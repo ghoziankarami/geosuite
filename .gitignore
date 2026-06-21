@@ -1,0 +1,9 @@
+# Release artifacts — uploaded via gh release, not committed
+exe/
+zips/
+docs/
+sample-data/
+screenshots/
+*.exe
+*.zip
+*.pdf

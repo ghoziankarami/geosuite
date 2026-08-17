@@ -4,10 +4,10 @@
 
 **Drillhole data preparation · EDA · Resource estimation — 100% offline Windows EXE**
 
-[![Version](https://img.shields.io/badge/version-2.6.8-0d9488?style=flat-square)](https://github.com/ghoziankarami/geosuite/releases)
+[![Version](https://img.shields.io/badge/version-2.6.10-0d9488?style=flat-square)](https://github.com/ghoziankarami/geosuite/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078d6?style=flat-square&logo=windows&logoColor=white)](https://github.com/ghoziankarami/geosuite)
 [![Offline](https://img.shields.io/badge/offline-first-brightgreen?style=flat-square)]()
-[![License](https://img.shields.io/badge/license-commercial--single--purchase-5980a6?style=flat-square)]()
+[![License](https://img.shields.io/badge/free-forever-5980a6?style=flat-square)]()
 [![Standards](https://img.shields.io/badge/SNI%204726%3A2019-KCMI%20%E2%80%A2%20JORC-orange?style=flat-square)]()
 
 **Geological data workflows built for mineral exploration — from raw drillhole CSV to resource-ready output, fully offline.**
@@ -22,6 +22,8 @@
 
 Orebit GeoSuite is a **geologist-first toolkit** for mineral exploration data. It runs **100% offline** — perfect for field camps, sites without internet, and privacy-sensitive environments.
 
+**Free to use, permanently** — web and Desktop Edition alike, no trial, no paywall. Sustained by voluntary [Support Orebit](https://saweria.co/orebitindonesia) contributions from users who find it valuable.
+
 Every workflow is checked against **SNI 4726:2019, KCMI, and JORC** resource-reporting standards.
 
 | Module | Function |
@@ -29,7 +31,7 @@ Every workflow is checked against **SNI 4726:2019, KCMI, and JORC** resource-rep
 | **Core** | Drillhole validation, composite, desurvey, export |
 | **Assay** | EDA: statistics, top-cut, domaining, tonnage estimation |
 | **Resource** | Variography, ordinary kriging, resource classification |
-| **Bundle** | All modules in one ZIP — unlock with a single key |
+| **Bundle** | All three modules in one ZIP |
 
 > 💡 Try the **free web version** at [geosuite.orebit.id/try/](https://geosuite.orebit.id/try/) — full features, no install.
 
@@ -39,11 +41,11 @@ Every workflow is checked against **SNI 4726:2019, KCMI, and JORC** resource-rep
 
 **Step 1 — Double-click `Orebit-*.exe`**
 - WebView2 Runtime auto-installs in the background (one-time)
-- License activation dialog appears
+- A free license key request prompt appears
 
-**Step 2 — Paste your license key**
-- Copy the key from your email (format `OREBIT3.xxx…`)
-- Paste → click **Activate** → done!
+**Step 2 — Request your free license key**
+- Enter your email — a free, permanent key is sent instantly
+- Paste the key → click **Activate** → done!
 
 Activation is **once per machine**. After activation the app opens directly every time.
 
@@ -103,7 +105,7 @@ Orebit-{Module}-vX.Y.Z.zip
 3. Run the EXE again
 
 **Q: "Invalid key"**
-**A:** (1) Ensure the key has no extra spaces. (2) Keys are case-sensitive. (3) Confirm the key matches the product (BNDL unlocks all modules). (4) Contact hello@orebit.id if it still fails.
+**A:** (1) Ensure the key has no extra spaces. (2) Keys are case-sensitive. (3) Confirm the key matches the product (BNDL unlocks all modules). (4) Contact hello@orebit.id if it still fails — free replacement keys are sent on request.
 
 **Q: Does it run on Linux / Mac?**
 **A:** The EXE is Windows-only. Use the full-featured web version at [geosuite.orebit.id/try/](https://geosuite.orebit.id/try/) in any modern browser.
@@ -120,16 +122,18 @@ Orebit-{Module}-vX.Y.Z.zip
 
 ## 📜 License
 
-**Single-purchase, lifetime license.** The original buyer may use it for internal work and personal consulting projects.
+**Free, permanent license.** Core, Assay, and Resource are free to use — web and Desktop Edition alike — for personal and business work, with no trial period or expiry.
 
-**NOT permitted:** Reselling, public redistribution, or uploading the EXE/key to public repositories, forums, or file-sharing services.
+**NOT permitted:** Public redistribution, or reselling access to the EXE/key.
 
-For team / company / multi-seat licensing, contact [hello@orebit.id](mailto:hello@orebit.id).
+Orebit GeoSuite is sustained by voluntary, open-amount support from users who find it valuable — see [Support Orebit](https://saweria.co/orebitindonesia). This is entirely optional and not required to use the software.
+
+For team / company / multi-seat deployments, contact [hello@orebit.id](mailto:hello@orebit.id).
 
 ---
 
 <div align="center">
 
-© 2026 [Orebit](https://orebit.id) · Single-purchase license · Built by [Ghozian Islam Karami](https://github.com/ghoziankarami)
+© 2026 [Orebit](https://orebit.id) · Free to use · Built by [Ghozian Islam Karami](https://github.com/ghoziankarami)
 
 </div>

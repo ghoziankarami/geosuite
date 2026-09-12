@@ -4,7 +4,7 @@
 
 **Drillhole data preparation · EDA · Resource estimation — 100% offline Windows EXE**
 
-[![Version](https://img.shields.io/badge/version-2.6.10-0d9488?style=flat-square)](https://github.com/ghoziankarami/geosuite/releases)
+[![Version](https://img.shields.io/badge/version-2.9.4-0d9488?style=flat-square)](https://github.com/ghoziankarami/geosuite/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078d6?style=flat-square&logo=windows&logoColor=white)](https://github.com/ghoziankarami/geosuite)
 [![Offline](https://img.shields.io/badge/offline-first-brightgreen?style=flat-square)]()
 [![License](https://img.shields.io/badge/free-forever-5980a6?style=flat-square)]()
@@ -12,7 +12,7 @@
 
 **Geological data workflows built for mineral exploration — from raw drillhole CSV to resource-ready output, fully offline.**
 
-![Demo](assets/demo.gif)
+![Multivariate Analysis](assets/s4.png)
 
 </div>
 

@@ -105,7 +105,7 @@ Orebit-{Module}-vX.Y.Z.zip
 3. Run the EXE again
 
 **Q: "Invalid key"**
-**A:** (1) Ensure the key has no extra spaces. (2) Keys are case-sensitive. (3) Confirm the key matches the product (BNDL unlocks all modules). (4) Contact hello@orebit.id if it still fails — free replacement keys are sent on request.
+**A:** (1) Ensure the key has no extra spaces. (2) Keys are case-sensitive. (3) Confirm the key matches the product (BNDL unlocks all modules). (4) Contact orebit.id@gmail.com if it still fails — free replacement keys are sent on request.
 
 **Q: Does it run on Linux / Mac?**
 **A:** The EXE is Windows-only. Use the full-featured web version at [geosuite.orebit.id/try/](https://geosuite.orebit.id/try/) in any modern browser.
@@ -114,7 +114,7 @@ Orebit-{Module}-vX.Y.Z.zip
 
 ## 📞 Contact & Support
 
-- **Email**: [hello@orebit.id](mailto:hello@orebit.id)
+- **Email**: [orebit.id@gmail.com](mailto:orebit.id@gmail.com)
 - **Web**: [orebit.id](https://orebit.id) · [geosuite.orebit.id](https://geosuite.orebit.id)
 - **Support hours**: 09:00–17:00 WIB (Mon–Fri)
 
@@ -128,7 +128,7 @@ Orebit-{Module}-vX.Y.Z.zip
 
 Orebit GeoSuite is sustained by voluntary, open-amount support from users who find it valuable — see [Support Orebit](https://saweria.co/orebitindonesia). This is entirely optional and not required to use the software.
 
-For team / company / multi-seat deployments, contact [hello@orebit.id](mailto:hello@orebit.id).
+For team / company / multi-seat deployments, contact [orebit.id@gmail.com](mailto:orebit.id@gmail.com).
 
 ---
 

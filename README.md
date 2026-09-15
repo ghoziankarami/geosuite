@@ -24,16 +24,22 @@ Orebit GeoSuite is a **geologist-first toolkit** for mineral exploration data. I
 
 **Free to use, permanently** — web and Desktop Edition alike, no trial, no paywall. Sustained by voluntary [Support Orebit](https://saweria.co/orebitindonesia) contributions from users who find it valuable.
 
-Every workflow is checked against **SNI 4726:2019, KCMI, and JORC** resource-reporting standards.
+Workflows are aligned with **SNI 4726:2019, KCMI, and JORC** reference standards. Standards are
+reference points, not a substitute for judgement: finalising a resource statement requires
+independent Competent Person review.
 
 | Module | Function |
 |--------|----------|
-| **Core** | Drillhole validation, composite, desurvey, export |
-| **Assay** | EDA: statistics, top-cut, domaining, tonnage estimation |
-| **Resource** | Variography, ordinary kriging, resource classification |
+| **Core** | Drillhole validation, desurvey, compositing, merge & export |
+| **Assay** | EDA: statistics, top-cut, drill spacing, domaining |
+| **Resource** | Variography, ordinary kriging, block model, grade-tonnage, preliminary confidence screening |
 | **Bundle** | All three modules in one ZIP |
 
-> 💡 Try the **free web version** at [geosuite.orebit.id/try/](https://geosuite.orebit.id/try/) — full features, no install.
+> **On classification.** Resource reports a *preliminary confidence* screen. That is
+> not a Measured/Indicated/Inferred classification and is not a substitute for one —
+> see [the docs](https://geosuite.orebit.id/docs/) for what the distinction means in practice.
+
+> 💡 Try the **free web tools** at [geosuite.orebit.id/try/](https://geosuite.orebit.id/try/) — full features, no install, no signup.
 
 ---
 
@@ -79,6 +85,53 @@ Read **`docs/Orebit-GeoSuite.pdf`** (included in every package) for the complete
 
 ---
 
+## 📚 Learn it with real data
+
+You do not need your own drillhole data to start. Everything below is free and openly licensed.
+
+### Worked tutorial — epithermal gold, start to finish
+
+**[From drillhole CSV to a grade-tonnage curve →](https://gist.github.com/ghoziankarami/957b05c882f57097441d9388c1e3fa5c)**
+
+A complete run through all three modules on a synthetic epithermal gold vein:
+validation → desurvey → compositing → EDA → top-cut → domaining → variography →
+ordinary kriging → grade-tonnage. Every number in it is measured from the data,
+and it ships with a **self-verification script** that recomputes all of them from
+the raw CSVs so you can check the tutorial rather than trust it.
+
+Decisions it walks through, with the actual trade-off numbers:
+
+- why pooling domains reports **0.43 g/t** where the vein is **5.59 g/t** (13× apart)
+- what a top-cut at 20 g/t really costs — **17.2% of the metal**
+- why a downhole width of **7.50 m** is a true width of **5.40 m**, a 39% overstatement
+- why an omnidirectional variogram on 30 m sections looks like pure nugget
+
+### Open datasets
+
+**[orebit-datasets →](https://github.com/ghoziankarami/orebit-datasets)** — three fully
+synthetic drillhole datasets under **CC BY 4.0**, built around deposit styles that
+matter in Indonesia. No licence ambiguity: every number was generated, so there is
+no third party to ask.
+
+| Dataset | Style | Grade CV | The estimation problem it poses |
+|---|---|---|---|
+| `01-emas-epitermal` | Low-sulphidation Au–Ag vein | **1.66** | Erratic high grades; top-cut and domaining decide the answer |
+| `02-nikel-laterit` | Ni–Co laterite over ultramafic | **0.28** | Smooth layered regolith; the problem is horizon boundaries, not outliers |
+| `03-timah-placer` | Alluvial cassiterite (kaksa) | **1.42** | Thin basal pay layer, volumetric grade in kg/m³ |
+
+Same four-file layout (`collar` · `survey` · `assay` · `litho`) across all three, so a
+workflow built on one runs on the others.
+
+### Reference documentation
+
+**[geosuite.orebit.id/docs →](https://geosuite.orebit.id/docs/)** — a 15-minute quickstart,
+workflow guides (QA/QC, top-cut, variogram modelling, block size, estimation validation,
+reporting), a full parameter reference for every control in all three modules, and concept
+pages explaining *why* — why minimum curvature, what kriging variance is and is not, how to
+read a swath plot.
+
+---
+
 ## 📦 Package Layout
 
 ```
@@ -108,7 +161,7 @@ Orebit-{Module}-vX.Y.Z.zip
 **A:** (1) Ensure the key has no extra spaces. (2) Keys are case-sensitive. (3) Confirm the key matches the product (BNDL unlocks all modules). (4) Contact orebit.id@gmail.com if it still fails — free replacement keys are sent on request.
 
 **Q: Does it run on Linux / Mac?**
-**A:** The EXE is Windows-only. Use the full-featured web version at [geosuite.orebit.id/try/](https://geosuite.orebit.id/try/) in any modern browser.
+**A:** The EXE is Windows-only. Use the full-featured web tools at [geosuite.orebit.id/try/](https://geosuite.orebit.id/try/) instead — they run on your own laptop, whatever the operating system.
 
 ---
 

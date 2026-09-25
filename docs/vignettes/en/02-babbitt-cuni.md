@@ -122,8 +122,7 @@ The Cu distribution departs from a single lognormal population from **0.72 % (P8
 | | |
 |---|---:|
 | Assays capped | 94 |
-| Metal removed, length-weighted (independent calculation) | 1.68 % |
-| Metal removed per the app (per sample, not length-weighted) | 2.99 % |
+| Metal removed, length-weighted (app = independent calculation) | 1.68 % |
 | CV inside the 0.2 % shell: before → after | 1.07 → 0.66 |
 | P99.5 inside the shell | 3.5 |
 
@@ -143,10 +142,10 @@ One 24 % Cu assay with a 200 m search spreads massive-sulphide grade into dozens
 The export header records the decision:
 
 ```
-# topcut: cu_pct cut=3.0000 affected=94/23684 metal_removed=2.99% applied_by=manual
+# topcut: cu_pct cut=3.0000 affected=94/23684 metal_removed=1.68% (length-weighted) applied_by=manual
 ```
 
-> An honest note: the app's *metal_removed* figure sums assay values without length weighting. With unequal sample lengths, the length-weighted figure (1.68 %) is the correct one. This limitation is logged for a fix.
+> Earlier versions summed assay values without length weighting and reported 2.99 %. Metal is grade × length, so a 0.2 m sample must not weigh the same as a 3 m interval. Now fixed, and checked against the independent calculation by `test_vignettes.py`.
 
 ### 10 ft (3.048 m) compositing
 
@@ -164,7 +163,11 @@ The second bug this stage exposed was in **composite coordinates**. Each composi
 
 ![Cu variogram](../img/babbitt-09-resource-variogram.png)
 
-Auto-fitted model: exponential, nugget **0.063**, sill **0.105** (%²), so the nugget is **60 %**. Range **72.5 m**.
+**Nugget from the holes.** Compute the **Variogram Downhole** first (Variography tab, 2 m lags): 183,031 pairs of samples within the same hole. Most samples are 10 ft (3.05 m) long, so adjacent samples pair up at 3 m, where γ is **0.035** (%²). The 1 m bin, from a few shorter samples, gives 0.028; the app takes the lowest of the first three lags. Either way the nugget is a quarter to a third of the sill.
+
+**Then between holes.** Auto-fit holds the nugget at the down-hole value: exponential, nugget **0.028**, sill **0.115** (%²), about 24 % nugget. Range **72.5 m**, and the app flags it as **the shortest range the fit tries**. In the first lag (0–50 m, down-hole and between-hole pairs pooled), γ is already 0.093, 98 % of the data variance.
+
+> Earlier revisions of this vignette reported "nugget 0.063 = 60 %". Like on Thalanga (vignette 01 §7), that was the ceiling of the fitting grid, not the deposit. See the down-hole variogram for the real short-range structure.
 
 Nearest between-hole spacing: **median 107 m, P90 150 m**. **The variogram range is shorter than the hole spacing.** The measured spatial structure comes almost entirely from *down-hole* pairs. At hole spacing, kriging has almost no correlation to work with and will return something close to a local mean. In a layered deposit like this one, the honest variogram is a **directional variogram parallel to the layering**. We record that as a limitation.
 
@@ -174,18 +177,25 @@ Block size: the app suggests 55 × 55 × 28 m. Used: **50 × 50 × 15 m** (about
 
 ## 6. Estimate
 
-Search 200 × 200 × 30 m (horizontal, about twice the hole spacing; vertically tight because the mineralisation is layered), 4 to 16 composites.
+Search 200 × 200 × 30 m (horizontal, about twice the hole spacing; vertically tight because the mineralisation is layered), 4 to 16 composites. Two runs: **without** and **with** the domain boundary (*Keep blocks inside the domain*, see vignette 01 §8: a block joins the domain only if its nearest composite, of any domain, is in it).
 
-![Estimate](../img/babbitt-10-resource-estimate.png)
+![Estimate without the domain boundary](../img/babbitt-10a-resource-estimate-unbounded.png)
 
-| | OK | IDW | NN |
-|---|---:|---:|---:|
-| Blocks estimated | 74,940 | | |
-| Mean Cu grade | **0.479 %** | 0.483 % | 0.460 % |
-| Tonnes (2.8 t/m³) | **7,869 Mt** | | |
-| Cu metal | 37.7 Mt | | |
+| | No domain boundary | With domain boundary |
+|---|---:|---:|
+| Blocks estimated | 74,940 | **26,842** |
+| Blocks within reach removed by the boundary | — | 209,506 |
+| Mean Cu grade (OK) | 0.474 % | **0.503 %** |
+| Tonnes (2.8 t/m³) | 7,869 Mt | **2,818 Mt** |
+| Cu metal | 37.3 Mt | **14.2 Mt** |
 
-Global mean check: OK is **4 %** above NN, inside the usual ±5 %. Tonnage recheck: 74,940 blocks × 37,500 m³ × 2.8 t/m³ = 7,869 Mt. It matches.
+![Estimate with the domain boundary](../img/babbitt-10-resource-estimate.png)
+
+On dense data the boundary removes almost two-thirds of the tonnage: blocks within 200 m of a ≥ 0.2 % Cu composite whose nearest composite is < 0.2 % Cu rock or unassayed core. The mean grade rises because those "diluted" edge blocks leave.
+
+Note a hidden decision: Assay labels **unassayed** composites M0, so 33,236 composites of unassayed core act as boundary too. For cover rock above the intrusion that is right. For intervals *inside* the zone that were skipped by the assay budget, it can cut out ore. That is a geologist's decision and must be written down (§3).
+
+Global mean check (with the boundary): OK **0.503 %** and NN **0.509 %**, 1.1 % apart. Tonnage recheck: 26,842 blocks × 37,500 m³ × 2.8 t/m³ = 2,818 Mt. It matches.
 
 ---
 
@@ -197,11 +207,11 @@ The earlier leave-one-out searched for neighbours **only among the 200 random sa
 
 | n = 194 of 200 | OK | IDW | NN |
 |---|---:|---:|---:|
-| Slope (estimate on actual) | **0.50** | 0.68 | 0.68 |
-| r² | 0.61 | 0.62 | 0.47 |
+| Slope (estimate on actual) | **0.62** | 0.68 | 0.68 |
+| r² | 0.67 | 0.62 | 0.47 |
 | Mean bias | +0.02 | +0.03 | +0.02 |
 
-The estimate is globally unbiased, but **a slope of 0.50 means heavy smoothing**: high grades are strongly under-estimated and low grades over-estimated. That is consistent with a 60 % nugget and a range shorter than the hole spacing (§5). On the grade-tonnage curve this means **too many tonnes at low cut-offs and too low a grade at high cut-offs**. The curve must not be used to choose a mining cut-off without a change-of-support correction.
+The estimate is globally unbiased, but **a slope of 0.62 means substantial smoothing**: high grades are strongly under-estimated and low grades over-estimated. That is what a range shorter than the hole spacing produces (§5). With the old grid-ceiling nugget of 60 % the slope was 0.50; reading the nugget from the holes improved it, but no variogram can make up for drill spacing. On the grade-tonnage curve this means **too many tonnes at low cut-offs and too low a grade at high cut-offs**. The curve must not be used to choose a mining cut-off without a change-of-support correction.
 
 ---
 
@@ -211,20 +221,20 @@ The estimate is globally unbiased, but **a slope of 0.50 means heavy smoothing**
 
 | Cu cut-off | Tonnes (Mt) | Cu grade |
 |---|---:|---:|
-| 0.2 % | 7,869 | 0.479 % |
-| 0.3 % | 7,354 | 0.494 % |
-| 0.4 % | 5,036 | 0.559 % |
-| 0.5 % | 2,785 | 0.649 % |
-| 0.6 % | 1,425 | 0.748 % |
-| 0.8 % | 306 | 1.00 % |
+| 0.2 % | 2,818 | 0.503 % |
+| 0.3 % | 2,671 | 0.516 % |
+| 0.4 % | 1,960 | 0.575 % |
+| 0.5 % | 1,203 | 0.655 % |
+| 0.6 % | 656 | 0.745 % |
+| 0.8 % | 150 | 0.952 % |
 
-Against the public description (**> 1 billion tonnes @ ~0.43 % Cu**), the grade is comparable but **our tonnage is about 8 times larger**. The cause is not units, which we converted. It is the reporting principle most often forgotten:
+Against the public description (**> 1 billion tonnes @ ~0.43 % Cu**), the grade is comparable. Without the domain boundary our tonnage was about 8 times larger; with it, still **about 2.8 times**. The remaining gap is not units (feet were converted) and no longer extrapolation into wall rock. It is the reporting principle most often forgotten:
 
-**A Mineral Resource must have *reasonable prospects for eventual economic extraction* (RPEEE).** Our estimate is a **geological inventory**: every block inside a 0.2 % Cu shell, down to 869 m below surface, within 200 m of any hole. A reported resource is bounded by:
+**A Mineral Resource must have *reasonable prospects for eventual economic extraction* (RPEEE).** Our estimate is a **geological inventory**: every block inside the 0.2 % Cu domain, down to 869 m below surface. A reported resource is bounded by:
 
-- an **economic cut-off** (for Cu-Ni-PGE usually an NSR value, not Cu alone);
+- an **economic cut-off** (for Cu-Ni-PGE usually an NSR value, not Cu alone). A 0.4 % Cu cut-off alone already brings the tonnage down to 1,960 Mt;
 - an **optimised pit shell**, so deep blocks below the pit floor are not counted;
-- sensible confidence classification, so blocks far from data (reached only by the 200 m radius) are left out.
+- sensible confidence classification, so blocks far from data are left out.
 
 Density adds to this: 2.8 t/m³ is an assumption. Duluth troctolite/gabbro typically runs about 2.9–3.0 t/m³, and measured density would *add* tonnes.
 

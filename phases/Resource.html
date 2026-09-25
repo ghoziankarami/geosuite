@@ -5062,6 +5062,7 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
  </label>
  </div>
  <p style="margin-top:8px;font-size:12px;color:var(--fg-mute);">${t('res.activeUnit')} <strong>${escapeHtml(gradeUnitFor(setupState.element))}</strong>. ${gradeUnitFor(setupState.element) === 'kg/m³' ? t('res.unitVolumetric') : t('res.unitMass')}</p>
+ <div id="setupDomainWarn">${_allDomainsWarnHtml()}</div>
  <div id="elementSummary" style="margin-top:12px;"></div>
  </div>
  <div class="card">
@@ -5143,6 +5144,7 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
  });
  document.getElementById('setupDomain').addEventListener('change', e => {
  setupState.domain = e.target.value;
+ const dw = document.getElementById('setupDomainWarn'); if (dw) dw.innerHTML = _allDomainsWarnHtml();
  variogramState.experimental = null;
  variogramState.model = null;
  variogramState._lastRange = null;
@@ -5720,6 +5722,12 @@ async function autoFitVariogram(replot = true) {
  }
 
  const maxLag = ex.lags[ex.lags.length - 1];
+ // Standard practice: read the nugget where pairs are closest -- the
+ // down-hole variogram -- and fit only sill and range between holes. Used
+ // whenever the down-hole variogram has been computed for this data.
+ const dhv = variogramState.downhole || {};
+ const fixedNug = (Number.isFinite(dhv.suggestedNugget) && dhv.suggestedNugget > 0 && dhv.lags && dhv.forElement === setupState.element && dhv.forDomain === setupState.domain)
+   ? dhv.suggestedNugget : null;
  const types = ['spherical', 'exponential', 'gaussian'];
  const weights = ex.lags.map((h, i) => ex.pairs[i] / (h * h + 1));
  let best = { sse: Infinity, type: 'exponential', nugget: 0, sill: dataVar, range: maxLag };
@@ -5731,10 +5739,16 @@ async function autoFitVariogram(replot = true) {
  for (let ti = 0; ti < types.length; ti++) {
  const type = types[ti];
  for (let r = rMin; r <= rMax; r += rStep) {
- for (let nr = 0; nr <= 0.6; nr += 0.05) {
+ // Nugget up to 90 % of the sill (2026-09-25). The grid used to stop at 60 %,
+ // and on Thalanga, Babbitt and the epithermal-gold corpus the "best fit" sat
+ // exactly on that ceiling (and on the shortest range searched): a limit of
+ // the search reported as a property of the deposit. Gold and massive-sulphide
+ // data can carry 70-90 % nugget at drill-hole lags.
+ for (let nr = 0; nr <= 0.9 + 1e-9; nr += 0.05) {
+ if (fixedNug !== null && nr > 0) break; // nugget fixed from the down-hole variogram
  for (let sr = 0.5; sr <= 1.5; sr += 0.1) {
  const sill = dataVar * sr;
- const nugget = sill * nr;
+ const nugget = fixedNug !== null ? Math.min(fixedNug, sill) : sill * nr;
  const m = { type, nugget, sill, range: r };
  let sse = 0;
  for (let i = 0; i < ex.lags.length; i++) {
@@ -5757,6 +5771,13 @@ async function autoFitVariogram(replot = true) {
  }
 
  variogramState.model = { type: best.type, nugget: best.nugget, sill: best.sill, range: best.range };
+ // Say so when the answer is an edge of the search, not a fit.
+ const atBounds = [];
+ variogramState.fitNuggetFrom = fixedNug !== null ? 'downhole' : 'fit';
+ if (fixedNug === null && best.sill > 0 && best.nugget / best.sill >= 0.9 - 1e-6) atBounds.push('nugget');
+ if (best.range <= rMin + 1e-9) atBounds.push('rangeMin');
+ if (best.range >= rMax - rStep - 1e-9) atBounds.push('rangeMax');
+ variogramState.fitAtBounds = atBounds;
  // Force search-radius refresh on next Tab-6/7/9 entry
  variogramState._lastRange = null;
  updateModelInputs();
@@ -5770,7 +5791,14 @@ async function autoFitVariogram(replot = true) {
  }
  const rmse = Math.sqrt(sse2 / ex.lags.length);
  const nugRatio = best.sill > 0? (best.nugget / best.sill * 100) : 0;
- const fitNote = `<span style="color:var(--good);"> Auto-fit · type: <strong>${escapeHtml(best.type)}</strong> · range: <strong>${best.range.toFixed(0)} m</strong> · nugget ratio: <strong>${nugRatio.toFixed(0)}%</strong> · RMSE: ${rmse.toFixed(2)}</span>`;
+ const boundNote = atBounds.length
+   ? `<div class="hint warn" style="margin-top:6px;">${escapeHtml([
+       t('res.vg.fitAtBounds').replace('{what}', atBounds.map(b => ({ nugget: t('res.vg.bound.nugget'), rangeMin: t('res.vg.bound.rangeMin'), rangeMax: t('res.vg.bound.rangeMax') })[b]).join(', ')),
+       fixedNug === null ? t('res.vg.fitAtBounds.noDownhole').replace('{lag}', (ex.lags.length > 1 ? (ex.lags[1] - ex.lags[0]) : ex.lags[0] * 2).toFixed(0)) : '',
+       atBounds.includes('rangeMin') ? t('res.vg.fitAtBounds.short') : ''
+     ].filter(Boolean).join(' '))}</div>`
+   : '';
+ const fitNote = `<span style="color:var(${atBounds.length ? '--warn' : '--good'});"> Auto-fit${fixedNug !== null ? ' · ' + t('res.vg.nuggetFromDownhole') : ''} · type: <strong>${escapeHtml(best.type)}</strong> · range: <strong>${best.range.toFixed(0)} m</strong> · nugget ratio: <strong>${nugRatio.toFixed(0)}%</strong> · RMSE: ${rmse.toFixed(2)}</span>${boundNote}`;
  const statusEl = document.getElementById('varStatus');
  if (statusEl) {
  if (replot) statusEl.innerHTML = fitNote;
@@ -6424,47 +6452,58 @@ async function plotVariogramMap() {
 }
 
 /* ---------- Algorithm 2: Downhole Variogram ----------
- Strict vertical pairs (horiz < 5 m), small lag, short cutoff. Nugget = min(γ[0..2]). */
+ Pairs within the same hole at their along-hole separation, small lag, short cutoff. Nugget = min(γ[0..2]). */
 async function computeDownholeVariogram() {
  await ensurePlotly();
  const samples = getSamples();
  const n = samples.length;
  if (n < 20) {
- document.getElementById('dhStatus').innerHTML =
+ (document.getElementById('dhStatus') || {}).innerHTML =
  `<span style="color:var(--bad);"><span style="color:var(--bad);"></span> Insufficient data (${n} samples).</span>`;
  return;
  }
- const lag = +document.getElementById('dhLag').value || 2;
- const maxH = +document.getElementById('dhMaxH').value || 100;
+ const lag = +((document.getElementById('dhLag') || {}).value) || variogramState.downhole.lagSize || 2;
+ const maxH = +((document.getElementById('dhMaxH') || {}).value) || variogramState.downhole.maxDist || 100;
  const nLag = Math.max(8, Math.min(60, Math.floor(maxH / lag)));
  variogramState.downhole.lagSize = lag;
  variogramState.downhole.maxDist = maxH;
 
- // No subsample needed: filter is strict vertical so most pairs drop out anyway.
- // But cap at 2000 to keep O(n²) bounded.
- const cap = 2000;
- let pool = samples;
- if (n > cap) {
- pool = _seededSubsample(samples, cap);
- }
- const m = pool.length;
-
+ // Pairs are samples of the SAME HOLE, at their 3D separation along it
+ // (2026-09-25). The rule used to be "any two samples less than 5 m apart
+ // horizontally", on a random 2,000-sample subset: inclined holes (Thalanga
+ // flattens to 20 deg) lost their along-hole pairs, and on dense data the
+ // subset left few close pairs at all -- while this is the one place the
+ // nugget can actually be read. Within-hole pairs need no subsample
+ // (sum of n_hole^2); the old vertical rule remains only for files without
+ // hole IDs.
  const bins = Array.from({ length: nLag }, () => ({ sum: 0, n: 0 }));
  let totalPairs = 0;
- for (let i = 0; i < m; i++) {
- for (let j = i + 1; j < m; j++) {
- const dx = pool[j].x - pool[i].x;
- const dy = pool[j].y - pool[i].y;
- const horiz = Math.hypot(dx, dy);
- if (horiz > 5) continue; // strict vertical
- const dz = Math.abs(pool[j].z - pool[i].z);
- if (dz === 0 || dz > maxH) continue;
- const bin = Math.floor(dz / lag);
- if (bin >= nLag) continue;
- const diff = pool[j].v - pool[i].v;
+ const addPair = (a, b, h) => {
+ if (!(h > 0) || h > maxH) return;
+ const bin = Math.floor(h / lag);
+ if (bin >= nLag) return;
+ const diff = b.v - a.v;
  bins[bin].sum += diff * diff;
  bins[bin].n += 1;
  totalPairs++;
+ };
+ const byHole = new Map();
+ samples.forEach(sm => { if (sm.rid != null && sm.rid !== '') { const k = String(sm.rid); if (!byHole.has(k)) byHole.set(k, []); byHole.get(k).push(sm); } });
+ if (byHole.size > 0) {
+ byHole.forEach(arr => {
+ for (let i = 0; i < arr.length; i++) {
+ for (let j = i + 1; j < arr.length; j++) {
+ addPair(arr[i], arr[j], Math.hypot(arr[j].x - arr[i].x, arr[j].y - arr[i].y, arr[j].z - arr[i].z));
+ }
+ }
+ });
+ } else {
+ const pool = n > 2000 ? _seededSubsample(samples, 2000) : samples;
+ for (let i = 0; i < pool.length; i++) {
+ for (let j = i + 1; j < pool.length; j++) {
+ if (Math.hypot(pool[j].x - pool[i].x, pool[j].y - pool[i].y) > 5) continue; // no hole IDs: near-vertical pairs only
+ addPair(pool[i], pool[j], Math.abs(pool[j].z - pool[i].z));
+ }
  }
  }
  const lags = [], gammas = [], npairs = [];
@@ -6476,18 +6515,19 @@ async function computeDownholeVariogram() {
  }
  }
  if (lags.length < 2) {
- document.getElementById('dhStatus').innerHTML =
- `<span style="color:var(--bad);"><span style="color:var(--bad);"></span> Only ${totalPairs} vertical pairs — try increasing lag or widening horizontal tolerance.</span>`;
+ (document.getElementById('dhStatus') || {}).innerHTML =
+ `<span style="color:var(--bad);"><span style="color:var(--bad);"></span> Only ${totalPairs} within-hole pairs — try a larger lag or maximum distance.</span>`;
  return;
  }
  // Suggested nugget = min of first 3 lag gammas (Sinclair & Blackwell 2002)
  const firstK = gammas.slice(0, Math.min(3, gammas.length));
  const sugg = firstK.reduce((a,b) => Math.min(a,b), Infinity);
- variogramState.downhole = {...variogramState.downhole, lags, gammas, pairs: npairs, suggestedNugget: sugg, totalPairs };
- document.getElementById('dhStatus').innerHTML =
- `<span style="color:var(--good);"></span> Downhole: <strong>${lags.length}</strong> lag bins · ${totalPairs.toLocaleString('en-US')} pasangan vertikal. Nugget heuristik = min(γ[0..2]) = <strong>${fmtNum(sugg)}</strong>.`;
- document.getElementById('dhApplyBtn').disabled = false;
- await plotDownhole();
+ variogramState.downhole = {...variogramState.downhole, lags, gammas, pairs: npairs, suggestedNugget: sugg, totalPairs,
+   forElement: setupState.element, forDomain: setupState.domain };
+ (document.getElementById('dhStatus') || {}).innerHTML =
+ `<span style="color:var(--good);"></span> Downhole: <strong>${lags.length}</strong> lag bins · ${totalPairs.toLocaleString('en-US')} within-hole pairs. Nugget heuristic = min(γ[0..2]) = <strong>${fmtNum(sugg)}</strong>.`;
+ { const ab = document.getElementById('dhApplyBtn'); if (ab) ab.disabled = false; }
+ if (document.getElementById('dhPlot')) { try { await plotDownhole(); } catch (e) { console.warn('[downhole plot]', e); } }
 }
 
 async function plotDownhole() {
@@ -6512,7 +6552,7 @@ async function plotDownhole() {
  }
  const layout = {
 ...plotTheme(),
- title: { text: 'Variogram Downhole (vertikal)', font: { size: 13 } },
+ title: { text: 'Down-hole variogram (within-hole pairs)', font: { size: 13 } },
  xaxis: {...plotTheme().xaxis, title: 'Δz (m)' },
  yaxis: {...plotTheme().yaxis, title: 'γ(h)' },
  legend: { orientation: 'h', y: -0.22 },
@@ -6685,7 +6725,10 @@ let searchState = {
   maxNeighbors: 16,
   // CHANGED 2026-07-28: senior geologist audit #11 — octant default false for sparse data
   // (was true; octant search too restrictive for early-stage exploration with wide spacing)
-  useOctant: false  // Sprint C: octant search for spatially balanced neighbor selection
+  useOctant: false,  // Sprint C: octant search for spatially balanced neighbor selection
+  // Domain boundary (2026-09-25): a block belongs to the selected domain only if
+  // the nearest composite of ANY domain is in it. See _domainBoundary().
+  domainBoundary: true
 };
 let estimState = {
   results: null, // {idw:[], ok:[], nn:[], variance:[], nNeighbors:[], nearestDist:[]}
@@ -6763,7 +6806,8 @@ function saveResourceSession() {
     rMaj: searchState.rMaj, rSemi: searchState.rSemi, rMin: searchState.rMin,
     azDeg: searchState.azDeg, dipDeg: searchState.dipDeg,
     minNeighbors: searchState.minNeighbors, maxNeighbors: searchState.maxNeighbors,
-    useOctant: searchState.useOctant
+    useOctant: searchState.useOctant,
+    domainBoundary: searchState.domainBoundary
    }
   };
   localStorage.setItem(RESOURCE_SESSION_KEY, JSON.stringify(payload));
@@ -6817,6 +6861,7 @@ function restoreResourceSession() {
    if (Number.isFinite(p.search[k])) searchState[k] = p.search[k];
   }
   if (typeof p.search.useOctant === 'boolean') searchState.useOctant = p.search.useOctant;
+  if (typeof p.search.domainBoundary === 'boolean') searchState.domainBoundary = p.search.domainBoundary;
  }
  return restored ? p : null;
 }
@@ -7137,6 +7182,48 @@ function nearestNeighbor(neighbors, samples) {
 }
 
 /* ---------- Build sample list from filtered rows ---------- */
+// Hard domain boundary without a wireframe. Every composite that carries
+// coordinates -- of every domain, assayed or not -- votes for the rock it sits
+// in; a block is inside the selected domain only if its nearest composite
+// (anisotropic distance, same search ellipsoid) is in that domain. Without
+// this, an M1-only estimate spread ore grade into every block within the
+// search radius: Thalanga 276 Mt against 4.7 Mt ever mined, Babbitt 7.9 Gt.
+// Returns null when there is nothing to bound (no domain column, all domains
+// selected, or only one domain present). 2026-09-25.
+// "All domains" is the default and the easy mistake: several domains estimated
+// as one population average ore with waste, and there is no domain to bound.
+// Seen walking a new user's flow on the epithermal-gold dataset. 2026-09-25.
+function _allDomainsWarnHtml() {
+ try {
+  if (setupState.domain !== 'all' || !DATA || !DATA.rows) return '';
+  const di = colIdx('domain');
+  if (di < 0) return '';
+  const n = new Set(DATA.rows.map(r => r[di]).filter(v => v !== '' && v != null)).size;
+  if (n < 2) return '';
+  return `<div class="hint warn" style="margin-top:10px;">${t('res.st.allDomainsWarn').replace('{n}', n)}</div>`;
+ } catch (e) { return ''; }
+}
+
+function _domainBoundary() {
+ if (!DATA || !DATA.rows || setupState.domain === 'all' || setupState.domain == null) return null;
+ const di = colIdx('domain'), xi = colIdx('midx'), yi = colIdx('midy'), zi = colIdx('midz');
+ if (di < 0 || xi < 0 || yi < 0 || zi < 0) return null;
+ const want = String(setupState.domain);
+ const samples = [], inDomain = [];
+ let nIn = 0;
+ for (const r of DATA.rows) {
+  const x = asNum(r[xi]), y = asNum(r[yi]), z = asNum(r[zi]);
+  if (x === null || y === null || z === null) continue;
+  const d = r[di] == null ? '' : String(r[di]);
+  const isIn = d === want;
+  samples.push({ x, y, z });
+  inDomain.push(isIn);
+  if (isIn) nIn++;
+ }
+ if (!nIn || nIn === samples.length) return null;
+ return { samples, inDomain, nIn, nOut: samples.length - nIn };
+}
+
 function getSamples() {
  const rows = rowsFiltered();
  const eli = colIdx(setupState.element);
@@ -7908,6 +7995,7 @@ function renderEstimation() {
  <label>${t('res.renderEstimation.minNeighbors')}: <input type="number" id="sMinN" value="${searchState.minNeighbors}" min="2" max="50" style="width:80px;"></label>
  <label>${t('res.renderEstimation.maxNeighbors')}: <input type="number" id="sMaxN" value="${searchState.maxNeighbors}" min="2" max="50" style="width:80px;"></label>
  <label title="${t('res.renderEstimation.octantSearchDivideSearchEllipsoid')}"><input type="checkbox" id="sOctant" ${searchState.useOctant ? 'checked' : ''}> Octant search</label>
+ <label title="${escapeHtml(t('res.est.domainBoundaryTitle'))}"><input type="checkbox" id="sDomainBound" ${searchState.domainBoundary ? 'checked' : ''}> ${t('res.est.domainBoundary')}</label>
  <button class="btn" onclick="runEstimation()" ${!haveModel ||!haveBlocks? 'disabled' : ''}> ${t('res.renderEstimation.runEstimationIdwOkNn')}</button>
  </div>
  <div id="estimStatus" style="margin-top:12px;font-size:13px;"></div>
@@ -7978,6 +8066,8 @@ async function runEstimation() {
  searchState.minNeighbors = +document.getElementById('sMinN').value;
  searchState.maxNeighbors = +document.getElementById('sMaxN').value;
  searchState.useOctant = document.getElementById('sOctant').checked;
+ const dbEl = document.getElementById('sDomainBound');
+ if (dbEl) searchState.domainBoundary = dbEl.checked;
 
  const samples = getSamples();
  if (samples.length < searchState.minNeighbors) {
@@ -7993,6 +8083,10 @@ async function runEstimation() {
  // Smaller cell size = fewer cells per neighbor query (was = max radius which gives 27-cell scan).
  const cellSize = Math.max(searchState.rMaj, searchState.rSemi, searchState.rMin) / 2;
  const idx = buildSampleIndex(samples, cellSize);
+ const bound = searchState.domainBoundary ? _domainBoundary() : null;
+ const boundIdx = bound ? buildSampleIndex(bound.samples, cellSize) : null;
+ const boundSearch = bound ? Object.assign({}, searchState, { maxNeighbors: 1, useOctant: false }) : null;
+ let outsideDomain = 0;
 
  // Sample-envelope bbox + buffer for early-out.
  let sxMin = Infinity, sxMax = -Infinity, syMin = Infinity, syMax = -Infinity, szMin = Infinity, szMax = -Infinity;
@@ -8052,6 +8146,10 @@ async function runEstimation() {
  skippedBbox++;
  continue;
  }
+ if (bound) {
+   const nb = neighborsAround(boundIdx, b.cx, b.cy, b.cz, bound.samples, boundSearch);
+   if (!nb.length || !bound.inDomain[nb[0].idx]) { outsideDomain++; continue; }
+ }
  const neigh = neighborsAround(idx, b.cx, b.cy, b.cz, samples, searchState);
  nNb[k] = neigh.length;
  if (neigh.length === 0) continue;
@@ -8097,13 +8195,14 @@ async function runEstimation() {
  // Done
  const dt = ((performance.now() - t0) / 1000).toFixed(1);
  const bps = (N / Math.max(0.001, (performance.now() - t0) / 1000)).toFixed(0);
- estimState.results = { idw, ok, nn, variance, nNb, nearestDist, estimated, skippedBbox, negClamped };
+ estimState.results = { idw, ok, nn, variance, nNb, nearestDist, estimated, skippedBbox, negClamped, outsideDomain, domainBoundary: !!bound };
  estimState.done = true;
  estimState._running = false;
  setEstimStatus(`<span style="color:var(--good);"><span style="color:var(--good);"></span> ${t('res.processChunk.finished')
    .replace('{dt}', dt).replace('{estimated}', estimated.toLocaleString('en-US')).replace('{n}', N.toLocaleString('en-US'))
    .replace('{pct}', (estimated / N * 100).toFixed(1)).replace('{skipped}', skippedBbox.toLocaleString('en-US'))
-   .replace('{bps}', bps)}</span>`);
+   .replace('{bps}', bps)}</span>`
+   + (bound ? `<div style="margin-top:4px;color:var(--fg-mute);">${t('res.est.domainBoundaryDone').replace('{n}', outsideDomain.toLocaleString('en-US')).replace('{dom}', escapeHtml(String(setupState.domain)))}</div>` : ''));
  if (typeof logPipeline === 'function') logPipeline('Estimation', `${(setupState.element||'grade')} kriging (IDW/OK/NN) → ${estimated.toLocaleString('en-US')}/${N.toLocaleString('en-US')} blocks`);
  classState = { thresholds: null, labels: null };
  crossvalState = { results: null, metrics: null };
@@ -12597,11 +12696,12 @@ window.addEventListener('DOMContentLoaded', () => {
    try {
      setStep(t('res.cancelComputePipeline.step210Variography'), 15); setEta(t('res.cancelComputePipeline.est40sRemaining'));
      showTab(4); await new Promise(r => setTimeout(r, 200));
-     if (typeof computeVariogram === 'function') { computeVariogram(); await new Promise(r => setTimeout(r, 800)); }
-     if (typeof autoFitVariogram === 'function') { autoFitVariogram(); await new Promise(r => setTimeout(r, 300)); }
+     // Down-hole first: it fixes the nugget for the auto-fit (2026-09-25).
+     if (typeof computeDownholeVariogram === 'function') { await computeDownholeVariogram(); }
+     if (typeof computeVariogram === 'function') { await computeVariogram(); }
+     if (typeof autoFitVariogram === 'function') { await autoFitVariogram(); }
      if (typeof computeVariogramMap === 'function') { computeVariogramMap(); await new Promise(r => setTimeout(r, 800)); }
      if (typeof computeDirectionalScan === 'function') { computeDirectionalScan(); await new Promise(r => setTimeout(r, 800)); }
-     if (typeof computeDownholeVariogram === 'function') { computeDownholeVariogram(); await new Promise(r => setTimeout(r, 500)); }
    } catch(e) { console.warn('[pipeline] Variogram:', e.message); }
    if (_pipelineCancelled) { _pipelineRunning = false; _computeOverlay(false); return; }
    // Honest feedback: if the variogram failed to fit (e.g. the selected domain
@@ -13379,5 +13479,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (el && m && m.getAttribute('content')) el.textContent = m.getAttribute('content');
   } catch (e) { /* footer stamp is cosmetic; never block boot on it */ }
 });
-</script></body>
+</script>
+<script>OrebitHandoff.receive('Resource');</script></body>
 </html>

@@ -268,9 +268,15 @@ Unggah komposit ke **Orebit Resource**. Di **Setup** pilih elemen **zn_pct** dan
 
 ![Variogram Zn di domain M1](img/thalanga-10-resource-variogram.png)
 
-Model yang dicocokkan otomatis: **eksponensial**, nugget **67,2**, sill **112,0** (%²), range **326 m**. Artinya nugget sekitar **60 % dari sill**.
+**Mulai dari sepanjang lubang.** Komposit terdekat antar lubang berjarak sekitar 90 m, sehingga nugget, yaitu variabilitas pada jarak nol, hanya bisa dibaca *sepanjang* lubang. Buka **Variogram Downhole** di tab **Variography**: pasangan sampel dalam lubang yang sama, lag 2 m. Ditemukan **840** pasangan dalam-lubang, dan γ naik dari **22,2** (%²) pada 1 m menjadi **113,5** pada 15 m. Ini struktur jarak pendek yang nyata: dalam beberapa meter kadar berubah dari sulfida masif ke batuan samping.
 
-Cara membacanya: 98 komposit dari segelintir lubang berarti sebagian besar pasangan di variogram eksperimental adalah pasangan *sepanjang lubang*, bukan *antar lubang*. Nugget 60 % mengatakan bahwa pada jarak antar lubang sebagian besar variabilitas kadar Zn **tidak bisa diprediksi** dari tetangga, sesuatu yang wajar untuk lensa sulfida masif yang berselingan dengan batuan samping dalam jarak meter. Range 326 m didukung sangat sedikit pasangan. Anggap itu indikatif, bukan terukur.
+**Lalu antar lubang.** **Compute** variogram eksperimental lalu **Auto-fit**. Karena variogram downhole sudah ada untuk elemen dan domain ini, auto-fit menahan nugget pada nilai downhole dan hanya mencocokkan sill dan range: **eksponensial**, nugget **22,2**, sill **104,0** (%²), range **72,5 m**. Nugget sekitar 21 % dari sill.
+
+Aplikasi menandai range itu dengan warna kuning, dan memang seharusnya: **72,5 m adalah range terpendek yang boleh dicoba oleh fitting**, bukan hasil ukur. Lag pertama menjelaskan alasannya. Pada 0–50 m, tempat hampir semua pasangan adalah pasangan sepanjang lubang, γ sudah **77,4**, yaitu 97 % dari varians data (80,0), dan variogram downhole melewati varians itu pada 15 m. Sepanjang lubang, kadar Zn berhenti berkorelasi dalam sekitar 10–15 m, kira-kira setebal satu lensa. Searah jurus, kontinuitasnya sama sekali tidak terukur: lubang terdekat berjarak 90 m.
+
+Artinya bagi estimasi: dengan lubang berjarak sekitar 90 m (lihat bawah), blok di antara lubang mendapat nilai yang mendekati rata-rata lokal tetangganya. Perataan itu dipaksakan oleh jarak bor, bukan oleh pilihan model. Hanya bor sisipan (*infill*) yang bisa menyelesaikannya, dan Competent Person akan menimbangnya dalam klasifikasi apa pun.
+
+> **Koreksi yang dipaksakan vignette ini.** Revisi sebelumnya melaporkan nugget 67,2, "60 % dari sill". Itu adalah batas atas grid fitting (pencarian nugget berhenti di 60 %) yang dilaporkan seolah-olah sifat endapan. Artefak yang sama muncul di Babbitt dan di satu dataset emas epitermal. Grid kini mencapai 90 %, nugget diambil dari variogram downhole, dan hasil fit yang jatuh di tepi grid diberi tanda. Validasi silang ikut membaik (slope OK 0,68 → 0,75, §9).
 
 ### Ukuran blok
 
@@ -282,27 +288,40 @@ Dipakai **25 × 25 × 10 m** (sekitar ¼ jarak lubang; 10 m = tinggi *bench*/lev
 
 ## 8. Estimasi: pelajaran terpenting di vignette ini
 
-### Percobaan A — parameter bawaan, tanpa batas
+Tiga percobaan di tab **Estimation**, dengan komposit dan variogram yang sama. Yang berubah hanya dua keputusan: **batas domain** dan **strategi pencarian**.
 
-Jalankan estimasi dengan radius pencarian yang disarankan otomatis (1,5 × range variogram, dilebarkan untuk data jarang): **489 × 489 × 135 m**, minimal 2 komposit.
+### Percobaan A — parameter bawaan, tanpa batas domain
 
-![Estimasi tanpa batas](img/thalanga-11a-resource-estimate-unconstrained.png)
+Matikan **Keep blocks inside the domain**. Itulah perilaku semua versi GeoSuite sebelum 25 September 2026. Pakai radius pencarian yang disarankan otomatis (1,5 × range variogram, dilebarkan untuk data jarang): **218 × 218 × 135 m**, minimal 2 komposit.
+
+![Estimasi tanpa batas domain](img/thalanga-11a-resource-estimate-unconstrained.png)
 
 | | |
 |---|---:|
-| Blok terestimasi | **15.744** dari 20.967 |
-| Tonase (2,8 t/m³) | **276 Mt** |
-| Logam Zn | **17,0 Mt** |
+| Blok terestimasi | **11.522** dari 20.967 |
+| Tonase (2,8 t/m³) | **202 Mt** |
+| Logam Zn | **11,9 Mt** |
 | Kadar OK terendah | 1,05 % |
 
-Ini **59 kali** produksi historis. Tidak ada error, tidak ada peringatan merah, dan angkanya salah total. Penyebabnya:
+Ini **43 kali** produksi historis. Tidak ada error, tidak ada peringatan merah, dan angkanya salah total. Estimasi memakai komposit domain M1 saja (semua ≥ 1 % Zn), lalu **menyebarkan kadar itu ke setiap blok dalam radius 218 m**, termasuk ratusan meter batuan samping. Kadar blok terendah 1,05 % karena tidak ada satu pun sampel rendah yang ikut.
 
-- estimasi memakai komposit domain M1 saja (semua ≥ 1 % Zn), lalu **menyebarkan kadar itu ke setiap blok dalam radius 489 m**, termasuk ratusan meter batuan samping. Kadar blok terendah 1,05 % karena tidak ada satu pun sampel rendah yang ikut;
-- elipsoid pencarian bulat (tanpa arah) pada lensa yang memanjang.
+### Batas domain tanpa wireframe
 
-Model blok tidak punya batas domain 3D di sini, karena tanpa litologi tidak ada wireframe. Maka **strategi pencarian yang harus menahan ekstrapolasi**. Parameter bawaan perangkat lunak bukan keputusan geologi.
+Tanpa litologi tidak ada wireframe. Namun 409 komposit M0 (Zn < 1 %) tetap tahu di mana *bukan* bijih. GeoSuite kini memakai semuanya sebagai batas: **sebuah blok masuk domain M1 hanya bila komposit terdekatnya, dari domain mana pun dan diukur dengan elipsoid pencarian yang sama, adalah komposit M1.** Ini penugasan domain *nearest-neighbour*, cara standar membangun batas keras dari data bor bila belum ada model geologi. Opsi ini aktif secara bawaan.
 
-### Percobaan B — pencarian yang dibatasi geologi
+> Fitur ini ditambahkan ke GeoSuite justru karena Percobaan A di vignette ini.
+
+### Percobaan A2 — parameter bawaan, dengan batas domain
+
+| | |
+|---|---:|
+| Blok terestimasi | **810** |
+| Blok dalam jangkauan yang dikeluarkan batas domain | 20.123 |
+| Tonase | **14,2 Mt** @ **7,38 %** Zn |
+
+Batas domain saja memangkas tonase 14 kali. Tetapi 14 Mt masih 3 kali produksi, karena elipsoid bulat 218 m masih menjangkau jauh ke arah yang **tidak dibor sama sekali**. Di tepi area bor tidak ada komposit M0 yang bisa "menolak" blok, jadi komposit M1 terluar menjadi yang terdekat bagi blok-blok ratusan meter jauhnya.
+
+### Percobaan B — batas domain + pencarian yang dibatasi geologi
 
 Arah jurus dari sebaran komposit (PCA): **azimut 98°**, kira-kira timur–barat, sesuai sebaran lubang seri TH. Parameter:
 
@@ -314,18 +333,18 @@ Arah jurus dari sebaran komposit (PCA): **azimut 98°**, kira-kira timur–barat
 | Azimut / dip | 98° / 0° | jurus dari data; kemiringan tidak bisa ditentukan dengan andal |
 | Min / maks komposit | 4 / 12 | tidak ada blok yang diisi satu intersep saja |
 
-![Estimasi dengan pencarian terbatas](img/thalanga-11-resource-estimate.png)
+![Estimasi dengan batas domain dan pencarian terbatas](img/thalanga-11-resource-estimate.png)
 
 | | OK | IDW | NN |
 |---|---:|---:|---:|
-| Blok | 717 | 717 | 717 |
-| Kadar rata-rata Zn | **7,63 %** | 7,87 % | 7,12 % |
-| Tonase | **12,547 Mt** | | |
-| Logam Zn | **957,6 kt** | | |
+| Blok | 209 | 209 | 209 |
+| Kadar rata-rata Zn | **8,09 %** | 8,72 % | 9,24 % |
+| Tonase | **3,658 Mt** | | |
+| Logam Zn | **295,8 kt** | | |
 
 **Kemiringan (dip) lensa tidak terselesaikan.** Penampang melintang antar lubang memberi kemiringan 2°, 12°, dan 41°, tidak konsisten. Dengan 13 lubang tanpa litologi, orientasi lensa tidak bisa ditentukan. Karena itu elipsoid dibuat pipih dan kecil ke arah melintang. Ini pilihan konservatif, dan ini pula keterbatasan terbesar hasil ini.
 
-**Cek rata-rata global:** rata-rata NN (7,12 %) adalah pendekatan rata-rata yang sudah *declustered*. OK lebih tinggi **7 %** darinya. Praktik umum menerima selisih sekitar ±5 %; 7 % adalah **tanda kuning**. Estimasi ini cenderung sedikit optimistis, kemungkinan karena blok-blok jauh diisi komposit berkadar tinggi yang berkelompok.
+**Cek rata-rata global:** rata-rata NN (9,24 %) **14 % di atas** OK (8,09 %). Praktik umum mencari selisih dalam ±5 %. Dengan hanya 209 blok, rata-rata NN didominasi segelintir komposit berkadar tinggi yang kebetulan paling dekat ke banyak blok, sedangkan OK meratakannya. Ini tanda kuning ke arah sebaliknya dari biasanya: estimasi OK cenderung *konservatif* terhadap data terdekat. Rujukan yang lebih baik adalah rata-rata komposit yang sudah di-*decluster* (tab Declustering di Assay).
 
 ---
 
@@ -337,12 +356,12 @@ Tab **Cross-Val** (*leave-one-out*, n = 92 komposit):
 
 | | OK | IDW | NN |
 |---|---:|---:|---:|
-| Slope regresi (prediksi terhadap aktual) | **0,68** | 0,77 | 0,82 |
-| r² | 0,71 | 0,75 | 0,71 |
-| Bias rata-rata (prediksi − aktual) | **+0,04** | +0,24 | +0,19 |
-| RMSE | 4,90 | 4,62 | 5,07 |
+| Slope regresi (prediksi terhadap aktual) | **0,75** | 0,77 | 0,82 |
+| r² | 0,75 | 0,75 | 0,71 |
+| Bias rata-rata (prediksi − aktual) | **+0,08** | +0,24 | +0,19 |
+| RMSE | 4,60 | 4,62 | 5,07 |
 
-Cara membaca: OK **tidak bias secara global** (+0,04 % Zn dari rata-rata 8,43 %), tetapi **bias bersyarat**. Slope 0,68 berarti kadar tinggi diremehkan dan kadar rendah dilebih-lebihkan. Ini perataan (*smoothing*) yang diharapkan dengan nugget 60 %. Akibatnya kurva grade-tonnage **pada cut-off tinggi** harus dibaca hati-hati: tonase di atas cut-off tinggi cenderung terlalu besar dengan kadar terlalu rendah. Slope ≥ 0,8–0,9 biasanya dicari untuk estimasi yang dipakai membuat keputusan per blok.
+Cara membaca: OK **tidak bias secara global** (+0,08 % Zn dari rata-rata 8,43 %), tetapi **bias bersyarat**. Slope 0,75 berarti kadar tinggi diremehkan dan kadar rendah dilebih-lebihkan. Ini perataan (*smoothing*) yang diharapkan bila range korelasi lebih pendek dari jarak antar lubang (§7). Akibatnya kurva grade-tonnage **pada cut-off tinggi** harus dibaca hati-hati: tonase di atas cut-off tinggi cenderung terlalu besar dengan kadar terlalu rendah. Slope ≥ 0,8–0,9 biasanya dicari untuk estimasi yang dipakai membuat keputusan per blok.
 
 ---
 
@@ -350,19 +369,19 @@ Cara membaca: OK **tidak bias secara global** (+0,04 % Zn dari rata-rata 8,43 %)
 
 ### Skrining keyakinan
 
-Tab **Preliminary Confidence** membagi 717 blok berdasarkan jarak ke data dan jumlah lubang:
+Tab **Preliminary Confidence** membagi 209 blok berdasarkan jarak ke data dan jumlah lubang:
 
 | Tingkat | Blok |
 |---|---:|
-| Keyakinan tinggi | 106 |
-| Keyakinan sedang | 262 |
-| Keyakinan rendah | 349 |
+| Keyakinan tinggi | 39 |
+| Keyakinan sedang | 72 |
+| Keyakinan rendah | 98 |
 
 ![Skrining keyakinan](img/thalanga-12b-resource-confidence.png)
 
 Ini **skrining komputasi**, bukan klasifikasi *Measured / Indicated / Inferred*. KCMI 2017 dan JORC 2012 tidak menetapkan ambang numerik. Klasifikasi adalah keputusan tertulis seorang *Competent Person* yang menimbang geologi, QAQC, densitas, dan kontinuitas. Karena itulah GeoSuite sengaja tidak memakai istilah itu.
 
-Satu hal yang layak dicatat: kadar rata-rata blok berkeyakinan tinggi + sedang (**7,08 %**) **lebih rendah** daripada semua blok (7,63 %). Artinya kadar tertinggi berada di blok yang paling jauh dari data. Itu pola klasik ekstrapolasi, dan alasan lain untuk curiga pada angka di cut-off tinggi.
+Satu hal yang layak dicatat: kadar rata-rata blok berkeyakinan tinggi + sedang (**7,70 %**) **lebih rendah** daripada semua blok (8,09 %). Kadar tertinggi berada di blok yang paling jauh dari data, pola klasik ekstrapolasi. Itu alasan lain untuk curiga pada angka di cut-off tinggi.
 
 ### Grade-tonnage, diperiksa independen
 
@@ -370,11 +389,11 @@ Kurva di tab **Grade-Tonnage** dihitung oleh aplikasi. Tabel di bawah dihitung *
 
 | Cut-off Zn | Tonase (Mt) | Kadar Zn | Logam Zn (kt) | Hanya tinggi + sedang: Mt @ % |
 |---|---:|---:|---:|---|
-| 0 / 1 % | 12,547 | 7,63 % | 957,6 | 6,440 @ 7,08 |
-| 2 % | 11,008 | 8,45 % | 930,2 | 5,775 @ 7,69 |
-| 3 % | 7,455 | 11,22 % | 836,8 | 3,780 @ 10,38 |
-| 5 % | 5,145 | 14,67 % | 754,8 | 2,678 @ 13,24 |
-| 8 % | 4,253 | 16,30 % | 693,0 | 2,205 @ 14,62 |
+| 0 / 1 % | 3,658 | 8,09 % | 295,8 | 1,943 @ 7,70 |
+| 2 % | 3,465 | 8,44 % | 292,6 | 1,820 @ 8,10 |
+| 3 % | 2,590 | 10,47 % | 271,1 | 1,295 @ 10,38 |
+| 5 % | 2,188 | 11,76 % | 257,2 | 1,085 @ 11,73 |
+| 8 % | 1,768 | 13,00 % | 229,9 | 0,858 @ 13,02 |
 
 ![Kurva grade-tonnage (hanya tinggi + sedang)](img/thalanga-13-resource-grade-tonnage.png)
 
@@ -390,25 +409,30 @@ Tab **KCMI** menampilkan dasar densitas sebagai:
 
 Bijih sulfida masif dengan sfalerit, galena, dan pirit umumnya memiliki densitas **3,2–4,0 t/m³**, bukan 2,8. Karena tonase berbanding lurus dengan densitas, memakai 2,8 bisa **meremehkan tonase bijih sulfida masif hingga ±30 %**, sementara pada zona stringer / disseminasi 2,8 mungkin wajar. Densitas harus diukur, per domain atau diregresikan terhadap kadar Fe+S+Zn+Pb. Tanpa itu tonase belum layak dilaporkan.
 
+Untuk skala: 209 blok yang sama dengan densitas **3,6 t/m³** memberi **4,702 Mt**, bukan 3,658 Mt.
+
 ---
 
 ## 12. Uji kewajaran terhadap produksi historis
 
 | | Tonase | Zn |
 |---|---:|---:|
-| Produksi 1989–1998 | 4,7 Mt | 8,3 % |
-| Skrining ini, semua blok, cut-off 1 % | 12,5 Mt | 7,63 % |
-| Skrining ini, cut-off 5 % | 5,1 Mt | 14,67 % |
-| Skrining ini, tinggi + sedang, cut-off 1 % | 6,4 Mt | 7,08 % |
+| **Produksi 1989–1998** | **4,7 Mt** | **8,3 %** |
+| Percobaan A: tanpa batas domain | 202 Mt | 5,88 % |
+| Percobaan A2: batas domain, pencarian bawaan | 14,2 Mt | 7,38 % |
+| Percobaan B: batas domain + pencarian geologis (2,8 t/m³) | 3,7 Mt | 8,09 % |
+| Percobaan B dengan densitas sulfida masif 3,6 t/m³ | 4,7 Mt | 8,09 % |
+| Percobaan B, hanya keyakinan tinggi + sedang | 1,9 Mt | 7,70 % |
 
-**Kadar** berada dalam 10 % dari kadar yang ditambang. Itu wajar, karena kadar komposit di dalam *shell* diukur langsung dari bor. **Tonase** 2,7 kali produksi. Penjelasan yang masuk akal, dari yang paling berpengaruh:
+**Kadar** hanya berselisih sekitar 3 % dari kadar yang ditambang. **Tonase** 78 % dari produksi pada densitas asumsi, dan praktis sama pada densitas sulfida masif yang wajar.
 
-1. **Produksi bukan sumber daya.** Tambang menambang sebagian endapan pada cut-off ekonomi dengan dilusi, lalu tutup karena alasan ekonomi. Endapan ini kemudian dikembangkan kembali, yang berarti mineralisasi tersisa setelah 1998.
-2. **Batas yang longgar.** Kotak area dan *grade shell* 1 % ikut memasukkan zona stringer / disseminasi di sekitar lensa sulfida masif. Tanpa wireframe litologi, volume itu tidak bisa dipisahkan.
-3. **Orientasi yang tidak terselesaikan.** Elipsoid horizontal pada lensa yang kemiringannya tidak diketahui menyebarkan kadar melintasi batas lensa.
-4. **Densitas** bekerja ke *arah sebaliknya*: densitas terukur yang lebih tinggi akan *menambah* tonase. Jadi selisih tonase bukan disebabkan densitas.
+**Jangan terlalu cepat senang.** Kecocokan ini sebagian kebetulan, dan geologis senior harus mengatakannya:
 
-Kesimpulan yang jujur: dari 13 lubang tanpa litologi, GeoSuite menghasilkan **orde besaran dan kadar yang masuk akal**, tetapi **volume tidak bisa ditentukan dengan kepastian yang layak dilaporkan**. Inilah fungsi skrining: memberi tahu *apa yang harus dikerjakan berikutnya*, bukan menggantikannya.
+1. **Produksi bukan sumber daya.** Tambang menambang sebagian endapan pada cut-off ekonomi dengan dilusi (menurunkan kadar), lalu tutup karena alasan ekonomi. Endapan ini kemudian dikembangkan kembali, yang berarti mineralisasi tersisa setelah 1998.
+2. **Orientasi yang tidak terselesaikan.** Elipsoid horizontal pada lensa yang kemiringannya tidak diketahui bisa menaruh volume di tempat yang salah meski totalnya kebetulan mendekati.
+3. **Batas domain berasal dari satu cut-off (1 % Zn).** Ubah ke 0,5 % atau 2 % dan tonase bergeser. Tanpa wireframe litologi, volume ini tetap bergantung pada keputusan itu.
+
+Kesimpulan yang jujur: dengan batas domain dan pencarian yang dibatasi geologi, 13 lubang tanpa litologi menghasilkan **orde besaran, kadar, dan tonase yang masuk akal** terhadap sejarah tambang. Tetapi **volume dan klasifikasinya tetap belum dapat dipertanggungjawabkan untuk dilaporkan**. Inilah fungsi skrining: memberi tahu *apa yang harus dikerjakan berikutnya*, bukan menggantikannya.
 
 ---
 
@@ -428,7 +452,7 @@ Kesimpulan yang jujur: dari 13 lubang tanpa litologi, GeoSuite menghasilkan **or
 ## Coba sendiri
 
 1. Ubah cut-off domain ke **0,5 %** dan **2 %**. Perhatikan berapa logam yang masuk dan keluar dari domain, dan bagaimana CV di dalam domain berubah.
-2. Masukkan densitas **3,6 t/m³** di tab Block Model, jalankan ulang, lalu bandingkan tonase.
+2. Matikan **Keep blocks inside the domain** pada Percobaan B. Berapa tonase yang bertambah, dan di mana letak blok-blok tambahan itu?
 3. Jalankan ulang Percobaan B dengan **minimal 2 komposit** dan **octant search** aktif. Blok mana yang berubah paling banyak?
 4. Naikkan r Semi ke 100 m, lalu lihat hasil validasi silang dan rasio OK/NN.
 

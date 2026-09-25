@@ -250,9 +250,17 @@ def resource_stage(br, site, tmp, comp_csv, comp_rows, R):
 
     pg.evaluate("showTab(4)")
     settle(pg, 1500)
-    pg.evaluate("async () => { await computeVariogram(); await autoFitVariogram(false); }")
+    # Down-hole variogram first (within-hole pairs): it fixes the nugget, then the
+    # between-hole fit only searches sill and range -- the app's own pipeline order.
+    pg.evaluate("async () => { await computeDownholeVariogram(); await computeVariogram(); await autoFitVariogram(false); }")
     settle(pg, 2500)
     r["variogram"] = pg.evaluate("variogramState.model")
+    r["variogram_fit"] = pg.evaluate("""({nugget_from: variogramState.fitNuggetFrom, at_bounds: variogramState.fitAtBounds || [],
+        lag: variogramState.experimental.lags.length > 1 ? variogramState.experimental.lags[1] - variogramState.experimental.lags[0] : null,
+        first_lag_h: variogramState.experimental.lags[0], first_lag_gamma: variogramState.experimental.gammas[0], data_variance: (() => { const v = getSamples().map(s => s.v);
+            const m = v.reduce((a, b) => a + b, 0) / v.length; return v.reduce((a, b) => a + (b - m) ** 2, 0) / v.length; })()})""")
+    r["downhole"] = pg.evaluate("""(() => { const d = variogramState.downhole;
+        return {nugget: d.suggestedNugget, pairs: d.totalPairs, lags: (d.lags || []).slice(0, 8), gammas: (d.gammas || []).slice(0, 8), lag_pairs: (d.pairs || []).slice(0, 8)}; })()""")
     r["img_variogram"] = shot(pg, "10-resource-variogram")
 
     pg.evaluate("showTab(5)")
@@ -269,9 +277,13 @@ def resource_stage(br, site, tmp, comp_csv, comp_rows, R):
 
     pg.evaluate("showTab(6)")
     settle(pg, 1000)
-    r["estimate_unconstrained"] = run_estimation(pg, None)
+    # A: the app's default search with the domain boundary switched OFF -- what
+    # every version before 2026-09-25 did. A2: same search, boundary ON (the
+    # default now). B: boundary ON + a geologically constrained search.
+    r["estimate_unconstrained"] = run_estimation(pg, {"sDomainBound": False})
     r["img_estimate_unconstrained"] = shot(pg, "11a-resource-estimate-unconstrained")
-    r["estimate"] = run_estimation(pg, SEARCH_B)
+    r["estimate_default_bounded"] = run_estimation(pg, {"sDomainBound": True})
+    r["estimate"] = run_estimation(pg, dict(SEARCH_B, sDomainBound=True))
     r["spacing_note"] = pg.evaluate("""(() => { const m = document.body.innerText.match(/between-hole NN: median (\\d+)\\s*m, P90 (\\d+)\\s*m/);
         return m ? {median_m: +m[1], p90_m: +m[2]} : null; })()""")
     r["search_constrained"] = pg.evaluate("({rMaj: searchState.rMaj, rSemi: searchState.rSemi, rMin: searchState.rMin, az: searchState.azDeg, dip: searchState.dipDeg, minN: searchState.minNeighbors, maxN: searchState.maxNeighbors})")
@@ -344,6 +356,7 @@ def run_estimation(pg, search):
         const ok = s(res.ok); const t = ok ? ok.n * bx * by * bz * blockState.density : 0;
         return {ok, idw: s(res.idw), nn: s(res.nn), blocks_total: blockState.blocks.length,
                 tonnes_Mt: t / 1e6, zn_metal_kt: ok ? t * ok.mean / 100 / 1e3 : 0,
+                outside_domain: res.outsideDomain || 0, domain_boundary: !!res.domainBoundary,
                 search: {rMaj: searchState.rMaj, rSemi: searchState.rSemi, rMin: searchState.rMin, az: searchState.azDeg, minN: searchState.minNeighbors, maxN: searchState.maxNeighbors}};
     })()""")
     out["seconds"] = round(time.time() - t0)
@@ -367,6 +380,8 @@ def independent_gt(bh, brows, R):
         g = st.mean(sel) if sel else 0.0
         out["curve"].append({"cutoff_pct": cut, "tonnes_Mt": round(t / 1e6, 3), "grade_pct": round(g, 2),
                              "zn_metal_kt": round(t * g / 100 / 1e3, 1)})
+    # The same blocks at a massive-sulphide density instead of the assumed 2.8 t/m3 (vignette section 11).
+    out["tonnes_Mt_at_3_6"] = round(len(vals) * vol * 3.6 / 1e6, 3)
     R["independent_gt"] = out
 
 

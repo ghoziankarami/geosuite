@@ -787,5 +787,10 @@
   "core.imp.lengthUnit": "Satuan panjang di file:",
   "core.imp.lengthM": "Meter",
   "core.imp.lengthFt": "Feet (dikonversi ke meter)",
-  "core.upload.feetConverted": "Panjang dibaca sebagai feet dan dikonversi ke meter (× 0,3048): X/Y/Z dan kedalaman collar, kedalaman survey, from/to interval. Header ekspor mencatatnya."
+  "core.upload.feetConverted": "Panjang dibaca sebagai feet dan dikonversi ke meter (× 0,3048): X/Y/Z dan kedalaman collar, kedalaman survey, from/to interval. Header ekspor mencatatnya.",
+  "handoff.toAssay": "Lanjut di Assay →",
+  "handoff.toAssayTitle": "Buka Orebit Assay dengan file master ini sudah termuat — impor yang sama seperti mengunggah CSV, tanpa perlu mengunduh.",
+  "handoff.toAssayCroppedTitle": "Buka Orebit Assay dengan file master hasil crop sudah termuat.",
+  "handoff.toResource": "Lanjut di Resource →",
+  "handoff.toResourceTitle": "Buka Orebit Resource dengan komposit ini (domain, koordinat, kadar) sudah termuat — impor yang sama seperti mengunggah CSV."
 }

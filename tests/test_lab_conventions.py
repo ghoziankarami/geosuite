@@ -49,14 +49,14 @@ def check(name, ok, detail=""):
         print(f"  ❌ {name}  {detail}")
 
 
-def write_dataset(d: Path, header=("hole_id", "from", "to", "au_gpt", "cu_pct"), latlon=False, codes=True):
+def write_dataset(d: Path, header=("hole_id", "from", "to", "au_gpt", "cu_pct"), latlon=False, codes=True, depth_header="depth"):
     """6 vertical holes x 20 two-metre samples. Returns the real (non-code) Au values."""
     random.seed(7)
     holes = [f"DH{i:02d}" for i in range(1, 7)]
     d.mkdir(parents=True, exist_ok=True)
     with open(d / "collar.csv", "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["hole_id", "x", "y", "z", "depth"])
+        w.writerow(["hole_id", "x", "y", "z", depth_header])
         for i, h in enumerate(holes):
             if latlon:
                 w.writerow([h, round(106.8 + (i % 3) * 0.0005, 6), round(-6.2 + (i // 3) * 0.0005, 6), 250, 40])
@@ -188,6 +188,13 @@ def main():
         chk = pg.evaluate("_p1RunValidationChecks().filter(c => /lat\\/long/.test(c.name)).map(c => c.severity)")
         check("Core: UTM collar passes it", chk == ["ok"], str(chk))
         pg.close()
+        for hdr in ("TD", "max_depth", "hole_depth"):
+            write_dataset(tmp / f"depth-{hdr}", depth_header=hdr)
+            pg = br.new_page()
+            upload(pg, CORE, tmp / f"depth-{hdr}", "() => STATE.assay.length === 120 && STATE.collar.length === 6")
+            dep = pg.evaluate("STATE.collar.map(r => r.depth)")
+            check(f"Core: a '{hdr}' collar column is read as the hole depth", dep == [40] * 6, str(dep))
+            pg.close()
 
         print("\n── Lengths in feet, collar without depth ──")
         import math

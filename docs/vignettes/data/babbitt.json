@@ -260,7 +260,7 @@
       "cut": 3,
       "affected": 94,
       "n": 23685,
-      "metal_removed_pct": 2.994312144073099
+      "metal_removed_pct": 1.682446797043603
     },
     "img_topcut_applied": "babbitt-05b-assay-topcut-applied.png",
     "composites": {
@@ -287,7 +287,7 @@
         "ni_pct",
         "fe_pct"
       ],
-      "topcut_line": "# topcut: cu_pct cut=3.0000 affected=94/23684 metal_removed=2.99% applied_by=manual",
+      "topcut_line": "# topcut: cu_pct cut=3.0000 affected=94/23684 metal_removed=1.68% (length-weighted) applied_by=manual",
       "domains": {
         "M0-Background": 41655,
         "M1-Mineralised": 13464
@@ -321,9 +321,53 @@
     "img_setup": "babbitt-08-resource-setup.png",
     "variogram": {
       "type": "exponential",
-      "nugget": 0.06306456369652136,
-      "sill": 0.10510760616086894,
+      "nugget": 0.02805317755319148,
+      "sill": 0.1146628430845843,
       "range": 72.5
+    },
+    "variogram_fit": {
+      "nugget_from": "downhole",
+      "at_bounds": [
+        "rangeMin"
+      ],
+      "lag": 50,
+      "first_lag_h": 25,
+      "first_lag_gamma": 0.093299969286411,
+      "data_variance": 0.09555236923715359
+    },
+    "downhole": {
+      "nugget": 0.02805317755319148,
+      "pairs": 183031,
+      "lags": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13,
+        15
+      ],
+      "gammas": [
+        0.02805317755319148,
+        0.03511155317073274,
+        0.11102823864973274,
+        0.04837485938395964,
+        0.057755681184850895,
+        0.09767113029069768,
+        0.06138591588065189,
+        0.06587138700766704
+      ],
+      "lag_pairs": [
+        141,
+        10701,
+        748,
+        9488,
+        9056,
+        946,
+        8295,
+        7957
+      ]
     },
     "img_variogram": "babbitt-09-resource-variogram.png",
     "suggested_block_size": [
@@ -345,17 +389,12 @@
       "n": 237475,
       "density": 2.8
     },
-    "estimate_seconds": 4,
-    "spacing_note": {
-      "median_m": 107,
-      "p90_m": 150
-    },
-    "estimate": {
+    "estimate_unbounded": {
       "ok": {
         "n": 74940,
-        "mean": 0.4792733152248095,
-        "min": 0.21369583904743195,
-        "max": 2.4845972061157227
+        "mean": 0.47399940252351797,
+        "min": 0.2120598554611206,
+        "max": 2.489047050476074
       },
       "idw": {
         "n": 74940,
@@ -370,7 +409,38 @@
         "max": 3
       },
       "tonnes_Mt": 7868.699999999999,
-      "cu_metal_kt": 37712.57935509458
+      "cu_metal_kt": 37297.59098636805,
+      "outside_domain": 0,
+      "domain_boundary": false
+    },
+    "img_estimate_unbounded": "babbitt-10a-resource-estimate-unbounded.png",
+    "estimate": {
+      "ok": {
+        "n": 26842,
+        "mean": 0.5032682629305891,
+        "min": 0.2129182070493698,
+        "max": 2.489047050476074
+      },
+      "idw": {
+        "n": 26842,
+        "mean": 0.5120759399803605,
+        "min": 0.21548575162887573,
+        "max": 2.2688920497894287
+      },
+      "nn": {
+        "n": 26842,
+        "mean": 0.5090201246375148,
+        "min": 0.20000000298023224,
+        "max": 3
+      },
+      "tonnes_Mt": 2818.41,
+      "cu_metal_kt": 14184.163049262019,
+      "outside_domain": 209506,
+      "domain_boundary": true
+    },
+    "spacing_note": {
+      "median_m": 107,
+      "p90_m": 150
     },
     "img_estimate": "babbitt-10-resource-estimate.png",
     "crossval": {
@@ -387,13 +457,13 @@
         },
         "ok": {
           "n": 194,
-          "mae": 0.15566167444396717,
-          "rmse": 0.21448319807598437,
-          "r2": 0.6057010981215484,
-          "slope": 0.5010597953665422,
+          "mae": 0.1397751556825814,
+          "rmse": 0.19430738598840838,
+          "r2": 0.667458665775872,
+          "slope": 0.6173060923572276,
           "meanAct": 0.5272989690721648,
-          "meanPred": 0.5458059740198069,
-          "bias": 0.018507004947642125
+          "meanPred": 0.5500447107486285,
+          "bias": 0.022745741676463704
         },
         "nn": {
           "n": 194,
@@ -412,72 +482,72 @@
     "gt_app": [
       {
         "cutoff_pct": 0.2,
-        "tonnes_Mt": 7868.7,
-        "grade_pct": 0.479
+        "tonnes_Mt": 2818.41,
+        "grade_pct": 0.503
       },
       {
         "cutoff_pct": 0.25,
-        "tonnes_Mt": 7761.495,
-        "grade_pct": 0.483
+        "tonnes_Mt": 2795.415,
+        "grade_pct": 0.505
       },
       {
         "cutoff_pct": 0.3,
-        "tonnes_Mt": 7354.2,
-        "grade_pct": 0.494
+        "tonnes_Mt": 2670.885,
+        "grade_pct": 0.516
       },
       {
         "cutoff_pct": 0.35,
-        "tonnes_Mt": 6298.32,
-        "grade_pct": 0.522
+        "tonnes_Mt": 2340.975,
+        "grade_pct": 0.542
       },
       {
         "cutoff_pct": 0.4,
-        "tonnes_Mt": 5035.59,
-        "grade_pct": 0.559
+        "tonnes_Mt": 1959.72,
+        "grade_pct": 0.575
       },
       {
         "cutoff_pct": 0.45,
-        "tonnes_Mt": 3809.4,
-        "grade_pct": 0.602
+        "tonnes_Mt": 1564.185,
+        "grade_pct": 0.613
       },
       {
         "cutoff_pct": 0.5,
-        "tonnes_Mt": 2785.335,
-        "grade_pct": 0.649
+        "tonnes_Mt": 1203.09,
+        "grade_pct": 0.655
       },
       {
         "cutoff_pct": 0.55,
-        "tonnes_Mt": 1996.785,
+        "tonnes_Mt": 900.585,
         "grade_pct": 0.698
       },
       {
         "cutoff_pct": 0.6,
-        "tonnes_Mt": 1424.64,
-        "grade_pct": 0.748
+        "tonnes_Mt": 656.145,
+        "grade_pct": 0.745
       },
       {
         "cutoff_pct": 0.65,
-        "tonnes_Mt": 990.045,
-        "grade_pct": 0.802
+        "tonnes_Mt": 478.8,
+        "grade_pct": 0.79
       },
       {
         "cutoff_pct": 0.7,
-        "tonnes_Mt": 685.545,
-        "grade_pct": 0.859
+        "tonnes_Mt": 339.045,
+        "grade_pct": 0.837
       },
       {
         "cutoff_pct": 0.75,
-        "tonnes_Mt": 464.52,
-        "grade_pct": 0.923
+        "tonnes_Mt": 234.045,
+        "grade_pct": 0.888
       },
       {
         "cutoff_pct": 0.8,
-        "tonnes_Mt": 306.18,
-        "grade_pct": 1
+        "tonnes_Mt": 150.465,
+        "grade_pct": 0.952
       }
     ],
     "img_gt": "babbitt-12-resource-grade-tonnage.png",
     "page_errors": []
   },
-  "runtime_s": 126
+  "runtime_s": 137
 }

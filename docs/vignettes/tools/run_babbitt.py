@@ -242,8 +242,7 @@ def assay_stage(br, site, master, tmp, R):
         a["topcut_applied"] = pg.evaluate("""(() => { const l = window._capLog && window._capLog['cu_pct']; if (!l) return null;
             const o = (l.original || []).filter(v => typeof v === 'number');
             const cut = l.cut, aff = o.filter(v => v > cut).length;
-            const before = o.reduce((s, v) => s + v, 0), after = o.reduce((s, v) => s + Math.min(v, cut), 0);
-            return {cut, affected: aff, n: o.length, metal_removed_pct: 100 * (before - after) / before}; })()""")
+            return {cut, affected: aff, n: o.length, metal_removed_pct: _capMetalLossPct(l.original, cut)}; })()""")
         a["img_topcut_applied"] = shot(pg, "05b-assay-topcut-applied")
 
     pg.evaluate("showTab(7)")
@@ -299,9 +298,17 @@ def resource_stage(br, site, comp_csv, comp_rows, R):
 
     pg.evaluate("showTab(4)")
     settle(pg, 1500)
-    pg.evaluate("async () => { await computeVariogram(); await autoFitVariogram(false); }")
+    # Down-hole variogram first (within-hole pairs): it fixes the nugget, then the
+    # between-hole fit only searches sill and range -- the app's own pipeline order.
+    pg.evaluate("async () => { await computeDownholeVariogram(); await computeVariogram(); await autoFitVariogram(false); }")
     settle(pg, 3000)
     r["variogram"] = pg.evaluate("variogramState.model")
+    r["variogram_fit"] = pg.evaluate("""({nugget_from: variogramState.fitNuggetFrom, at_bounds: variogramState.fitAtBounds || [],
+        lag: variogramState.experimental.lags.length > 1 ? variogramState.experimental.lags[1] - variogramState.experimental.lags[0] : null,
+        first_lag_h: variogramState.experimental.lags[0], first_lag_gamma: variogramState.experimental.gammas[0], data_variance: (() => { const v = getSamples().map(s => s.v);
+            const m = v.reduce((a, b) => a + b, 0) / v.length; return v.reduce((a, b) => a + (b - m) ** 2, 0) / v.length; })()})""")
+    r["downhole"] = pg.evaluate("""(() => { const d = variogramState.downhole;
+        return {nugget: d.suggestedNugget, pairs: d.totalPairs, lags: (d.lags || []).slice(0, 8), gammas: (d.gammas || []).slice(0, 8), lag_pairs: (d.pairs || []).slice(0, 8)}; })()""")
     r["img_variogram"] = shot(pg, "09-resource-variogram")
 
     pg.evaluate("showTab(5)")
@@ -316,25 +323,31 @@ def resource_stage(br, site, comp_csv, comp_rows, R):
 
     pg.evaluate("showTab(6)")
     settle(pg, 1500)
-    pg.evaluate("""(s) => { Object.entries(s).forEach(([id, v]) => { const el = document.getElementById(id);
-        if (!el) return; if (el.type === 'checkbox') el.checked = !!v; else el.value = v; }); }""", SEARCH)
-    pg.evaluate("() => { estimState.done = false; }")
-    t0 = time.time()
-    pg.evaluate("async () => { await runEstimation(); }")
-    for _ in range(1800):
-        if pg.evaluate("estimState.done === true"):
-            break
-        pg.wait_for_timeout(1000)
-    r["estimate_seconds"] = round(time.time() - t0)
-    settle(pg, 2000)
+
+    def estimate(extra):
+        pg.evaluate("""(s) => { Object.entries(s).forEach(([id, v]) => { const el = document.getElementById(id);
+            if (!el) return; if (el.type === 'checkbox') el.checked = !!v; else el.value = v; }); }""", dict(SEARCH, **extra))
+        pg.evaluate("() => { estimState.done = false; }")
+        pg.evaluate("async () => { await runEstimation(); }")
+        for _ in range(1800):
+            if pg.evaluate("estimState.done === true"):
+                break
+            pg.wait_for_timeout(1000)
+        settle(pg, 2000)
+        return pg.evaluate("""(() => {
+            const s = a => { const v = Array.from(a || []).filter(x => x !== null && isFinite(x)); if (!v.length) return null;
+                const m = v.reduce((p, q) => p + q, 0) / v.length; return {n: v.length, mean: m, min: Math.min(...v), max: Math.max(...v)}; };
+            const res = estimState.results; const [bx, by, bz] = blockState.size;
+            const ok = s(res.ok); const t = ok ? ok.n * bx * by * bz * blockState.density : 0;
+            return {ok, idw: s(res.idw), nn: s(res.nn), tonnes_Mt: t / 1e6, cu_metal_kt: ok ? t * ok.mean / 100 / 1e3 : 0,
+                    outside_domain: res.outsideDomain || 0, domain_boundary: !!res.domainBoundary}; })()""")
+
+    # Without the domain boundary (every version before 2026-09-25), then with it (the default).
+    r["estimate_unbounded"] = estimate({"sDomainBound": False})
+    r["img_estimate_unbounded"] = shot(pg, "10a-resource-estimate-unbounded")
+    r["estimate"] = estimate({"sDomainBound": True})
     r["spacing_note"] = pg.evaluate("""(() => { const m = document.body.innerText.match(/between-hole NN: median (\\d+)\\s*m, P90 (\\d+)\\s*m/);
         return m ? {median_m: +m[1], p90_m: +m[2]} : null; })()""")
-    r["estimate"] = pg.evaluate("""(() => {
-        const s = a => { const v = Array.from(a || []).filter(x => x !== null && isFinite(x)); if (!v.length) return null;
-            const m = v.reduce((p, q) => p + q, 0) / v.length; return {n: v.length, mean: m, min: Math.min(...v), max: Math.max(...v)}; };
-        const res = estimState.results; const [bx, by, bz] = blockState.size;
-        const ok = s(res.ok); const t = ok ? ok.n * bx * by * bz * blockState.density : 0;
-        return {ok, idw: s(res.idw), nn: s(res.nn), tonnes_Mt: t / 1e6, cu_metal_kt: ok ? t * ok.mean / 100 / 1e3 : 0}; })()""")
     r["img_estimate"] = shot(pg, "10-resource-estimate")
 
     pg.evaluate("showTab(7)")

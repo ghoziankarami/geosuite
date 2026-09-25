@@ -68,9 +68,11 @@ More:
   desurvey, compositing, IDW, kriging (with its own independent solver), grade–tonnage
   and contained metal, then compares them with what the app reports.
 - Two tutorials drive real public drillhole databases through the whole chain on every
-  change (above). Building them found and fixed a dozen defects — samples stacked on a
-  collar, duplicate composite coordinates, a cross-validation that found neighbours for
-  10 samples of 200, results that changed from run to run.
+  change (above). Building them found and fixed more than a dozen defects — no domain
+  boundary in estimation (Thalanga 202 Mt → 3.7 Mt against 4.7 Mt mined), a variogram fit whose
+  "60 % nugget" was the edge of its own search grid, samples stacked
+  on a collar, duplicate composite coordinates, a cross-validation that found neighbours
+  for 10 samples of 200, results that changed from run to run.
 - Imports never drop or change data silently: every upload shows what was loaded,
   what was rejected and why, and every below-detection or missing-sample code that
   was converted.

@@ -16,6 +16,17 @@ against numbers computed in this file, not by the app:
      used Math.random(), so the same data gave different numbers on every run --
      as did the variogram above 5,000 samples (Babbitt nugget 0.063 vs 0.069).
 
+Two more from the same work (2026-09-25):
+
+  4. The down-hole variogram paired "any two samples under 5 m apart horizontally"
+     on a random 2,000-sample subset, so inclined holes lost their along-hole pairs.
+     It now pairs samples of the same hole at their 3D distance; checked here pair
+     for pair against a count and a gamma computed in this file. Auto-fit then holds
+     the nugget at that value.
+  5. Auto-fit searched the nugget only up to 60 % of the sill, and Thalanga, Babbitt
+     and an epithermal-gold set all "had" a 60 % nugget: the edge of the search.
+     A fit on an edge of the search is now flagged, checked on pure noise.
+
 Requires HTTP servers on 8768 (Assay) and 8769 (Resource) serving dist/ + vendor/,
 as run-tier.sh pr starts them.
 """
@@ -89,6 +100,105 @@ def write_dense_composites(path):
                 g = 1.0 + 0.4 * math.sin(x / 150.0) + 0.3 * math.cos(y / 120.0) + 0.2 * (rnd() - 0.5)
                 w.writerow([f"H{h:02d}", k * 2, k * 2 + 2, x, y, 300 - d, "M1", round(g, 4)])
     return 6000
+
+
+def write_two_domains(path):
+    """10 x 10 vertical holes at 50 m, 20 x 2 m composites. M1 = the central 3 x 3 holes, 10-30 m
+    deep in a checkerboard of them and only 10-18 m in the others, so the M1 bounding box (which
+    the block model covers) holds ground whose nearest composite is M0. Grade ~5 in M1, ~0.2 in M0."""
+    rows = []
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["hole_id", "from_m", "to_m", "midx", "midy", "midz", "domain", "cu_pct"])
+        for i in range(10):
+            for j in range(10):
+                x, y = 1000 + i * 50, 5000 + j * 50
+                for k in range(20):
+                    d = k * 2 + 1
+                    m1 = 3 <= i <= 5 and 3 <= j <= 5 and 10 <= d <= (30 if (i + j) % 2 == 0 else 18)
+                    g = (5.0 + 0.3 * ((i + j + k) % 5)) if m1 else (0.2 + 0.02 * ((i * j + k) % 5))
+                    dom = "M1" if m1 else "M0"
+                    w.writerow([f"H{i}{j}", k * 2, k * 2 + 2, x, y, 400 - d, dom, g])
+                    rows.append((x, y, 400 - d, dom))
+    return rows
+
+
+def rnd_stream(seed):
+    s = [seed]
+
+    def rnd():
+        s[0] = (s[0] * 1103515245 + 12345) & 0x7FFFFFFF
+        return s[0] / 0x7FFFFFFF
+    return rnd
+
+
+def write_inclined(path):
+    """12 holes dipping 60 deg towards azimuth 90, 80 x 1 m composites. Each hole has its own
+    grade level (so between-hole variance is large) plus small noise (within-hole variance is
+    small). Returns {hole: [(x, y, z, grade), ...]}."""
+    rnd, holes = rnd_stream(777), {}
+    ch, sh = math.cos(math.radians(60)), math.sin(math.radians(60))
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["hole_id", "from_m", "to_m", "midx", "midy", "midz", "domain", "cu_pct"])
+        for h in range(12):
+            x0, y0, level = 2000 + (h % 4) * 80, 7000 + (h // 4) * 80, 1 + 8 * rnd()
+            for k in range(80):
+                d = k + 0.5
+                x, y, z, g = round(x0 + d * ch, 4), float(y0), round(500 - d * sh, 4), round(level + 0.3 * (rnd() - 0.5), 4)
+                w.writerow([f"I{h:02d}", k, k + 1, x, y, z, "M1", g])
+                holes.setdefault(f"I{h:02d}", []).append((x, y, z, g))
+    return holes
+
+
+def write_noise(path):
+    """36 vertical holes at 50 m, 20 x 2 m composites, independent uniform grades: no spatial
+    structure at any lag, so an honest fit has nothing to find."""
+    rnd = rnd_stream(4242)
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["hole_id", "from_m", "to_m", "midx", "midy", "midz", "domain", "cu_pct"])
+        for h in range(36):
+            x, y = 3000 + (h % 6) * 50, 8000 + (h // 6) * 50
+            for k in range(20):
+                w.writerow([f"N{h:02d}", k * 2, k * 2 + 2, x, y, 300 - (k * 2 + 1), "M1", round(0.5 + 2 * rnd(), 4)])
+    return 720
+
+
+def downhole_expected(holes, lag, max_h):
+    """The down-hole variogram computed here: pairs within a hole, 3D distance, the app's binning."""
+    n_lag = max(8, min(60, int(max_h // lag)))
+    sums, ns = [0.0] * n_lag, [0] * n_lag
+    for pts in holes.values():
+        for i in range(len(pts)):
+            for j in range(i + 1, len(pts)):
+                h = math.dist(pts[i][:3], pts[j][:3])
+                if not (0 < h <= max_h):
+                    continue
+                b = int(h // lag)
+                if b < n_lag:
+                    sums[b] += (pts[j][3] - pts[i][3]) ** 2
+                    ns[b] += 1
+    gammas = [sums[b] / (2 * ns[b]) for b in range(n_lag) if ns[b] >= 5]
+    return sum(ns), gammas, min(gammas[:3])
+
+
+def load_resource(br, path, n):
+    pg = br.new_page()
+    pg.goto(RESOURCE, wait_until="domcontentloaded", timeout=60000)
+    ready(pg)
+    pg.evaluate("showTab(2)")
+    time.sleep(1.0)
+    pg.locator("#fileInput").set_input_files(str(path))
+    pg.wait_for_function(f"() => typeof DATA !== 'undefined' && DATA && DATA.rows && DATA.rows.length === {n}", timeout=60000)
+    time.sleep(1.0)
+    pg.evaluate("showTab(3)")
+    time.sleep(1.0)
+    pg.evaluate("() => { const s = document.getElementById('setupElement'); if (s) { s.value = 'cu_pct'; s.dispatchEvent(new Event('change')); } }")
+    time.sleep(1.0)
+    pg.evaluate("showTab(4)")
+    time.sleep(1.0)
+    return pg
 
 
 def main():
@@ -166,6 +276,81 @@ def main():
         check("same data, same cross-validation numbers (was Math.random)",
               a["pairs"] == b["pairs"] and abs(a["ok"]["rmse"] - b["ok"]["rmse"]) < 1e-12,
               f"rmse {a['ok']['rmse']:.6f} vs {b['ok']['rmse']:.6f}")
+        pg.close()
+
+        print("\n── Resource: domain boundary ──")
+        pts = write_two_domains(tmp / "two-domains.csv")
+        pg = br.new_page()
+        pg.goto(RESOURCE, wait_until="domcontentloaded", timeout=60000)
+        ready(pg)
+        pg.evaluate("showTab(2)")
+        time.sleep(1.0)
+        pg.locator("#fileInput").set_input_files(str(tmp / "two-domains.csv"))
+        pg.wait_for_function(f"() => typeof DATA !== 'undefined' && DATA && DATA.rows && DATA.rows.length === {len(pts)}", timeout=60000)
+        time.sleep(1.0)
+        pg.evaluate("showTab(3)")
+        time.sleep(1.0)
+        pg.evaluate("""() => { const s = document.getElementById('setupElement'); if (s) { s.value = 'cu_pct'; s.dispatchEvent(new Event('change')); }
+                              const d = document.getElementById('setupDomain'); if (d) { d.value = 'M1'; d.dispatchEvent(new Event('change')); } }""")
+        time.sleep(1.0)
+        pg.evaluate("showTab(4)")
+        time.sleep(0.8)
+        # A fixed model: this checks the boundary, not the variogram fit.
+        pg.evaluate("() => { variogramState.model = {type: 'spherical', nugget: 0.1, sill: 1, range: 150}; }")
+        pg.evaluate("showTab(5)")
+        time.sleep(0.8)
+        pg.evaluate("""async () => { ['bmX','bmY'].forEach(id => document.getElementById(id).value = 25);
+                                     document.getElementById('bmZ').value = 4; await generateBlocks(); }""")
+        pg.evaluate("showTab(6)")
+        time.sleep(0.8)
+
+        def run(bound):
+            pg.evaluate("""(b) => { const set = (id, v) => { const el = document.getElementById(id); if (el.type === 'checkbox') el.checked = v; else el.value = v; };
+                set('srMaj', 120); set('srSemi', 120); set('srMin', 120); set('sAz', 0); set('sDip', 0); set('sMinN', 2); set('sMaxN', 12);
+                set('sDomainBound', b); estimState.done = false; }""", bound)
+            pg.evaluate("async () => { await runEstimation(); }")
+            pg.wait_for_function("() => estimState.done === true", timeout=120000)
+            return pg.evaluate("""(() => { const r = estimState.results, out = [];
+                for (let i = 0; i < blockState.blocks.length; i++) if (Number.isFinite(r.ok[i])) { const b = blockState.blocks[i]; out.push([b.cx, b.cy, b.cz, r.ok[i]]); }
+                return {blocks: out, outside: r.outsideDomain || 0}; })()""")
+        off, on = run(False), run(True)
+        check("without the boundary, M1 grade reaches M0 ground", len(off["blocks"]) > len(on["blocks"]),
+              f"{len(off['blocks'])} blocks off vs {len(on['blocks'])} on")
+        wrong = 0
+        for bx, by, bz, _ in on["blocks"]:
+            near = min(pts, key=lambda q: (q[0] - bx) ** 2 + (q[1] - by) ** 2 + (q[2] - bz) ** 2)
+            wrong += near[3] != "M1"
+        check("with the boundary, every estimated block's nearest composite is M1 (computed here)",
+              on["blocks"] and wrong == 0, f"{wrong} of {len(on['blocks'])} blocks sit next to M0")
+        check("the boundary reports how many blocks it removed", on["outside"] > 0, str(on["outside"]))
+        pg.close()
+
+        print("\n── Resource: down-hole variogram on inclined holes ──")
+        holes = write_inclined(tmp / "inclined.csv")
+        pg = load_resource(br, tmp / "inclined.csv", sum(len(v) for v in holes.values()))
+        pg.evaluate("async () => { await computeDownholeVariogram(); }")
+        dh = pg.evaluate("(() => { const d = variogramState.downhole; return {lag: d.lagSize, maxH: d.maxDist, total: d.totalPairs, gammas: d.gammas, nug: d.suggestedNugget}; })()")
+        want_total, want_g, want_nug = downhole_expected(holes, dh["lag"], dh["maxH"])
+        check("every within-hole pair of the inclined holes is counted (was: <5 m horizontal only)",
+              dh["total"] == want_total, f"app {dh['total']} vs {want_total} computed here")
+        check("down-hole gammas match the ones computed here",
+              len(dh["gammas"]) == len(want_g) and all(abs(a - b) <= 1e-9 * max(1, b) for a, b in zip(dh["gammas"], want_g)),
+              f"{[round(x, 5) for x in dh['gammas'][:3]]} vs {[round(x, 5) for x in want_g[:3]]}")
+        check("down-hole nugget = min of the first three lags", abs(dh["nug"] - want_nug) <= 1e-12, f"{dh['nug']:.5f}")
+        fit = pg.evaluate("""async () => { await computeVariogram(); await autoFitVariogram(false);
+            return {m: variogramState.model, from: variogramState.fitNuggetFrom}; }""")
+        check("auto-fit holds the nugget at the down-hole value", fit["from"] == "downhole" and abs(fit["m"]["nugget"] - dh["nug"]) < 1e-12,
+              f"nugget {fit['m']['nugget']:.5f} from {fit['from']}")
+        pg.close()
+
+        print("\n── Resource: a fit on an edge of the search is flagged ──")
+        pg = load_resource(br, tmp / "noise.csv", write_noise(tmp / "noise.csv"))
+        res = pg.evaluate("""async () => { await computeVariogram(); await autoFitVariogram(true);
+            return {at: variogramState.fitAtBounds || [], m: variogramState.model,
+                    note: (document.getElementById('varStatus') || {}).textContent || ''}; }""")
+        check("pure noise: the fit lands on an edge of the search and says so", len(res["at"]) > 0, f"{res['at']} {res['m']}")
+        check("…with a warning under the fit", "edge of what auto-fit searches" in res["note"] or "batas pencarian auto-fit" in res["note"],
+              res["note"][-160:])
         pg.close()
         br.close()
     print(f"\n  ESTIMATION INPUTS: {PASSED} passed, {FAILED} failed")

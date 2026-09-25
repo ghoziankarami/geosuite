@@ -43,6 +43,7 @@ jobs:
           python tests/test_pipeline_known_answer.py
           python tests/test_lab_conventions.py
           python tests/test_estimation_inputs.py
+          python tests/test_module_handoff.py
 
       - name: Tutorials on real data still match the app (docs/vignettes)
         run: python tests/test_vignettes.py

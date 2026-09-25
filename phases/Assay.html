@@ -7948,6 +7948,7 @@ function renderCompositing() {
         <label title="${hasLitho ? '' : t('asy.cmp.breakAtLithoNoColumn')}"><input type="checkbox" id="compBreakLitho" ${breakAtLitho ? 'checked' : ''} ${hasLitho ? '' : 'disabled'} onchange="renderCompositing()"> ${t('asy.cmp.breakAtLitho')}</label>
         <button class="btn secondary" onclick="renderCompositing()">${t('asy.renderCompositing.reCompute')}</button>
         <button class="btn secondary" onclick="exportComposites()">${ICONS.download} ${t('asy.renderCompositing.exportCompositeCsv')}</button>
+        ${OrebitHandoff.available() ? `<button class="btn" data-handoff="Resource" onclick="OrebitHandoff.send('Resource', exportMasterForEstimation)" title="${escapeHtml(t('handoff.toResourceTitle'))}">${t('handoff.toResource')}</button>` : ''}
       </div>
       <p style="font-size:12px;color:var(--fg-mute);margin-top:8px;">${t('asy.renderCompositing.medianRawInterval')}: <strong>${medianRawLen.toFixed(2)}m</strong> · ${rawLengths.length} ${t('asy.renderCompositing.intervals')}${breakAtLitho ? ` · ${t('asy.cmp.breakAtLithoActiveNote').replace('{n}', composites.length.toLocaleString('en-US'))}` : ''}</p>
       ${advisory}
@@ -8571,6 +8572,31 @@ function _invNormal(p) {
 //
 // Departure is measured against the distribution's OWN body scatter rather than a fixed
 // number, so a naturally noisy dataset does not report a break just for being noisy.
+// Contained metal removed by a cap, weighted by sample LENGTH. `values` is a
+// grade column aligned with DATA.rows (the cap log's pristine baseline).
+// Metal is grade x length: an unweighted sum treats a 0.2 m spot sample like a
+// 3 m interval -- on Babbitt it reported 2.99 % removed where the
+// length-weighted figure is 1.68 %. Falls back to equal weights only when a
+// row has no usable from/to. 2026-09-25.
+function _capMetalLossPct(values, cut) {
+  if (!values || !DATA || !DATA.rows) return 0;
+  const fi = colIdx('from_m'), ti = colIdx('to_m');
+  let tot = 0, kept = 0;
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    if (typeof v !== 'number' || !(v > 0)) continue;
+    let w = 1;
+    const r = DATA.rows[i];
+    if (r && fi >= 0 && ti >= 0) {
+      const L = Number(r[ti]) - Number(r[fi]);
+      if (isFinite(L) && L > 0) w = L;
+    }
+    tot += v * w;
+    kept += Math.min(v, cut) * w;
+  }
+  return tot > 0 ? (tot - kept) / tot * 100 : 0;
+}
+
 function _topcutDiagnostics(sortedAsc) {
   const N = sortedAsc.length;
   if (N < 30) return null;
@@ -8660,9 +8686,7 @@ function renderTopCut() {
       const orig = lg.original.filter(v => typeof v === 'number' && v > 0);
       const cut = lg.cut;
       const affected = orig.filter(v => v > cut).length;
-      const totalMetal = orig.reduce((a, b) => a + b, 0);
-      const keptMetal = orig.map(v => Math.min(v, cut)).reduce((a, b) => a + b, 0);
-      const lossPct = totalMetal > 0 ? (totalMetal - keptMetal) / totalMetal * 100 : 0;
+      const lossPct = _capMetalLossPct(lg.original, cut);
       const m = elementMeta(col);
       const when = lg.appliedAt ? new Date(lg.appliedAt).toLocaleString() : '—';
       return `<tr>
@@ -11933,6 +11957,7 @@ function renderDomain() {
     </div>` : ''}
     <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
       <button class="btn" onclick="exportMasterForEstimation()" title="Single CSV with composites, domain, XYZ — ready for Resource">${ICONS.package} ${t('asy.dm.exportMaster')}</button>
+      ${OrebitHandoff.available() ? `<button class="btn" data-handoff="Resource" onclick="OrebitHandoff.send('Resource', exportMasterForEstimation)" title="${escapeHtml(t('handoff.toResourceTitle'))}">${t('handoff.toResource')}</button>` : ''}
       <button class="btn secondary" onclick="exportDomainCSV()">${ICONS.download} ${t('asy.dm.exportDomainTagged')}</button>
       <button class="btn secondary" onclick="exportCompositeStr()" title="String file (.str) of composite centroids — imports into commercial 3D mining software">${t('asy.dm.compositeStr')}</button>
       <button class="btn secondary" onclick="exportCompositeCSV()" title="Composite CSV in the standard drillhole import layout (HOLEID,FROM,TO,X,Y,Z)">${t('asy.dm.compositeCsv')}</button>
@@ -12464,15 +12489,13 @@ function exportMasterForEstimation(opts) {
     const orig = (lg.original || []).filter(v => typeof v === 'number' && v > 0);
     if (!orig.length) return;
     const affected = orig.filter(v => v > lg.cut).length;
-    const totalMetal = orig.reduce((a, b) => a + b, 0);
-    const keptMetal = orig.map(v => Math.min(v, lg.cut)).reduce((a, b) => a + b, 0);
-    const lossPct = totalMetal > 0 ? (totalMetal - keptMetal) / totalMetal * 100 : 0;
+    const lossPct = _capMetalLossPct(lg.original, lg.cut);
     const src = lg.source === 'autoclean' ? 'screen-and-propose' : 'manual';
     // The file itself is always the full population (Resource needs every hole),
     // but a cut chosen while a domain was selected was read off that domain's
     // statistics -- the provenance has to say so or the number is unreadable.
     const scopeTag = (lg.scope && lg.scope !== 'All') ? ` scope=${lg.scope}` : '';
-    capLines.push(`# topcut: ${col} cut=${lg.cut.toFixed(4)} affected=${affected}/${orig.length} metal_removed=${lossPct.toFixed(2)}% applied_by=${src}${scopeTag}`);
+    capLines.push(`# topcut: ${col} cut=${lg.cut.toFixed(4)} affected=${affected}/${orig.length} metal_removed=${lossPct.toFixed(2)}% (length-weighted) applied_by=${src}${scopeTag}`);
   });
 
   // Coverage provenance. informed_length/coverage columns tell a downstream
@@ -14425,5 +14448,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (el && m && m.getAttribute('content')) el.textContent = m.getAttribute('content');
   } catch (e) { /* footer stamp is cosmetic; never block boot on it */ }
 });
-</script></body>
+</script>
+<script>OrebitHandoff.receive('Assay');</script></body>
 </html>

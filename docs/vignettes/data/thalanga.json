@@ -1,0 +1,786 @@
+{
+  "vignette": "01-thalanga-vms",
+  "data": {
+    "name": "NEQ Deposit Atlas - Thalanga (ds100103)",
+    "publisher": "Geological Survey of Queensland",
+    "licence": "CC BY 4.0",
+    "url": "https://geoscience.data.qld.gov.au/dataset/ds100103"
+  },
+  "parameters": {
+    "boundary": "thalanga-deposit-area.geojson",
+    "cutoff_pct_zn": 1.0,
+    "composite_m": 1.0
+  },
+  "core": {
+    "tables": {
+      "collar": 717,
+      "survey": 667,
+      "assay": 9073,
+      "geology": 14518
+    },
+    "grade_codes": {
+      "bdl": 2428,
+      "missing": 41,
+      "byColumn": {
+        "au_gpt": {
+          "bdl": 1223,
+          "missing": 0,
+          "maxPositive": 1380
+        },
+        "cu_ppm": {
+          "bdl": 68,
+          "missing": 0,
+          "maxPositive": 114200
+        },
+        "pb_ppm": {
+          "bdl": 68,
+          "missing": 15,
+          "maxPositive": 248000
+        },
+        "zn_ppm": {
+          "bdl": 6,
+          "missing": 0,
+          "maxPositive": 406000
+        },
+        "ag_gpt": {
+          "bdl": 578,
+          "missing": 19,
+          "maxPositive": 9560
+        },
+        "s_pct": {
+          "bdl": 485,
+          "missing": 7,
+          "maxPositive": 5
+        }
+      }
+    },
+    "grade_columns": [
+      "au_gpt",
+      "cu_ppm",
+      "pb_ppm",
+      "zn_ppm",
+      "ag_gpt",
+      "fe_pct",
+      "s_pct"
+    ],
+    "drill_types": {
+      "BEDRK": 520,
+      "ACORE": 21,
+      "REVC": 55,
+      "DD": 18,
+      "RAB": 39,
+      "PERC": 45,
+      "TCH": 19
+    },
+    "img_dashboard": "thalanga-01-core-dashboard.png",
+    "checks_before": [
+      {
+        "name": "Holes in Assay but not in Collar",
+        "value": "0 orphan",
+        "severity": "ok"
+      },
+      {
+        "name": "Holes in Survey but not in Collar",
+        "value": "0 orphan",
+        "severity": "ok"
+      },
+      {
+        "name": "Holes in Geology but not in Collar",
+        "value": "0 orphan",
+        "severity": "ok"
+      },
+      {
+        "name": "Collar without Survey (assumed vertical)",
+        "value": "259 hole",
+        "severity": "warn"
+      },
+      {
+        "name": "Collar without Assay",
+        "value": "16 hole",
+        "severity": "warn"
+      },
+      {
+        "name": "Collar without Geology",
+        "value": "381 hole",
+        "severity": "warn"
+      },
+      {
+        "name": "Collar X/Y in projected metres (not lat/long degrees)",
+        "value": "ok",
+        "severity": "ok"
+      },
+      {
+        "name": "Duplicate collar hole_id",
+        "value": "6 duplicate",
+        "severity": "fail"
+      },
+      {
+        "name": "collar required-field completeness",
+        "value": "100.0%",
+        "severity": "ok"
+      },
+      {
+        "name": "survey required-field completeness",
+        "value": "100.0%",
+        "severity": "ok"
+      },
+      {
+        "name": "assay required-field completeness",
+        "value": "100.0%",
+        "severity": "ok"
+      },
+      {
+        "name": "geology required-field completeness",
+        "value": "100.0%",
+        "severity": "warn"
+      },
+      {
+        "name": "Assay interval gaps",
+        "value": "208 gap",
+        "severity": "warn"
+      },
+      {
+        "name": "Assay interval overlaps",
+        "value": "115 overlap",
+        "severity": "fail"
+      },
+      {
+        "name": "Below-detection (negative) grade values",
+        "value": "0 sample",
+        "severity": "ok"
+      },
+      {
+        "name": "Linkage verdict — ready for Desurvey",
+        "value": "FIX REQUIRED",
+        "severity": "fail"
+      }
+    ],
+    "img_validation": "thalanga-02-core-validation.png",
+    "fixes": {
+      "spot_samples": [
+        {
+          "hole": "TH37",
+          "from": 190,
+          "to": 190.2,
+          "sample_id": "TH37190",
+          "zn_ppm": 20
+        },
+        {
+          "hole": "TH37",
+          "from": 490,
+          "to": 490.2,
+          "sample_id": "TH37490",
+          "zn_ppm": 160
+        }
+      ],
+      "au": {
+        "hole": "TH35",
+        "from": 100,
+        "to": 100.2,
+        "au_gpt": 1380,
+        "ag_gpt": 1,
+        "zn_ppm": 1210
+      },
+      "change_log": [
+        {
+          "table": "assay",
+          "summary": "1 rows edited, 0 added, 2 deleted",
+          "diffs": 1
+        }
+      ]
+    },
+    "checks_after": [
+      {
+        "name": "Holes in Assay but not in Collar",
+        "value": "0 orphan",
+        "severity": "ok"
+      },
+      {
+        "name": "Holes in Survey but not in Collar",
+        "value": "0 orphan",
+        "severity": "ok"
+      },
+      {
+        "name": "Holes in Geology but not in Collar",
+        "value": "0 orphan",
+        "severity": "ok"
+      },
+      {
+        "name": "Collar without Survey (assumed vertical)",
+        "value": "259 hole",
+        "severity": "warn"
+      },
+      {
+        "name": "Collar without Assay",
+        "value": "16 hole",
+        "severity": "warn"
+      },
+      {
+        "name": "Collar without Geology",
+        "value": "381 hole",
+        "severity": "warn"
+      },
+      {
+        "name": "Collar X/Y in projected metres (not lat/long degrees)",
+        "value": "ok",
+        "severity": "ok"
+      },
+      {
+        "name": "Duplicate collar hole_id",
+        "value": "6 duplicate",
+        "severity": "fail"
+      },
+      {
+        "name": "collar required-field completeness",
+        "value": "100.0%",
+        "severity": "ok"
+      },
+      {
+        "name": "survey required-field completeness",
+        "value": "100.0%",
+        "severity": "ok"
+      },
+      {
+        "name": "assay required-field completeness",
+        "value": "100.0%",
+        "severity": "ok"
+      },
+      {
+        "name": "geology required-field completeness",
+        "value": "100.0%",
+        "severity": "warn"
+      },
+      {
+        "name": "Assay interval gaps",
+        "value": "206 gap",
+        "severity": "warn"
+      },
+      {
+        "name": "Assay interval overlaps",
+        "value": "113 overlap",
+        "severity": "fail"
+      },
+      {
+        "name": "Below-detection (negative) grade values",
+        "value": "0 sample",
+        "severity": "ok"
+      },
+      {
+        "name": "Linkage verdict — ready for Desurvey",
+        "value": "FIX REQUIRED",
+        "severity": "fail"
+      }
+    ],
+    "desurvey": {
+      "convention": "positive_down",
+      "holes": 711,
+      "bad_survey": 0,
+      "TH5_end": {
+        "depth": 395.9,
+        "x": 371662.0355341647,
+        "y": 7750484.185639508,
+        "z": 117.20186647643203
+      },
+      "TH1_end": {
+        "depth": 257,
+        "x": 371643.5592648842,
+        "y": 7750480.619844384,
+        "z": 140.94749893796262
+      },
+      "TH40_end": {
+        "depth": 593.3,
+        "x": 370625.03157204227,
+        "y": 7750904.658388674,
+        "z": -103.13142443920718
+      }
+    },
+    "img_desurvey": "thalanga-03-core-desurvey.png",
+    "merged_rows": 9071,
+    "crop": {
+      "total": 9071,
+      "kept": 667,
+      "dropped": 8404,
+      "noCoord": 0,
+      "keptHoles": 13,
+      "totalHoles": 695
+    },
+    "img_crop": "thalanga-04-core-crop.png",
+    "export": {
+      "rows": 667,
+      "columns": [
+        "hole_id",
+        "from_m",
+        "to_m",
+        "midx",
+        "midy",
+        "midz",
+        "au_gpt",
+        "cu_ppm",
+        "pb_ppm",
+        "zn_ppm",
+        "ag_gpt",
+        "fe_pct",
+        "s_pct"
+      ],
+      "holes": [
+        "TE-1",
+        "TE-2",
+        "TH1",
+        "TH2",
+        "TH3",
+        "TH31",
+        "TH35",
+        "TH37",
+        "TH39",
+        "TH4",
+        "TH40",
+        "TH5",
+        "TH6"
+      ]
+    },
+    "page_errors": []
+  },
+  "independent": {
+    "samples": 667,
+    "zn_mean_pct": 2.245,
+    "zn_median_pct": 0.2,
+    "zn_cv": 2.66,
+    "zn_p95": 15.1,
+    "zn_p99": 31.2,
+    "zn_max": 40.6,
+    "sample_length_median_m": 0.7,
+    "sample_length_mode_m": 1.0,
+    "metal_share_above_cutoff_pct": {
+      "0.5": 95.7,
+      "1.0": 91.7,
+      "2.0": 87.0,
+      "5.0": 74.6
+    },
+    "shell": {
+      "n_in": 170,
+      "cv_in": 1.15,
+      "mean_in": 8.26,
+      "n_out": 497,
+      "cv_out": 1.26,
+      "mean_out": 0.187
+    }
+  },
+  "assay": {
+    "columns": [
+      "hole_id",
+      "from_m",
+      "to_m",
+      "midx",
+      "midy",
+      "midz",
+      "au_gpt",
+      "cu_pct",
+      "pb_pct",
+      "zn_pct",
+      "fe_pct",
+      "ag_gpt",
+      "s_pct"
+    ],
+    "elements": [
+      "cu_pct",
+      "pb_pct",
+      "zn_pct",
+      "au_gpt",
+      "ag_gpt"
+    ],
+    "unit_conversions": [
+      {
+        "field": "cu_pct",
+        "divisor": 10000,
+        "raw": "cu_ppm"
+      },
+      {
+        "field": "pb_pct",
+        "divisor": 10000,
+        "raw": "pb_ppm"
+      },
+      {
+        "field": "zn_pct",
+        "divisor": 10000,
+        "raw": "zn_ppm"
+      }
+    ],
+    "first_element_before_choice": "cu_pct",
+    "img_stats": "thalanga-05-assay-stats.png",
+    "topcut": {
+      "n": 667,
+      "disintegration": {
+        "value": 27.5,
+        "pct": 98.12593703148426
+      }
+    },
+    "img_topcut": "thalanga-06-assay-topcut.png",
+    "domains": {
+      "M0-Background": {
+        "n": 497
+      },
+      "M1-Mineralised": {
+        "n": 170
+      }
+    },
+    "img_domain": "thalanga-07-assay-domain.png",
+    "composites": {
+      "n": 507,
+      "dropped_tail_m": 11.38,
+      "gap_m": 1112,
+      "overlaps": 0
+    },
+    "img_composite": "thalanga-08-assay-composite.png",
+    "export": {
+      "rows": 507,
+      "columns": [
+        "hole_id",
+        "from_m",
+        "to_m",
+        "informed_length",
+        "coverage",
+        "midx",
+        "midy",
+        "midz",
+        "domain",
+        "cu_pct",
+        "pb_pct",
+        "zn_pct",
+        "au_gpt",
+        "ag_gpt"
+      ],
+      "domains": {
+        "M1-Mineralised": 98,
+        "M0-Background": 409
+      },
+      "under_half_informed": 77
+    },
+    "page_errors": []
+  },
+  "resource": {
+    "setup": {
+      "element": "zn_pct",
+      "domain": "M1-Mineralised",
+      "unit": "%",
+      "samples": 98
+    },
+    "img_setup": "thalanga-09-resource-setup.png",
+    "variogram": {
+      "type": "exponential",
+      "nugget": 67.17875323465545,
+      "sill": 111.96458872442575,
+      "range": 326.25
+    },
+    "img_variogram": "thalanga-10-resource-variogram.png",
+    "suggested_block_size": [
+      15,
+      15,
+      8
+    ],
+    "blocks": {
+      "size": [
+        25,
+        25,
+        10
+      ],
+      "dims": [
+        84,
+        20,
+        29
+      ],
+      "n": 20938,
+      "density": 2.8,
+      "density_user_set": false
+    },
+    "search": {
+      "rMaj": 200,
+      "rSemi": 200,
+      "rMin": 50,
+      "minN": 2,
+      "maxN": 16,
+      "octant": false
+    },
+    "estimate_unconstrained": {
+      "ok": {
+        "n": 15744,
+        "mean": 6.180870332558284,
+        "min": 1.049719214439392,
+        "max": 26.798423767089844
+      },
+      "idw": {
+        "n": 15744,
+        "mean": 6.282292590923304,
+        "min": 1.047017216682434,
+        "max": 26.839147567749023
+      },
+      "nn": {
+        "n": 15744,
+        "mean": 4.365966258593267,
+        "min": 1,
+        "max": 33.45800018310547
+      },
+      "blocks_total": 20938,
+      "tonnes_Mt": 275.52,
+      "zn_metal_kt": 17029.533940264584,
+      "search": {
+        "rMaj": 489,
+        "rSemi": 489,
+        "rMin": 135,
+        "az": 0,
+        "minN": 2,
+        "maxN": 16
+      },
+      "seconds": 3
+    },
+    "img_estimate_unconstrained": "thalanga-11a-resource-estimate-unconstrained.png",
+    "estimate": {
+      "ok": {
+        "n": 717,
+        "mean": 7.631533709530053,
+        "min": 1.261386752128601,
+        "max": 29.44170570373535
+      },
+      "idw": {
+        "n": 717,
+        "mean": 7.871328635195808,
+        "min": 1.259749412536621,
+        "max": 29.3682861328125
+      },
+      "nn": {
+        "n": 717,
+        "mean": 7.116802790507446,
+        "min": 1,
+        "max": 33.45800018310547
+      },
+      "blocks_total": 20938,
+      "tonnes_Mt": 12.5475,
+      "zn_metal_kt": 957.5666922032833,
+      "search": {
+        "rMaj": 100,
+        "rSemi": 50,
+        "rMin": 25,
+        "az": 98,
+        "minN": 4,
+        "maxN": 12
+      },
+      "seconds": 3
+    },
+    "spacing_note": {
+      "median_m": 91,
+      "p90_m": 96
+    },
+    "search_constrained": {
+      "rMaj": 100,
+      "rSemi": 50,
+      "rMin": 25,
+      "az": 98,
+      "dip": 0,
+      "minN": 4,
+      "maxN": 12
+    },
+    "img_estimate": "thalanga-11-resource-estimate.png",
+    "crossval": {
+      "metrics": {
+        "idw": {
+          "n": 92,
+          "mae": 2.92448618054599,
+          "rmse": 4.620164347669186,
+          "r2": 0.7455772478748878,
+          "slope": 0.7741189244598505,
+          "meanAct": 8.429439130434785,
+          "meanPred": 8.66844343475808,
+          "bias": 0.239004304323295
+        },
+        "ok": {
+          "n": 92,
+          "mae": 3.3444234724985242,
+          "rmse": 4.895235820222773,
+          "r2": 0.7138751347112778,
+          "slope": 0.6814662232333871,
+          "meanAct": 8.429439130434785,
+          "meanPred": 8.47015627193465,
+          "bias": 0.04071714149986505
+        },
+        "nn": {
+          "n": 92,
+          "mae": 3.154820652173913,
+          "rmse": 5.071700626719329,
+          "r2": 0.7091295294944151,
+          "slope": 0.8203210986633662,
+          "meanAct": 8.429439130434785,
+          "meanPred": 8.616646739130438,
+          "bias": 0.1872076086956529
+        }
+      },
+      "pairs": 92
+    },
+    "img_crossval": "thalanga-12-resource-crossval.png",
+    "confidence_screen": {
+      "high": 106,
+      "medium": 262,
+      "low": 349,
+      "outside": 20221
+    },
+    "img_confidence": "thalanga-12b-resource-confidence.png",
+    "gt_app": {
+      "all_blocks": [
+        {
+          "cutoff_pct": 0,
+          "tonnes_Mt": 12.548,
+          "grade_pct": 7.63
+        },
+        {
+          "cutoff_pct": 1,
+          "tonnes_Mt": 12.548,
+          "grade_pct": 7.63
+        },
+        {
+          "cutoff_pct": 2,
+          "tonnes_Mt": 11.008,
+          "grade_pct": 8.45
+        },
+        {
+          "cutoff_pct": 3,
+          "tonnes_Mt": 7.455,
+          "grade_pct": 11.22
+        },
+        {
+          "cutoff_pct": 4,
+          "tonnes_Mt": 5.303,
+          "grade_pct": 14.36
+        },
+        {
+          "cutoff_pct": 5,
+          "tonnes_Mt": 5.145,
+          "grade_pct": 14.67
+        },
+        {
+          "cutoff_pct": 6,
+          "tonnes_Mt": 4.935,
+          "grade_pct": 15.06
+        },
+        {
+          "cutoff_pct": 7,
+          "tonnes_Mt": 4.76,
+          "grade_pct": 15.37
+        },
+        {
+          "cutoff_pct": 8,
+          "tonnes_Mt": 4.253,
+          "grade_pct": 16.3
+        }
+      ],
+      "high_medium": [
+        {
+          "cutoff_pct": 0,
+          "tonnes_Mt": 6.44,
+          "grade_pct": 7.08
+        },
+        {
+          "cutoff_pct": 1,
+          "tonnes_Mt": 6.44,
+          "grade_pct": 7.08
+        },
+        {
+          "cutoff_pct": 2,
+          "tonnes_Mt": 5.775,
+          "grade_pct": 7.69
+        },
+        {
+          "cutoff_pct": 3,
+          "tonnes_Mt": 3.78,
+          "grade_pct": 10.38
+        },
+        {
+          "cutoff_pct": 4,
+          "tonnes_Mt": 2.8,
+          "grade_pct": 12.84
+        },
+        {
+          "cutoff_pct": 5,
+          "tonnes_Mt": 2.678,
+          "grade_pct": 13.24
+        },
+        {
+          "cutoff_pct": 6,
+          "tonnes_Mt": 2.555,
+          "grade_pct": 13.61
+        },
+        {
+          "cutoff_pct": 7,
+          "tonnes_Mt": 2.433,
+          "grade_pct": 13.96
+        },
+        {
+          "cutoff_pct": 8,
+          "tonnes_Mt": 2.205,
+          "grade_pct": 14.62
+        }
+      ]
+    },
+    "img_gt": "thalanga-13-resource-grade-tonnage.png",
+    "block_export_columns": [
+      "X",
+      "Y",
+      "Z",
+      "X_INC",
+      "Y_INC",
+      "Z_INC",
+      "IDW",
+      "OK",
+      "NN",
+      "KRIGE_VAR",
+      "NEAR_DIST",
+      "N_NEIGHBORS",
+      "CLASS"
+    ],
+    "img_kcmi": "thalanga-14-resource-kcmi.png",
+    "density_basis_text": "ASSUMED uniform default — not measured. Enter the deposit's measured SG before reporting tonnage.",
+    "page_errors": []
+  },
+  "independent_gt": {
+    "grade_column": "OK",
+    "blocks_estimated": 717,
+    "block_volume_m3": 6250,
+    "density_t_m3": 2.8,
+    "curve": [
+      {
+        "cutoff_pct": 0.0,
+        "tonnes_Mt": 12.547,
+        "grade_pct": 7.63,
+        "zn_metal_kt": 957.6
+      },
+      {
+        "cutoff_pct": 1.0,
+        "tonnes_Mt": 12.547,
+        "grade_pct": 7.63,
+        "zn_metal_kt": 957.6
+      },
+      {
+        "cutoff_pct": 2.0,
+        "tonnes_Mt": 11.008,
+        "grade_pct": 8.45,
+        "zn_metal_kt": 930.2
+      },
+      {
+        "cutoff_pct": 3.0,
+        "tonnes_Mt": 7.455,
+        "grade_pct": 11.22,
+        "zn_metal_kt": 836.8
+      },
+      {
+        "cutoff_pct": 5.0,
+        "tonnes_Mt": 5.145,
+        "grade_pct": 14.67,
+        "zn_metal_kt": 754.8
+      },
+      {
+        "cutoff_pct": 8.0,
+        "tonnes_Mt": 4.253,
+        "grade_pct": 16.3,
+        "zn_metal_kt": 693.0
+      }
+    ]
+  },
+  "runtime_s": 85
+}

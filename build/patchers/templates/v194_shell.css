@@ -1,0 +1,1132 @@
+<style id="orebit-v194-shell">
+/* ═══════════════════════════════════════════════════════════════════════════
+ * OREBIT v1.9.4 SHELL — vertical-tab redesign + UX polish
+ * (Replaces v1.9.3 block. Loaded last via cascade. Safe-inject before </body>.)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* === Compact navbar (replaces hero gradient) === */
+header.orebit-header {{
+  background: rgba(255,255,255,0.92) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  color: var(--fg) !important;
+  padding: 12px 20px !important;
+  margin: -14px -22px 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid var(--border) !important;
+  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04) !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 100 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  flex-wrap: nowrap !important;
+  min-height: 56px !important;
+  background-image: none !important;
+}}
+[data-theme="dark"] header.orebit-header,
+body.dark header.orebit-header {{
+  background: rgba(15,23,42,0.92) !important;
+  border-bottom-color: rgba(255,255,255,0.08) !important;
+}}
+header.orebit-header .brand {{
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+}}
+header.orebit-header .logo {{
+  width: 28px !important; height: 28px !important;
+  background: transparent !important;
+  border-radius: 4px !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}}
+header.orebit-header .logo img {{ width: 28px !important; height: 28px !important; }}
+header.orebit-header .title-block {{
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}}
+header.orebit-header h1 {{
+  color: var(--fg) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+  letter-spacing: -0.01em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}}
+header.orebit-header .subtitle,
+header.orebit-header .tags {{ display: none !important; }}
+header.orebit-header .toolbar {{
+  display: flex !important;
+  gap: 4px !important;
+  align-items: center !important;
+  flex: 0 0 auto !important;
+  margin-left: auto !important;
+}}
+header.orebit-header .toolbar button,
+header.orebit-header .toolbar .glossary-trigger,
+header.orebit-header #themeToggle,
+header.orebit-header .orebit-link {{
+  background: transparent !important;
+  color: var(--fg-body) !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer !important;
+}}
+header.orebit-header .toolbar button:hover,
+header.orebit-header .toolbar .glossary-trigger:hover,
+header.orebit-header #themeToggle:hover,
+header.orebit-header .orebit-link:hover {{
+  background: var(--bg-alt) !important;
+  color: var(--fg) !important;
+  border-color: var(--border) !important;
+}}
+
+/* Phase pill */
+.orebit-phase-pill {{
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 3px 10px !important;
+  border-radius: 9999px !important;
+  background: var(--accent-soft, rgba(45,122,142,0.12)) !important;
+  color: var(--accent, #2D7A8E) !important;
+  font-family: ui-monospace, "JetBrains Mono", "SF Mono", Consolas, monospace !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+  margin-left: 4px !important;
+  flex-shrink: 0 !important;
+}}
+
+/* === Breadcrumb (active tab name in header) === */
+.orebit-crumb {{
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 13.5px !important;
+  color: var(--fg-2, var(--fg-body)) !important;
+  font-weight: 600 !important;
+  margin-left: 10px !important;
+  padding-left: 12px !important;
+  border-left: 1px solid var(--border) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 220px !important;
+}}
+
+/* .orebit-hdr-search rules removed 2026-09-04 along with the button itself
+   (v194_shell.js) -- it was labelled "Search" behind a magnifier icon but
+   opened the Glossary, a mislabelled affordance rather than a duplicate.
+   The Ctrl+K shortcut it also bound stays live; only the visible icon and
+   its styling are gone. */
+
+.orebit-avatar {{
+  width: 34px !important; height: 34px !important;
+  border-radius: 50% !important;
+  flex: none !important;
+  cursor: pointer !important;
+  margin-left: 6px !important;
+  background: linear-gradient(135deg, var(--slate-700, #334155), var(--slate-900, #0f172a)) !important;
+  color: #fff !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(15,23,42,0.18) !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease !important;
+}}
+.orebit-avatar:hover {{ transform: translateY(-1px) !important; box-shadow: 0 3px 8px rgba(15,23,42,0.25) !important; }}
+
+/* Update available — a dot on the avatar, nothing more. The Desktop EXE is
+   frozen at the version it was downloaded at, so this is its only hint that a
+   newer one exists; the menu itself spells out which. Deliberately small: the
+   dashboard banner this replaces was removed for shouting, and an update is
+   not urgent enough to interrupt someone mid-estimate. Absent entirely when
+   up to date, offline, or the check fails. */
+.orebit-avatar {{ position: relative !important; }}
+.orebit-avatar.orebit-has-update::after {{
+  content: '' !important;
+  position: absolute !important;
+  top: 1px !important; right: 1px !important;
+  width: 9px !important; height: 9px !important;
+  border-radius: 50% !important;
+  background: var(--accent, #0d9488) !important;
+  border: 2px solid var(--bg, #fff) !important;
+  box-sizing: content-box !important;
+}}
+
+/* === Profile / project menu === */
+.orebit-profile-menu {{
+  position: fixed !important;
+  top: 58px !important; right: 16px !important;
+  width: 300px !important;
+  background: var(--bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 16px 40px -8px rgba(15,23,42,0.28), 0 4px 12px -4px rgba(15,23,42,0.14) !important;
+  z-index: 1200 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  display: none !important;
+  font-size: 13.5px !important;
+}}
+.orebit-profile-menu.open {{ display: block !important; }}
+.orebit-profile-head {{
+  display: flex !important; align-items: center !important; gap: 12px !important;
+  padding: 16px !important;
+  background: linear-gradient(135deg, var(--accent-soft, rgba(13,148,136,0.10)), transparent) !important;
+  border-bottom: 1px solid var(--border-sub, var(--border)) !important;
+}}
+.orebit-profile-head .pa {{
+  width: 44px !important; height: 44px !important; border-radius: 50% !important;
+  background: linear-gradient(135deg, var(--slate-700,#334155), var(--slate-900,#0f172a)) !important;
+  color: #fff !important; display: grid !important; place-items: center !important;
+  font-size: 16px !important; font-weight: 700 !important; flex: none !important;
+}}
+.orebit-profile-head .pn {{ font-weight: 700 !important; color: var(--fg) !important; font-size: 14.5px !important; }}
+.orebit-profile-head .pr {{ font-size: 12px !important; color: var(--fg-mute, var(--fg-body)) !important; margin-top: 1px !important; }}
+.orebit-profile-sec {{ padding: 12px 16px !important; border-bottom: 1px solid var(--border-sub, var(--border)) !important; }}
+.orebit-profile-sec:last-child {{ border-bottom: none !important; }}
+.orebit-profile-sec .lbl {{
+  font-size: 10.5px !important; font-weight: 700 !important; letter-spacing: 0.06em !important;
+  text-transform: uppercase !important; color: var(--fg-mute, var(--fg-body)) !important; margin-bottom: 8px !important;
+}}
+.orebit-profile-row {{ display: flex !important; align-items: center !important; justify-content: space-between !important; padding: 4px 0 !important; }}
+.orebit-profile-row .k {{ color: var(--fg-2, var(--fg-body)) !important; }}
+.orebit-profile-row .v {{ font-weight: 600 !important; color: var(--fg) !important; font-variant-numeric: tabular-nums !important; }}
+.orebit-profile-act {{
+  display: flex !important; align-items: center !important; gap: 10px !important; width: 100% !important;
+  padding: 10px 16px !important; background: transparent !important; border: none !important;
+  color: var(--fg-body) !important; font-size: 13.5px !important; font-family: inherit !important;
+  cursor: pointer !important; text-align: left !important; transition: background 0.12s !important;
+}}
+.orebit-profile-act:hover {{ background: var(--bg-alt) !important; color: var(--fg) !important; }}
+.orebit-profile-act svg {{ width: 16px !important; height: 16px !important; color: var(--fg-mute, var(--fg-body)) !important; flex: none !important; }}
+.orebit-profile-backdrop {{
+  position: fixed !important; inset: 0 !important; z-index: 1199 !important;
+  background: transparent !important; display: none !important;
+}}
+.orebit-profile-backdrop.open {{ display: block !important; }}
+
+/* === Profile inline editor === */
+.orebit-profile-edit {{
+  flex: none !important; width: 30px !important; height: 30px !important;
+  display: grid !important; place-items: center !important;
+  background: transparent !important; border: 1px solid var(--border) !important;
+  border-radius: 8px !important; cursor: pointer !important; color: var(--fg-mute, var(--fg-body)) !important;
+  transition: background 0.12s, color 0.12s !important;
+}}
+.orebit-profile-edit:hover {{ background: var(--bg-alt) !important; color: var(--accent) !important; }}
+.orebit-profile-edit svg {{ width: 15px !important; height: 15px !important; }}
+.orebit-edit-form {{ display: flex !important; flex-direction: column !important; gap: 4px !important; }}
+.orebit-edit-lbl {{
+  font-size: 10.5px !important; font-weight: 700 !important; letter-spacing: 0.05em !important;
+  text-transform: uppercase !important; color: var(--fg-mute, var(--fg-body)) !important; margin-top: 6px !important;
+}}
+.orebit-edit-inp {{
+  width: 100% !important; box-sizing: border-box !important;
+  padding: 8px 10px !important; font-size: 13.5px !important; font-family: inherit !important;
+  background: var(--bg-alt, var(--bg)) !important; color: var(--fg) !important;
+  border: 1px solid var(--border) !important; border-radius: 8px !important; outline: none !important;
+}}
+.orebit-edit-inp:focus {{ border-color: var(--accent) !important; box-shadow: 0 0 0 2px var(--accent-soft, rgba(13,148,136,0.18)) !important; }}
+.orebit-edit-btns {{ display: flex !important; gap: 8px !important; margin-top: 12px !important; }}
+.orebit-edit-btns button {{
+  flex: 1 !important; height: 36px !important; border-radius: 8px !important; cursor: pointer !important;
+  font-size: 13px !important; font-weight: 600 !important; font-family: inherit !important; border: 1px solid var(--border) !important;
+}}
+.orebit-edit-cancel {{ background: transparent !important; color: var(--fg-body) !important; }}
+.orebit-edit-cancel:hover {{ background: var(--bg-alt) !important; }}
+.orebit-edit-save {{ background: var(--accent) !important; color: #fff !important; border-color: var(--accent) !important; }}
+.orebit-edit-save:hover {{ filter: brightness(1.06) !important; }}
+
+/* === Sidebar footer: relocated Undo + Glossary === */
+.orebit-rail-foot {{
+  margin-top: auto !important;
+  padding: 12px 4px 4px !important;
+  border-top: 1px solid var(--border-sub, var(--border)) !important;
+  display: flex !important; gap: 6px !important;
+}}
+.orebit-rail-foot button {{
+  flex: 1 !important;
+  display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 6px !important;
+  height: 34px !important; padding: 0 8px !important;
+  border: 1px solid var(--border) !important; border-radius: 7px !important;
+  background: transparent !important; color: var(--fg-body) !important;
+  font-size: 12.5px !important; font-weight: 500 !important; font-family: inherit !important;
+  cursor: pointer !important; transition: all 0.12s !important;
+}}
+.orebit-rail-foot button:hover {{ background: var(--bg-alt) !important; color: var(--fg) !important; }}
+.orebit-rail-foot button svg {{ width: 15px !important; height: 15px !important; flex: none !important; }}
+
+.demo-banner,
+.scope-banner {{
+  margin: 12px 22px 0 !important;
+  border-radius: var(--radius, 10px) !important;
+}}
+
+/* === VERTICAL SIDEBAR TABS (desktop ≥ 1080px) === */
+@media (min-width: 1080px) {{
+  body .wrap {{
+    padding: 0 !important;
+    max-width: none !important;
+    display: grid !important;
+    grid-template-columns: 240px 1fr !important;
+    gap: 0 !important;
+    align-items: start !important;
+    min-height: calc(100vh - 56px) !important;
+  }}
+  .wrap > header.orebit-header {{
+    grid-column: 1 / -1 !important;
+    margin: 0 !important;
+  }}
+  .wrap > .demo-banner,
+  .wrap > .scope-banner {{
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    margin: 12px 28px 0 !important;
+  }}
+  /* FIX v1.9.4: footer must span full width, not stuck in sidebar column */
+  .wrap > footer,
+  .wrap > .orebit-footer {{
+    grid-column: 1 / -1 !important;
+    margin: 16px 0 0 !important;
+    width: 100% !important;
+  }}
+  .wrap > nav.tabs {{
+    position: sticky !important;
+    top: 56px !important;
+    align-self: start !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    gap: 2px !important;
+    border-right: 1px solid var(--border) !important;
+    border-bottom: none !important;
+    border-radius: 0 !important;
+    padding: 16px 12px !important;
+    margin: 0 !important;
+    overflow-x: visible !important;
+    overflow-y: auto !important;
+    max-height: calc(100vh - 56px) !important;
+    background: var(--bg-page, var(--bg)) !important;
+    box-shadow: none !important;
+    grid-column: 1 !important;
+    grid-row: 2 / 20 !important;
+    counter-reset: tab-counter !important;
+  }}
+  .wrap > nav.tabs .tab {{
+    width: 100% !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    padding: 9px 12px !important;
+    border-radius: 6px !important;
+    border: none !important;
+    margin-bottom: 0 !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: var(--fg-body) !important;
+    background: transparent !important;
+    position: relative !important;
+    counter-increment: tab-counter !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    transition: background 0.12s, color 0.12s !important;
+  }}
+  .wrap > nav.tabs .tab::before {{
+    content: none !important;
+  }}
+  .wrap > nav.tabs .tab:hover {{
+    background: var(--bg-alt) !important;
+    color: var(--fg) !important;
+    border-bottom: none !important;
+  }}
+  .wrap > nav.tabs .tab.active {{
+    background: var(--accent-soft, rgba(45,122,142,0.12)) !important;
+    color: var(--accent, #2D7A8E) !important;
+    font-weight: 600 !important;
+    border-bottom: none !important;
+  }}
+  .wrap > nav.tabs .tab.active::before {{
+    color: var(--accent, #2D7A8E) !important;
+  }}
+  /* Active item: teal left rail (Linear-style) */
+  .wrap > nav.tabs .tab.active {{
+    box-shadow: inset 3px 0 0 0 var(--accent, #0d9488) !important;
+  }}
+  .wrap > nav.tabs .tab .lucide-icon {{
+    width: 17px !important;
+    height: 17px !important;
+    color: var(--fg-mute) !important;
+    flex-shrink: 0 !important;
+  }}
+  .wrap > nav.tabs .tab.active .lucide-icon {{ color: var(--accent, #0d9488) !important; }}
+  /* Group labels (template-owned, single source of truth) */
+  .wrap > nav.tabs .tab-group-label {{
+    font-family: var(--font-sans), "Inter", sans-serif !important;
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+    color: var(--fg-mute) !important;
+    padding: 14px 12px 6px !important;
+    margin: 0 !important;
+    border: none !important;
+    display: block !important;
+    width: 100% !important;
+  }}
+  .wrap > nav.tabs .tab-group-label:first-child {{ padding-top: 2px !important; }}
+  /* PLAN-uiux-desktop-mobile.md §2.5: this 1200px cap doesn't scale with its
+     own 1fr grid column (.wrap's grid-template-columns is 240px sidebar +
+     1fr content). It happens to fit almost exactly at a 1440px viewport
+     (1440 - 240 sidebar = 1200), which is why this was never visibly wrong
+     during normal development -- but at 1920x1080 it leaves 480px (25% of
+     the viewport) of genuinely dead space on the right of every tab,
+     confirmed via CSSOM rule inspection + screenshot, worsening linearly on
+     wider monitors. Reuses --content-max (1600px), the same "how wide should
+     the main content get" constant already governing .wrap's own max-width
+     in the non-sidebar (narrow/tablet) layout, instead of a second
+     independent hardcoded number. */
+  .wrap > .panel {{
+    grid-column: 2 !important;
+    padding: 24px 36px 60px !important;
+    max-width: var(--content-max) !important;
+  }}
+
+  /* === SIDEBAR FOOTER: toolbar moved from header === */
+  /* Hide toolbar in header on desktop */
+  /* toolbar stays visible in header on desktop */
+  /* Sidebar footer container */
+  .wrap > nav.tabs {{
+    display: flex !important;
+    flex-direction: column !important;
+  }}
+}}
+
+/* === MOBILE / TABLET (<1080px) === */
+@media (max-width: 1079px) {{
+  /* iPad / tablet: hide sidebar, use full-width content */
+  body .wrap {{ grid-template-columns: 1fr !important; }}
+  body .wrap > nav.tabs {{ display: none !important; }}
+  body .wrap > .panel {{ grid-column: 1 !important; padding: 20px 24px 60px !important; }}
+  body .wrap > .orebit-footer {{ grid-column: 1 !important; }}
+}}
+
+/* === SMALL TABLET / LARGE PHONE (768-1024px) === */
+@media (min-width: 769px) and (max-width: 1024px) {{
+  body {{ overflow-x: hidden !important; }}
+  .wrap {{ padding: 12px 16px 40px !important; overflow-x: hidden !important; }}
+  header.orebit-header h1 {{ font-size: 14px !important; }}
+}}
+
+@media (max-width: 768px) {{
+  body {{ overflow-x: hidden !important; font-size: 14px !important; }}
+  .wrap {{ overflow-x: hidden !important; max-width: 100vw !important; padding-bottom: 64px !important; }}
+
+  /* Brand icon-only on mobile: h1+subtitle+tags overflow the 390px header
+     ("Orebit Core" truncated to "O..", next item clipped). Title returns on
+     wide screens via the desktop media query. */
+  header.orebit-header .brand .title-block {{ display: none !important; }}
+
+  /* Icon-only controls on mobile: hide text labels (Tema / EN) — icons suffice */
+  header.orebit-header .toolbar #themeToggle span,
+  header.orebit-header .toolbar #lang-switch .lang-label {{ display: none !important; }}
+
+  /* Domain-breakdown rows (Assay/Resource dashboard): stack each domain on its
+     own line and allow mid-word wrap so "count · pct" never clips (390px). */
+  #dashDomainTable > div {{ display: block !important; width: 100% !important; }}
+  #dashDomainTable div {{ flex-wrap: wrap !important; }}
+  #dashDomainTable span {{ overflow-wrap: anywhere !important; white-space: normal !important; }}
+
+  /* Hide sidebar — mobile-bottom-nav replaces it */
+  body .wrap > nav.tabs {{ display: none !important; }}
+  body .wrap > .panel {{ grid-column: 1 !important; padding: 16px 14px calc(96px + env(safe-area-inset-bottom, 0px)) !important; }}
+
+  /* Clear fixed bottom-nav: last cards were hidden behind it */
+  .wrap {{ padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important; }}
+
+  /* Button rows inside dashboard cards MUST wrap — Export Bundle was clipped off-screen */
+  .panel .card > div {{ flex-wrap: wrap !important; }}
+  .panel .card .btn,
+  .panel .card .btn.small {{ flex: 1 1 auto !important; min-width: 0 !important; white-space: nowrap; }}
+  /* Project Manager button group: even 3-up wrap */
+  #dashProjectManager > div,
+  #dashProjectManager > div > div {{ flex-wrap: wrap !important; width: 100% !important; }}
+  #dashProjectManager .btn {{ flex: 1 1 calc(50% - 8px) !important; justify-content: center !important; }}
+
+  /* Wide tables (workflow-table etc.) scroll inside their box instead of clipping */
+  .panel table {{ display: block !important; overflow-x: auto !important; max-width: 100% !important; -webkit-overflow-scrolling: touch; }}
+  .panel .workflow-table {{ font-size: 12px !important; }}
+  /* PLAN-uiux-desktop-mobile.md §2.1: table.editable-table (Core's drillhole
+     CRUD tables) already has its own dedicated wrapper (.editable-table-wrap,
+     overflow:auto) with the scroll-shadow CSS below (§10) targeting THAT
+     wrapper specifically. The blanket `.panel table` rule above also matches
+     it, turning the <table> itself into a second, nested scroll container --
+     it silently absorbs all the horizontal overflow, so .editable-table-wrap
+     never scrolls (its shadow never shows) while the table itself scrolls
+     with zero visual affordance. A column ends mid-number with no hint there
+     is more to the right. Root-caused via Playwright DOM measurement
+     (scrollWidth 839 vs clientWidth 291 on the <table> itself, not the
+     wrapper). Restore default table behaviour here so
+     .editable-table-wrap goes back to being the one real scroll boundary,
+     matching how its shadow CSS was designed to work. */
+  .panel .editable-table-wrap table.editable-table {{
+    display: table !important; overflow-x: visible !important; max-width: none !important;
+  }}
+
+  /* Footer lives OUTSIDE .wrap — give it its own clearance from the fixed bottom-nav */
+  footer.orebit-footer, .orebit-footer {{ margin-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important; padding-left: 14px !important; padding-right: 14px !important; }}
+
+  /* Font size minimums */
+  body {{ font-size: 14px !important; }}
+  .tab {{ font-size: 14px !important; }}
+  .section-label {{ font-size: 12px !important; }}
+  .mobile-bottom-nav {{ font-size: 12px !important; }}
+  .mobile-bottom-nav .nav-item span {{ font-size: 11px !important; }}
+
+  header.orebit-header {{
+    padding: 10px 14px !important;
+    /* CRITICAL: backdrop-filter on header creates a containing block that
+       traps position:fixed children (the toolbar drawer). Disable on mobile
+       so the drawer can be fixed to the viewport, not the 56px header. */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }}
+  header.orebit-header h1 {{ font-size: 13px !important; }}
+  header.orebit-header .orebit-phase-pill {{ display: none !important; }}
+  header.orebit-header .toolbar button,
+  header.orebit-header .toolbar .glossary-trigger {{
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+  }}
+  /* On mobile, hide Help/Tour/Glossary in toolbar (use floating help instead) */
+  header.orebit-header .toolbar [data-orebit-collapse-mobile] {{ display: none !important; }}
+
+  /* Mobile: docs link icon-only (book icon) to keep ID toggle + profile avatar on-screen */
+  header.orebit-header .toolbar a[href*="geosuite.orebit.id/docs"] span {{ display: none !important; }}
+  header.orebit-header .toolbar a[href*="geosuite.orebit.id/docs"] {{
+    width: 44px !important;
+    min-width: 44px !important;
+    justify-content: center !important;
+    padding: 8px 0 !important;
+  }}
+
+  /* Mobile: desktop-CTA icon-only (monitor icon), same reasoning as docs
+     above -- the full "Get Desktop Edition" text pushed later toolbar
+     buttons off the right edge of the header on narrow phones (found
+     2026-09-04, reported by Tuan testing the actual mobile view: the CTA
+     was invisible not because it was hidden, but because the icons after
+     it -- including the one Tuan was looking for -- had been shoved
+     offscreen). Deliberately NOT [data-orebit-collapse-mobile] (fully
+     hidden) -- a mobile visitor can still submit the request form now and
+     download the EXE later from a desktop, so the CTA stays reachable,
+     just compact. */
+  header.orebit-header .toolbar a[data-desktop-cta] span {{ display: none !important; }}
+  header.orebit-header .toolbar a[data-desktop-cta] {{
+    width: 44px !important;
+    min-width: 44px !important;
+    justify-content: center !important;
+    padding: 8px 0 !important;
+  }}
+
+  /* Mobile toolbar: keep inline in header, do NOT use drawer (prevents off-screen buttons) */
+  header.orebit-header .toolbar {{
+    display: flex !important;
+    position: static !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    transform: none !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    z-index: auto !important;
+  }}
+  header.orebit-header .toolbar button,
+  header.orebit-header .toolbar a,
+  header.orebit-header .toolbar #langToggle {{
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    min-height: 44px !important;
+    min-width: 44px !important;
+    width: auto !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }}
+}}
+
+/* === Language toggle === */
+#langToggle {{
+  font-family: ui-monospace, "JetBrains Mono", monospace !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.05em !important;
+  min-width: 44px !important;
+  text-align: center !important;
+}}
+#langToggle .lang-active {{ color: var(--accent, #2D7A8E) !important; }}
+#langToggle .lang-sep {{ margin: 0 3px; color: var(--fg-mute) !important; }}
+
+/* === Language picker modal === */
+.lang-picker-overlay {{
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(15,23,42,0.65) !important;
+  backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 10000 !important;
+  animation: orebitFadeIn 0.25s ease-out;
+}}
+@keyframes orebitFadeIn {{ from {{ opacity: 0; }} to {{ opacity: 1; }} }}
+.lang-picker {{
+  background: var(--bg, #fff) !important;
+  border-radius: 14px !important;
+  padding: 32px 28px !important;
+  max-width: 360px !important;
+  width: calc(100% - 32px) !important;
+  text-align: center !important;
+  box-shadow: 0 20px 50px -8px rgba(0,0,0,0.25) !important;
+  border: 1px solid var(--border) !important;
+}}
+.lang-picker h3 {{ margin: 0 0 6px !important; font-size: 18px !important; color: var(--fg) !important; }}
+.lang-picker p {{ color: var(--fg-body) !important; font-size: 13px !important; margin: 0 0 20px !important; }}
+.lang-picker-options {{ display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; }}
+.lang-picker-options button {{
+  background: var(--bg-alt) !important;
+  border: 1px solid var(--border) !important;
+  padding: 14px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  text-align: center !important;
+  transition: all 0.15s !important;
+  font-family: inherit !important;
+}}
+.lang-picker-options button:hover {{
+  border-color: var(--accent, #2D7A8E) !important;
+  background: var(--accent-soft, rgba(45,122,142,0.12)) !important;
+}}
+.lang-picker-options button .flag {{ font-size: 22px; display: block; margin-bottom: 4px; }}
+.lang-picker-options button .name {{ font-weight: 600; font-size: 13px; color: var(--fg); }}
+.lang-picker-options button .sub {{ font-size: 11px; color: var(--fg-mute); margin-top: 2px; }}
+.lang-picker-skip {{
+  margin-top: 16px !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--fg-mute) !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  font-family: inherit !important;
+}}
+.lang-picker-skip:hover {{ color: var(--fg-body) !important; }}
+
+/* Tab completion checkmarks */
+.tab.completed::after {{
+  content: " ";
+  color: #16a34a;
+  font-weight: 700;
+  margin-left: 4px;
+}}
+
+/* Touch shims */
+button, .tab, .glossary-trigger {{ touch-action: manipulation; }}
+
+/* === FLOATING HELP BUBBLE (v1.9.4) === */
+/* Toasts must never intercept a tap. Added 2026-09-04: toast() builds a
+   fixed, z-index:9999 div with the default `pointer-events:auto`, and while
+   one is on screen it swallows clicks on whatever sits under it. Caught on
+   Core at 375px, where the "Sanitized 26 impossible grade values" toast
+   (679-724) covered the floating help button (672-724) -- elementFromPoint
+   at the button's own centre returned the toast, so the button looked
+   present and simply did not respond until the toast timed out. These are
+   pure text notifications with nothing clickable inside, so disabling
+   pointer events costs nothing; the inner rule keeps any future
+   button/link inside a toast usable. */
+#toast, .toast, .toast-container, [role="status"]:not(.btn) {{
+  pointer-events: none;
+}}
+#toast a, #toast button, .toast a, .toast button,
+.toast-container a, .toast-container button {{
+  pointer-events: auto;
+}}
+
+.orebit-help-bubble {{
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent) 0%, #0891b2 100%);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(13, 148, 136, 0.35);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: white;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}}
+.orebit-help-bubble:hover {{
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 12px 32px rgba(13, 148, 136, 0.45);
+}}
+.orebit-help-bubble:active {{ transform: translateY(0) scale(1.0); }}
+.orebit-help-menu {{
+  position: fixed;
+  bottom: 92px;
+  right: 24px;
+  background: white;
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 220px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+  border: 1px solid var(--border, #e2e8f0);
+  z-index: 998;
+  display: none;
+  animation: orebitSlideUp 0.18s ease-out;
+}}
+.orebit-help-menu.open {{ display: block; }}
+@keyframes orebitSlideUp {{
+  from {{ opacity: 0; transform: translateY(8px); }}
+  to {{ opacity: 1; transform: translateY(0); }}
+}}
+[data-theme="dark"] .orebit-help-menu,
+body.dark .orebit-help-menu {{
+  background: var(--bg-alt, #1e293b);
+  border-color: rgba(255,255,255,0.1);
+}}
+.orebit-help-menu button {{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--fg-body, #475569);
+  text-align: left;
+  transition: background 0.12s;
+}}
+.orebit-help-menu button:hover {{
+  background: var(--bg-alt, #f1f5f9);
+  color: var(--fg, #0f172a);
+}}
+.orebit-help-menu button .icon {{ font-size: 18px; flex-shrink: 0; width: 22px; text-align: center; }}
+.orebit-help-menu button .label {{ flex: 1; font-weight: 500; }}
+.orebit-help-menu button .kbd {{
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--fg-mute, #94a3b8);
+}}
+.orebit-help-menu .divider {{
+  height: 1px;
+  background: var(--border, #e2e8f0);
+  margin: 4px 0;
+}}
+@media (max-width: 720px) {{
+  /* Clear the bottom nav. Fixed 2026-09-04: at `bottom:16px` the bubble sat
+     INSIDE the nav's band (measured 375x812: bubble 744-796, nav 747-812) and
+     the nav, painted later, swallowed the tap -- elementFromPoint at the
+     bubble's own centre returned a nav icon, not the button. It looked
+     present and simply did not respond, so Help & FAQ and the embedded
+     manual were unreachable on mobile. Same offset convention as the toast
+     and the compute overlay. */
+  .orebit-help-bubble {{
+    bottom: calc(16px + 72px + env(safe-area-inset-bottom, 0px));
+    right: 16px; width: 52px; height: 52px; font-size: 24px;
+  }}
+  .orebit-help-menu {{
+    bottom: calc(80px + 72px + env(safe-area-inset-bottom, 0px));
+    right: 16px; left: 16px; min-width: auto;
+  }}
+}}
+
+/* === QUICK START CARD (v1.9.4) — pinned to top of Tutorial panel === */
+.orebit-quickstart {{
+  background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+  border: 1px solid #5eead4;
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin: 0 0 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+}}
+.orebit-quickstart-content {{ flex: 1 1 280px; min-width: 0; }}
+.orebit-quickstart h3 {{
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.3;
+}}
+.orebit-quickstart p {{
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.55;
+}}
+.orebit-quickstart-cta {{
+  background: linear-gradient(135deg, var(--accent) 0%, #0891b2 100%);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(13, 148, 136, 0.25);
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+}}
+.orebit-quickstart-cta:hover {{
+  box-shadow: 0 6px 14px rgba(13, 148, 136, 0.4);
+  transform: translateY(-1px);
+}}
+[data-theme="dark"] .orebit-quickstart,
+body.dark .orebit-quickstart {{
+  background: linear-gradient(135deg, rgba(13,148,136,0.12) 0%, rgba(8,145,178,0.12) 100%);
+  border-color: rgba(94,234,212,0.3);
+}}
+[data-theme="dark"] .orebit-quickstart h3,
+body.dark .orebit-quickstart h3 {{ color: #5eead4; }}
+[data-theme="dark"] .orebit-quickstart p,
+body.dark .orebit-quickstart p {{ color: #cbd5e1; }}
+@media (max-width: 720px) {{
+  .orebit-quickstart {{ padding: 14px 16px; gap: 12px; }}
+  .orebit-quickstart h3 {{ font-size: 15px; }}
+  .orebit-quickstart p {{ font-size: 13px; }}
+  .orebit-quickstart-cta {{ width: 100%; padding: 12px; font-size: 14px; }}
+}}
+
+/* === MOBILE BOTTOM TAB BAR (< 768px) === */
+@media (max-width: 767px) {{
+  body .wrap {{
+    padding-bottom: 64px !important;
+  }}
+  /* Hide sidebar tabs entirely — mobile-bottom-nav replaces them */
+  body .wrap > nav.tabs {{ display: none !important; }}
+
+  /* ─── Mobile Bottom Nav ─── */
+  .mobile-bottom-nav {{ display:none !important;position:fixed;bottom:0;left:0;right:0;background:var(--bg-card);border-top:1px solid var(--border);z-index:1000;padding:6px 0 8px;box-shadow:0 -2px 12px rgba(0,0,0,0.08) }}
+  .mobile-bottom-nav .nav-items {{ display:flex;justify-content:space-around;align-items:center;max-width:500px;margin:0 auto }}
+  .mobile-bottom-nav .nav-item {{ display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border:none;background:none;color:var(--fg-mute);font-size:10px;font-weight:500;cursor:pointer;border-radius:8px;transition:all .2s;font-family:inherit;-webkit-tap-highlight-color:transparent;min-width:56px }}
+  .mobile-bottom-nav .nav-item svg {{ width:22px;height:22px;stroke-width:1.8 }}
+  .mobile-bottom-nav .nav-item.active {{ color:var(--accent) }}
+  .mobile-bottom-nav .nav-item:active {{ transform:scale(0.92) }}
+  @media (max-width:768px) {{
+    .mobile-bottom-nav {{ display:block !important }}
+    .wrap {{ padding-bottom:88px }}
+  }}
+
+  /* ─── Anything pinned to the bottom of the viewport must clear the fixed
+     bottom nav. Reported from a real phone 2026-09-02 (Resource, "Compute All
+     Plots"): the progress strip sat ON TOP of the nav, hiding
+     Dashboard/Analysis/Results, and its own text was cut off at both screen
+     edges. Two separate causes, both fixed here rather than in the phase's
+     inline JS style so the rule lives once and can use a media query:
+
+     1. Overlap — bottom nav measures 65px tall; `bottom:18px` (overlay) and
+        `bottom:16px` (toast) both land inside it. Clear it explicitly.
+     2. Clipping — #computeOverlay's inline style carries `min-width:320px`
+        together with `left:50%; transform:translateX(-50%)`. In CSS min-width
+        BEATS max-width, so on a viewport narrower than 320px the box stays
+        320px wide and the centering transform pushes it off BOTH edges
+        (measured: 20px clipped each side at 280px, 10px at 300px, clean at
+        >=320px). Pinning it to left/right instead removes the whole class of
+        problem -- it can no longer be wider than the screen. A stylesheet
+        `!important` outranks a non-important inline style, so no JS change
+        is needed. Desktop (>768px) keeps the original centred 320-560px box. ─── */
+  #toast, .toast, [role="status"]:not(.btn) {{
+    bottom: calc(16px + 72px + env(safe-area-inset-bottom, 0px)) !important;
+  }}
+  #computeOverlay {{
+    bottom: calc(14px + 72px + env(safe-area-inset-bottom, 0px)) !important;
+    left: 10px !important; right: 10px !important;
+    transform: none !important;
+    min-width: 0 !important; max-width: none !important;
+  }}
+
+  /* ─── Mobile nav drawer (PLAN-uiux-desktop-mobile.md follow-up, 2026-09-02):
+     replaces the old .mobile-sub-tabs bar, which stacked ON TOP of the bottom
+     nav (permanently costing ~120px of a 812px viewport combined) and had no
+     scroll-affordance for its own horizontal overflow -- the same missing-
+     shadow bug as the Collar table (§2.1), just on a different element that
+     §10's shadow CSS never targeted. A vertical drawer sidesteps both: it
+     costs 0px until opened, and a vertical list has no "cut off mid-item"
+     failure mode the way a horizontal strip does. Triggered by the hamburger
+     button next to the logo (the logo itself stays inert -- .title-block is
+     hidden on mobile, so the hamburger is the one thing that appears there). ─── */
+  .mobile-nav-hamburger {{
+    display:none !important; align-items:center; justify-content:center;
+    width:36px; height:36px; margin-left:6px; border:1px solid var(--border);
+    border-radius:8px; background:var(--bg-card); color:var(--fg-body);
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }}
+  .mobile-nav-hamburger.show {{ display:inline-flex !important; }}
+  .mobile-nav-hamburger svg {{ width:20px; height:20px; stroke-width:2; }}
+  .mobile-nav-drawer-backdrop {{
+    display:none; position:fixed; inset:0; background:rgba(15,23,42,0.35);
+    z-index:1001; opacity:0; transition:opacity .2s ease;
+  }}
+  .mobile-nav-drawer-backdrop.show {{ display:block; opacity:1; }}
+  .mobile-nav-drawer {{
+    position:fixed; top:0; bottom:0; left:0; width:min(78vw, 300px);
+    background:var(--bg-card); z-index:1002; box-shadow:2px 0 16px rgba(0,0,0,0.18);
+    transform:translateX(-100%); transition:transform .22s ease;
+    display:flex; flex-direction:column; padding:16px 10px;
+    padding-top:calc(16px + env(safe-area-inset-top, 0px));
+    overflow-y:auto; box-sizing:border-box;
+  }}
+  .mobile-nav-drawer.show {{ transform:translateX(0); }}
+  .mobile-nav-drawer .drawer-title {{
+    font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--fg-mute); padding:4px 10px 10px;
+  }}
+  .mobile-nav-drawer .sub-tab {{
+    display:flex; align-items:center; gap:10px; width:100%; min-height:44px;
+    padding:10px 12px; border:none; border-radius:9px; background:none;
+    color:var(--fg-body); font-size:14px; font-weight:500; text-align:left;
+    cursor:pointer; font-family:inherit; -webkit-tap-highlight-color:transparent;
+  }}
+  .mobile-nav-drawer .sub-tab:active {{ background:var(--bg-alt); }}
+  .mobile-nav-drawer .sub-tab.active {{ color:var(--accent); background:var(--accent-bg); }}
+  .mobile-nav-drawer .sub-tab svg {{ width:18px; height:18px; stroke-width:1.8; flex-shrink:0; }}
+}}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODERN POLISH (v2.6.9) — micro-interactions, focus a11y, scrollbar,
+   tabular numerals, hover lift. Dark-first (Linear-inspired).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1. Keyboard-first focus states (a11y) */
+:focus-visible {{ outline:2px solid var(--accent) !important; outline-offset:2px; border-radius:4px; }}
+:focus:not(:focus-visible) {{ outline:none; }}
+
+/* 2. Micro-interactions — cards (lift on hover, desktop only) */
+.card {{
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease,
+              background-color .25s ease, color .25s ease;
+}}
+@media (hover:hover) and (pointer:fine) {{
+  .card:hover {{ border-color:var(--border-strong); box-shadow:0 10px 28px -14px rgba(0,0,0,0.22); }}
+}}
+
+/* 3. Micro-interactions — buttons */
+.btn {{
+  transition: transform .12s ease, background-color .15s ease, box-shadow .15s ease,
+              border-color .15s ease, filter .15s ease;
+}}
+@media (hover:hover) and (pointer:fine) {{
+  .btn:hover {{ filter:brightness(1.06); }}
+  .btn:active {{ transform:scale(0.98); }}
+}}
+
+/* 4. Tabular numerals — statistics, KPIs, tables (align columns) */
+.stat-value, [class*="kpi"], [class*="stat"], #tab1 td, #tab1 th,
+[id^="dash"][id$="Count"], [id^="dash"][id$="Val"] {{
+  font-variant-numeric: tabular-nums;
+}}
+
+/* 5. Custom scrollbar (subtle, theme-aware) */
+* {{ scrollbar-width:thin; scrollbar-color:var(--border-strong) transparent; }}
+*::-webkit-scrollbar {{ width:8px; height:8px; }}
+*::-webkit-scrollbar-thumb {{ background:var(--border-strong); border-radius:8px; }}
+*::-webkit-scrollbar-thumb:hover {{ background:var(--accent); }}
+*::-webkit-scrollbar-track {{ background:transparent; }}
+
+/* 6. Smooth theme transition */
+body, header.orebit-header, .panel {{
+  transition: background-color .25s ease, border-color .25s ease, color .25s ease;
+}}
+
+/* 7. Respect reduced-motion */
+@media (prefers-reduced-motion:reduce) {{
+  *, *::before, *::after {{ animation-duration:.01ms !important; transition-duration:.01ms !important; }}
+}}
+
+/* 8. Mobile: stack dashboard rich-grid to a single full-width column
+   (Core already has .dash-rich-grid set to 1fr; Assay/Resource only set inline
+   grid-template-columns:1fr 1fr, which squeezes tables to ~135px on phones). */
+@media (max-width:768px) {{
+  #dashRichGrid {{ grid-template-columns: 1fr !important; }}
+}}
+
+/* 9. Touch targets — gated on pointer:coarse, NOT on width.
+   A narrow desktop window is not a finger; sizing by width alone would
+   inflate controls for someone who just dragged their browser narrow.
+   Measured 2026-09-01 at 375px: raw checkbox/radio render 16x16 (the browser
+   default), well under the 24px WCAG 2.5.8 AA floor, and .btn renders 32px
+   tall against Apple HIG's 44pt. The delimiter picker in Core's import tab is
+   the worst case -- four 16px radios that decide how the whole file parses.
+   .btn is already inline-flex + align-items:center, so min-height keeps its
+   label centred rather than top-aligning it. */
+@media (pointer:coarse) {{
+  input[type="checkbox"], input[type="radio"] {{
+    width:24px; height:24px; min-width:24px; min-height:24px;
+  }}
+  /* The label is the real tap target for a checkbox -- give it room so the
+     finger has somewhere forgiving to land next to the 22px control. */
+  label:has(> input[type="checkbox"]), label:has(> input[type="radio"]) {{
+    min-height:40px; display:inline-flex; align-items:center; gap:8px;
+  }}
+  /* Corrected 2026-09-04 (docs/PLAN-uiux-2.2-2.5.md §2.2). This block used to
+     set BOTH `.btn` and `.btn.small` to min-height:40px, and the comment here
+     claimed that raised them. Measured via CSSOM at 375px, it did the
+     opposite for `.btn`: three earlier rules -- `@media (max-width:768px)
+     {{.btn}}`, and two unmediated `button, .tab, .btn, …` rules -- already give
+     44px, and this block, being last in source order, pulled it back DOWN to
+     40px. Same width, same page: finger = 40px, mouse = 44px. The old
+     ".btn renders 32px" note predates those three rules.
+
+     `.btn` is therefore no longer named here at all -- it inherits 44px.
+     `.btn.small` still is, but at 44px rather than 40px: it carries its own
+     `.btn.small, .badge {{min-height:32px}}` at two-class specificity, which
+     outranks the single-class 44px rules, so deleting this line outright
+     (as the plan's first draft said) would have dropped touch users from
+     40px to 32px -- a regression in the same direction the plan set out to
+     fix. Equal specificity, later source order, so 44px wins.
+
+     Row-action buttons inside dense tables get taller on touch as a result;
+     that is the intended trade, since a button a finger cannot reliably hit
+     is worse than a taller row. Table row height is set by cell padding, not
+     button height, and was measured unchanged (82px) across this change. */
+  .btn.small, button.btn.small {{ min-height:44px; }}
+  select, input[type="text"], input[type="number"],
+  input[type="search"], input[type="file"] {{ min-height:40px; }}
+}}
+
+/* 9b. `.table-toolbar` and `.filter-info` are used in Core's editable-table
+   markup but were never given any CSS at all -- so the search box, the
+   optional "clear sort" button and the hint text just flowed as inline
+   content. At 375px that wraps mid-phrase ("click a" / "header to sort"
+   orphaned onto its own line, measured 2026-09-01). Giving the container a
+   real flex context fixes the wrap and costs desktop nothing. */
+.table-toolbar {{
+  display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:8px 0;
+}}
+.table-toolbar > input[type="search"] {{ flex:1 1 220px; min-width:0; }}
+.filter-info {{ font-size:12px; color:var(--fg-mute); flex:0 1 auto; }}
+@media (max-width:600px) {{
+  /* The hint is advice, not a control -- let it drop to its own full line
+     rather than fight the search box for room. */
+  .filter-info {{ flex:1 0 100%; }}
+}}
+
+/* 9c. Mobile `.row-controls` stacks every child into its own full-width row.
+   That is right when the row holds form fields (the existing rule below it
+   sets those to width:100%), but wrong for a group of three short action
+   buttons -- measured at 375px it burned ~200px of height before any data
+   was visible. Keep the stack only when the group actually contains a field;
+   let button-only groups wrap as a normal row. Browsers without :has()
+   simply keep today's behaviour. */
+@media (max-width:768px) {{
+  .row-controls:not(:has(> label)):not(:has(> input)):not(:has(> select)) {{
+    flex-direction:row; flex-wrap:wrap; align-items:center;
+  }}
+}}
+
+/* 10. Scrolling shadows on horizontally scrollable tables.
+   Wide tables already scroll, but at 375px they simply look cut off -- a
+   column ends mid-number with nothing saying "there is more to the right".
+   This is the background-attachment local/scroll technique: the two `local`
+   layers ride with the content and mask the shadow when that edge is
+   reached, so the shadow shows ONLY while there is more to scroll toward.
+   Pure CSS, no scroll listener, and it degrades to nothing if a browser
+   ignores it. Targets inline `overflow-x:auto` (how most of these wrappers
+   are written) as well as the one named wrapper class. */
+.editable-table-wrap,
+[style*="overflow-x:auto"],
+[style*="overflow-x: auto"] {{
+  background-image:
+    linear-gradient(to right, var(--bg-card) 30%, rgba(0,0,0,0)),
+    linear-gradient(to left,  var(--bg-card) 30%, rgba(0,0,0,0)),
+    linear-gradient(to right, rgba(15,23,42,0.16), rgba(0,0,0,0) 14px),
+    linear-gradient(to left,  rgba(15,23,42,0.16), rgba(0,0,0,0) 14px);
+  background-position: left center, right center, left center, right center;
+  background-repeat: no-repeat;
+  background-size: 32px 100%, 32px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}}
+
+/* 11. Per-tab help box collapses to its title on touch devices, expanding on
+   tap. Measured 2026-09-05: the description alone is 104px, 16.5% of the
+   distance to the first data row on a 375px Collar tab (docs/PLAN-uiux-2.2-
+   2.5.md §3.2). The DOM transform (div -> details/summary) happens in JS
+   (src/shared/ui/index.js's _collapseTabHelpOnTouch(), called after every
+   _injectTabHelp -- that function rebuilds the plain div on every tab AND
+   language switch, so the transform must re-run there, not just once at
+   load). This block only styles whatever shape that JS produces; gated on
+   the same pointer:coarse media query so desktop's `.tab-help` (a plain div
+   there, JS leaves it alone) is untouched. */
+@media (pointer:coarse) {{
+  details.tab-help summary {{
+    list-style: none;
+    cursor: pointer;
+  }}
+  details.tab-help summary::-webkit-details-marker {{ display: none; }}
+  details.tab-help summary strong::after {{
+    content: ' \25be';
+    font-weight: 400;
+    color: var(--fg-mute);
+  }}
+  details.tab-help[open] summary strong::after {{ content: ' \25b4'; }}
+  details.tab-help span {{ display: block; margin-top: 6px; }}
+}}
+
+/* 12. Per-table validation hint collapses to its first finding when there is
+   more than one, on every device (not gated on pointer:coarse like #11 --
+   a long stacked list of findings is equally noisy on desktop and mobile).
+   Core's renderEditableTable emits a plain .hint div when there are 0 or 1
+   findings (unchanged) and a details/summary only when there are 2+, so this
+   only styles a shape that already signals "there's more". Severity classes
+   (.hint.bad etc, defined per-phase) are untouched -- this only adds
+   summary affordance and the pattern already used by _p1 desurvey-style
+   "+N more" (../locales/core/{{en,id}}.json's core.tbl.moreIssues). */
+details.hint summary {{
+  list-style: none;
+  cursor: pointer;
+}}
+details.hint summary::-webkit-details-marker {{ display: none; }}
+details.hint .hint-more-count {{
+  color: var(--fg-mute);
+  font-weight: 400;
+}}
+details.hint .hint-more-count::before {{ content: '\25be '; }}
+details.hint[open] .hint-more-count::before {{ content: '\25b4 '; }}
+</style>

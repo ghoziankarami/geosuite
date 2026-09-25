@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build all three modules
+        run: node build/build.mjs Core Assay Resource
+
+      - name: Node known-answer and import tests
+        run: node tests/run-node-tests.mjs
+
+      - name: Install Playwright + Chromium
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: End-to-end known-answer test (Core -> Assay -> Resource)
+        run: |
+          cp -r vendor dist/
+          python -m http.server 8767 -d dist >/dev/null 2>&1 &
+          python -m http.server 8768 -d dist >/dev/null 2>&1 &
+          python -m http.server 8769 -d dist >/dev/null 2>&1 &
+          sleep 2
+          python tests/test_pipeline_known_answer.py
+          python tests/test_lab_conventions.py
+          python tests/test_estimation_inputs.py
+
+      - name: Tutorials on real data still match the app (docs/vignettes)
+        run: python tests/test_vignettes.py
+
+      - name: Installable offline app (macOS / Linux route)
+        run: python tests/test_pwa_install.py
+
+      - name: Upload built modules
+        uses: actions/upload-artifact@v4
+        with:
+          name: geosuite-dist
+          path: dist/*.html

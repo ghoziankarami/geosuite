@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use Orebit GeoSuite in a report, thesis or paper, please cite it as below."
+title: "Orebit GeoSuite: offline drillhole-to-resource-estimation tools"
+type: software
+authors:
+  - family-names: Karami
+    given-names: Ghozian Islam
+    affiliation: Orebit
+license: GPL-3.0-only
+repository-code: "https://github.com/ghoziankarami/geosuite"
+url: "https://geosuite.orebit.id"
+keywords:
+  - geology
+  - drillhole
+  - geostatistics
+  - kriging
+  - mineral resource estimation
+  - KCMI

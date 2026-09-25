@@ -1,192 +1,170 @@
-<div align="center">
+# Orebit GeoSuite
 
-# ⛏️ Orebit GeoSuite
+**Drillhole data to a first resource estimate — free, offline, open source.**
+Three connected tools for exploration geologists, in English and Bahasa Indonesia:
 
-**Drillhole data preparation · EDA · Resource estimation — 100% offline Windows EXE**
+| Module | What it does |
+|---|---|
+| **Orebit Core** | Import collar / survey / assay / lithology tables (any column names, EN or ID headers), validate them, desurvey, QAQC, export a clean master file. |
+| **Orebit Assay** | Statistics per element and domain, top-cut, declustering, automatic or manual domaining, compositing, variography. |
+| **Orebit Resource** | Block model, ordinary kriging / IDW / nearest neighbour, cross-validation, a preliminary confidence screen (not a classification), grade–tonnage, contained metal, a reporting-readiness checklist and PDF report. |
 
-[![Version](https://img.shields.io/badge/version-2.9.4-0d9488?style=flat-square)](https://github.com/ghoziankarami/geosuite/releases)
-[![Platform](https://img.shields.io/badge/platform-Windows-0078d6?style=flat-square&logo=windows&logoColor=white)](https://github.com/ghoziankarami/geosuite)
-[![Offline](https://img.shields.io/badge/offline-first-brightgreen?style=flat-square)]()
-[![License](https://img.shields.io/badge/free-forever-5980a6?style=flat-square)]()
-[![Standards](https://img.shields.io/badge/SNI%204726%3A2019-KCMI%20%E2%80%A2%20JORC-orange?style=flat-square)]()
+Each module is a single self-contained tool that runs offline on your laptop: your
+data never leaves your computer. No account, no trial, no paid tier.
 
-**Geological data workflows built for mineral exploration — from raw drillhole CSV to resource-ready output, fully offline.**
+**Try it:** [geosuite.orebit.id](https://geosuite.orebit.id) (loads with a sample dataset) ·
+**Desktop (Windows):** [Releases](https://github.com/ghoziankarami/geosuite/releases) ·
+**Tutorials on real data:** [docs/vignettes](docs/vignettes/README.md) ·
+**Methodology:** [docs/METHODOLOGY.md](docs/METHODOLOGY.md) ·
+**Input format:** [docs/DATA-FORMAT.md](docs/DATA-FORMAT.md) ·
+**Manual:** [geosuite.orebit.id/docs](https://geosuite.orebit.id/docs/)
 
-![Multivariate Analysis](assets/s4.png)
+## Install
 
-</div>
+| Your computer | How |
+|---|---|
+| **Mac** | Open [geosuite.orebit.id/Core.html](https://geosuite.orebit.id/Core.html) in **Safari → File → Add to Dock** (macOS 14 Sonoma or later), or in Chrome/Edge click **Install app**. GeoSuite then opens from the Dock as its own app and works offline. |
+| **Linux, ChromeOS** | Chrome/Edge/Chromium: **Install app** (button in the header, or the install icon in the address bar). |
+| **Windows** | Same as above, or the Desktop Edition from [Releases](https://github.com/ghoziankarami/geosuite/releases). |
+| **No internet at all / your own server** | `node build/build.mjs && cp -r vendor dist/` and serve `dist/` from any static web server — it is a complete installable app. |
 
----
+The installed app caches all three modules on first launch; updates arrive the next time
+it opens with a connection. Your data stays on your computer either way.
 
-## 📦 What is GeoSuite?
+> GeoSuite is a screening and data-preparation tool. Its output is not a Mineral
+> Resource classification; public reporting under KCMI 2017 / JORC 2012 needs a
+> Competent Person. See [METHODOLOGY.md](docs/METHODOLOGY.md#methodology--what-geosuite-computes-and-what-it-does-not).
 
-Orebit GeoSuite is a **geologist-first toolkit** for mineral exploration data. It runs **100% offline** — perfect for field camps, sites without internet, and privacy-sensitive environments.
+## Learn it with real data
 
-**Free to use, permanently** — web and Desktop Edition alike, no trial, no paywall. Sustained by voluntary [Support Orebit](https://saweria.co/orebitindonesia) contributions from users who find it valuable.
+| Tutorial | Data | What it teaches |
+|---|---|---|
+| [01 — Thalanga VMS](docs/vignettes/en/01-thalanga-vms.md) · [ID](docs/vignettes/01-thalanga-vms.md) | Geological Survey of Queensland, CC BY 4.0 (the built-in sample) | lab codes, validation with an audit trail, cropping a regional compilation, populations vs outliers, grade-shell domaining without lithology, why defaults gave 276 Mt, a check against 1989–1998 production |
+| [02 — Babbitt Cu-Ni](docs/vignettes/en/02-babbitt-cuni.md) · [ID](docs/vignettes/02-babbitt-cuni.md) | NRRI Duluth Complex database via pygslib | files in feet, 61 % of the core never assayed, a justified top-cut, dense data and smoothing, estimate vs an RPEEE-constrained resource |
 
-Workflows are aligned with **SNI 4726:2019, KCMI, and JORC** reference standards. Standards are
-reference points, not a substitute for judgement: finalising a resource statement requires
-independent Competent Person review.
+Every number in these tutorials is produced by a script that drives the real app
+(`docs/vignettes/tools/`), re-derived independently, and re-checked by
+`tests/test_vignettes.py` — the text cannot silently disagree with the software.
 
-| Module | Function |
-|--------|----------|
-| **Core** | Drillhole validation, desurvey, compositing, merge & export |
-| **Assay** | EDA: statistics, top-cut, drill spacing, domaining |
-| **Resource** | Variography, ordinary kriging, block model, grade-tonnage, preliminary confidence screening |
-| **Bundle** | All three modules in one ZIP |
+More:
 
-> **On classification.** Resource reports a *preliminary confidence* screen. That is
-> not a Measured/Indicated/Inferred classification and is not a substitute for one —
-> see [the docs](https://geosuite.orebit.id/docs/) for what the distinction means in practice.
+- **[Epithermal gold, start to finish](https://gist.github.com/ghoziankarami/957b05c882f57097441d9388c1e3fa5c)** —
+  all three modules on a synthetic vein, with a self-verification script: why pooling
+  domains reports 0.43 g/t where the vein is 5.59 g/t, what a 20 g/t top-cut costs
+  (17.2 % of the metal), why a 7.50 m downhole width is 5.40 m true width.
+- **[orebit-datasets](https://github.com/ghoziankarami/orebit-datasets)** — three synthetic
+  drillhole datasets under CC BY 4.0, same four-file layout:
 
-> 💡 Try the **free web tools** at [geosuite.orebit.id/try/](https://geosuite.orebit.id/try/) — full features, no install, no signup.
+  | Dataset | Style | Grade CV | The problem it poses |
+  |---|---|---|---|
+  | `01-emas-epitermal` | Low-sulphidation Au–Ag vein | 1.66 | erratic high grades; top-cut and domaining decide the answer |
+  | `02-nikel-laterit` | Ni–Co laterite over ultramafic | 0.28 | smooth layered regolith; horizon boundaries, not outliers |
+  | `03-timah-placer` | Alluvial cassiterite (kaksa) | 1.42 | thin basal pay layer, volumetric grade in kg/m³ |
 
----
+## Why trust the numbers
 
-## 🚀 Quick Start (2 steps)
+- Every calculation, default and limit is written down in [METHODOLOGY.md](docs/METHODOLOGY.md).
+- A known-answer test drives real CSV files through all three modules and re-derives
+  desurvey, compositing, IDW, kriging (with its own independent solver), grade–tonnage
+  and contained metal, then compares them with what the app reports.
+- Two tutorials drive real public drillhole databases through the whole chain on every
+  change (above). Building them found and fixed a dozen defects — samples stacked on a
+  collar, duplicate composite coordinates, a cross-validation that found neighbours for
+  10 samples of 200, results that changed from run to run.
+- Imports never drop or change data silently: every upload shows what was loaded,
+  what was rejected and why, and every below-detection or missing-sample code that
+  was converted.
+- Found a wrong number? [Report it](https://github.com/ghoziankarami/geosuite/issues/new?template=wrong-numbers.md)
+  — these reports are fixed first.
 
-**Step 1 — Double-click `Orebit-*.exe`**
-- WebView2 Runtime auto-installs in the background (one-time)
-- A free license key request prompt appears
+## Build from source
 
-**Step 2 — Request your free license key**
-- Enter your email — a free, permanent key is sent instantly
-- Paste the key → click **Activate** → done!
+Requirements: Node.js ≥ 18 and Python ≥ 3.9 (for the build-time patchers). No npm packages.
 
-Activation is **once per machine**. After activation the app opens directly every time.
-
----
-
-## 🖼️ Product Screenshots
-
-### Core — Project Dashboard
-![Core Dashboard](assets/s2.png)
-
-### Assay — EDA Dashboard
-![Assay EDA](assets/s1.png)
-
-### Data Import
-![Data Import](assets/s3.png)
-
-### Multivariate Analysis
-![Multivariate](assets/s4.png)
-
----
-
-## 🔬 Workflow — 3 Stages
-
-```
-Stage 1 — Core      → validate + composite + desurvey drillhole
-Stage 2 — Assay     → exploratory data analysis (EDA)
-Stage 3 — Resource  → resource estimation (JORC/KCMI/SNI)
-```
-
-Read **`docs/Orebit-GeoSuite.pdf`** (included in every package) for the complete manual — CSV format for collar/survey/assay, parameter reference, and export guide.
-
----
-
-## 📚 Learn it with real data
-
-You do not need your own drillhole data to start. Everything below is free and openly licensed.
-
-### Worked tutorial — epithermal gold, start to finish
-
-**[From drillhole CSV to a grade-tonnage curve →](https://gist.github.com/ghoziankarami/957b05c882f57097441d9388c1e3fa5c)**
-
-A complete run through all three modules on a synthetic epithermal gold vein:
-validation → desurvey → compositing → EDA → top-cut → domaining → variography →
-ordinary kriging → grade-tonnage. Every number in it is measured from the data,
-and it ships with a **self-verification script** that recomputes all of them from
-the raw CSVs so you can check the tutorial rather than trust it.
-
-Decisions it walks through, with the actual trade-off numbers:
-
-- why pooling domains reports **0.43 g/t** where the vein is **5.59 g/t** (13× apart)
-- what a top-cut at 20 g/t really costs — **17.2% of the metal**
-- why a downhole width of **7.50 m** is a true width of **5.40 m**, a 39% overstatement
-- why an omnidirectional variogram on 30 m sections looks like pure nugget
-
-### Open datasets
-
-**[orebit-datasets →](https://github.com/ghoziankarami/orebit-datasets)** — three fully
-synthetic drillhole datasets under **CC BY 4.0**, built around deposit styles that
-matter in Indonesia. No licence ambiguity: every number was generated, so there is
-no third party to ask.
-
-| Dataset | Style | Grade CV | The estimation problem it poses |
-|---|---|---|---|
-| `01-emas-epitermal` | Low-sulphidation Au–Ag vein | **1.66** | Erratic high grades; top-cut and domaining decide the answer |
-| `02-nikel-laterit` | Ni–Co laterite over ultramafic | **0.28** | Smooth layered regolith; the problem is horizon boundaries, not outliers |
-| `03-timah-placer` | Alluvial cassiterite (kaksa) | **1.42** | Thin basal pay layer, volumetric grade in kg/m³ |
-
-Same four-file layout (`collar` · `survey` · `assay` · `litho`) across all three, so a
-workflow built on one runs on the others.
-
-### Reference documentation
-
-**[geosuite.orebit.id/docs →](https://geosuite.orebit.id/docs/)** — a 15-minute quickstart,
-workflow guides (QA/QC, top-cut, variogram modelling, block size, estimation validation,
-reporting), a full parameter reference for every control in all three modules, and concept
-pages explaining *why* — why minimum curvature, what kriging variance is and is not, how to
-read a swath plot.
-
----
-
-## 📦 Package Layout
-
-```
-Orebit-{Module}-vX.Y.Z.zip
-├── Orebit-Core.exe          ← double-click, ready to use
-├── docs/
-│   └── Orebit-GeoSuite.pdf
-└── README.txt               ← guide + license
+```bash
+node build/build.mjs            # builds dist/Core.html, dist/Assay.html, dist/Resource.html
+npm test                        # fast known-answer and import tests (Node only)
 ```
 
-> WebView2 Runtime auto-installs on first run. No manual setup needed.
+Open `dist/Core.html` from a local web server (`python3 -m http.server -d dist`) —
+the pages load `vendor/` scripts by relative path, so copy `vendor/` next to them
+(`cp -r vendor dist/`).
+
+Full browser test (Playwright + Chromium):
+
+```bash
+pip install playwright && playwright install chromium
+cp -r vendor dist/
+python3 -m http.server 8767 -d dist & python3 -m http.server 8768 -d dist & python3 -m http.server 8769 -d dist &
+python3 tests/test_pipeline_known_answer.py
+```
+
+### Repository layout
+
+```
+phases/        Core.html, Assay.html, Resource.html — the application source (edit these)
+src/shared/    code shared by all three modules (import, columns, grade codes, geostatistics, UI)
+src/assets/    fonts and sample datasets, inlined at build time
+src/locales/   English and Indonesian UI text
+build/         build.mjs resolves the @orebit-inline markers, then runs the patchers
+vendor/        third-party libraries (see THIRD_PARTY_NOTICES.md)
+tests/         known-answer, browser and tutorial tests
+docs/          methodology, data format, manual, tutorials (docs/vignettes)
+```
+
+`phases/*.html` contain `/* @orebit-inline: … */` markers and are **not runnable
+before the build**. Always open the files in `dist/`.
+
+## Troubleshooting (Windows Desktop Edition)
+
+- **"Windows protected your PC" (SmartScreen):** *More info* → *Run anyway*, for a file
+  from the official Releases page only. Or install through Chrome/Edge instead (no warning).
+- **The EXE opens no window:** WebView2 did not install. Get the *Evergreen Standalone
+  Installer* from [Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
+  and run the EXE again.
+- **Older versions asked for a licence key.** From v3.0 there is none; download the
+  current release.
+
+## Contributing
+
+Bug reports with a small CSV that reproduces them are the most valuable contribution.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Security issues: [SECURITY.md](SECURITY.md).
+
+## Support the project
+
+GeoSuite is free. If it saves you time, you can support development with a donation of
+any amount at [saweria.co/orebitindonesia](https://saweria.co/orebitindonesia).
+Training and institutional support: support@orebit.id.
+
+## License
+
+GeoSuite is free software under the [GNU General Public License v3.0](LICENSE).
+You may use, study, share and modify it; distributed modified versions must remain
+under the GPL with their source available. Third-party components keep their own
+licences — see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ---
 
-## 🆘 Troubleshooting
+## Bahasa Indonesia
 
-**Q: "Windows protected your PC" (SmartScreen)**
-**A:** Click **More info** → **Run anyway**. New software without an EV certificate triggers this — normal and safe.
+**Dari data bor sampai estimasi sumber daya awal — gratis, offline, open source.**
+Orebit Core (impor, validasi, desurvey, QAQC), Orebit Assay (statistik, top-cut,
+declustering, domain, komposit, variogram) dan Orebit Resource (block model, kriging,
+kurva grade–tonase, logam terkandung, laporan). Data Anda tidak pernah meninggalkan
+laptop. Tanpa akun, tanpa trial, tanpa versi berbayar.
 
-**Q: EXE opens no window at all**
-**A:** WebView2 failed to auto-install. Fix:
-1. Install manually: https://developer.microsoft.com/en-us/microsoft-edge/webview2/
-2. Choose **"Evergreen Standalone Installer"**
-3. Run the EXE again
+**Pasang di Mac:** buka [geosuite.orebit.id/Core.html](https://geosuite.orebit.id/Core.html) di Safari →
+File → Add to Dock (macOS 14+), atau di Chrome/Edge klik **Install app**. GeoSuite lalu terbuka
+dari Dock sebagai aplikasi sendiri dan bisa dipakai offline. Linux/ChromeOS: Chrome/Edge → Install app.
+Windows: cara yang sama, atau Desktop Edition dari Releases.
 
-**Q: "Invalid key"**
-**A:** (1) Ensure the key has no extra spaces. (2) Keys are case-sensitive. (3) Confirm the key matches the product (BNDL unlocks all modules). (4) Contact orebit.id@gmail.com if it still fails — free replacement keys are sent on request.
+Hasil GeoSuite adalah *screening* pra-estimasi, bukan klasifikasi sumber daya;
+pelaporan publik KCMI 2017 / JORC 2012 tetap membutuhkan Competent Person. Semua
+metode, parameter bawaan, dan batasannya tertulis di [docs/METHODOLOGY.md](docs/METHODOLOGY.md).
 
-**Q: Does it run on Linux / Mac?**
-**A:** The EXE is Windows-only. Use the full-featured web tools at [geosuite.orebit.id/try/](https://geosuite.orebit.id/try/) instead — they run on your own laptop, whatever the operating system.
+**Tutorial dengan data nyata** (Bahasa Indonesia): [Thalanga](docs/vignettes/01-thalanga-vms.md) ·
+[Babbitt](docs/vignettes/02-babbitt-cuni.md) — setiap angka diukur ulang dari aplikasi pada tiap perubahan.
 
----
-
-## 📞 Contact & Support
-
-- **Email**: [orebit.id@gmail.com](mailto:orebit.id@gmail.com)
-- **Web**: [orebit.id](https://orebit.id) · [geosuite.orebit.id](https://geosuite.orebit.id)
-- **Support hours**: 09:00–17:00 WIB (Mon–Fri)
-
----
-
-## 📜 License
-
-**Free, permanent license.** Core, Assay, and Resource are free to use — web and Desktop Edition alike — for personal and business work, with no trial period or expiry.
-
-**NOT permitted:** Public redistribution, or reselling access to the EXE/key.
-
-Orebit GeoSuite is sustained by voluntary, open-amount support from users who find it valuable — see [Support Orebit](https://saweria.co/orebitindonesia). This is entirely optional and not required to use the software.
-
-For team / company / multi-seat deployments, contact [orebit.id@gmail.com](mailto:orebit.id@gmail.com).
-
----
-
-<div align="center">
-
-© 2026 [Orebit](https://orebit.id) · Free to use · Built by [Ghozian Islam Karami](https://github.com/ghoziankarami)
-
-</div>
+Menemukan angka yang salah? [Laporkan](https://github.com/ghoziankarami/geosuite/issues/new?template=wrong-numbers.md)
+dengan CSV kecil yang mereproduksinya — laporan seperti ini diprioritaskan.
+Lisensi: GPL-3.0.

@@ -1,0 +1,483 @@
+{
+  "vignette": "02-babbitt-cuni",
+  "data": {
+    "name": "Babbitt Cu-Ni drill database (pygslib Tutorial 1)",
+    "source": "NRRI, University of Minnesota -- Duluth Complex database (NRRI/TR-2003/21)",
+    "distributed_by": "opengeostat/pygslib@c26c3bf (MIT)",
+    "url": "https://github.com/opengeostat/pygslib/tree/master/doc/source/Tutorial_1/Babbitt"
+  },
+  "parameters": {
+    "length_unit": "ft",
+    "composite_m": 3.048,
+    "cutoff_pct_cu": 0.2,
+    "block_m": [
+      50,
+      50,
+      15
+    ],
+    "search": {
+      "srMaj": 200,
+      "srSemi": 200,
+      "srMin": 30,
+      "sAz": 0,
+      "sDip": 0,
+      "sMinN": 4,
+      "sMaxN": 16
+    }
+  },
+  "raw": {
+    "holes": 399,
+    "surveys": 2628,
+    "assay_rows": 35616,
+    "collar_columns": [
+      "BHID",
+      "XCOLLAR",
+      "YCOLLAR",
+      "ZCOLLAR"
+    ],
+    "assay_columns": [
+      "BHID",
+      "FROM",
+      "TO",
+      "CU",
+      "NI",
+      "S",
+      "FE"
+    ],
+    "length_mode_ft": 10.0,
+    "length_mode_share_pct": 78.4,
+    "extent_ft": [
+      18006,
+      11316
+    ],
+    "extent_m": [
+      5488,
+      3449
+    ],
+    "volume_factor_if_read_as_m": 35.3,
+    "drilled_m": 164967,
+    "assayed_m": 63726,
+    "unassayed_m": 101241,
+    "unassayed_pct": 61.4,
+    "cu_mean_assayed": 0.3638,
+    "cu_mean_zero_filled": 0.1405,
+    "cu_p50": 0.300000012,
+    "cu_p99": 1.70000005,
+    "cu_p999": 6.5,
+    "cu_max": 24.3999996,
+    "cu_n": 23685,
+    "metal_share": {
+      "0.1": {
+        "metal_pct": 97.3,
+        "length_pct": 77.7,
+        "mean_cu": 0.456
+      },
+      "0.2": {
+        "metal_pct": 91.4,
+        "length_pct": 62.5,
+        "mean_cu": 0.532
+      },
+      "0.3": {
+        "metal_pct": 82.1,
+        "length_pct": 48.5,
+        "mean_cu": 0.616
+      },
+      "0.5": {
+        "metal_pct": 58.5,
+        "length_pct": 26.4,
+        "mean_cu": 0.806
+      }
+    },
+    "cu_ni_r": 0.711,
+    "ni_cu_ratio_median": 0.241,
+    "single_station_holes": 2,
+    "topcut_check": {
+      "cut": 3.0,
+      "assays_above": 94,
+      "metal_removed_length_weighted_pct": 1.68,
+      "m1_cv_raw": 1.07,
+      "m1_cv_capped": 0.66,
+      "m1_p995": 3.5
+    },
+    "B1_001_expected_deepest_midz": 382.53,
+    "holes_without_collar_depth": 399
+  },
+  "core": {
+    "tables": {
+      "collar": 399,
+      "survey": 2628,
+      "assay": 35616,
+      "geology": 0
+    },
+    "length_unit_source": "ft",
+    "collar_first": {
+      "hole_id": "34873",
+      "x": 699827.228232,
+      "y": 126216.41508,
+      "z": 484.632
+    },
+    "grade_columns": [
+      "fe_pct",
+      "s_pct",
+      "CU",
+      "NI"
+    ],
+    "img_import": "babbitt-01-core-import-feet.png",
+    "checks": [
+      {
+        "name": "Holes in Assay but not in Collar",
+        "value": "0 orphan",
+        "severity": "ok"
+      },
+      {
+        "name": "Holes in Survey but not in Collar",
+        "value": "0 orphan",
+        "severity": "ok"
+      },
+      {
+        "name": "Holes in Geology but not in Collar",
+        "value": "0 orphan",
+        "severity": "ok"
+      },
+      {
+        "name": "Collar without Survey (assumed vertical)",
+        "value": "0 hole",
+        "severity": "ok"
+      },
+      {
+        "name": "Collar without Assay",
+        "value": "0 hole",
+        "severity": "ok"
+      },
+      {
+        "name": "Collar without Geology",
+        "value": "399 hole",
+        "severity": "warn"
+      },
+      {
+        "name": "Collar X/Y in projected metres (not lat/long degrees)",
+        "value": "ok",
+        "severity": "ok"
+      },
+      {
+        "name": "Duplicate collar hole_id",
+        "value": "0 duplicate",
+        "severity": "ok"
+      },
+      {
+        "name": "collar required-field completeness",
+        "value": "80.0%",
+        "severity": "fail"
+      },
+      {
+        "name": "survey required-field completeness",
+        "value": "100.0%",
+        "severity": "ok"
+      },
+      {
+        "name": "assay required-field completeness",
+        "value": "100.0%",
+        "severity": "ok"
+      },
+      {
+        "name": "Assay interval gaps",
+        "value": "0 gap",
+        "severity": "ok"
+      },
+      {
+        "name": "Assay interval overlaps",
+        "value": "0 overlap",
+        "severity": "ok"
+      },
+      {
+        "name": "Below-detection (negative) grade values",
+        "value": "0 sample",
+        "severity": "ok"
+      },
+      {
+        "name": "Linkage verdict — ready for Desurvey",
+        "value": "READY",
+        "severity": "ok"
+      }
+    ],
+    "img_validation": "babbitt-02-core-validation.png",
+    "desurvey": {
+      "convention": "positive_down",
+      "holes": 399,
+      "bad_survey": 0,
+      "B1_001_trace_end": {
+        "depth": 158.496,
+        "z": 356.78875760178164
+      }
+    },
+    "img_desurvey": "babbitt-03-core-desurvey.png",
+    "export_lengths_line": "# lengths: metres (converted from feet x0.3048 on import: collar x/y/z/depth, survey depth, from/to)",
+    "export": {
+      "rows": 35616,
+      "columns": [
+        "hole_id",
+        "from_m",
+        "to_m",
+        "midx",
+        "midy",
+        "midz",
+        "fe_pct",
+        "s_pct",
+        "CU",
+        "NI"
+      ]
+    },
+    "B1_001_deepest_midz": 382.53,
+    "page_errors": []
+  },
+  "assay": {
+    "elements": [
+      "cu_pct",
+      "s_pct",
+      "ni_pct",
+      "fe_pct"
+    ],
+    "unit_conversions": [],
+    "img_stats": "babbitt-04-assay-stats.png",
+    "topcut": {
+      "n": 23684,
+      "disintegration": null,
+      "p99": 1.70000005,
+      "p999": 6.5,
+      "max": 24.3999996,
+      "body_departure": {
+        "value": 0.720000029,
+        "pct": 85.98843100827564
+      }
+    },
+    "img_topcut": "babbitt-05-assay-topcut.png",
+    "domains": {
+      "M0-Background": 20246,
+      "M1-Mineralised": 15370
+    },
+    "img_domain": "babbitt-06-assay-domain.png",
+    "topcut_applied": {
+      "cut": 3,
+      "affected": 94,
+      "n": 23685,
+      "metal_removed_pct": 2.994312144073099
+    },
+    "img_topcut_applied": "babbitt-05b-assay-topcut-applied.png",
+    "composites": {
+      "n": 55119,
+      "dropped_tail_m": 35.692,
+      "gap_m": 0,
+      "overlaps": 0
+    },
+    "img_composite": "babbitt-07-assay-composite.png",
+    "export": {
+      "rows": 55119,
+      "columns": [
+        "hole_id",
+        "from_m",
+        "to_m",
+        "informed_length",
+        "coverage",
+        "midx",
+        "midy",
+        "midz",
+        "domain",
+        "cu_pct",
+        "s_pct",
+        "ni_pct",
+        "fe_pct"
+      ],
+      "topcut_line": "# topcut: cu_pct cut=3.0000 affected=94/23684 metal_removed=2.99% applied_by=manual",
+      "domains": {
+        "M0-Background": 41655,
+        "M1-Mineralised": 13464
+      },
+      "under_half_informed": 33236
+    },
+    "page_errors": []
+  },
+  "independent_composites": {
+    "m1_n": 13464,
+    "m1_cu_mean": 0.5235,
+    "m1_cu_cv": 0.59,
+    "m1_cu_max": 3.0,
+    "m1_extent_m": [
+      4824,
+      3453,
+      869
+    ],
+    "m1_z_range": [
+      -378,
+      491
+    ]
+  },
+  "resource": {
+    "setup": {
+      "element": "cu_pct",
+      "domain": "M1-Mineralised",
+      "unit": "%",
+      "samples": 13464
+    },
+    "img_setup": "babbitt-08-resource-setup.png",
+    "variogram": {
+      "type": "exponential",
+      "nugget": 0.06306456369652136,
+      "sill": 0.10510760616086894,
+      "range": 72.5
+    },
+    "img_variogram": "babbitt-09-resource-variogram.png",
+    "suggested_block_size": [
+      55,
+      55,
+      28
+    ],
+    "blocks": {
+      "size": [
+        50,
+        50,
+        15
+      ],
+      "dims": [
+        98,
+        71,
+        59
+      ],
+      "n": 237475,
+      "density": 2.8
+    },
+    "estimate_seconds": 4,
+    "spacing_note": {
+      "median_m": 107,
+      "p90_m": 150
+    },
+    "estimate": {
+      "ok": {
+        "n": 74940,
+        "mean": 0.4792733152248095,
+        "min": 0.21369583904743195,
+        "max": 2.4845972061157227
+      },
+      "idw": {
+        "n": 74940,
+        "mean": 0.48337748734763153,
+        "min": 0.2070433497428894,
+        "max": 2.887444496154785
+      },
+      "nn": {
+        "n": 74940,
+        "mean": 0.46038904840035666,
+        "min": 0.20000000298023224,
+        "max": 3
+      },
+      "tonnes_Mt": 7868.699999999999,
+      "cu_metal_kt": 37712.57935509458
+    },
+    "img_estimate": "babbitt-10-resource-estimate.png",
+    "crossval": {
+      "metrics": {
+        "idw": {
+          "n": 194,
+          "mae": 0.1408927768342148,
+          "rmse": 0.21065993550520032,
+          "r2": 0.6158037801004984,
+          "slope": 0.6789879451123758,
+          "meanAct": 0.5272989690721648,
+          "meanPred": 0.5607586290999168,
+          "bias": 0.033459660027752025
+        },
+        "ok": {
+          "n": 194,
+          "mae": 0.15566167444396717,
+          "rmse": 0.21448319807598437,
+          "r2": 0.6057010981215484,
+          "slope": 0.5010597953665422,
+          "meanAct": 0.5272989690721648,
+          "meanPred": 0.5458059740198069,
+          "bias": 0.018507004947642125
+        },
+        "nn": {
+          "n": 194,
+          "mae": 0.16332835051546393,
+          "rmse": 0.2638532315199212,
+          "r2": 0.46681938178556515,
+          "slope": 0.6752829231059003,
+          "meanAct": 0.5272989690721648,
+          "meanPred": 0.5438623711340206,
+          "bias": 0.016563402061855803
+        }
+      },
+      "pairs": 194
+    },
+    "img_crossval": "babbitt-11-resource-crossval.png",
+    "gt_app": [
+      {
+        "cutoff_pct": 0.2,
+        "tonnes_Mt": 7868.7,
+        "grade_pct": 0.479
+      },
+      {
+        "cutoff_pct": 0.25,
+        "tonnes_Mt": 7761.495,
+        "grade_pct": 0.483
+      },
+      {
+        "cutoff_pct": 0.3,
+        "tonnes_Mt": 7354.2,
+        "grade_pct": 0.494
+      },
+      {
+        "cutoff_pct": 0.35,
+        "tonnes_Mt": 6298.32,
+        "grade_pct": 0.522
+      },
+      {
+        "cutoff_pct": 0.4,
+        "tonnes_Mt": 5035.59,
+        "grade_pct": 0.559
+      },
+      {
+        "cutoff_pct": 0.45,
+        "tonnes_Mt": 3809.4,
+        "grade_pct": 0.602
+      },
+      {
+        "cutoff_pct": 0.5,
+        "tonnes_Mt": 2785.335,
+        "grade_pct": 0.649
+      },
+      {
+        "cutoff_pct": 0.55,
+        "tonnes_Mt": 1996.785,
+        "grade_pct": 0.698
+      },
+      {
+        "cutoff_pct": 0.6,
+        "tonnes_Mt": 1424.64,
+        "grade_pct": 0.748
+      },
+      {
+        "cutoff_pct": 0.65,
+        "tonnes_Mt": 990.045,
+        "grade_pct": 0.802
+      },
+      {
+        "cutoff_pct": 0.7,
+        "tonnes_Mt": 685.545,
+        "grade_pct": 0.859
+      },
+      {
+        "cutoff_pct": 0.75,
+        "tonnes_Mt": 464.52,
+        "grade_pct": 0.923
+      },
+      {
+        "cutoff_pct": 0.8,
+        "tonnes_Mt": 306.18,
+        "grade_pct": 1
+      }
+    ],
+    "img_gt": "babbitt-12-resource-grade-tonnage.png",
+    "page_errors": []
+  },
+  "runtime_s": 126
+}

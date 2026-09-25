@@ -268,9 +268,15 @@ Upload the composites to **Orebit Resource**. On **Setup** choose element **zn_p
 
 ![Zn variogram in domain M1](../img/thalanga-10-resource-variogram.png)
 
-Auto-fitted model: **exponential**, nugget **67.2**, sill **112.0** (%²), range **326 m**. The nugget is about **60 % of the sill**.
+**Down-hole first.** Between holes the closest composites are about 90 m apart, so the nugget, the variability at zero distance, can only be read *along* the holes. Open **Variogram Downhole** on the **Variography** tab: pairs of samples within the same hole, 2 m lags. It finds **840** within-hole pairs, and γ rises from **22.2** (%²) at 1 m to **113.5** at 15 m. Real short-range structure: over a few metres the grade changes from massive sulphide to wall rock.
 
-How to read it: 98 composites from a handful of holes means most pairs in the experimental variogram are *down-hole* pairs, not *between-hole* pairs. A 60 % nugget says that at hole spacing most of the Zn variability **cannot be predicted** from neighbours. That is reasonable for massive sulphide lenses interleaved with wall rock at metre scale. The 326 m range rests on very few pairs. Treat it as indicative, not measured.
+**Then between holes.** **Compute** the experimental variogram and **Auto-fit**. Because the down-hole variogram exists for this element and domain, auto-fit holds the nugget at the down-hole value and fits only the sill and range: **exponential**, nugget **22.2**, sill **104.0** (%²), range **72.5 m**. The nugget is about 21 % of the sill.
+
+The app marks the range in yellow, and it should: **72.5 m is the shortest range the fit is allowed to try**, not a measurement. The first lag says why. Over 0–50 m, where almost every pair is a down-hole pair, γ is already **77.4**, 97 % of the data variance (80.0), and the down-hole variogram passes the variance by 15 m. Down the hole, Zn grade stops being correlated within about 10–15 m, roughly the thickness of a lens. Along strike the continuity is not measured at all: the closest holes are 90 m apart.
+
+What that means for the estimate: with holes about 90 m apart (below), a block between holes gets close to the local mean of its neighbours. That smoothing is forced by the drill spacing, not by a modelling choice. Only infill drilling can resolve it, and a Competent Person will weigh it in any classification.
+
+> **A correction this vignette forced.** Earlier revisions reported nugget 67.2, "60 % of the sill". That was the ceiling of the fitting grid (the nugget search stopped at 60 %), reported as if it were a property of the deposit. The same artefact appeared on Babbitt and on an epithermal gold dataset. The grid now reaches 90 %, the nugget comes from the down-hole variogram, and a fit that lands on an edge of the grid is flagged. Cross-validation improved with it (OK slope 0.68 → 0.75, §9).
 
 ### Block size
 
@@ -282,27 +288,40 @@ Used: **25 × 25 × 10 m** (about ¼ of the hole spacing; 10 m is a typical benc
 
 ## 8. Estimation: the most important lesson in this vignette
 
-### Run A — default parameters, no boundary
+Three runs on the **Estimation** tab, with the same composites and the same variogram. Only two decisions change: the **domain boundary** and the **search strategy**.
 
-Run the estimate with the auto-suggested search (1.5 × the variogram range, widened for sparse data): **489 × 489 × 135 m**, minimum 2 composites.
+### Run A — default parameters, no domain boundary
 
-![Unconstrained estimate](../img/thalanga-11a-resource-estimate-unconstrained.png)
+Switch **Keep blocks inside the domain** off. That is how every GeoSuite version before 25 September 2026 behaved. Use the auto-suggested search (1.5 × the variogram range, widened for sparse data): **218 × 218 × 135 m**, minimum 2 composites.
+
+![Estimate without a domain boundary](../img/thalanga-11a-resource-estimate-unconstrained.png)
 
 | | |
 |---|---:|
-| Blocks estimated | **15,744** of 20,967 |
-| Tonnes (2.8 t/m³) | **276 Mt** |
-| Zn metal | **17.0 Mt** |
+| Blocks estimated | **11,522** of 20,967 |
+| Tonnes (2.8 t/m³) | **202 Mt** |
+| Zn metal | **11.9 Mt** |
 | Lowest OK grade | 1.05 % |
 
-That is **59 times** historical production. No error, no red warning, and completely wrong. Why:
+That is **43 times** historical production. No error, no red warning, and completely wrong. The estimate uses only M1 composites (all ≥ 1 % Zn) and **spreads that grade into every block within 218 m**, including hundreds of metres of wall rock. The lowest block grade is 1.05 % because no low sample ever takes part.
 
-- the estimate uses only M1 composites (all ≥ 1 % Zn) and **spreads that grade into every block within 489 m**, including hundreds of metres of wall rock. The lowest block grade is 1.05 % because no low sample ever takes part;
-- the search ellipsoid is round (no direction) on an elongate lens.
+### A domain boundary without a wireframe
 
-The block model has no 3D domain boundary here, because without lithology there is no wireframe. So **the search strategy has to hold back extrapolation**. Software defaults are not geological decisions.
+No lithology means no wireframe. But the 409 M0 composites (Zn < 1 %) still know where the ore is *not*. GeoSuite now uses all of them as the boundary: **a block belongs to domain M1 only if its nearest composite, of any domain and measured with the same search ellipsoid, is an M1 composite.** This is nearest-neighbour domain assignment, the standard way to build a hard boundary from drilling when no geological model exists yet. It is on by default.
 
-### Run B — a geologically constrained search
+> This feature was added to GeoSuite because of Run A in this vignette.
+
+### Run A2 — default parameters, with the domain boundary
+
+| | |
+|---|---:|
+| Blocks estimated | **810** |
+| Blocks within reach removed by the domain boundary | 20,123 |
+| Tonnes | **14.2 Mt** @ **7.38 %** Zn |
+
+The boundary alone cuts the tonnage 14-fold. But 14 Mt is still 3 times production, because the round 218 m ellipsoid still reaches far into **undrilled** ground. At the edge of the drilling there are no M0 composites to "reject" a block, so the outermost M1 composite becomes the nearest one for blocks hundreds of metres away.
+
+### Run B — domain boundary + a geologically constrained search
 
 Strike from the composite distribution (PCA): **azimuth 98°**, roughly east–west, matching the TH-series hole distribution. Parameters:
 
@@ -314,18 +333,18 @@ Strike from the composite distribution (PCA): **azimuth 98°**, roughly east–w
 | Azimuth / dip | 98° / 0° | strike from the data; dip cannot be determined reliably |
 | Min / max composites | 4 / 12 | no block is informed by a single intercept |
 
-![Constrained estimate](../img/thalanga-11-resource-estimate.png)
+![Estimate with domain boundary and constrained search](../img/thalanga-11-resource-estimate.png)
 
 | | OK | IDW | NN |
 |---|---:|---:|---:|
-| Blocks | 717 | 717 | 717 |
-| Mean Zn grade | **7.63 %** | 7.87 % | 7.12 % |
-| Tonnes | **12.547 Mt** | | |
-| Zn metal | **957.6 kt** | | |
+| Blocks | 209 | 209 | 209 |
+| Mean Zn grade | **8.09 %** | 8.72 % | 9.24 % |
+| Tonnes | **3.658 Mt** | | |
+| Zn metal | **295.8 kt** | | |
 
 **The dip of the lens is unresolved.** Cross-sections between holes give dips of 2°, 12° and 41°, which are inconsistent. With 13 holes and no lithology, the lens orientation cannot be determined, so the ellipsoid is kept flat and tight across strike. That is a conservative choice, and it is also this result's biggest limitation.
 
-**Global mean check:** the NN mean (7.12 %) approximates a declustered mean. OK is **7 %** higher. Practice usually accepts about ±5 %, so 7 % is a **yellow flag**: the estimate leans optimistic, probably because distant blocks are filled from clustered high-grade composites.
+**Global mean check:** the NN mean (9.24 %) is **14 % above** OK (8.09 %). Practice looks for agreement within ±5 %. With only 209 blocks, the NN mean is dominated by a few high-grade composites that happen to be nearest to many blocks, while OK smooths them. This yellow flag points the unusual way: OK is *conservative* relative to the nearest data. A better reference is the declustered composite mean (Declustering in Assay).
 
 ---
 
@@ -337,12 +356,12 @@ Strike from the composite distribution (PCA): **azimuth 98°**, roughly east–w
 
 | | OK | IDW | NN |
 |---|---:|---:|---:|
-| Regression slope (estimate on actual) | **0.68** | 0.77 | 0.82 |
-| r² | 0.71 | 0.75 | 0.71 |
-| Mean bias (estimate − actual) | **+0.04** | +0.24 | +0.19 |
-| RMSE | 4.90 | 4.62 | 5.07 |
+| Regression slope (estimate on actual) | **0.75** | 0.77 | 0.82 |
+| r² | 0.75 | 0.75 | 0.71 |
+| Mean bias (estimate − actual) | **+0.08** | +0.24 | +0.19 |
+| RMSE | 4.60 | 4.62 | 5.07 |
 
-How to read it: OK is **globally unbiased** (+0.04 % Zn on a mean of 8.43 %) but **conditionally biased**. A slope of 0.68 means high grades are under-estimated and low grades over-estimated. That is the smoothing you expect with a 60 % nugget. It means the grade-tonnage curve **at high cut-offs** must be read with care: tonnes above a high cut-off tend to be too many at too low a grade. A slope of 0.8–0.9 or better is usually sought for an estimate used for block-by-block decisions.
+How to read it: OK is **globally unbiased** (+0.08 % Zn on a mean of 8.43 %) but **conditionally biased**. A slope of 0.75 means high grades are under-estimated and low grades over-estimated. That is the smoothing you expect when the correlation range is shorter than the hole spacing (§7). It means the grade-tonnage curve **at high cut-offs** must be read with care: tonnes above a high cut-off tend to be too many at too low a grade. A slope of 0.8–0.9 or better is usually sought for an estimate used for block-by-block decisions.
 
 ---
 
@@ -350,19 +369,19 @@ How to read it: OK is **globally unbiased** (+0.04 % Zn on a mean of 8.43 %) but
 
 ### Confidence screen
 
-The **Preliminary Confidence** tab splits the 717 blocks by distance to data and number of holes:
+The **Preliminary Confidence** tab splits the 209 blocks by distance to data and number of holes:
 
 | Tier | Blocks |
 |---|---:|
-| High confidence | 106 |
-| Medium confidence | 262 |
-| Low confidence | 349 |
+| High confidence | 39 |
+| Medium confidence | 72 |
+| Low confidence | 98 |
 
 ![Confidence screen](../img/thalanga-12b-resource-confidence.png)
 
 This is a **computational screen**, not a *Measured / Indicated / Inferred* classification. KCMI 2017 and JORC 2012 set no numeric thresholds. Classification is a Competent Person's written judgement, weighing geology, QAQC, density and continuity. That is why GeoSuite deliberately does not use those terms.
 
-One thing worth noting: the mean grade of the high + medium blocks (**7.08 %**) is **lower** than that of all blocks (7.63 %). The highest grades sit in the blocks furthest from data. That is the classic signature of extrapolation, and one more reason to distrust the high-cut-off numbers.
+One thing worth noting: the mean grade of the high + medium blocks (**7.70 %**) is **lower** than that of all blocks (8.09 %). The highest grades sit in the blocks furthest from data, the classic signature of extrapolation. That is one more reason to distrust the high-cut-off numbers.
 
 ### Grade-tonnage, checked independently
 
@@ -370,11 +389,11 @@ The curve on the **Grade-Tonnage** tab is computed by the app. The table below i
 
 | Zn cut-off | Tonnes (Mt) | Zn grade | Zn metal (kt) | High + medium only: Mt @ % |
 |---|---:|---:|---:|---|
-| 0 / 1 % | 12.547 | 7.63 % | 957.6 | 6.440 @ 7.08 |
-| 2 % | 11.008 | 8.45 % | 930.2 | 5.775 @ 7.69 |
-| 3 % | 7.455 | 11.22 % | 836.8 | 3.780 @ 10.38 |
-| 5 % | 5.145 | 14.67 % | 754.8 | 2.678 @ 13.24 |
-| 8 % | 4.253 | 16.30 % | 693.0 | 2.205 @ 14.62 |
+| 0 / 1 % | 3.658 | 8.09 % | 295.8 | 1.943 @ 7.70 |
+| 2 % | 3.465 | 8.44 % | 292.6 | 1.820 @ 8.10 |
+| 3 % | 2.590 | 10.47 % | 271.1 | 1.295 @ 10.38 |
+| 5 % | 2.188 | 11.76 % | 257.2 | 1.085 @ 11.73 |
+| 8 % | 1.768 | 13.00 % | 229.9 | 0.858 @ 13.02 |
 
 ![Grade-tonnage curve (high + medium only)](../img/thalanga-13-resource-grade-tonnage.png)
 
@@ -390,25 +409,30 @@ The **KCMI** tab shows the density basis as:
 
 Massive sulphide ore with sphalerite, galena and pyrite typically runs **3.2–4.0 t/m³**, not 2.8. Tonnage scales directly with density, so 2.8 may **under-state massive-sulphide tonnage by up to about 30 %**, while 2.8 may be fine in stringer / disseminated zones. Density must be measured, per domain or regressed against Fe+S+Zn+Pb. Until then the tonnage is not reportable.
 
+For scale: the same 209 blocks at **3.6 t/m³** give **4.702 Mt**, not 3.658 Mt.
+
 ---
 
 ## 12. Sanity check against historical production
 
 | | Tonnes | Zn |
 |---|---:|---:|
-| Production 1989–1998 | 4.7 Mt | 8.3 % |
-| This screen, all blocks, 1 % cut-off | 12.5 Mt | 7.63 % |
-| This screen, 5 % cut-off | 5.1 Mt | 14.67 % |
-| This screen, high + medium, 1 % cut-off | 6.4 Mt | 7.08 % |
+| **Production 1989–1998** | **4.7 Mt** | **8.3 %** |
+| Run A: no domain boundary | 202 Mt | 5.88 % |
+| Run A2: domain boundary, default search | 14.2 Mt | 7.38 % |
+| Run B: boundary + geological search (2.8 t/m³) | 3.7 Mt | 8.09 % |
+| Run B at a massive-sulphide density of 3.6 t/m³ | 4.7 Mt | 8.09 % |
+| Run B, high + medium confidence only | 1.9 Mt | 7.70 % |
 
-The **grade** is within 10 % of the mined grade. That is expected, because composite grades inside the shell are measured directly from core. **Tonnage** is 2.7× production. Plausible reasons, most important first:
+The **grade** is within about 3 % of the mined grade. The **tonnage** is 78 % of production at the assumed density, and practically the same at a reasonable massive-sulphide density.
 
-1. **Production is not a resource.** The mine extracted part of the deposit at an economic cut-off with dilution, then closed for economic reasons. The deposit was later redeveloped, so mineralisation remained after 1998.
-2. **A loose boundary.** The area box plus a 1 % grade shell also takes in the stringer / disseminated halo around the massive sulphide lenses. Without a lithology wireframe that volume cannot be separated.
-3. **Unresolved orientation.** A horizontal ellipsoid on a lens of unknown dip spreads grade across the lens boundary.
-4. **Density** works in the *opposite* direction: a higher measured density would *add* tonnes. It does not explain the gap.
+**Do not celebrate too early.** Part of this agreement is coincidence, and a senior geologist has to say so:
 
-The honest conclusion: from 13 holes with no lithology, GeoSuite produces **a plausible order of magnitude and grade**, but **the volume cannot be determined with reportable confidence**. That is what a screen is for: telling you *what to do next*, not replacing it.
+1. **Production is not a resource.** The mine extracted part of the deposit at an economic cut-off with dilution (which lowers the grade), then closed for economic reasons. The deposit was later redeveloped, so mineralisation remained after 1998.
+2. **Unresolved orientation.** A horizontal ellipsoid on a lens of unknown dip can put volume in the wrong place even when the total happens to come out close.
+3. **The domain boundary rests on one cut-off (1 % Zn).** Move it to 0.5 % or 2 % and the tonnage moves. Without a lithology wireframe, this volume still depends on that decision.
+
+The honest conclusion: with a domain boundary and a geologically constrained search, 13 holes with no lithology produce **a plausible order of magnitude, grade and tonnage** against the mine's history. But **the volume and its classification are still not reportable**. That is what a screen is for: telling you *what to do next*, not replacing it.
 
 ---
 
@@ -428,7 +452,7 @@ The honest conclusion: from 13 holes with no lithology, GeoSuite produces **a pl
 ## Try it yourself
 
 1. Change the domain cut-off to **0.5 %** and **2 %**. Watch how much metal enters or leaves the domain, and how the in-domain CV changes.
-2. Enter a density of **3.6 t/m³** on the Block Model tab, re-run, and compare the tonnes.
+2. Switch **Keep blocks inside the domain** off for Run B. How many tonnes are added, and where do the extra blocks sit?
 3. Re-run Run B with **minimum 2 composites** and **octant search** on. Which blocks change most?
 4. Raise r Semi to 100 m and look at the cross-validation and the OK/NN ratio.
 

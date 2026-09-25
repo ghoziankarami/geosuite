@@ -615,8 +615,8 @@ var DOCS = [
 
       {t:'h', en:'Part 2 — Assay (about 4 minutes)', id:'Bagian 2 — Assay (sekitar 4 menit)'},
       {t:'steps', items:[
-        {en:'Open Orebit Assay and upload the merged CSV you just exported.',
-         id:'Buka Orebit Assay dan unggah CSV gabungan yang barusan Anda ekspor.'},
+        {en:'On Core\u2019s export, click <b>Continue in Assay →</b>: Assay opens with the merged file already loaded. (Or upload the merged CSV you exported — it is the same import. In the Windows Desktop Edition, upload is the only way.)',
+         id:'Di ekspor Core, klik <b>Lanjut di Assay →</b>: Assay terbuka dengan file gabungan sudah termuat. (Atau unggah CSV gabungan yang Anda ekspor — impornya sama. Di Desktop Edition Windows, hanya cara unggah yang tersedia.)'},
         {en:'Go to <b>Stats</b>. Look at the histogram and the coefficient of variation. A CV above roughly 1.5 tells you outliers will drive the estimate and a top-cut needs thinking about.',
          id:'Masuk ke <b>Stats</b>. Perhatikan histogram dan koefisien variasi. CV di atas kira-kira 1,5 menandakan pencilan akan mendominasi estimasi dan top-cut perlu dipikirkan.'},
         {en:'Go to <b>Top-Cut</b>. Compare the P98 and P99 candidates and see how much metal each one removes. Choose one and note why.',
@@ -629,14 +629,14 @@ var DOCS = [
 
       {t:'h', en:'Part 3 — Resource (about 5 minutes)', id:'Bagian 3 — Resource (sekitar 5 menit)'},
       {t:'steps', items:[
-        {en:'Open Orebit Resource, upload the same merged CSV, and in <b>Setup</b> choose the element, the domain and the grade unit.',
-         id:'Buka Orebit Resource, unggah CSV gabungan yang sama, dan di <b>Setup</b> pilih unsur, domain, dan satuan kadar.'},
+        {en:'In Assay\u2019s <b>Composite</b> or <b>Domain</b> tab, click <b>Continue in Resource →</b> (or upload Assay\u2019s master composite CSV — composites, not Core\u2019s raw intervals). In <b>Setup</b> choose the element, the domain and the grade unit.',
+         id:'Di tab <b>Composite</b> atau <b>Domain</b> Assay, klik <b>Lanjut di Resource →</b> (atau unggah CSV master komposit dari Assay — komposit, bukan interval mentah dari Core). Di <b>Setup</b> pilih unsur, domain, dan satuan kadar.'},
         {en:'Go to <b>Variography</b>. Start omnidirectional, fit a model, and read off nugget, sill and range. Do not fight for a perfect fit on the first pass.',
          id:'Masuk ke <b>Variography</b>. Mulai omnidirectional, cocokkan model, dan baca nugget, sill, dan range. Jangan berjuang mengejar kecocokan sempurna di percobaan pertama.'},
         {en:'Go to <b>Block Model</b>. As a starting rule set the block size to roughly one third to one half of your drill spacing, then build.',
          id:'Masuk ke <b>Block Model</b>. Sebagai aturan awal tetapkan ukuran blok sekitar sepertiga sampai setengah spasi bor Anda, lalu bangun.'},
-        {en:'Go to <b>Estimation</b> and run ordinary kriging. Check the estimation reach reported afterwards — if it is under 15 percent, stop and read the troubleshooting entry rather than continuing.',
-         id:'Masuk ke <b>Estimation</b> dan jalankan ordinary kriging. Periksa jangkauan estimasi yang dilaporkan setelahnya — kalau di bawah 15 persen, berhenti dan baca entri pemecahan masalah, jangan lanjut.'},
+        {en:'Go to <b>Estimation</b>, leave <b>Keep blocks inside the domain</b> on, and run ordinary kriging. Read the status line: how many blocks were estimated, and how many the domain boundary left out. A low reach with many blocks left out by the boundary is the domain doing its job; a low reach with few left out means the search is too small — read the troubleshooting entry.',
+         id:'Masuk ke <b>Estimation</b>, biarkan <b>Batasi blok di dalam domain</b> aktif, lalu jalankan ordinary kriging. Baca baris status: berapa blok terestimasi, dan berapa yang dikeluarkan batas domain. Jangkauan rendah dengan banyak blok dikeluarkan batas berarti domain bekerja sebagaimana mestinya; jangkauan rendah dengan sedikit blok dikeluarkan berarti pencarian terlalu kecil — baca entri pemecahan masalah.'},
         {en:'Go to <b>Cross-Val</b> and <b>Swath</b> to validate. Then read the <b>Grade-Tonnage</b> curve.',
          id:'Masuk ke <b>Cross-Val</b> dan <b>Swath</b> untuk validasi. Lalu baca kurva <b>Grade-Tonnage</b>.'}
       ]},
@@ -944,6 +944,14 @@ var DOCS = [
         en:'VERIFY — the 0.3 and 0.6 nugget-to-sill bands are widely used interpretive guides, not thresholds computed by the software. Confirm the wording matches how you want your users to apply them.',
         id:'VERIFIKASI — rentang rasio nugget-sill 0,3 dan 0,6 adalah panduan interpretasi yang lazim dipakai, bukan ambang yang dihitung perangkat lunak. Pastikan penyampaiannya sesuai dengan cara Anda ingin pengguna menerapkannya.'},
 
+      {t:'h', en:'Read the nugget down the holes, then fit between them', id:'Baca nugget sepanjang lubang, lalu cocokkan antar lubang'},
+      {t:'p',
+        en:'Between holes, the closest pairs are a drill spacing apart, so the between-hole variogram cannot see the nugget. Open <b>Variogram Downhole</b> first: it pairs samples within the same hole, at their true 3D distance. Its lowest value over the first three lags is the nugget. <b>Auto-fit</b> then holds the nugget at that value and fits only the sill and range between holes; the fit note says <i>nugget fixed from the down-hole variogram</i>.',
+        id:'Antar lubang, pasangan terdekat berjarak satu spasi bor, sehingga variogram antar lubang tidak bisa melihat nugget. Buka <b>Variogram Downhole</b> lebih dulu: ia memasangkan sampel dalam lubang yang sama, pada jarak 3D sebenarnya. Nilai terendahnya pada tiga lag pertama adalah nugget. <b>Auto-fit</b> lalu menahan nugget pada nilai itu dan hanya mencocokkan sill dan range antar lubang; catatan fit menyebut <i>nugget ditetapkan dari variogram down-hole</i>.'},
+      {t:'note', k:'warn',
+        en:'A yellow note under the fit means the answer sits on an edge of what auto-fit searches: nugget at 90 % of the sill, or the range at the shortest or longest value tried. That describes the search, not your deposit. The common case is the shortest range: in the first lag the variogram is already at the sill, meaning grades are barely correlated beyond that distance. Kriging then returns something close to a local mean, and only closer drilling can measure the true range. Say so in the report.',
+        id:'Catatan kuning di bawah fit berarti hasilnya berada di tepi pencarian auto-fit: nugget pada 90 % sill, atau range pada nilai terpendek atau terpanjang yang dicoba. Itu menggambarkan pencarian, bukan endapan Anda. Kasus yang paling umum adalah range terpendek: pada lag pertama variogram sudah mencapai sill, artinya kadar hampir tidak berkorelasi melewati jarak itu. Kriging lalu menghasilkan nilai yang mendekati rata-rata lokal, dan hanya bor yang lebih rapat yang bisa mengukur range sebenarnya. Nyatakan itu di laporan.'},
+
       {t:'h', en:'Step 3 — choose a model shape', id:'Langkah 3 — pilih bentuk model'},
       {t:'table',
         head:[{en:'Model',id:'Model'},{en:'Behaviour',id:'Perilaku'},{en:'Use when',id:'Pakai saat'}],
@@ -1047,7 +1055,9 @@ var DOCS = [
           [{en:'Maximum samples',id:'Sampel maksimum'}, '16',
            {en:'More samples means more smoothing. Beyond about 20 the extra samples add little but run time.',id:'Lebih banyak sampel berarti lebih banyak penghalusan. Melewati sekitar 20, sampel tambahan hanya menambah waktu proses.'}],
           [{en:'Octant search',id:'Pencarian oktan'}, {en:'Off',id:'Mati'},
-           {en:'Turn on when drilling is clustered — it forces samples to be drawn from around the block instead of all from one dense side.',id:'Nyalakan saat pengeboran mengelompok — ini memaksa sampel diambil dari sekeliling blok, bukan semua dari satu sisi yang padat.'}]
+           {en:'Turn on when drilling is clustered — it forces samples to be drawn from around the block instead of all from one dense side.',id:'Nyalakan saat pengeboran mengelompok — ini memaksa sampel diambil dari sekeliling blok, bukan semua dari satu sisi yang padat.'}],
+          [{en:'Keep blocks inside the domain',id:'Batasi blok di dalam domain'}, {en:'On',id:'Aktif'},
+           {en:'Leave it on. It keeps the domain grade next to the composites that carry it; switching it off is how a small lens becomes a very large tonnage.',id:'Biarkan aktif. Opsi ini menjaga kadar domain tetap di dekat komposit yang membawanya; mematikannya adalah cara lensa kecil berubah menjadi tonase sangat besar.'}]
         ]},
 
       {t:'h', en:'Run, then check the reach immediately', id:'Jalankan, lalu segera periksa jangkauannya'},
@@ -1281,7 +1291,7 @@ var DOCS = [
           [{en:'Scan tolerance',id:'Toleransi pindai'},{en:'5–45°, step 2.5',id:'5–45°, langkah 2,5'},
            {en:'Angular tolerance used during the scan.',id:'Toleransi sudut yang dipakai selama pemindaian.'}],
           [{en:'Downhole lag',id:'Lag downhole'},{en:'step 0.5 m',id:'langkah 0,5 m'},
-           {en:'Lag along the hole. The downhole variogram gives the most reliable nugget because sample separations are shortest.',id:'Lag sepanjang lubang. Variogram downhole memberi nugget paling andal karena jarak pisah sampelnya terpendek.'}],
+           {en:'Lag for pairs of samples within the same hole, at their true 3D distance. The lowest value over the first three lags is the nugget, and the next auto-fit holds the nugget at it.',id:'Lag untuk pasangan sampel dalam lubang yang sama, pada jarak 3D sebenarnya. Nilai terendah pada tiga lag pertama adalah nugget, dan auto-fit berikutnya menahan nugget pada nilai itu.'}],
           [{en:'Downhole maximum distance',id:'Jarak maksimum downhole'},{en:'from 20 m, step 10',id:'dari 20 m, langkah 10'},
            {en:'How far down the hole pairs are formed.',id:'Sejauh mana pasangan dibentuk menyusuri lubang.'}]
         ]}
@@ -1327,7 +1337,10 @@ var DOCS = [
           [{en:'Maximum samples',id:'Sampel maksimum'},'16',{en:'2 – 50',id:'2 – 50'},
            {en:'Upper limit per block. More samples means more smoothing and longer run time.',id:'Batas atas per blok. Lebih banyak sampel berarti lebih banyak penghalusan dan waktu proses lebih lama.'}],
           [{en:'Octant search',id:'Pencarian oktan'},{en:'Off',id:'Mati'},'—',
-           {en:'Divides the search into octants and caps how many samples each may contribute, so a clustered side cannot dominate.',id:'Membagi pencarian menjadi oktan dan membatasi berapa sampel yang boleh disumbang tiap oktan, sehingga sisi yang mengelompok tidak mendominasi.'}]
+           {en:'Divides the search into octants and caps how many samples each may contribute, so a clustered side cannot dominate.',id:'Membagi pencarian menjadi oktan dan membatasi berapa sampel yang boleh disumbang tiap oktan, sehingga sisi yang mengelompok tidak mendominasi.'}],
+          [{en:'Keep blocks inside the domain',id:'Batasi blok di dalam domain'},{en:'On',id:'Aktif'},'—',
+           {en:'When a single domain is selected, a block is estimated only if its nearest composite of any domain (same search ellipsoid) belongs to it. This is the domain boundary when there is no wireframe. Off, the domain grade is spread into every block within search range — on the Thalanga tutorial that was 202 Mt against 4.7 Mt ever mined. Unassayed composites carry whatever domain Assay gave them, so they act as boundary too.',
+            id:'Bila satu domain dipilih, blok hanya diestimasi jika komposit terdekatnya dari domain mana pun (elipsoid pencarian yang sama) termasuk domain itu. Inilah batas domain bila tidak ada wireframe. Bila dimatikan, kadar domain disebar ke setiap blok dalam jangkauan pencarian — di tutorial Thalanga hasilnya 202 Mt, padahal yang pernah ditambang 4,7 Mt. Komposit tak dianalisis membawa domain yang diberikan Assay, sehingga ikut menjadi batas.'}]
         ]},
       {t:'note', k:'info',
         en:'The estimator is ordinary kriging. Inverse distance weighting and nearest neighbour are also computed, and are what the validation comparisons are made against.',

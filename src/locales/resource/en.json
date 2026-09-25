@@ -135,7 +135,7 @@
   "res.vg.applyNugget": "↳ Apply Nugget",
   "res.vg.seedFromOmni": "↳ Seed from Omni",
   "res.vg.seedHint": "Click \"Seed from Omni\" to auto-fill the base parameters (needs an experimental variogram in omni mode).",
-  "res.vg.downholeHint": "Tight vertical pairs (horizontal separation under 5 m). Small lags let you estimate the nugget from the intercept.",
+  "res.vg.downholeHint": "Pairs of samples within the same hole, at their true 3D distance (no subsampling). Small lags show the nugget; the next auto-fit holds the nugget at this value.",
   "res.bm.gridPreview": "Grid preview:",
   "res.bm.blocksDims": "blocks ({d})",
   "res.bm.densityHint": "Map lithology codes to specific gravity. When filled in, blocks take a per-lithology density instead of the single global value.",
@@ -822,5 +822,16 @@
   "import.apply": "Apply mapping",
   "res.renderKCMIReport.densityNotApplied": "Not applied (volumetric grade, kg/m³)",
   "res.renderKCMIReport.basisSample": "Per sample (each block takes its nearest composite's own measured density)",
-  "res.renderKCMIReport.basisDomain": "Per domain (density table applied by the user)"
+  "res.renderKCMIReport.basisDomain": "Per domain (density table applied by the user)",
+  "res.est.domainBoundary": "Keep blocks inside the domain",
+  "res.est.domainBoundaryTitle": "A block is estimated only if its nearest composite (any domain, same search ellipsoid) belongs to the selected domain. Without a wireframe this is the boundary: switching it off spreads the domain's grade into every block within search range.",
+  "res.est.domainBoundaryDone": "Domain boundary: {n} blocks within reach were left out because their nearest composite is not in {dom}.",
+  "res.st.allDomainsWarn": "You are estimating all {n} domains as one population. That averages ore with waste and leaves nothing to bound the estimate. Pick the domain you want to estimate — the one holding the mineralisation — and run each domain on its own.",
+  "res.vg.fitAtBounds": "This fit sits at the edge of what auto-fit searches ({what}), so it describes the search, not your deposit.",
+  "res.vg.bound.nugget": "nugget at 90 % of the sill",
+  "res.vg.bound.rangeMin": "range at the shortest value tried",
+  "res.vg.bound.rangeMax": "range at the longest value tried",
+  "res.vg.nuggetFromDownhole": "nugget fixed from the down-hole variogram",
+  "res.vg.fitAtBounds.noDownhole": "With a {lag} m lag every down-hole pair falls into the first lag. Read the nugget from the down-hole variogram (Variography → Variogram Downhole); the next auto-fit then holds the nugget at that value.",
+  "res.vg.fitAtBounds.short": "At the first lag the variogram is already close to the sill: grades are barely correlated beyond that distance, and the range is shorter than these data can measure. Closer drilling, or a directional variogram along the mineralisation, is needed to measure it. Set the model by hand if you have better evidence."
 }

@@ -28,6 +28,12 @@ function fmtNum(v, sig) {
 }
 
 function downloadFile(filename, content, mime) {
+  // OrebitHandoff.capture() runs an existing export and takes the file it
+  // produces instead of saving it (module-to-module handoff, below).
+  if (typeof window !== 'undefined' && typeof window.__orebitCaptureDownload === 'function') {
+    window.__orebitCaptureDownload(filename, content, mime);
+    return true;
+  }
   const _r = orebitSaveFile(filename, content, mime);
   try {
     if (typeof window._recordExport === 'function') {
@@ -68,3 +74,91 @@ function openDB() {
 function ensurePlotly() {
   return window._plotlyReady;
 }
+
+// ---- Module-to-module handoff (web build and installed app) ----
+// Core -> Assay -> Resource used to mean: export a CSV, find it in Downloads,
+// open the next module, upload it. The three modules share one origin, so the
+// file the existing export would have written is handed over through
+// IndexedDB instead, and the next module feeds it into its own upload input --
+// the same import path, report and checks as a manual upload, nothing new to
+// trust. The Desktop EXE runs each module separately (window.__OREBIT_RT__),
+// so the buttons are not shown there. 2026-09-25.
+var OrebitHandoff = (function () {
+  var DB = 'orebit-handoff', STORE = 'handoff', MAX_AGE_MS = 30 * 60 * 1000;
+  function available() {
+    try { return typeof indexedDB !== 'undefined' && !window.__OREBIT_RT__; } catch (e) { return false; }
+  }
+  function db() {
+    return new Promise(function (resolve, reject) {
+      var req = indexedDB.open(DB, 1);
+      req.onupgradeneeded = function (e) { var d = e.target.result; if (!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE); };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }
+  function put(target, rec) {
+    return db().then(function (d) {
+      return new Promise(function (resolve, reject) {
+        var tx = d.transaction(STORE, 'readwrite');
+        tx.objectStore(STORE).put(rec, target);
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
+  function take(target) {
+    return db().then(function (d) {
+      return new Promise(function (resolve, reject) {
+        var tx = d.transaction(STORE, 'readwrite'), st = tx.objectStore(STORE), got = null;
+        var g = st.get(target);
+        g.onsuccess = function () { got = g.result || null; st.delete(target); };
+        tx.oncomplete = function () { resolve(got && (Date.now() - got.ts) < MAX_AGE_MS ? got : null); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
+  // Run an export function and capture the file it would have downloaded.
+  function capture(exportFn) {
+    var got = null;
+    window.__orebitCaptureDownload = function (name, content) { if (!got) got = { name: name, text: String(content) }; };
+    try { exportFn(); } finally { window.__orebitCaptureDownload = null; }
+    return got;
+  }
+  // target: 'Assay' | 'Resource'. Opens <target>.html next to this module.
+  function send(target, exportFn) {
+    var file = capture(exportFn);
+    if (!file) return Promise.resolve(false);
+    var w = null;
+    try { w = window.open('', '_blank'); } catch (e) { w = null; }
+    var url = target + '.html?handoff=1';
+    return put(target, { name: file.name, text: file.text, ts: Date.now() }).then(function () {
+      if (w) w.location.href = url; else window.location.href = url;
+      return true;
+    }, function (err) {
+      if (w) try { w.close(); } catch (e) { /* ignore */ }
+      if (typeof toast === 'function') toast('Could not hand the data over (' + (err && err.message || err) + '). Use the CSV export instead.', 'bad');
+      return false;
+    });
+  }
+  // Called once by the receiving module: if opened with ?handoff=1, load the file
+  // through the module's own #fileInput, exactly like a manual upload.
+  function receive(target) {
+    if (!available() || !/[?&]handoff=1(&|$)/.test(location.search)) return;
+    var go = function () {
+      take(target).then(function (rec) {
+        try { history.replaceState(null, '', location.pathname); } catch (e) { /* ignore */ }
+        if (!rec) return;
+        var input = document.getElementById('fileInput');
+        if (!input || typeof DataTransfer === 'undefined') return;
+        var dt = new DataTransfer();
+        dt.items.add(new File([rec.text], rec.name, { type: 'text/csv' }));
+        input.files = dt.files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        if (typeof showTab === 'function') { try { showTab(2); } catch (e) { /* ignore */ } }
+      }).catch(function (e) { console.warn('[handoff]', e); });
+    };
+    if (document.readyState === 'complete') setTimeout(go, 600);
+    else window.addEventListener('load', function () { setTimeout(go, 600); });
+  }
+  return { available: available, capture: capture, send: send, receive: receive };
+})();

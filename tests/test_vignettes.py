@@ -88,6 +88,21 @@ def quoted(docs: dict[str, str], label: str, value: float, dec: int):
         check(s in text, f"{label}: prose ({lang}) does not quote {s}")
 
 
+def variogram_checks(r: dict, docs: dict[str, str], dec: int):
+    """The nugget comes from the down-hole variogram, and a fit on an edge of the
+    search grid is reported as one -- the two 2026-09-25 variogram fixes."""
+    fit, dh, vg = r["variogram_fit"], r["downhole"], r["variogram"]
+    check(fit["nugget_from"] == "downhole", f"auto-fit did not take the nugget from the down-hole variogram ({fit['nugget_from']})")
+    check(abs(vg["nugget"] - dh["nugget"]) < 1e-9, f"nugget {vg['nugget']} != down-hole nugget {dh['nugget']}")
+    check(dh["nugget"] == min(dh["gammas"][:3]), "down-hole nugget is not min(first three lags)")
+    check(vg["nugget"] / vg["sill"] < 0.59, "nugget/sill back at the old 60 % grid ceiling")
+    check(set(fit["at_bounds"]) <= {"nugget", "rangeMin", "rangeMax"}, f"unknown bound flag {fit['at_bounds']}")
+    check("rangeMin" in fit["at_bounds"], f"the text says the range is flagged as the shortest tried; flags are {fit['at_bounds']}")
+    quoted(docs, "down-hole pairs", dh["pairs"], 0)
+    quoted(docs, "nugget", vg["nugget"], dec)
+    quoted(docs, "first between-hole lag gamma", fit["first_lag_gamma"], dec)
+
+
 def thalanga_consistency(d: dict, docs: dict[str, str]):
     r, gt = d["resource"], d["independent_gt"]
     # app's computeGT vs the Python re-derivation from the exported block model
@@ -119,12 +134,22 @@ def thalanga_consistency(d: dict, docs: dict[str, str]):
     quoted(docs, "disintegration", a["topcut"]["disintegration"]["value"], 1)
     quoted(docs, "composites", a["composites"]["n"], 0)
     quoted(docs, "under-half composites", a["export"]["under_half_informed"], 0)
-    quoted(docs, "nugget", r["variogram"]["nugget"], 1)
-    quoted(docs, "range", r["variogram"]["range"], 0)
+    variogram_checks(r, docs, 1)
+    quoted(docs, "range", r["variogram"]["range"], 1)
     quoted(docs, "spacing", r["spacing_note"]["median_m"], 0)
     quoted(docs, "unconstrained blocks", r["estimate_unconstrained"]["ok"]["n"], 0)
     quoted(docs, "unconstrained Mt", r["estimate_unconstrained"]["tonnes_Mt"], 0)
     quoted(docs, "estimated blocks", est["ok"]["n"], 0)
+    bd = r["estimate_default_bounded"]
+    check(bd["domain_boundary"] and est["domain_boundary"] and not r["estimate_unconstrained"]["domain_boundary"],
+          "domain boundary on/off not as the text describes")
+    check(est["ok"]["n"] < bd["ok"]["n"] < r["estimate_unconstrained"]["ok"]["n"], "boundary/search did not shrink the estimate")
+    quoted(docs, "bounded default blocks", bd["ok"]["n"], 0)
+    quoted(docs, "bounded default removed", bd["outside_domain"], 0)
+    quoted(docs, "bounded default Mt", bd["tonnes_Mt"], 1)
+    quoted(docs, "bounded default grade", bd["ok"]["mean"], 2)
+    quoted(docs, "tonnes at 3.6", gt["tonnes_Mt_at_3_6"], 3)
+    check(abs(gt["tonnes_Mt_at_3_6"] - gt["curve"][0]["tonnes_Mt"] * 3.6 / gt["density_t_m3"]) < 0.002, "density sensitivity inconsistent")
     quoted(docs, "OK grade", est["ok"]["mean"], 2)
     quoted(docs, "NN grade", est["nn"]["mean"], 2)
     quoted(docs, "tonnes", est["tonnes_Mt"], 3)
@@ -152,9 +177,17 @@ def babbitt_consistency(d: dict, docs: dict[str, str]):
           "top-cut diagnostics offer a cut inside the body again")
     check((a["export"]["topcut_line"] or "").startswith(f"# topcut: cu_pct cut={tc['cut']:.4f}"), "cap not recorded in the export")
     check(a["topcut_applied"]["affected"] == tc["assays_above"], "app and independent count of capped assays differ")
+    check(abs(a["topcut_applied"]["metal_removed_pct"] - tc["metal_removed_length_weighted_pct"]) < 0.01,
+          f"app metal removed {a['topcut_applied']['metal_removed_pct']:.2f}% vs length-weighted {tc['metal_removed_length_weighted_pct']}%")
     check(ic["m1_cu_max"] <= tc["cut"] + 1e-9, "a composite exceeds the cap")
     check(r["setup"]["samples"] == ic["m1_n"], "Resource did not receive every M1 composite")
+    variogram_checks(r, docs, 3)
     e = r["estimate"]
+    eu = r["estimate_unbounded"]
+    check(e["domain_boundary"] and not eu["domain_boundary"] and e["ok"]["n"] < eu["ok"]["n"], "Babbitt boundary runs not as described")
+    quoted(docs, "unbounded Mt", eu["tonnes_Mt"], 0)
+    quoted(docs, "unbounded blocks", eu["ok"]["n"], 0)
+    quoted(docs, "boundary removed", e["outside_domain"], 0)
     bx, by, bz = r["blocks"]["size"]
     check(abs(e["tonnes_Mt"] - e["ok"]["n"] * bx * by * bz * r["blocks"]["density"] / 1e6) < 1e-6, "tonnage != blocks x volume x density")
     check(abs(r["gt_app"][0]["tonnes_Mt"] - e["tonnes_Mt"]) < 0.01, "GT at the domain cut-off != estimated tonnage")
@@ -167,7 +200,6 @@ def babbitt_consistency(d: dict, docs: dict[str, str]):
                           ("ni/cu", raw["ni_cu_ratio_median"], 3), ("metal share 0.2", raw["metal_share"]["0.2"]["metal_pct"], 1),
                           ("capped assays", tc["assays_above"], 0), ("metal removed lw", tc["metal_removed_length_weighted_pct"], 2),
                           ("cv raw", tc["m1_cv_raw"], 2), ("cv capped", tc["m1_cv_capped"], 2),
-                          ("app metal removed", a["topcut_applied"]["metal_removed_pct"], 2),
                           ("body departure", a["topcut"]["body_departure"]["value"], 2),
                           ("under-half composites", a["export"]["under_half_informed"], 0), ("composites", a["composites"]["n"], 0),
                           ("M1 composites", ic["m1_n"], 0), ("M1 mean", ic["m1_cu_mean"], 4), ("nugget", r["variogram"]["nugget"], 3),

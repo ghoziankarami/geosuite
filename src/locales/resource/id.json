@@ -135,7 +135,7 @@
   "res.vg.applyNugget": "↳ Terapkan Nugget",
   "res.vg.seedFromOmni": "↳ Ambil dari Omni",
   "res.vg.seedHint": "Klik \"Seed from Omni\" untuk mengisi parameter dasar otomatis (perlu variogram eksperimental dalam mode omni).",
-  "res.vg.downholeHint": "Pasangan vertikal rapat (jarak horizontal di bawah 5 m). Lag kecil memungkinkan nugget diperkirakan dari titik potongnya.",
+  "res.vg.downholeHint": "Pasangan sampel dalam lubang yang sama, pada jarak 3D sebenarnya (tanpa subsampel). Lag kecil memperlihatkan nugget; auto-fit berikutnya menahan nugget pada nilai ini.",
   "res.bm.gridPreview": "Pratinjau grid:",
   "res.bm.blocksDims": "blok ({d})",
   "res.bm.densityHint": "Petakan kode litologi ke berat jenis. Kalau diisi, blok memakai densitas per litologi, bukan satu nilai global.",
@@ -822,5 +822,16 @@
   "import.apply": "Terapkan pemetaan",
   "res.renderKCMIReport.densityNotApplied": "Tidak dipakai (grade volumetrik, kg/m³)",
   "res.renderKCMIReport.basisSample": "Per sampel (tiap blok memakai densitas terukur composite terdekatnya)",
-  "res.renderKCMIReport.basisDomain": "Per domain (tabel densitas yang diterapkan pengguna)"
+  "res.renderKCMIReport.basisDomain": "Per domain (tabel densitas yang diterapkan pengguna)",
+  "res.est.domainBoundary": "Batasi blok di dalam domain",
+  "res.est.domainBoundaryTitle": "Blok hanya diestimasi bila komposit terdekatnya (domain apa pun, elipsoid pencarian yang sama) termasuk domain terpilih. Tanpa wireframe, inilah batas domainnya: mematikannya menyebarkan kadar domain ke setiap blok dalam jangkauan pencarian.",
+  "res.est.domainBoundaryDone": "Batas domain: {n} blok dalam jangkauan dikeluarkan karena komposit terdekatnya bukan {dom}.",
+  "res.st.allDomainsWarn": "Anda mengestimasi {n} domain sekaligus sebagai satu populasi. Itu merata-ratakan bijih dengan batuan samping dan tidak menyisakan batas untuk estimasi. Pilih domain yang ingin diestimasi — domain yang memuat mineralisasi — dan jalankan tiap domain terpisah.",
+  "res.vg.fitAtBounds": "Fit ini berada di batas pencarian auto-fit ({what}), jadi yang digambarkannya adalah batas pencarian, bukan endapan Anda.",
+  "res.vg.bound.nugget": "nugget 90 % dari sill",
+  "res.vg.bound.rangeMin": "range pada nilai terpendek yang dicoba",
+  "res.vg.bound.rangeMax": "range pada nilai terpanjang yang dicoba",
+  "res.vg.nuggetFromDownhole": "nugget ditetapkan dari variogram down-hole",
+  "res.vg.fitAtBounds.noDownhole": "Dengan lag {lag} m, semua pasangan sepanjang lubang masuk ke lag pertama. Baca nugget dari variogram down-hole (Variography → Variogram Downhole); auto-fit berikutnya lalu menahan nugget pada nilai itu.",
+  "res.vg.fitAtBounds.short": "Pada lag pertama variogram sudah mendekati sill: kadar hampir tidak berkorelasi melewati jarak itu, dan range-nya lebih pendek dari yang bisa diukur data ini. Perlu bor yang lebih rapat, atau variogram berarah sepanjang mineralisasi, untuk mengukurnya. Tetapkan model secara manual bila Anda punya bukti yang lebih baik."
 }

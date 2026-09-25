@@ -122,8 +122,7 @@ Distribusi Cu sudah menyimpang dari satu populasi lognormal sejak **0,72 % (P86)
 | | |
 |---|---:|
 | Assay yang terpotong | 94 |
-| Logam yang terbuang, tertimbang panjang (hitung independen) | 1,68 % |
-| Logam yang terbuang menurut aplikasi (per sampel, tanpa bobot panjang) | 2,99 % |
+| Logam yang terbuang, tertimbang panjang (aplikasi = hitung independen) | 1,68 % |
 | CV di dalam shell 0,2 %: sebelum → sesudah | 1,07 → 0,66 |
 | P99,5 di dalam shell | 3,5 |
 
@@ -143,10 +142,10 @@ Satu assay 24 % Cu dengan radius pencarian 200 m menyebarkan kadar sulfida masif
 Header ekspor mencatat keputusan ini:
 
 ```
-# topcut: cu_pct cut=3.0000 affected=94/23684 metal_removed=2.99% applied_by=manual
+# topcut: cu_pct cut=3.0000 affected=94/23684 metal_removed=1.68% (length-weighted) applied_by=manual
 ```
 
-> Catatan jujur: angka *metal_removed* dari aplikasi menjumlahkan nilai assay tanpa bobot panjang. Untuk sampel yang panjangnya berbeda-beda, angka tertimbang panjang (1,68 %) yang benar. Keterbatasan ini dicatat untuk diperbaiki.
+> Versi sebelumnya menjumlahkan nilai assay tanpa bobot panjang dan melaporkan 2,99 %. Logam = kadar × panjang, jadi sampel 0,2 m tidak boleh berbobot sama dengan interval 3 m. Kini diperbaiki dan dicocokkan dengan hitungan independen oleh `test_vignettes.py`.
 
 ### Kompositing 10 ft (3,048 m)
 
@@ -164,7 +163,11 @@ Bug kedua yang ditemukan di tahap ini: **koordinat komposit**. Setiap komposit d
 
 ![Variogram Cu](img/babbitt-09-resource-variogram.png)
 
-Model otomatis: eksponensial, nugget **0,063**, sill **0,105** (%²), yaitu nugget **60 %**. Range **72,5 m**.
+**Nugget dari lubang bor.** Hitung **Variogram Downhole** lebih dulu (tab Variography, lag 2 m): 183.031 pasangan sampel dalam lubang yang sama. Sebagian besar sampel panjangnya 10 ft (3,05 m), sehingga sampel yang bersebelahan berpasangan pada 3 m, tempat γ bernilai **0,035** (%²). Bin 1 m, dari beberapa sampel yang lebih pendek, memberi 0,028; aplikasi mengambil nilai terendah dari tiga lag pertama. Bagaimanapun, nugget sekitar seperempat sampai sepertiga sill.
+
+**Lalu antar lubang.** Auto-fit menahan nugget pada nilai downhole: eksponensial, nugget **0,028**, sill **0,115** (%²), nugget sekitar 24 %. Range **72,5 m**, dan aplikasi menandainya sebagai **range terpendek yang dicoba fitting**. Pada lag pertama (0–50 m, pasangan sepanjang lubang dan antar lubang digabung), γ sudah 0,093, yaitu 98 % dari varians data.
+
+> Revisi sebelumnya melaporkan "nugget 0,063 = 60 %". Seperti di Thalanga (vignette 01 §7), itu batas atas grid fitting, bukan sifat endapan. Lihat variogram downhole untuk struktur jarak pendek yang sebenarnya.
 
 Jarak antar lubang terdekat: **median 107 m, P90 150 m**. **Range variogram lebih pendek dari jarak antar lubang.** Artinya struktur spasial yang terukur hampir seluruhnya berasal dari pasangan *sepanjang lubang*. Pada jarak antar lubang, kriging hampir tidak punya informasi korelasi dan akan menghasilkan sesuatu yang dekat dengan rata-rata lokal. Pada endapan berlapis seperti ini, variogram yang lebih jujur adalah **variogram berarah sejajar pelapisan**. Kita catat sebagai keterbatasan.
 
@@ -174,18 +177,25 @@ Ukuran blok: aplikasi menyarankan 55 × 55 × 28 m. Dipakai **50 × 50 × 15 m**
 
 ## 6. Estimasi
 
-Radius pencarian 200 × 200 × 30 m (horizontal, sekitar dua kali jarak lubang; vertikal sempit karena mineralisasi berlapis), minimal 4 / maksimal 16 komposit.
+Radius pencarian 200 × 200 × 30 m (horizontal, sekitar dua kali jarak lubang; vertikal sempit karena mineralisasi berlapis), minimal 4 / maksimal 16 komposit. Dua percobaan: **tanpa** dan **dengan** batas domain (opsi *Keep blocks inside the domain*, lihat vignette 01 §8: blok masuk domain hanya bila komposit terdekatnya, dari domain mana pun, ada di domain itu).
 
-![Estimasi](img/babbitt-10-resource-estimate.png)
+![Estimasi tanpa batas domain](img/babbitt-10a-resource-estimate-unbounded.png)
 
-| | OK | IDW | NN |
-|---|---:|---:|---:|
-| Blok terestimasi | 74.940 | | |
-| Kadar rata-rata Cu | **0,479 %** | 0,483 % | 0,460 % |
-| Tonase (2,8 t/m³) | **7.869 Mt** | | |
-| Logam Cu | 37,7 Mt | | |
+| | Tanpa batas domain | Dengan batas domain |
+|---|---:|---:|
+| Blok terestimasi | 74.940 | **26.842** |
+| Blok dalam jangkauan yang dikeluarkan batas | — | 209.506 |
+| Kadar rata-rata Cu (OK) | 0,474 % | **0,503 %** |
+| Tonase (2,8 t/m³) | 7.869 Mt | **2.818 Mt** |
+| Logam Cu | 37,3 Mt | **14,2 Mt** |
 
-Cek rata-rata global: OK lebih tinggi **4 %** dari NN, masih dalam batas ±5 % yang lazim. Cek ulang tonase: 74.940 blok × 37.500 m³ × 2,8 t/m³ = 7.869 Mt. Cocok.
+![Estimasi dengan batas domain](img/babbitt-10-resource-estimate.png)
+
+Pada data rapat, batas domain membuang hampir dua pertiga tonase: blok-blok yang dijangkau radius 200 m dari komposit ≥ 0,2 % Cu tetapi komposit terdekatnya adalah batuan < 0,2 % Cu atau core yang tidak dianalisis. Kadar rata-rata naik karena blok-blok pinggiran yang "diencerkan" itu keluar.
+
+Perhatikan satu keputusan tersembunyi: Assay memberi label M0 pada komposit yang **tidak dianalisis**, jadi 33.236 komposit core tak dianalisis ikut menjadi batas. Untuk batuan penutup di atas intrusi itu tepat. Untuk interval *di dalam* zona yang terlewat analisis, itu bisa memangkas bijih. Ini keputusan geologis yang harus ditulis (§3).
+
+Cek rata-rata global (dengan batas domain): OK **0,503 %** dan NN **0,509 %**, selisih 1,1 %. Cek ulang tonase: 26.842 blok × 37.500 m³ × 2,8 t/m³ = 2.818 Mt. Cocok.
 
 ---
 
@@ -197,11 +207,11 @@ Validasi silang *leave-one-out* versi sebelumnya mencari tetangga **hanya di ant
 
 | n = 194 dari 200 | OK | IDW | NN |
 |---|---:|---:|---:|
-| Slope (estimasi terhadap aktual) | **0,50** | 0,68 | 0,68 |
-| r² | 0,61 | 0,62 | 0,47 |
+| Slope (estimasi terhadap aktual) | **0,62** | 0,68 | 0,68 |
+| r² | 0,67 | 0,62 | 0,47 |
 | Bias rata-rata | +0,02 | +0,03 | +0,02 |
 
-Tidak bias secara global, tetapi **slope 0,50 berarti perataan berat**: kadar tinggi sangat diremehkan dan kadar rendah dilebih-lebihkan. Ini konsisten dengan nugget 60 % dan range yang lebih pendek dari jarak lubang (§5). Akibatnya pada kurva grade-tonnage, **tonase di cut-off rendah terlalu besar dan kadar di cut-off tinggi terlalu rendah**. Kurva ini tidak boleh dipakai untuk memilih cut-off penambangan tanpa koreksi *change of support*.
+Tidak bias secara global, tetapi **slope 0,62 berarti perataan yang cukup besar**: kadar tinggi sangat diremehkan dan kadar rendah dilebih-lebihkan. Itulah akibat range yang lebih pendek dari jarak lubang (§5). Dengan nugget 60 % dari batas grid yang lama, slope-nya 0,50; membaca nugget dari lubang bor memperbaikinya, tetapi tidak ada variogram yang bisa menggantikan jarak bor. Akibatnya pada kurva grade-tonnage, **tonase di cut-off rendah terlalu besar dan kadar di cut-off tinggi terlalu rendah**. Kurva ini tidak boleh dipakai untuk memilih cut-off penambangan tanpa koreksi *change of support*.
 
 ---
 
@@ -211,20 +221,20 @@ Tidak bias secara global, tetapi **slope 0,50 berarti perataan berat**: kadar ti
 
 | Cut-off Cu | Tonase (Mt) | Kadar Cu |
 |---|---:|---:|
-| 0,2 % | 7.869 | 0,479 % |
-| 0,3 % | 7.354 | 0,494 % |
-| 0,4 % | 5.036 | 0,559 % |
-| 0,5 % | 2.785 | 0,649 % |
-| 0,6 % | 1.425 | 0,748 % |
-| 0,8 % | 306 | 1,00 % |
+| 0,2 % | 2.818 | 0,503 % |
+| 0,3 % | 2.671 | 0,516 % |
+| 0,4 % | 1.960 | 0,575 % |
+| 0,5 % | 1.203 | 0,655 % |
+| 0,6 % | 656 | 0,745 % |
+| 0,8 % | 150 | 0,952 % |
 
-Dibanding deskripsi publik (**> 1 miliar ton @ ~0,43 % Cu**): kadarnya sebanding, tetapi **tonase kita sekitar 8 kali lebih besar**. Penyebabnya bukan satuan, karena kita sudah mengonversi feet. Penyebabnya adalah prinsip pelaporan yang paling sering dilupakan:
+Dibanding deskripsi publik (**> 1 miliar ton @ ~0,43 % Cu**): kadarnya sebanding. Tanpa batas domain tonase kita sekitar 8 kali lebih besar; dengan batas domain masih **sekitar 2,8 kali**. Selisih yang tersisa bukan soal satuan (feet sudah dikonversi) dan bukan lagi soal ekstrapolasi ke batuan samping. Penyebabnya prinsip pelaporan yang paling sering dilupakan:
 
-**Sumber Daya Mineral harus punya *reasonable prospects for eventual economic extraction* (RPEEE).** Estimasi kita adalah **inventaris geologi**: semua blok dalam *shell* 0,2 % Cu, sampai kedalaman 869 m di bawah permukaan, dalam jangkauan 200 m dari lubang mana pun. Sumber daya yang dilaporkan dibatasi oleh:
+**Sumber Daya Mineral harus punya *reasonable prospects for eventual economic extraction* (RPEEE).** Estimasi kita adalah **inventaris geologi**: semua blok di dalam domain 0,2 % Cu, sampai kedalaman 869 m di bawah permukaan. Sumber daya yang dilaporkan dibatasi oleh:
 
-- **cut-off ekonomi** (untuk Cu-Ni-PGE biasanya berbasis NSR, bukan Cu saja);
+- **cut-off ekonomi** (untuk Cu-Ni-PGE biasanya berbasis NSR, bukan Cu saja). Pada cut-off 0,4 % Cu saja tonase sudah turun ke 1.960 Mt;
 - **cangkang tambang terbuka yang dioptimasi** (*pit shell*), sehingga blok dalam di bawah dasar pit tidak dihitung;
-- klasifikasi keyakinan yang wajar, sehingga blok jauh dari data (yang dijangkau radius 200 m) tidak masuk.
+- klasifikasi keyakinan yang wajar, sehingga blok jauh dari data tidak masuk.
 
 Ditambah densitas: 2,8 t/m³ adalah asumsi. Troktolit/gabro Duluth umumnya sekitar 2,9–3,0 t/m³, dan densitas terukur justru *menambah* tonase.
 

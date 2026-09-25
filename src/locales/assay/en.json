@@ -1038,5 +1038,10 @@
   "asy.densityMapFailed": "Export failed:",
   "asy.unitAssumedPct": "Unit not declared, assumed % (all values are 100 or below):",
   "asy.unitAssumedPctHint": "If these columns are actually ppm, set the unit in the grade column setting before compositing.",
-  "asy.tc.bodyDeparture": "The distribution departs from a single lognormal population already at {v} {u} (P{p}), inside its body rather than in a sparse upper tail. That is a mixture or a differently shaped distribution, not a top-cut signal: capping there would remove real metal. Separate the populations with a domain, then look at each domain's upper tail."
+  "asy.tc.bodyDeparture": "The distribution departs from a single lognormal population already at {v} {u} (P{p}), inside its body rather than in a sparse upper tail. That is a mixture or a differently shaped distribution, not a top-cut signal: capping there would remove real metal. Separate the populations with a domain, then look at each domain's upper tail.",
+  "handoff.toAssay": "Continue in Assay →",
+  "handoff.toAssayTitle": "Open Orebit Assay with this master file already loaded — the same import as uploading the CSV, without the download.",
+  "handoff.toAssayCroppedTitle": "Open Orebit Assay with the cropped master file already loaded.",
+  "handoff.toResource": "Continue in Resource →",
+  "handoff.toResourceTitle": "Open Orebit Resource with these composites (domain, coordinates, grades) already loaded — the same import as uploading the CSV."
 }

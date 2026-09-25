@@ -1038,5 +1038,10 @@
   "asy.densityMapFailed": "Ekspor gagal:",
   "asy.unitAssumedPct": "Satuan tidak dinyatakan, diasumsikan % (semua nilai 100 atau kurang):",
   "asy.unitAssumedPctHint": "Jika kolom ini sebenarnya ppm, atur satuannya di pengaturan kolom kadar sebelum compositing.",
-  "asy.tc.bodyDeparture": "Distribusi sudah menyimpang dari satu populasi lognormal pada {v} {u} (P{p}), di dalam badan distribusi, bukan di ekor atas yang jarang. Itu tanda campuran populasi atau bentuk distribusi lain, bukan sinyal top-cut: memangkas di sana membuang logam nyata. Pisahkan populasinya dengan domain, lalu periksa ekor atas setiap domain."
+  "asy.tc.bodyDeparture": "Distribusi sudah menyimpang dari satu populasi lognormal pada {v} {u} (P{p}), di dalam badan distribusi, bukan di ekor atas yang jarang. Itu tanda campuran populasi atau bentuk distribusi lain, bukan sinyal top-cut: memangkas di sana membuang logam nyata. Pisahkan populasinya dengan domain, lalu periksa ekor atas setiap domain.",
+  "handoff.toAssay": "Lanjut di Assay →",
+  "handoff.toAssayTitle": "Buka Orebit Assay dengan file master ini sudah termuat — impor yang sama seperti mengunggah CSV, tanpa perlu mengunduh.",
+  "handoff.toAssayCroppedTitle": "Buka Orebit Assay dengan file master hasil crop sudah termuat.",
+  "handoff.toResource": "Lanjut di Resource →",
+  "handoff.toResourceTitle": "Buka Orebit Resource dengan komposit ini (domain, koordinat, kadar) sudah termuat — impor yang sama seperti mengunggah CSV."
 }

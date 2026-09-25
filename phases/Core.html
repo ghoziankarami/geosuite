@@ -4087,7 +4087,9 @@ const TABLE_SCHEMA = {
       x: ['x','easting','xcollar','GDA94_E','amg_e','longitude','timur','bujur','koordinat_x'],
       y: ['y','northing','ycollar','GDA94_N','amg_n','latitude','utara','lintang','koordinat_y'],
       z: ['z','rl','zcollar','elevation','RL_Aster1','rl_local','elevasi','ketinggian'],
-      depth: ['depth','final_depth','total_depth','Final_Dept','EOH','kedalaman','kedalaman_total','total_kedalaman'],
+      // TD / max_depth / hole_depth / length: the usual end-of-hole headers in company
+      // databases. 'TD' alone left the orebit-datasets collars at 80 % complete. 2026-09-25.
+      depth: ['depth','final_depth','total_depth','Final_Dept','EOH','td','max_depth','hole_depth','end_depth','depth_m','hole_length','length','kedalaman','kedalaman_total','total_kedalaman','kedalaman_akhir'],
       prospect: ['prospect','prospect_c','prospect_code','area','prospek','wilayah','blok'],
       drill_type: ['drill_type','drilling_type','drill','Drilling_T','tipe_bor','jenis_bor'],
       comment: ['comment','notes','remarks','keterangan','catatan'],
@@ -6261,7 +6263,7 @@ function classifyTable(headers, fileName) {
   if (hasFrom() && hasTo() &&
       (has('sample_id','sampleid') || matches(/(au|cu|pb|zn|ag|ni|fe|sn|w|mo|co|pt|pd|as|sb|bi|cr|mn|ti|v|u|th|re|li|be|ta|nb|zr|hf|sc|y|la|ce|nd|pr|sm|eu|gd|tb|dy|ho|er|tm|yb|lu)(o2|o3|_|ppm|gpt|pct|ppb)?/i))) return 'assay';
   // Collar: depth + (x or easting)
-  if ((has('depth','final_dept','final_depth','total_depth') || matches(/depth$/)) &&
+  if ((has('depth','final_dept','final_depth','total_depth','td','eoh','max_depth','hole_depth','hole_length') || matches(/depth$/)) &&
       (has('x','easting','gda94_e','amg_e') || matches(/^east|^x$|_e$/))) return 'collar';
   // Last resort: the shared ColumnMap vocabulary (src/shared/io/columns.js), which the rules above
   // never had -- Indonesian Lubang/Dari/Sampai/Litho/Kedalaman/Elevasi headers are first-class.
@@ -11216,6 +11218,7 @@ function renderCropPanel() {
       ${s.kept === 0 ? _cropZeroDiagnostic(bb) : ''}
       <div class="row-controls" style="margin-top:14px;">
         <button class="btn" onclick="exportCroppedMaster()" ${s.kept===0?'disabled':''}>${ICONS.download} Cropped master CSV (desurveyed)</button>
+        ${OrebitHandoff.available() ? `<button class="btn" data-handoff="Assay" onclick="OrebitHandoff.send('Assay', exportCroppedMaster)" ${s.kept===0?'disabled':''} title="${escapeHtml(t('handoff.toAssayCroppedTitle'))}">${t('handoff.toAssay')}</button>` : ''}
         <button class="btn secondary" onclick="exportCroppedCollar()" ${s.kept===0?'disabled':''}>${ICONS.download} Cropped collar CSV</button>
         <button class="btn secondary" onclick="exportCroppedAssay()" ${s.kept===0?'disabled':''}>${ICONS.download} Cropped assay CSV</button>
         <button class="btn secondary" onclick="exportCroppedLithology()" ${s.kept===0?'disabled':''}>${ICONS.download} Cropped lithology CSV</button>
@@ -11343,6 +11346,7 @@ function renderExport() {
       })()}
       <div class="row-controls" style="margin-top:14px;">
         <button class="btn" onclick="exportMasterCSV()">${ICONS.download} ${t('core.ex.downloadMaster')}</button>
+        ${OrebitHandoff.available() ? `<button class="btn" data-handoff="Assay" onclick="OrebitHandoff.send('Assay', exportMasterCSV)" title="${escapeHtml(t('handoff.toAssayTitle'))}">${t('handoff.toAssay')}</button>` : ''}
         <button class="btn secondary" onclick="exportFullPackage()">${ICONS.package} ${t('core.ex.downloadAll')}</button>
       </div>
       <div class="row-controls" style="margin-top:8px;">

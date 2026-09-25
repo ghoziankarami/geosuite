@@ -5,3 +5,4 @@ __pycache__/
 .DS_Store
 *.bak-help
 *.bak-patch
+tests/known-answer/fixtures/big-dataset.csv

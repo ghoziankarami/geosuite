@@ -54,7 +54,8 @@ def compare(want, got, path="$"):
         if not isinstance(got, dict):
             return check(False, f"{path}: expected object, got {type(got).__name__}")
         for k, v in want.items():
-            if k in IGNORED_KEYS or k.startswith("img_"):
+            # timings vary by machine (first public CI run: estimate_seconds 4 -> 5)
+            if k in IGNORED_KEYS or k.endswith("seconds") or k.startswith("img_"):
                 continue
             if k not in got:
                 check(False, f"{path}.{k}: missing from fresh run")

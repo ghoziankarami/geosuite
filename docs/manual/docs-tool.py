@@ -23,6 +23,7 @@ TYPICAL EDIT LOOP
     python docs-tool.py find "nugget"        ->  ref/variography  line 1461
     (read only lines 1450-1500, edit there)
 """
+
 from __future__ import annotations
 
 import json
@@ -37,7 +38,14 @@ INDEX = HERE / "index.html"
 REPO_ROOT = HERE.parents[2]  # sites/geosuite.orebit.id/docs -> repo root
 CHANGELOG = REPO_ROOT / "ops/scripts/orebit/geosuite-changelog.json"
 
-C_DIM, C_B, C_OK, C_WARN, C_BAD, C_OFF = "\033[2m", "\033[1m", "\033[32m", "\033[33m", "\033[31m", "\033[0m"
+C_DIM, C_B, C_OK, C_WARN, C_BAD, C_OFF = (
+    "\033[2m",
+    "\033[1m",
+    "\033[32m",
+    "\033[33m",
+    "\033[31m",
+    "\033[0m",
+)
 if not sys.stdout.isatty():
     C_DIM = C_B = C_OK = C_WARN = C_BAD = C_OFF = ""
 
@@ -50,7 +58,9 @@ def read_html() -> str:
 def extract_docs_js(html: str) -> str:
     """Slice out `var VERSION … var DOCS = [ … ];` — the data, not the renderer."""
     start = html.index("var VERSION")
-    end = html.index("/* ==================================================================\n   RENDERER")
+    end = html.index(
+        "/* ==================================================================\n   RENDERER"
+    )
     return html[start:end]
 
 
@@ -63,8 +73,13 @@ def load_docs() -> list:
     js = extract_docs_js(read_html())
     with tempfile.TemporaryDirectory() as td:
         f = Path(td) / "docs.js"
-        f.write_text(js + "\nprocess.stdout.write(JSON.stringify({v:VERSION,d:DOCS}));\n", encoding="utf-8")
-        r = subprocess.run(["node", str(f)], capture_output=True, text=True, encoding="utf-8")
+        f.write_text(
+            js + "\nprocess.stdout.write(JSON.stringify({v:VERSION,d:DOCS}));\n",
+            encoding="utf-8",
+        )
+        r = subprocess.run(
+            ["node", str(f)], capture_output=True, text=True, encoding="utf-8"
+        )
         if r.returncode != 0:
             print(f"{C_BAD}JavaScript in index.html does not parse:{C_OFF}\n{r.stderr}")
             sys.exit(1)
@@ -110,6 +125,7 @@ def strip_tags(s: str) -> str:
 
 def walk_text(blocks, lang="en"):
     """Yield (kind, text) for every translatable string in a block list."""
+
     def pick(n):
         if n is None:
             return ""
@@ -154,7 +170,9 @@ def cmd_map():
             ln = lines.get(f"{sec['id']}/{pg['id']}", 0)
             nb = len(pg["blocks"])
             total += nb
-            print(f"   {C_DIM}L{ln:<5}{C_OFF} {sec['id']}/{pg['id']:<20} {pg['en']}  {C_DIM}({nb} blocks){C_OFF}")
+            print(
+                f"   {C_DIM}L{ln:<5}{C_OFF} {sec['id']}/{pg['id']:<20} {pg['en']}  {C_DIM}({nb} blocks){C_OFF}"
+            )
         print()
     print(f"{C_DIM}{len(flatten(data['d']))} pages · {total} blocks{C_OFF}")
 
@@ -188,10 +206,16 @@ def cmd_find(query: str):
             seen.add(flat)
             # locate the actual source line for this string
             needle = flat[:40]
-            src = next((n for n, l in enumerate(html_lines, 1)
-                        if n >= page_line and needle[:30] in strip_tags(l)), page_line)
+            src = next(
+                (
+                    n
+                    for n, line in enumerate(html_lines, 1)
+                    if n >= page_line and needle[:30] in strip_tags(line)
+                ),
+                page_line,
+            )
             i = flat.lower().index(q) if q in flat.lower() else 0
-            snip = flat[max(0, i - 40): i + 70]
+            snip = flat[max(0, i - 40) : i + 70]
             print(f"   {C_DIM}L{src:<5} [{lang}/{kind}]{C_OFF} …{snip}…")
 
     if not hits:
@@ -204,7 +228,9 @@ def cmd_show(route: str):
     data = load_docs()
     e = next((x for x in flatten(data["d"]) if x["route"] == route), None)
     if not e:
-        print(f"{C_BAD}No such route: {route}{C_OFF}\nRun `docs-tool.py map` for the list.")
+        print(
+            f"{C_BAD}No such route: {route}{C_OFF}\nRun `docs-tool.py map` for the list."
+        )
         sys.exit(1)
     pg = e["page"]
     print(f"{C_B}{pg['en']}{C_OFF}  {C_DIM}/ {pg.get('id_','')}{C_OFF}\n")
@@ -236,10 +262,15 @@ def cmd_verify():
             if b.get("t") == "note" and b.get("k") == "verify":
                 n += 1
                 ln = lines.get(e["route"], 0)
-                print(f"{C_WARN}{n}.{C_OFF} {C_B}{e['route']}{C_OFF} {C_DIM}(page L{ln}){C_OFF}")
+                print(
+                    f"{C_WARN}{n}.{C_OFF} {C_B}{e['route']}{C_OFF} {C_DIM}(page L{ln}){C_OFF}"
+                )
                 print(f"   {strip_tags(b.get('en',''))}\n")
-    print(f"{C_DIM}{n} item(s) need a domain expert sign-off.{C_OFF}"
-          if n else f"{C_OK}Nothing pending.{C_OFF}")
+    print(
+        f"{C_DIM}{n} item(s) need a domain expert sign-off.{C_OFF}"
+        if n
+        else f"{C_OK}Nothing pending.{C_OFF}"
+    )
 
 
 def _iter_blocks(blocks):
@@ -266,8 +297,10 @@ def cmd_check():
                 if isinstance(node, dict) and node.get("en") and not node.get("id"):
                     missing += 1
                     if missing <= 5:
-                        problems.append(f"missing ID translation in {e['route']}: "
-                                        f"{strip_tags(node['en'])[:60]}…")
+                        problems.append(
+                            f"missing ID translation in {e['route']}: "
+                            f"{strip_tags(node['en'])[:60]}…"
+                        )
         if not e["page"].get("id_"):
             problems.append(f"page {e['route']} has no Indonesian title (id_)")
     if missing > 5:
@@ -282,7 +315,9 @@ def cmd_check():
             if b.get("t") == "cards":
                 for c in b.get("items", []):
                     if c.get("to") not in routes:
-                        problems.append(f"dead card link in {e['route']}: {c.get('to')}")
+                        problems.append(
+                            f"dead card link in {e['route']}: {c.get('to')}"
+                        )
 
     # 3. Every referenced screenshot must exist on disk.
     for e in flat:
@@ -295,23 +330,35 @@ def cmd_check():
     # 4. Version must match the changelog SSOT.
     meta = re.search(r'name="docs-version" content="(v[\d.]+)"', html)
     if not meta:
-        problems.append("no <meta name=\"docs-version\"> anchor for version-sync-guard")
+        problems.append('no <meta name="docs-version"> anchor for version-sync-guard')
     elif CHANGELOG.is_file():
         ssot = json.loads(CHANGELOG.read_text(encoding="utf-8"))["current"]
         if meta.group(1) != ssot:
-            problems.append(f"version drift: docs says {meta.group(1)}, SSOT says {ssot}")
+            problems.append(
+                f"version drift: docs says {meta.group(1)}, SSOT says {ssot}"
+            )
         else:
             notes.append(f"version {ssot} matches SSOT")
 
     # 5. Unused screenshots — not an error, but worth knowing.
-    used = {b["src"] for e in flat for b in _iter_blocks(e["page"]["blocks"]) if b.get("t") == "fig"}
+    used = {
+        b["src"]
+        for e in flat
+        for b in _iter_blocks(e["page"]["blocks"])
+        if b.get("t") == "fig"
+    }
     shots = HERE / "screenshots" / "docs"
     if shots.is_dir():
-        unused = [f.name for f in sorted(shots.iterdir())
-                  if f.is_file() and f"/docs/screenshots/docs/{f.name}" not in used]
+        unused = [
+            f.name
+            for f in sorted(shots.iterdir())
+            if f.is_file() and f"/docs/screenshots/docs/{f.name}" not in used
+        ]
         if unused:
-            notes.append(f"{len(unused)} screenshot(s) not referenced: {', '.join(unused[:6])}"
-                         + ("…" if len(unused) > 6 else ""))
+            notes.append(
+                f"{len(unused)} screenshot(s) not referenced: {', '.join(unused[:6])}"
+                + ("…" if len(unused) > 6 else "")
+            )
 
     # 6. Size budget — the offline promise dies if this file gets huge.
     kb = INDEX.stat().st_size / 1024
@@ -359,8 +406,12 @@ def cmd_stats():
     for e in flat:
         for b in _iter_blocks(e["page"]["blocks"]):
             kinds[b.get("t", "?")] = kinds.get(b.get("t", "?"), 0) + 1
-        words_en += sum(len(strip_tags(t).split()) for _, t in walk_text(e["page"]["blocks"], "en"))
-        words_id += sum(len(strip_tags(t).split()) for _, t in walk_text(e["page"]["blocks"], "id"))
+        words_en += sum(
+            len(strip_tags(t).split()) for _, t in walk_text(e["page"]["blocks"], "en")
+        )
+        words_id += sum(
+            len(strip_tags(t).split()) for _, t in walk_text(e["page"]["blocks"], "id")
+        )
 
     print(f"{C_B}GeoSuite docs {data['v']}{C_OFF}\n")
     print(f"  sections      {len(data['d'])}")
@@ -405,26 +456,35 @@ def cmd_export_help(out_path: str | None = None, with_figures: bool = False):
 
     bundle = []
     for sec in data["d"]:
-        bundle.append({
-            "id": sec["id"], "en": sec["en"], "id_": sec["id_"],
-            "pages": [
-                {
-                    "id": pg["id"], "en": pg["en"], "id_": pg.get("id_", pg["en"]),
-                    "lede": pg.get("lede"),
-                    "blocks": clean(pg["blocks"]),
-                }
-                for pg in sec["pages"]
-            ],
-        })
+        bundle.append(
+            {
+                "id": sec["id"],
+                "en": sec["en"],
+                "id_": sec["id_"],
+                "pages": [
+                    {
+                        "id": pg["id"],
+                        "en": pg["en"],
+                        "id_": pg.get("id_", pg["en"]),
+                        "lede": pg.get("lede"),
+                        "blocks": clean(pg["blocks"]),
+                    }
+                    for pg in sec["pages"]
+                ],
+            }
+        )
 
-    js = json.dumps({"v": data["v"], "d": bundle},
-                    ensure_ascii=False, separators=(",", ":"))
+    js = json.dumps(
+        {"v": data["v"], "d": bundle}, ensure_ascii=False, separators=(",", ":")
+    )
     if out_path:
         Path(out_path).write_text(js, encoding="utf-8")
         kb = len(js.encode()) / 1024
         n_pages = sum(len(s["pages"]) for s in bundle)
-        print(f"{C_OK}wrote{C_OFF} {out_path}  {kb:.0f} KB  "
-              f"({len(bundle)} sections, {n_pages} pages)")
+        print(
+            f"{C_OK}wrote{C_OFF} {out_path}  {kb:.0f} KB  "
+            f"({len(bundle)} sections, {n_pages} pages)"
+        )
     else:
         # Write bytes, not text: the bundle contains arrows, em-dashes and
         # Indonesian text that a cp1252 console (the Windows default) cannot

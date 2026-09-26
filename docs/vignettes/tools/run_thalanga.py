@@ -28,15 +28,29 @@ import vignette_kit as K  # noqa: E402
 
 SHOTS = "--no-shots" not in sys.argv
 BOUNDARY = K.DATA / "thalanga-deposit-area.geojson"
-CUTOFF = 1.0          # % Zn grade shell -- chosen from the log-probability break (see vignette §5)
-COMP_LEN = 1.0        # m -- the dominant raw sample length
+CUTOFF = (
+    1.0  # % Zn grade shell -- chosen from the log-probability break (see vignette §5)
+)
+COMP_LEN = 1.0  # m -- the dominant raw sample length
 GT_CUTOFFS = [0.0, 1.0, 2.0, 3.0, 5.0, 8.0]
-BLOCK = (25, 25, 10)  # m -- about 1/4 of the ~90 m median between-hole spacing the app reports; 10 m benches
+BLOCK = (
+    25,
+    25,
+    10,
+)  # m -- about 1/4 of the ~90 m median between-hole spacing the app reports; 10 m benches
 # Constrained search (run B): major along the E-W strike found from the data (98 deg),
 # radius = half the along-strike drill spacing; small across-strike and vertical radii
 # because the lens geometry cannot be resolved from 11 holes (see vignette section 7);
 # at least 4 composites so no block is informed by a single intercept.
-SEARCH_B = {"srMaj": 100, "srSemi": 50, "srMin": 25, "sAz": 98, "sDip": 0, "sMinN": 4, "sMaxN": 12}
+SEARCH_B = {
+    "srMaj": 100,
+    "srSemi": 50,
+    "srMin": 25,
+    "sAz": 98,
+    "sDip": 0,
+    "sMinN": 4,
+    "sMaxN": 12,
+}
 
 
 def shot(pg, name, sel=None):
@@ -53,13 +67,19 @@ def core_stage(br, site, tmp, R):
     pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
     pg.goto(site.base + "/Core.html", wait_until="load")
     K.ready(pg)
-    pg.wait_for_function("() => STATE.assay.length > 9000 && STATE.collar.length > 700", timeout=90000)
+    pg.wait_for_function(
+        "() => STATE.assay.length > 9000 && STATE.collar.length > 700", timeout=90000
+    )
     settle(pg, 2500)
     R["core"] = c = {}
-    c["tables"] = pg.evaluate("({collar: STATE.collar.length, survey: STATE.survey.length, assay: STATE.assay.length, geology: STATE.geology.length})")
+    c["tables"] = pg.evaluate(
+        "({collar: STATE.collar.length, survey: STATE.survey.length, assay: STATE.assay.length, geology: STATE.geology.length})"
+    )
     c["grade_codes"] = pg.evaluate("window._lastGradeCodes")
     c["grade_columns"] = pg.evaluate("getActualGradeColumns()")
-    c["drill_types"] = pg.evaluate("""(() => { const m = {}; STATE.collar.forEach(r => { m[r.drill_type] = (m[r.drill_type] || 0) + 1; }); return m; })()""")
+    c["drill_types"] = pg.evaluate(
+        """(() => { const m = {}; STATE.collar.forEach(r => { m[r.drill_type] = (m[r.drill_type] || 0) + 1; }); return m; })()"""
+    )
     pg.evaluate("showTab(1)")
     c["img_dashboard"] = shot(pg, "01-core-dashboard")
 
@@ -124,9 +144,15 @@ def core_stage(br, site, tmp, R):
     settle(pg, 2500)
     c["crop"] = pg.evaluate("_cropStats()")
     c["img_crop"] = shot(pg, "04-core-crop", "#cropPanel")
-    master = K.download(pg, "exportCroppedMaster()", tmp / "thalanga-master-cropped.csv")
+    master = K.download(
+        pg, "exportCroppedMaster()", tmp / "thalanga-master-cropped.csv"
+    )
     hdr, rows = K.read_csv(master)
-    c["export"] = {"rows": len(rows), "columns": hdr, "holes": sorted({r["hole_id"] for r in rows})}
+    c["export"] = {
+        "rows": len(rows),
+        "columns": hdr,
+        "holes": sorted({r["hole_id"] for r in rows}),
+    }
     c["page_errors"] = errs
     pg.close()
     return master, rows
@@ -134,7 +160,9 @@ def core_stage(br, site, tmp, R):
 
 def independent_cropped(rows, R):
     """Recomputed from the exported CSV with plain Python -- not the app's code."""
-    zn = [(K.num(r["zn_ppm"]) or 0) / 1e4 for r in rows if K.num(r["zn_ppm"]) is not None]
+    zn = [
+        (K.num(r["zn_ppm"]) or 0) / 1e4 for r in rows if K.num(r["zn_ppm"]) is not None
+    ]
     L = [K.num(r["to_m"]) - K.num(r["from_m"]) for r in rows]
     tot = sum(z * ln for z, ln in zip(zn, L))
     shares = {}
@@ -147,12 +175,26 @@ def independent_cropped(rows, R):
     sv = sorted(zn)
     pct = lambda q: sv[min(len(sv) - 1, int(q * len(sv)))]  # noqa: E731
     R["independent"] = {
-        "samples": len(zn), "zn_mean_pct": round(st.mean(zn), 3), "zn_median_pct": round(st.median(zn), 3),
-        "zn_cv": round(cv(zn), 2), "zn_p95": round(pct(0.95), 2), "zn_p99": round(pct(0.99), 2), "zn_max": max(zn),
-        "sample_length_median_m": round(st.median(L), 2), "sample_length_mode_m": max(set(round(x, 1) for x in L), key=[round(x, 1) for x in L].count),
+        "samples": len(zn),
+        "zn_mean_pct": round(st.mean(zn), 3),
+        "zn_median_pct": round(st.median(zn), 3),
+        "zn_cv": round(cv(zn), 2),
+        "zn_p95": round(pct(0.95), 2),
+        "zn_p99": round(pct(0.99), 2),
+        "zn_max": max(zn),
+        "sample_length_median_m": round(st.median(L), 2),
+        "sample_length_mode_m": max(
+            set(round(x, 1) for x in L), key=[round(x, 1) for x in L].count
+        ),
         "metal_share_above_cutoff_pct": shares,
-        "shell": {"n_in": len(inside), "cv_in": round(cv(inside), 2), "mean_in": round(st.mean(inside), 2),
-                  "n_out": len(outside), "cv_out": round(cv(outside), 2), "mean_out": round(st.mean(outside), 3)},
+        "shell": {
+            "n_in": len(inside),
+            "cv_in": round(cv(inside), 2),
+            "mean_in": round(st.mean(inside), 2),
+            "n_out": len(outside),
+            "cv_out": round(cv(outside), 2),
+            "mean_out": round(st.mean(outside), 3),
+        },
     }
 
 
@@ -166,7 +208,10 @@ def assay_stage(br, site, tmp, master, R):
     settle(pg, 1000)
     pg.locator("#fileInput").set_input_files(str(master))
     n = R["core"]["export"]["rows"]
-    pg.wait_for_function(f"() => typeof DATA !== 'undefined' && DATA && DATA.rows && DATA.rows.length === {n}", timeout=90000)
+    pg.wait_for_function(
+        f"() => typeof DATA !== 'undefined' && DATA && DATA.rows && DATA.rows.length === {n}",
+        timeout=90000,
+    )
     settle(pg, 2000)
     R["assay"] = a = {}
     a["columns"] = pg.evaluate("DATA.columns || DATA.cols")
@@ -207,22 +252,31 @@ def assay_stage(br, site, tmp, master, R):
 
     pg.evaluate("showTab(7)")
     settle(pg, 1500)
-    pg.evaluate(f"() => {{ const el = document.getElementById('compLength'); if (el) {{ el.value = {COMP_LEN}; }} renderCompositing(); }}")
+    pg.evaluate(
+        f"() => {{ const el = document.getElementById('compLength'); if (el) {{ el.value = {COMP_LEN}; }} renderCompositing(); }}"
+    )
     settle(pg, 2500)
     comp = pg.evaluate(f"""(() => {{ const r = computeComposites({COMP_LEN}, 0.5, false);
         return {{n: r.composites.length, dropped_tail_m: r.droppedTailLength, gap_m: r.gapLength, overlaps: r.overlapCount}}; }})()""")
     a["composites"] = comp
     a["img_composite"] = shot(pg, "08-assay-composite")
 
-    comp_csv = K.download(pg, f"exportMasterForEstimation({{length: {COMP_LEN}}})", tmp / "thalanga-composites.csv")
+    comp_csv = K.download(
+        pg,
+        f"exportMasterForEstimation({{length: {COMP_LEN}}})",
+        tmp / "thalanga-composites.csv",
+    )
     hdr, rows = K.read_csv(comp_csv)
     a["export"] = {"rows": len(rows), "columns": hdr}
     dom_col = next((h for h in hdr if h == "domain"), None)
     if dom_col:
         from collections import Counter
+
         a["export"]["domains"] = dict(Counter(r[dom_col] for r in rows))
     cov = [K.num(r.get("coverage")) for r in rows]
-    a["export"]["under_half_informed"] = sum(1 for c in cov if c is not None and c < 0.5)
+    a["export"]["under_half_informed"] = sum(
+        1 for c in cov if c is not None and c < 0.5
+    )
     a["page_errors"] = errs
     pg.close()
     return comp_csv, rows
@@ -237,7 +291,10 @@ def resource_stage(br, site, tmp, comp_csv, comp_rows, R):
     pg.evaluate("showTab(2)")
     settle(pg, 1000)
     pg.locator("#fileInput").set_input_files(str(comp_csv))
-    pg.wait_for_function(f"() => typeof DATA !== 'undefined' && DATA && DATA.rows && DATA.rows.length === {len(comp_rows)}", timeout=120000)
+    pg.wait_for_function(
+        f"() => typeof DATA !== 'undefined' && DATA && DATA.rows && DATA.rows.length === {len(comp_rows)}",
+        timeout=120000,
+    )
     settle(pg, 2000)
     R["resource"] = r = {}
     pg.evaluate("showTab(3)")
@@ -245,35 +302,47 @@ def resource_stage(br, site, tmp, comp_csv, comp_rows, R):
     pg.evaluate("""() => { const s = document.getElementById('setupElement'); if (s) { s.value = 'zn_pct'; s.dispatchEvent(new Event('change')); }
                           const d = document.getElementById('setupDomain'); if (d) { d.value = 'M1-Mineralised'; d.dispatchEvent(new Event('change')); } }""")
     settle(pg, 1500)
-    r["setup"] = pg.evaluate("({element: setupState.element, domain: setupState.domain, unit: gradeUnitFor(setupState.element), samples: getSamples().length})")
+    r["setup"] = pg.evaluate(
+        "({element: setupState.element, domain: setupState.domain, unit: gradeUnitFor(setupState.element), samples: getSamples().length})"
+    )
     r["img_setup"] = shot(pg, "09-resource-setup")
 
     pg.evaluate("showTab(4)")
     settle(pg, 1500)
     # Down-hole variogram first (within-hole pairs): it fixes the nugget, then the
     # between-hole fit only searches sill and range -- the app's own pipeline order.
-    pg.evaluate("async () => { await computeDownholeVariogram(); await computeVariogram(); await autoFitVariogram(false); }")
+    pg.evaluate(
+        "async () => { await computeDownholeVariogram(); await computeVariogram(); await autoFitVariogram(false); }"
+    )
     settle(pg, 2500)
     r["variogram"] = pg.evaluate("variogramState.model")
-    r["variogram_fit"] = pg.evaluate("""({nugget_from: variogramState.fitNuggetFrom, at_bounds: variogramState.fitAtBounds || [],
+    r["variogram_fit"] = (
+        pg.evaluate("""({nugget_from: variogramState.fitNuggetFrom, at_bounds: variogramState.fitAtBounds || [],
         lag: variogramState.experimental.lags.length > 1 ? variogramState.experimental.lags[1] - variogramState.experimental.lags[0] : null,
         first_lag_h: variogramState.experimental.lags[0], first_lag_gamma: variogramState.experimental.gammas[0], data_variance: (() => { const v = getSamples().map(s => s.v);
             const m = v.reduce((a, b) => a + b, 0) / v.length; return v.reduce((a, b) => a + (b - m) ** 2, 0) / v.length; })()})""")
+    )
     r["downhole"] = pg.evaluate("""(() => { const d = variogramState.downhole;
         return {nugget: d.suggestedNugget, pairs: d.totalPairs, lags: (d.lags || []).slice(0, 8), gammas: (d.gammas || []).slice(0, 8), lag_pairs: (d.pairs || []).slice(0, 8)}; })()""")
     r["img_variogram"] = shot(pg, "10-resource-variogram")
 
     pg.evaluate("showTab(5)")
     settle(pg, 1500)
-    r["suggested_block_size"] = pg.evaluate("""async () => { if (typeof autoSuggestBlockSize === 'function') await autoSuggestBlockSize();
+    r["suggested_block_size"] = (
+        pg.evaluate("""async () => { if (typeof autoSuggestBlockSize === 'function') await autoSuggestBlockSize();
         return ['bmX','bmY','bmZ'].map(id => +((document.getElementById(id) || {}).value)); }""")
+    )
     settle(pg, 800)
     pg.evaluate(f"""() => {{ const setv = (id, v) => {{ const el = document.getElementById(id); if (el) el.value = v; }};
         setv('bmX', {BLOCK[0]}); setv('bmY', {BLOCK[1]}); setv('bmZ', {BLOCK[2]}); }}""")
     pg.evaluate("async () => { await generateBlocks(); }")
     settle(pg, 1500)
-    r["blocks"] = pg.evaluate("({size: blockState.size, dims: blockState.dims, n: blockState.blocks.length, density: blockState.density, density_user_set: !!blockState.densityUserSet})")
-    r["search"] = pg.evaluate("({rMaj: searchState.rMaj, rSemi: searchState.rSemi, rMin: searchState.rMin, minN: searchState.minNeighbors, maxN: searchState.maxNeighbors, octant: searchState.useOctant})")
+    r["blocks"] = pg.evaluate(
+        "({size: blockState.size, dims: blockState.dims, n: blockState.blocks.length, density: blockState.density, density_user_set: !!blockState.densityUserSet})"
+    )
+    r["search"] = pg.evaluate(
+        "({rMaj: searchState.rMaj, rSemi: searchState.rSemi, rMin: searchState.rMin, minN: searchState.minNeighbors, maxN: searchState.maxNeighbors, octant: searchState.useOctant})"
+    )
 
     pg.evaluate("showTab(6)")
     settle(pg, 1000)
@@ -284,28 +353,42 @@ def resource_stage(br, site, tmp, comp_csv, comp_rows, R):
     r["img_estimate_unconstrained"] = shot(pg, "11a-resource-estimate-unconstrained")
     r["estimate_default_bounded"] = run_estimation(pg, {"sDomainBound": True})
     r["estimate"] = run_estimation(pg, dict(SEARCH_B, sDomainBound=True))
-    r["spacing_note"] = pg.evaluate("""(() => { const m = document.body.innerText.match(/between-hole NN: median (\\d+)\\s*m, P90 (\\d+)\\s*m/);
+    r["spacing_note"] = (
+        pg.evaluate("""(() => { const m = document.body.innerText.match(/between-hole NN: median (\\d+)\\s*m, P90 (\\d+)\\s*m/);
         return m ? {median_m: +m[1], p90_m: +m[2]} : null; })()""")
-    r["search_constrained"] = pg.evaluate("({rMaj: searchState.rMaj, rSemi: searchState.rSemi, rMin: searchState.rMin, az: searchState.azDeg, dip: searchState.dipDeg, minN: searchState.minNeighbors, maxN: searchState.maxNeighbors})")
+    )
+    r["search_constrained"] = pg.evaluate(
+        "({rMaj: searchState.rMaj, rSemi: searchState.rSemi, rMin: searchState.rMin, az: searchState.azDeg, dip: searchState.dipDeg, minN: searchState.minNeighbors, maxN: searchState.maxNeighbors})"
+    )
     r["img_estimate"] = shot(pg, "11-resource-estimate")
 
     pg.evaluate("showTab(7)")
     settle(pg, 1000)
-    pg.evaluate("async () => { if (typeof runCrossVal === 'function') await runCrossVal(); }")
+    pg.evaluate(
+        "async () => { if (typeof runCrossVal === 'function') await runCrossVal(); }"
+    )
     for _ in range(300):
-        if pg.evaluate("typeof crossvalState !== 'undefined' && crossvalState && crossvalState.metrics"):
+        if pg.evaluate(
+            "typeof crossvalState !== 'undefined' && crossvalState && crossvalState.metrics"
+        ):
             break
         pg.wait_for_timeout(1000)
-    r["crossval"] = pg.evaluate("(typeof crossvalState !== 'undefined' && crossvalState.metrics) ? {metrics: crossvalState.metrics, pairs: crossvalState.results.actual.length} : null")
+    r["crossval"] = pg.evaluate(
+        "(typeof crossvalState !== 'undefined' && crossvalState.metrics) ? {metrics: crossvalState.metrics, pairs: crossvalState.results.actual.length} : null"
+    )
     r["img_crossval"] = shot(pg, "12-resource-crossval")
 
     pg.evaluate("showTab(9)")
     settle(pg, 1500)
-    pg.evaluate("() => { if (typeof runClassification === 'function') runClassification(); }")
+    pg.evaluate(
+        "() => { if (typeof runClassification === 'function') runClassification(); }"
+    )
     settle(pg, 2000)
-    r["confidence_screen"] = pg.evaluate("""(() => { const l = classState && classState.labels; if (!l) return null;
+    r["confidence_screen"] = (
+        pg.evaluate("""(() => { const l = classState && classState.labels; if (!l) return null;
         const c = {high: 0, medium: 0, low: 0, outside: 0}; Array.from(l).forEach(v => { if (v === 3) c.high++; else if (v === 2) c.medium++; else if (v === 1) c.low++; else c.outside++; });
         return c; })()""")
+    )
     r["img_confidence"] = shot(pg, "12b-resource-confidence")
 
     pg.evaluate("showTab(10)")
@@ -315,20 +398,27 @@ def resource_stage(br, site, tmp, comp_csv, comp_rows, R):
     # from the exported block model and the test compares the two.
     r["gt_app"] = {}
     for key, only_hm in (("all_blocks", False), ("high_medium", True)):
-        r["gt_app"][key] = pg.evaluate("""(onlyHM) => { const setv = (id, v) => { document.getElementById(id).value = v; };
+        r["gt_app"][key] = pg.evaluate(
+            """(onlyHM) => { const setv = (id, v) => { document.getElementById(id).value = v; };
             setv('gtMin', 0); setv('gtMax', 8); setv('gtSteps', 9); document.getElementById('gtClass').checked = onlyHM;
             computeGT(); const d = document.getElementById('gtPlot').data;
             return d[0].x.map((c, i) => ({cutoff_pct: Math.round(c * 100) / 100, tonnes_Mt: Math.round(d[0].y[i] * 1000) / 1000,
-                grade_pct: d[1].y[i] === null ? null : Math.round(d[1].y[i] * 100) / 100})); }""", only_hm)
+                grade_pct: d[1].y[i] === null ? null : Math.round(d[1].y[i] * 100) / 100})); }""",
+            only_hm,
+        )
     settle(pg, 1500)
     r["img_gt"] = shot(pg, "13-resource-grade-tonnage")
-    blocks_csv = K.download(pg, "exportBlockCSV('generic')", tmp / "thalanga-blocks.csv")
+    blocks_csv = K.download(
+        pg, "exportBlockCSV('generic')", tmp / "thalanga-blocks.csv"
+    )
     bh, brows = K.read_csv(blocks_csv)
     r["block_export_columns"] = bh
     pg.evaluate("showTab(12)")
     settle(pg, 2500)
     r["img_kcmi"] = shot(pg, "14-resource-kcmi")
-    r["density_basis_text"] = pg.evaluate("""(() => { const t = document.body.innerText; const m = t.match(/(ASSUMED[^\\n]{0,120}|ASUMSI[^\\n]{0,120})/); return m ? m[0] : null; })()""")
+    r["density_basis_text"] = pg.evaluate(
+        """(() => { const t = document.body.innerText; const m = t.match(/(ASSUMED[^\\n]{0,120}|ASUMSI[^\\n]{0,120})/); return m ? m[0] : null; })()"""
+    )
     r["page_errors"] = errs
     pg.close()
     return bh, brows
@@ -337,8 +427,11 @@ def resource_stage(br, site, tmp, comp_csv, comp_rows, R):
 def run_estimation(pg, search):
     """Set the search inputs (None = the app's defaults) and run OK/IDW/NN; return block stats + tonnage."""
     if search:
-        pg.evaluate("""(s) => { Object.entries(s).forEach(([id, v]) => { const el = document.getElementById(id);
-            if (!el) return; if (el.type === 'checkbox') el.checked = !!v; else el.value = v; }); }""", search)
+        pg.evaluate(
+            """(s) => { Object.entries(s).forEach(([id, v]) => { const el = document.getElementById(id);
+            if (!el) return; if (el.type === 'checkbox') el.checked = !!v; else el.value = v; }); }""",
+            search,
+        )
     pg.evaluate("() => { estimState.done = false; }")
     pg.evaluate("async () => { await runEstimation(); }")
     t0 = time.time()
@@ -347,7 +440,10 @@ def run_estimation(pg, search):
             break
         pg.wait_for_timeout(1000)
     if not pg.evaluate("estimState.done === true"):
-        raise RuntimeError("estimation did not finish: " + str(pg.evaluate("(document.getElementById('estimStatus')||{}).innerText")))
+        raise RuntimeError(
+            "estimation did not finish: "
+            + str(pg.evaluate("(document.getElementById('estimStatus')||{}).innerText"))
+        )
     settle(pg, 1500)
     out = pg.evaluate("""(() => {
         const s = a => { const v = Array.from(a || []).filter(x => x !== null && isFinite(x)); if (!v.length) return null;
@@ -369,17 +465,37 @@ def independent_gt(bh, brows, R):
     size = r["blocks"]["size"]
     vol = size[0] * size[1] * size[2]
     dens = r["blocks"]["density"]
-    gcol = next((h for h in bh if h.lower() in ("ok", "zn_pct_ok", "ok_zn_pct", "grade_ok", "ok_grade")), None) \
-        or next((h for h in bh if "ok" in h.lower()), None)
+    gcol = next(
+        (
+            h
+            for h in bh
+            if h.lower() in ("ok", "zn_pct_ok", "ok_zn_pct", "grade_ok", "ok_grade")
+        ),
+        None,
+    ) or next((h for h in bh if "ok" in h.lower()), None)
     vals = [K.num(x[gcol]) for x in brows] if gcol else []
-    vals = [v for v in vals if v is not None and v != -999]  # -999 = not estimated (export NA code)
-    out = {"grade_column": gcol, "blocks_estimated": len(vals), "block_volume_m3": vol, "density_t_m3": dens, "curve": []}
+    vals = [
+        v for v in vals if v is not None and v != -999
+    ]  # -999 = not estimated (export NA code)
+    out = {
+        "grade_column": gcol,
+        "blocks_estimated": len(vals),
+        "block_volume_m3": vol,
+        "density_t_m3": dens,
+        "curve": [],
+    }
     for cut in GT_CUTOFFS:
         sel = [v for v in vals if v >= cut]
         t = len(sel) * vol * dens
         g = st.mean(sel) if sel else 0.0
-        out["curve"].append({"cutoff_pct": cut, "tonnes_Mt": round(t / 1e6, 3), "grade_pct": round(g, 2),
-                             "zn_metal_kt": round(t * g / 100 / 1e3, 1)})
+        out["curve"].append(
+            {
+                "cutoff_pct": cut,
+                "tonnes_Mt": round(t / 1e6, 3),
+                "grade_pct": round(g, 2),
+                "zn_metal_kt": round(t * g / 100 / 1e3, 1),
+            }
+        )
     # The same blocks at a massive-sulphide density instead of the assumed 2.8 t/m3 (vignette section 11).
     out["tonnes_Mt_at_3_6"] = round(len(vals) * vol * 3.6 / 1e6, 3)
     R["independent_gt"] = out
@@ -388,14 +504,26 @@ def independent_gt(bh, brows, R):
 def main():
     tmp = Path(tempfile.mkdtemp(prefix="vig-thalanga-"))
     site = K.Site()
-    R = {"vignette": "01-thalanga-vms", "data": {
-        "name": "NEQ Deposit Atlas - Thalanga (ds100103)", "publisher": "Geological Survey of Queensland",
-        "licence": "CC BY 4.0", "url": "https://geoscience.data.qld.gov.au/dataset/ds100103"},
-        "parameters": {"boundary": BOUNDARY.name, "cutoff_pct_zn": CUTOFF, "composite_m": COMP_LEN}}
+    R = {
+        "vignette": "01-thalanga-vms",
+        "data": {
+            "name": "NEQ Deposit Atlas - Thalanga (ds100103)",
+            "publisher": "Geological Survey of Queensland",
+            "licence": "CC BY 4.0",
+            "url": "https://geoscience.data.qld.gov.au/dataset/ds100103",
+        },
+        "parameters": {
+            "boundary": BOUNDARY.name,
+            "cutoff_pct_zn": CUTOFF,
+            "composite_m": COMP_LEN,
+        },
+    }
     t0 = time.time()
     try:
         with sync_playwright() as p:
-            br = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-gpu"])
+            br = p.chromium.launch(
+                headless=True, args=["--no-sandbox", "--disable-gpu"]
+            )
             master, rows = core_stage(br, site, tmp, R)
             independent_cropped(rows, R)
             comp_csv, comp_rows = assay_stage(br, site, tmp, master, R)

@@ -1,0 +1,3 @@
+# Pinned deps for building the Orebit Core/Assay/Resource desktop EXEs.
+pywebview>=6.2.1,<7
+pyinstaller>=6.22,<7

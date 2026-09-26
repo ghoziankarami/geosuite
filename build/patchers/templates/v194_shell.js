@@ -22,19 +22,6 @@
   const QS_CTA_EN = {qs_cta_en!r};
   const QS_CTA_ID = {qs_cta_id!r};
 
-  /** Returns the verified license payload (or null if no key / invalid). */
-  function _getLicensePayload() {{
-    try {{
-      var rt = window.__OREBIT_RT__;
-      var key = (rt && rt.key) || null;
-      if (!key) return null;
-      if (typeof orbtVerify !== 'undefined' && orbtVerify.verify) {{
-        return orbtVerify.verify(key);
-      }}
-      return null;
-    }} catch(e) {{ return null; }}
-  }}
-
   const STRINGS = {{
     en: {{
       'nav.tour': 'Tour', 'nav.glossary': 'Glossary', 'nav.help': 'Help',
@@ -579,34 +566,18 @@
           + '<div class="orebit-profile-row"><span class="k">' + esc(st.rowsLabel) + '</span><span class="v num">' + st.rows + '</span></div>'
           + '<div class="orebit-profile-row"><span class="k">' + esc(st.stageLabel) + '</span><span class="v">' + PHASE_PILL + '</span></div>'
         + '</div>'
+        // Voluntary support CTA, shown in both the web and the Desktop profile
+        // menu. User-initiated, never a paywall.
         + (function(){{
-          var l = _getLicensePayload(), h = '';
-          var v = document.querySelector('meta[name="product-version"]');
-          var ver = v ? v.getAttribute('content') : '-';
-          if (l) {{
-            var pn = ({{CORE:'Orebit Core',ASAY:'Orebit Assay',RSRC:'Orebit Resource',BNDL:'GeoSuite Bundle'}})[l.p] || l.p;
-            var licLbl = document.documentElement.lang === 'id' ? 'Lisensi' : 'License';
-            h += '<div class="orebit-profile-sec">'
-              + '<div class="lbl">' + licLbl + '</div>'
-              + '<div class="orebit-profile-row"><span class="k">' + (document.documentElement.lang === 'id' ? 'Tipe' : 'Type') + '</span><span class="v">' + esc(pn) + '</span></div>'
-              + '<div class="orebit-profile-row"><span class="k">Email</span><span class="v">' + esc(l.e) + '</span></div>';
-                          // v3.2 (2026-08-18): Expiry is DEAD — GeoSuite is free & permanent.
-                          // License keys never expire; no 'x' row is rendered.
-                          h += '</div>';
-          }}
-            // D-008 addendum (2026-08-14): voluntary support CTA — shown in
-            // BOTH web and EXE profile menus (user-initiated, not a paywall gate).
-            {{
-              var _supportLbl = document.documentElement.lang === 'id' ? 'Dukung Orebit' : 'Support Orebit';
-              var _trialEndLbl = document.documentElement.lang === 'id' ? '💚 Terbantu GeoSuite?' : '💚 Enjoying GeoSuite?';
-              var _getLicLbl = document.documentElement.lang === 'id' ? 'Dukung tool & dokumentasi secara sukarela — sekali saja, tanpa langganan.' : 'Support the tools & docs voluntarily — one-time, no subscription.';
-              h += '<div class="orebit-profile-upgrade" style="margin:8px 12px 4px;padding:12px;border-radius:8px;background:#ecfdf5;border:1px solid #a7f3d0;text-align:center;">'
-                + '<div style="font-size:13px;font-weight:600;color:#065f46;margin-bottom:4px;">' + _trialEndLbl + '</div>'
-                + '<div style="font-size:11px;color:#047857;margin-bottom:8px;">' + _getLicLbl + '</div>'
-                + '<a href="{SUPPORT_URL}" target="_blank" style="display:inline-block;padding:6px 16px;border-radius:6px;background:#0d9488;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">💚 ' + _supportLbl + '</a>'
-              + '</div>';
-            }}
-          return h;
+          var isId = document.documentElement.lang === 'id';
+          var supportLbl = isId ? 'Dukung Orebit' : 'Support Orebit';
+          var titleLbl = isId ? '💚 Terbantu GeoSuite?' : '💚 Enjoying GeoSuite?';
+          var bodyLbl = isId ? 'Dukung tool & dokumentasi secara sukarela — sekali saja, tanpa langganan.' : 'Support the tools & docs voluntarily — one-time, no subscription.';
+          return '<div class="orebit-profile-upgrade" style="margin:8px 12px 4px;padding:12px;border-radius:8px;background:#ecfdf5;border:1px solid #a7f3d0;text-align:center;">'
+            + '<div style="font-size:13px;font-weight:600;color:#065f46;margin-bottom:4px;">' + titleLbl + '</div>'
+            + '<div style="font-size:11px;color:#047857;margin-bottom:8px;">' + bodyLbl + '</div>'
+            + '<a href="{SUPPORT_URL}" target="_blank" style="display:inline-block;padding:6px 16px;border-radius:6px;background:#0d9488;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">💚 ' + supportLbl + '</a>'
+            + '</div>';
         }})()
         + '<div class="orebit-profile-sec" style="padding:6px 0;">'
           + '<button class="orebit-profile-act" data-act="import"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>' + esc(L.importBundle) + '</span></button>'
@@ -1110,9 +1081,6 @@
 
     try {{ applyI18n(); }} catch (e) {{ console.warn('[orebit-v194] i18n:', e); }}
     try {{ injectMobileNav(); }} catch (e) {{ console.warn('[orebit-v194] mobile nav:', e); }}
-    // v3.2 (2026-08-18): Expiry is DEAD — GeoSuite is free & permanent.
-    // Trial-expired toast removed; keys never expire. Support CTA lives
-    // in the profile menu only (user-initiated, not a paywall gate).
 
     // Show lang-picker first (tour is now opt-in via header button only)
     maybeShowPickerOnFirstVisit(() => {{}});
@@ -1135,34 +1103,4 @@
   }}
 }})();
 
-/* ── Orebit Feature Injector ─────────────────────────────── */
-(function(){{
-  function injectFeatures() {{
-    try {{
-      // "Activate License" → "Activated ✓" when license valid
-      document.querySelectorAll('button, a, [class*="license"], [class*="activate"]').forEach(function(el) {{
-        if (el.textContent.trim().includes('Activate') || el.textContent.trim().includes('License')) {{
-          if (window.orbtLicenseUI && window.orbtLicenseUI.currentLicense && window.orbtLicenseUI.currentLicense()) {{
-            el.innerHTML = document.documentElement.lang === 'id' ? '✓ Aktif' : '✓ Activated';
-            el.style.cssText = 'background:#059669 !important;color:#fff !important;border-color:#059669 !important;cursor:default !important;opacity:0.85;';
-            el.disabled = true;
-            el.title = document.documentElement.lang === 'id' ? 'Lisensi aktif' : 'License active';
-          }}
-        }}
-      }});
-    }} catch(e) {{ console.warn('[OrebitFeatures]', e); }}
-  }}
-
-  // Retry in case license UI loads late
-  var retries = 0;
-  function tryInject() {{
-    injectFeatures();
-    if (retries < 10) {{ retries++; setTimeout(tryInject, retries * 500); }}
-  }}
-  if (document.readyState === 'complete') {{
-    setTimeout(tryInject, 800);
-  }} else {{
-    document.addEventListener('DOMContentLoaded', function() {{ setTimeout(tryInject, 800); }});
-  }}
-}})();
 </script>

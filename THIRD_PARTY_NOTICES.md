@@ -6,7 +6,7 @@ all compatible with GPL-3.0. Their licence headers are kept intact in the files.
 | Component | Version | Licence | File | Source |
 |---|---|---|---|---|
 | plotly.js | 2.32.0 | MIT | `vendor/plotly.min.js` | https://github.com/plotly/plotly.js |
-| jsPDF | 4.2.0 | MIT | `vendor/jspdf.umd.min.js`, `vendor/jspdf.min.js` | https://github.com/parallax/jsPDF |
+| jsPDF | 4.2.0 | MIT | `vendor/jspdf.umd.min.js` | https://github.com/parallax/jsPDF |
 | html2canvas | 1.4.1 | MIT | `vendor/html2canvas.min.js` | https://github.com/niklasvh/html2canvas |
 | JSZip | 3.10.1 | MIT or GPL-3.0 (used under MIT) | `vendor/jszip.min.js` | https://github.com/Stuk/jszip |
 | Inter (font) | — | SIL Open Font License 1.1 | `src/assets/fonts/*.face.css` | https://github.com/rsms/inter |

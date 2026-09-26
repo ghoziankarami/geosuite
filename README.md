@@ -1,10 +1,15 @@
 # Orebit GeoSuite
 
+[![Latest release](https://img.shields.io/github/v/release/ghoziankarami/geosuite?label=release)](https://github.com/ghoziankarami/geosuite/releases/latest)
+[![CI](https://github.com/ghoziankarami/geosuite/actions/workflows/ci.yml/badge.svg)](https://github.com/ghoziankarami/geosuite/actions/workflows/ci.yml)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+[![Bahasa: EN | ID](https://img.shields.io/badge/UI-English%20%7C%20Bahasa%20Indonesia-0d9488)](#bahasa-indonesia)
+
 **Drillhole data to a first resource estimate — free, offline, open source.**
 Three connected tools for exploration geologists, in English and Bahasa Indonesia:
 
 | Module | What it does |
-|---|---|
+| --- | --- |
 | **Orebit Core** | Import collar / survey / assay / lithology tables (any column names, EN or ID headers), validate them, desurvey, QAQC, export a clean master file. |
 | **Orebit Assay** | Statistics per element and domain, top-cut, declustering, automatic or manual domaining, compositing, variography. |
 | **Orebit Resource** | Block model, ordinary kriging / IDW / nearest neighbour, cross-validation, a preliminary confidence screen (not a classification), grade–tonnage, contained metal, a reporting-readiness checklist and PDF report. |
@@ -28,7 +33,7 @@ data never leaves your computer. No account, no trial, no paid tier.
 ## Install
 
 | Your computer | How |
-|---|---|
+| --- | --- |
 | **Mac** | Open [geosuite.orebit.id/Core.html](https://geosuite.orebit.id/Core.html) in **Safari → File → Add to Dock** (macOS 14 Sonoma or later), or in Chrome/Edge click **Install app**. GeoSuite then opens from the Dock as its own app and works offline. |
 | **Linux, ChromeOS** | Chrome/Edge/Chromium: **Install app** (button in the header, or the install icon in the address bar). |
 | **Windows** | Same as above, or the Desktop Edition from [Releases](https://github.com/ghoziankarami/geosuite/releases). |
@@ -46,7 +51,7 @@ it opens with a connection. Your data stays on your computer either way.
 Read them as web pages at **[geosuite.orebit.id/tutorials](https://geosuite.orebit.id/tutorials/)**, or here in the repository:
 
 | Tutorial | Data | What it teaches |
-|---|---|---|
+| --- | --- | --- |
 | [01 — Thalanga VMS](docs/vignettes/en/01-thalanga-vms.md) · [ID](docs/vignettes/01-thalanga-vms.md) | Geological Survey of Queensland, CC BY 4.0 (the built-in sample) | lab codes, validation with an audit trail, cropping a regional compilation, populations vs outliers, grade-shell domaining without lithology, why defaults gave 276 Mt, a check against 1989–1998 production |
 | [02 — Babbitt Cu-Ni](docs/vignettes/en/02-babbitt-cuni.md) · [ID](docs/vignettes/02-babbitt-cuni.md) | NRRI Duluth Complex database via pygslib | files in feet, 61 % of the core never assayed, a justified top-cut, dense data and smoothing, estimate vs an RPEEE-constrained resource |
 
@@ -64,7 +69,7 @@ More:
   drillhole datasets under CC BY 4.0, same four-file layout:
 
   | Dataset | Style | Grade CV | The problem it poses |
-  |---|---|---|---|
+  | --- | --- | --- | --- |
   | `01-emas-epitermal` | Low-sulphidation Au–Ag vein | 1.66 | erratic high grades; top-cut and domaining decide the answer |
   | `02-nikel-laterit` | Ni–Co laterite over ultramafic | 0.28 | smooth layered regolith; horizon boundaries, not outliers |
   | `03-timah-placer` | Alluvial cassiterite (kaksa) | 1.42 | thin basal pay layer, volumetric grade in kg/m³ |
@@ -144,7 +149,7 @@ python3 tests/test_pipeline_known_answer.py
 
 ### Repository layout
 
-```
+```text
 phases/        Core.html, Assay.html, Resource.html — the application source (edit these)
 src/shared/    code shared by all three modules (import, columns, grade codes, geostatistics, UI)
 src/assets/    fonts and sample datasets, inlined at build time
@@ -177,7 +182,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Security issues: [SECURITY.md](SECURITY.
 
 GeoSuite is free. If it saves you time, you can support development with a donation of
 any amount at [saweria.co/orebitindonesia](https://saweria.co/orebitindonesia).
-Training and institutional support: support@orebit.id.
+Training and institutional support: <support@orebit.id>.
 
 ## License
 

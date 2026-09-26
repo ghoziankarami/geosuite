@@ -2,10 +2,11 @@
 <!-- OREBIT_BUILD_START
 Orebit Core — GeoSuite v3.0.0
 Copyright (c) 2026 Orebit (Ghozian Islam Karami). All rights reserved.
-Build: core-v3.0.0-20260925-6ca6d26-dirty
+Build: core-v3.0.0-20260926-f2808ac-dirty
 Terms: https://geosuite.orebit.id/terms
 -- OREBIT_BUILD_END -->
-<script>window.OREBIT_BUILD_ID="core-v3.0.0-20260925-6ca6d26-dirty";</script>
+<script>window.OREBIT_BUILD_ID="core-v3.0.0-20260926-f2808ac-dirty";</script>
+
 
 
 
@@ -200,7 +201,7 @@ a:hover { color: var(--accent-h); text-decoration: underline; }
   /* Prevent horizontal overflow */
   .wrap { overflow-x: hidden !important; max-width: 100vw !important; }
   .card { overflow-x: auto; }
-  /* Push trial toast above footer on mobile */
+  /* Keep toasts above the mobile bottom nav */
   [data-orebit-toast] { bottom: 150px !important; }
 }
 
@@ -3130,9 +3131,7 @@ const SAMPLE_DATA = /* @orebit-inline: assets/sample/core.json */;
 // phase files and is the remaining Tahap 4.3 surface.
 // ==============================================================================
 
-// ============= LICENSE INFO (from EXE wrapper) =============
-// Reads window.__OREBIT_RT__ injected by the EXE wrapper at runtime.
-// Falls back gracefully if not present (web trial mode).
+// ============= SHARED MODULES (inlined at build time) =============
 /* @orebit-inline: shared/ui/index.js */
 /* @orebit-inline: shared/i18n/index.js */
 /* @orebit-inline: shared/io/index.js */

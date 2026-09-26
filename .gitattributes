@@ -1,0 +1,4 @@
+# Test fixtures whose exact bytes are the test: keep CRLF / BOM as committed,
+# whatever core.autocrlf a contributor's clone uses.
+tests/fixtures/csv-corpus/** -text
+tests/known-answer/fixtures/bom-crlf.csv -text

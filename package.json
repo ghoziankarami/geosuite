@@ -1,5 +1,6 @@
 {
   "name": "orebit-geosuite",
+  "version": "3.0.0",
   "private": true,
   "description": "Offline drillhole-to-resource-estimation tools (Orebit Core, Assay, Resource)",
   "license": "GPL-3.0-only",

@@ -52,31 +52,18 @@ PATCHER_CONFIG = {
     # Vault root that contains the per-phase HTML artifacts (SSOT).
     "vault_path": os.environ.get("OREBIT_VAULT_PATH", _DEFAULT_VAULT),
     # Production URLs injected into the generated HTML shell.
-    # Free-first transition (2026-08-17): the in-app "Support Orebit" button
-    # used to point at a fixed-price Rp99K Mayar bundle checkout, which is
-    # wrong for a voluntary-donation CTA — donors should pick their own
-    # amount. DECISION (owner-confirmed live in chat, 2026-08-17): use the
-    # owner's own Saweria page instead of Mayar's fundraising type. The
-    # owner created https://saweria.co/orebitindonesia themselves, confirmed
-    # it renders an open amount field, and personally completed a real test
-    # donation through it before authorizing this URL. A verified Mayar
-    # "fundraising"-type link also exists as a documented fallback
-    # (product id d571b634-626f-434b-9da4-d702d72d07b1, slug
-    # "support-orebit", still unlisted/draft) if Saweria ever needs to be
-    # swapped out — but Saweria is the live, owner-approved choice. Do not
-    # revert this to the Mayar link without a new explicit instruction from
-    # the owner.
+    # Voluntary donation of any amount (owner-approved Saweria page). Never
+    # a fixed-price checkout: GeoSuite is free.
     "support_url": "https://saweria.co/orebitindonesia",
-    "github_releases_url": "https://github.com/ghoziankarami/geosuite/releases",
+    # /latest, not the list: the list opens on whatever was published last
+    # and reads as "this is the current version" even when it is not.
+    "github_releases_url": "https://github.com/ghoziankarami/geosuite/releases/latest",
     "docs_url": "https://geosuite.orebit.id/docs",
     # Origin the Desktop build asks for 03-latest.json. A web build uses a
     # relative path (same origin); an EXE runs from file:, which has no
     # origin to resolve against, so it needs this absolute base.
     "product_base_url": "https://geosuite.orebit.id",
-    # In-app feedback entry point (2026-08-20): previously the only feedback
-    # prompt was a one-time mailto CTA baked into the license-issuance email
-    # (ops/webhooks/mayar-payment.py) — a long-time user who never revisited
-    # that email had no path back to send feedback from inside the app.
+    # Address the in-app feedback button writes to.
     "feedback_email": "orebit.id@gmail.com",
 }
 

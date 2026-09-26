@@ -6,3 +6,4 @@ __pycache__/
 *.bak-help
 *.bak-patch
 tests/known-answer/fixtures/big-dataset.csv
+desktop/build/

@@ -147,6 +147,19 @@ python3 -m http.server 8767 -d dist & python3 -m http.server 8768 -d dist & pyth
 python3 tests/test_pipeline_known_answer.py
 ```
 
+### Desktop Edition (Windows EXE)
+
+Each release's EXEs are built by [`release-exe.yml`](.github/workflows/release-exe.yml)
+on a GitHub-hosted Windows runner when a `vX.Y.Z` tag is pushed, and attached to the
+release with a `SHA256SUMS.txt`. To build them yourself on Windows (Python ≥ 3.10 with
+tcl/tk, Node.js ≥ 18):
+
+```bash
+pip install -r desktop/requirements.txt
+python desktop/build_exe.py            # desktop/dist/Orebit-Core.exe, -Assay.exe, -Resource.exe
+cd desktop && python verify-exe-build.py
+```
+
 ### Repository layout
 
 ```text
@@ -155,6 +168,7 @@ src/shared/    code shared by all three modules (import, columns, grade codes, g
 src/assets/    fonts and sample datasets, inlined at build time
 src/locales/   English and Indonesian UI text
 build/         build.mjs resolves the @orebit-inline markers, then runs the patchers
+desktop/       Windows Desktop Edition: pywebview wrapper and the PyInstaller build
 vendor/        third-party libraries (see THIRD_PARTY_NOTICES.md)
 tests/         known-answer, browser and tutorial tests
 docs/          methodology, data format, manual, tutorials (docs/vignettes)

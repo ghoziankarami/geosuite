@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <!-- OREBIT_BUILD_START
-Orebit Resource — GeoSuite v2.9.5
+Orebit Resource — GeoSuite v3.0.0
 Copyright (c) 2026 Orebit (Ghozian Islam Karami). All rights reserved.
-Build: resource-v2.9.5-20260920-e0946e9-dirty
+Build: resource-v3.0.0-20260925-6ca6d26-dirty
 Terms: https://geosuite.orebit.id/terms
 -- OREBIT_BUILD_END -->
-<script>window.OREBIT_BUILD_ID="resource-v2.9.5-20260920-e0946e9-dirty";</script>
+<script>window.OREBIT_BUILD_ID="resource-v3.0.0-20260925-6ca6d26-dirty";</script>
+
 
 
 
@@ -19,7 +20,7 @@ Terms: https://geosuite.orebit.id/terms
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="product-version" content="v2.9.5"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
+<meta name="product-version" content="v3.0.0"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
 <meta name="product-name" content="Orebit Resource">
 <meta name="product-stage" content="Resource">
 <!-- CSP: privacy-first. No external network, inline scripts/styles only (we bundle everything). -->
@@ -5144,7 +5145,7 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
  });
  document.getElementById('setupDomain').addEventListener('change', e => {
  setupState.domain = e.target.value;
- const dw = document.getElementById('setupDomainWarn'); if (dw) dw.innerHTML = _allDomainsWarnHtml();
+ const dw = document.getElementById('setupDomainWarn'); if (dw) { dw.textContent = ''; const wm = _allDomainsWarnText(); if (wm) { const wd = document.createElement('div'); wd.className = 'hint warn'; wd.style.marginTop = '10px'; wd.textContent = wm; dw.appendChild(wd); } }
  variogramState.experimental = null;
  variogramState.model = null;
  variogramState._lastRange = null;
@@ -7193,15 +7194,19 @@ function nearestNeighbor(neighbors, samples) {
 // "All domains" is the default and the easy mistake: several domains estimated
 // as one population average ore with waste, and there is no domain to bound.
 // Seen walking a new user's flow on the epithermal-gold dataset. 2026-09-25.
-function _allDomainsWarnHtml() {
+function _allDomainsWarnText() {
  try {
   if (setupState.domain !== 'all' || !DATA || !DATA.rows) return '';
   const di = colIdx('domain');
   if (di < 0) return '';
   const n = new Set(DATA.rows.map(r => r[di]).filter(v => v !== '' && v != null)).size;
   if (n < 2) return '';
-  return `<div class="hint warn" style="margin-top:10px;">${t('res.st.allDomainsWarn').replace('{n}', n)}</div>`;
+  return t('res.st.allDomainsWarn').replace('{n}', n);
  } catch (e) { return ''; }
+}
+function _allDomainsWarnHtml() {
+ const m = _allDomainsWarnText();
+ return m ? `<div class="hint warn" style="margin-top:10px;">${m}</div>` : '';
 }
 
 function _domainBoundary() {
@@ -13444,7 +13449,7 @@ body header.orebit-header .orebit-phase-pill {
 <script>document.addEventListener('DOMContentLoaded',function(){try{if(!window.__OREBIT_RT__){document.querySelectorAll('[data-phase-switch],[data-desktop-cta]').forEach(function(el){el.hidden=false;});}}catch(e){}});</script>
 <footer class="orebit-footer">
   <p>
-    <strong>Orebit GeoSuite</strong> · Orebit Resource · <span id="footerVersion">v2.9.5</span>
+    <strong>Orebit GeoSuite</strong> · Orebit Resource · <span id="footerVersion">v3.0.0</span>
     <span class="divider">·</span>
     © 2026 Orebit. All rights reserved.
     <span class="divider">·</span>

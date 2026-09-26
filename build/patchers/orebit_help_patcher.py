@@ -32,6 +32,7 @@ USAGE
     python3 orebit_help_patcher.py --check-idempotent  verify re-runs are no-ops
     python3 orebit_help_patcher.py --restore           undo from .bak-help
 """
+
 from __future__ import annotations
 
 import argparse
@@ -61,9 +62,17 @@ def _repo_root() -> Path:
 
 REPO = _repo_root()
 # orebit-ops keeps the user manual with the website; the public tree keeps it at docs/manual/.
-DOCS_TOOL = next((p for p in (REPO / "sites/geosuite.orebit.id/docs/docs-tool.py",
-                              REPO / "docs/manual/docs-tool.py") if p.exists()),
-                 REPO / "sites/geosuite.orebit.id/docs/docs-tool.py")
+DOCS_TOOL = next(
+    (
+        p
+        for p in (
+            REPO / "sites/geosuite.orebit.id/docs/docs-tool.py",
+            REPO / "docs/manual/docs-tool.py",
+        )
+        if p.exists()
+    ),
+    REPO / "sites/geosuite.orebit.id/docs/docs-tool.py",
+)
 TEMPLATES = Path(__file__).parent / "templates"
 
 
@@ -83,45 +92,53 @@ def _default_vault() -> Path:
 # now". Keep it short per tab — three or four entries, most relevant first.
 TAB_MAP: dict[str, dict[str, list[str]]] = {
     "Core": {
-        "1":  ["start/overview", "start/quickstart"],
-        "2":  ["start/data", "trouble/index#columns-not-detected"],
-        "3":  ["start/data", "ref/validation"],
-        "4":  ["start/data", "trouble/index#holes-point-up"],
-        "5":  ["start/data", "workflows/qaqc"],
-        "6":  ["start/data", "ref/domains"],
-        "7":  ["ref/validation", "workflows/qaqc"],
-        "8":  ["workflows/prepare", "start/data"],
-        "9":  ["workflows/prepare"],
-        "10": ["concepts/desurvey", "trouble/index#holes-point-up", "workflows/prepare"],
+        "1": ["start/overview", "start/quickstart"],
+        "2": ["start/data", "trouble/index#columns-not-detected"],
+        "3": ["start/data", "ref/validation"],
+        "4": ["start/data", "trouble/index#holes-point-up"],
+        "5": ["start/data", "workflows/qaqc"],
+        "6": ["start/data", "ref/domains"],
+        "7": ["ref/validation", "workflows/qaqc"],
+        "8": ["workflows/prepare", "start/data"],
+        "9": ["workflows/prepare"],
+        "10": [
+            "concepts/desurvey",
+            "trouble/index#holes-point-up",
+            "workflows/prepare",
+        ],
         "11": ["workflows/prepare"],
         "12": ["workflows/prepare", "workflows/blocksize"],
         "13": ["workflows/prepare", "workflows/reporting"],
     },
     "Assay": {
-        "1":  ["start/overview"],
-        "2":  ["start/data", "trouble/index#columns-not-detected"],
-        "3":  ["start/data"],
-        "4":  ["workflows/topcut"],
-        "5":  ["ref/domains"],
-        "6":  ["workflows/blocksize", "workflows/variogram"],
-        "7":  ["workflows/prepare"],
-        "8":  ["workflows/topcut", "concepts/declustering"],
-        "9":  ["workflows/topcut"],
+        "1": ["start/overview"],
+        "2": ["start/data", "trouble/index#columns-not-detected"],
+        "3": ["start/data"],
+        "4": ["workflows/topcut"],
+        "5": ["ref/domains"],
+        "6": ["workflows/blocksize", "workflows/variogram"],
+        "7": ["workflows/prepare"],
+        "8": ["workflows/topcut", "concepts/declustering"],
+        "9": ["workflows/topcut"],
         "10": ["ref/domains"],
         "11": ["ref/domains", "concepts/declustering"],
         "12": ["workflows/reporting"],
     },
     "Resource": {
-        "1":  ["start/overview", "workflows/estimate"],
-        "2":  ["start/data", "trouble/index#columns-not-detected"],
-        "3":  ["concepts/declustering", "workflows/topcut", "ref/estimation"],
-        "4":  ["ref/variography", "workflows/variogram", "trouble/index#flat-variogram"],
-        "5":  ["workflows/blocksize", "ref/estimation"],
-        "6":  ["ref/estimation", "workflows/estimate", "trouble/index#low-reach",
-               "trouble/index#over-smooth"],
-        "7":  ["workflows/estimate", "trouble/index#crossval-slope"],
-        "8":  ["concepts/swath", "workflows/estimate"],
-        "9":  ["ref/confidence", "concepts/not-classification"],
+        "1": ["start/overview", "workflows/estimate"],
+        "2": ["start/data", "trouble/index#columns-not-detected"],
+        "3": ["concepts/declustering", "workflows/topcut", "ref/estimation"],
+        "4": ["ref/variography", "workflows/variogram", "trouble/index#flat-variogram"],
+        "5": ["workflows/blocksize", "ref/estimation"],
+        "6": [
+            "ref/estimation",
+            "workflows/estimate",
+            "trouble/index#low-reach",
+            "trouble/index#over-smooth",
+        ],
+        "7": ["workflows/estimate", "trouble/index#crossval-slope"],
+        "8": ["concepts/swath", "workflows/estimate"],
+        "9": ["ref/confidence", "concepts/not-classification"],
         "10": ["trouble/index#tonnage-wrong", "workflows/reporting"],
         "11": ["workflows/estimate"],
         "12": ["workflows/reporting", "concepts/not-classification"],
@@ -147,12 +164,12 @@ def help_bundle() -> str:
     env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
     r = subprocess.run(
         [sys.executable, str(DOCS_TOOL), "export-help"],
-        capture_output=True, env=env,
+        capture_output=True,
+        env=env,
     )
     if r.returncode != 0 or not r.stdout.strip():
         raise SystemExit(
-            "docs-tool.py export-help failed:\n"
-            + r.stderr.decode("utf-8", "replace")
+            "docs-tool.py export-help failed:\n" + r.stderr.decode("utf-8", "replace")
         )
     # Guard the embedding context: a literal "</script>" inside any string
     # would terminate the host <script> element early.
@@ -163,11 +180,12 @@ def help_bundle() -> str:
 def build_block(phase: str) -> str:
     css = (TEMPLATES / "help_panel.css").read_text(encoding="utf-8").rstrip("\n")
     js = (TEMPLATES / "help_panel.js").read_text(encoding="utf-8").rstrip("\n")
-    js = (js
-          .replace("__OB_HELP_DATA__", help_bundle())
-          .replace("__OB_TAB_MAP__", json.dumps(TAB_MAP[phase], separators=(",", ":")))
-          .replace("__OB_PHASE__", phase)
-          .replace("__OB_DOCS_URL__", DOCS_URL))
+    js = (
+        js.replace("__OB_HELP_DATA__", help_bundle())
+        .replace("__OB_TAB_MAP__", json.dumps(TAB_MAP[phase], separators=(",", ":")))
+        .replace("__OB_PHASE__", phase)
+        .replace("__OB_DOCS_URL__", DOCS_URL)
+    )
     return f"\n{HELP_START}\n{css}\n\n{js}\n{HELP_END}\n"
 
 
@@ -269,14 +287,18 @@ def check_idempotent(targets: list[Path]) -> int:
             print(f"  OK   {p.name}: idempotent")
         # Drift: does what is in the file already match today's templates?
         if p.read_text(encoding="utf-8") != once:
-            print(f"       {p.name}: file differs from current templates "
-                  f"(re-run the patcher to refresh)")
+            print(
+                f"       {p.name}: file differs from current templates "
+                f"(re-run the patcher to refresh)"
+            )
     return 1 if bad else 0
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Inject the Orebit in-app help panel.")
-    ap.add_argument("target", nargs="?", help="single HTML file (default: all vault phases)")
+    ap.add_argument(
+        "target", nargs="?", help="single HTML file (default: all vault phases)"
+    )
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--check-idempotent", action="store_true")
     ap.add_argument("--restore", action="store_true")
@@ -304,7 +326,7 @@ def main() -> int:
     for p in targets:
         try:
             _, msg = patch_file(p, dry_run=a.dry_run)
-        except Exception as exc:                     # never leave a half-written file
+        except Exception as exc:  # never leave a half-written file
             msg, rc = f"ERROR {p.name}: {exc}", 1
         print("  " + msg)
     return rc

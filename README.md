@@ -12,12 +12,18 @@ Three connected tools for exploration geologists, in English and Bahasa Indonesi
 Each module is a single self-contained tool that runs offline on your laptop: your
 data never leaves your computer. No account, no trial, no paid tier.
 
-**Try it:** [geosuite.orebit.id](https://geosuite.orebit.id) (loads with a sample dataset) ·
-**Desktop (Windows):** [Releases](https://github.com/ghoziankarami/geosuite/releases) ·
-**Tutorials on real data:** [docs/vignettes](docs/vignettes/README.md) ·
+![Orebit Core with the built-in Thalanga drillhole dataset](docs/vignettes/img/thalanga-01-core-dashboard.png)
+
+**Try it now:** [geosuite.orebit.id](https://geosuite.orebit.id) (opens with a sample dataset, nothing to install) ·
+**Desktop (Windows):** [latest release](https://github.com/ghoziankarami/geosuite/releases/latest) ·
+**Tutorials:** [read on the web](https://geosuite.orebit.id/tutorials/) ·
+**Manual:** [geosuite.orebit.id/docs](https://geosuite.orebit.id/docs/) ·
 **Methodology:** [docs/METHODOLOGY.md](docs/METHODOLOGY.md) ·
-**Input format:** [docs/DATA-FORMAT.md](docs/DATA-FORMAT.md) ·
-**Manual:** [geosuite.orebit.id/docs](https://geosuite.orebit.id/docs/)
+**Input format:** [docs/DATA-FORMAT.md](docs/DATA-FORMAT.md)
+
+**Contents:** [Install](#install) · [Learn it with real data](#learn-it-with-real-data) ·
+[Why trust the numbers](#why-trust-the-numbers) · [FAQ](#faq) · [Build from source](#build-from-source) ·
+[Contributing](#contributing) · [License](#license) · [Bahasa Indonesia](#bahasa-indonesia)
 
 ## Install
 
@@ -36,6 +42,8 @@ it opens with a connection. Your data stays on your computer either way.
 > Competent Person. See [METHODOLOGY.md](docs/METHODOLOGY.md#methodology--what-geosuite-computes-and-what-it-does-not).
 
 ## Learn it with real data
+
+Read them as web pages at **[geosuite.orebit.id/tutorials](https://geosuite.orebit.id/tutorials/)**, or here in the repository:
 
 | Tutorial | Data | What it teaches |
 |---|---|---|
@@ -78,6 +86,39 @@ More:
   was converted.
 - Found a wrong number? [Report it](https://github.com/ghoziankarami/geosuite/issues/new?template=wrong-numbers.md)
   — these reports are fixed first.
+
+## FAQ
+
+**Is it really free? What is the catch?**
+Yes, for everyone, including commercial use: GPL-3.0, no account, no trial, no paid tier, no licence key.
+Development is supported by voluntary donations.
+
+**Does my data leave my computer?**
+No. All calculation runs locally. The web version is a static page; nothing you load is uploaded.
+
+**Does it work offline?**
+Yes. Install it as an app (see [Install](#install)) or use the Windows Desktop Edition; after the first
+launch it needs no connection.
+
+**Which file formats can I import?**
+CSV/TXT (comma, semicolon or tab; dot or comma decimals; what Excel's *Save as CSV* writes in any regional
+setting), with English or Indonesian column names
+(`Dari`/`Sampai`, `Lubang`, `Kedalaman`, ...). Lengths in metres or feet. Lab codes such as `-0.005`,
+`-999` and `>10` are converted and every conversion is listed. See [docs/DATA-FORMAT.md](docs/DATA-FORMAT.md).
+
+**Can I report the result as a Mineral Resource?**
+No. GeoSuite gives a screening estimate and prepares clean data. Public reporting under KCMI 2017 /
+JORC 2012 needs a Competent Person. What GeoSuite does and does not do is in [METHODOLOGY.md](docs/METHODOLOGY.md).
+
+**Mac or Linux?**
+Yes, as an installed web app (Safari *Add to Dock*, or Chrome/Edge *Install app*). The Desktop EXE is Windows-only.
+
+**Where are my projects saved?**
+In the browser or app storage on your computer. Use *Save Project* / export to keep a file copy.
+
+**I found a wrong number.**
+Please [report it](https://github.com/ghoziankarami/geosuite/issues/new?template=wrong-numbers.md) with a small CSV
+that reproduces it. These reports are fixed first.
 
 ## Build from source
 
@@ -164,8 +205,15 @@ Hasil GeoSuite adalah *screening* pra-estimasi, bukan klasifikasi sumber daya;
 pelaporan publik KCMI 2017 / JORC 2012 tetap membutuhkan Competent Person. Semua
 metode, parameter bawaan, dan batasannya tertulis di [docs/METHODOLOGY.md](docs/METHODOLOGY.md).
 
-**Tutorial dengan data nyata** (Bahasa Indonesia): [Thalanga](docs/vignettes/01-thalanga-vms.md) ·
-[Babbitt](docs/vignettes/02-babbitt-cuni.md) — setiap angka diukur ulang dari aplikasi pada tiap perubahan.
+**Tutorial dengan data nyata:** baca di [geosuite.orebit.id/tutorials](https://geosuite.orebit.id/tutorials/)
+atau di repositori ini: [Thalanga](docs/vignettes/01-thalanga-vms.md) · [Babbitt](docs/vignettes/02-babbitt-cuni.md),
+setiap angka diukur ulang dari aplikasi pada tiap perubahan.
+
+**Tanya jawab singkat.** *Gratis?* Ya, untuk semua orang termasuk pemakaian komersial (GPL-3.0), tanpa akun
+dan tanpa kunci lisensi. *Data saya dikirim ke mana?* Tidak ke mana-mana; semua dihitung di komputer Anda.
+*Bisa offline?* Bisa, setelah dipasang sebagai aplikasi atau memakai Desktop Edition. *Format file?* CSV/TXT
+(koma, titik koma, tab), header Indonesia atau Inggris, meter atau feet; detail di
+[docs/DATA-FORMAT.md](docs/DATA-FORMAT.md).
 
 Menemukan angka yang salah? [Laporkan](https://github.com/ghoziankarami/geosuite/issues/new?template=wrong-numbers.md)
 dengan CSV kecil yang mereproduksinya — laporan seperti ini diprioritaskan.

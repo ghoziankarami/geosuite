@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Orebit GeoSuite documentation — task-based guides, parameter reference and troubleshooting for drillhole preparation, exploratory analysis and mineral resource estimation. Offline-capable single file.">
-<title>Orebit GeoSuite Docs · v2.9.5</title>
+<title>Orebit GeoSuite Docs · v3.0.0</title>
 <link rel="canonical" href="https://geosuite.orebit.id/docs/">
 <meta name="theme-color" content="#0d9488">
 <!-- version-sync-guard consumer: keep this meta as the single version anchor for this page -->
-<meta name="docs-version" content="v2.9.5">
+<meta name="docs-version" content="v3.0.0">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Orebit">
 <meta property="og:url" content="https://geosuite.orebit.id/docs/">
@@ -273,7 +273,7 @@ figure.shot figcaption{padding:8px 13px; font-size:12.5px; color:var(--muted); b
     <img src="/images/geosuite/og-share.png" alt="" width="24" height="24">
     <span>GeoSuite <span class="sub">Docs</span></span>
   </a>
-  <span class="ver-pill" id="verPill">v2.9.5</span>
+  <span class="ver-pill" id="verPill">v3.0.0</span>
   <span class="topbar-spacer"></span>
   <button class="searchbtn" id="searchBtn">
     <span aria-hidden="true">⌕</span>
@@ -331,7 +331,7 @@ figure.shot figcaption{padding:8px 13px; font-size:12.5px; color:var(--muted); b
   </div>
   <div class="foot-bot">
     © Orebit.id 2026 · <span class="l-en">Free to use · No resell</span><span class="l-id">Gratis dipakai · Dilarang dijual ulang</span> ·
-    <span style="color:var(--teal); font-weight:600;">v2.9.5</span>
+    <span style="color:var(--teal); font-weight:600;">v3.0.0</span>
   </div>
 </footer>
 
@@ -358,7 +358,7 @@ figure.shot figcaption{padding:8px 13px; font-size:12.5px; color:var(--muted); b
    A cell/label written as a plain string is language-neutral
    (parameter names, units, numbers) and is rendered as-is.
 ================================================================== */
-var VERSION = 'v2.9.5';
+var VERSION = 'v3.0.0';
 
 var DOCS = [
 /* ================================================================
@@ -1583,8 +1583,8 @@ var DOCS = [
         rows:[
           [{en:'Column mapping (24 dropdowns)',id:'Pemetaan kolom (24 dropdown)'},
            {en:'auto-detected per field',id:'terdeteksi otomatis per field'},
-           {en:'Maps your header names onto the canonical fields (hole_id, x, y, z, depth, from_m, to_m, dip, azimuth, lith1…). Setting one to "(not mapped)" removes that field from every downstream step. Indonesian and Datamine-standard headers are already recognised, so an unmapped field usually means a genuinely non-standard column name.',
-            id:'Memetakan nama header Anda ke field kanonik (hole_id, x, y, z, depth, from_m, to_m, dip, azimuth, lith1…). Menyetel salah satunya ke "(not mapped)" menghapus field itu dari seluruh langkah hilir. Header Indonesia dan standar Datamine sudah dikenali, jadi field yang tak terpetakan biasanya berarti nama kolom yang memang tidak standar.'}],
+           {en:'Maps your header names onto the canonical fields (hole_id, x, y, z, depth, from_m, to_m, dip, azimuth, lith1…). Setting one to "(not mapped)" removes that field from every downstream step. Indonesian and common industry-standard headers are already recognised, so an unmapped field usually means a genuinely non-standard column name.',
+            id:'Memetakan nama header Anda ke field kanonik (hole_id, x, y, z, depth, from_m, to_m, dip, azimuth, lith1…). Menyetel salah satunya ke "(not mapped)" menghapus field itu dari seluruh langkah hilir. Header Indonesia dan standar industri umum sudah dikenali, jadi field yang tak terpetakan biasanya berarti nama kolom yang memang tidak standar.'}],
           [{en:'Grade unit (per element)',id:'Satuan kadar (per unsur)'},
            {en:'inferred from the column name',id:'disimpulkan dari nama kolom'},
            {en:'pct / ppm / gpt / kg/m³ / unitless. This is metadata, not a conversion — Orebit does not rescale your numbers. It travels with the export so that Assay and Resource label their axes correctly, and so contained-metal maths downstream uses the right formula (kg/m³ is volumetric and deliberately does not apply density twice).',

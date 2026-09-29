@@ -117,17 +117,29 @@ def main():
         desktop_assay = ctx.new_page()
         record = {"name": "master.csv", "text": expected, "ts": int(time.time() * 1000)}
         desktop_assay.add_init_script(
-            "window.__OREBIT_RT__={};window.pywebview={api:{take_handoff:async()=>"
-            + json.dumps(record) + "}};"
+            "window.__OREBIT_RT__={};window.__desktopTakeCalls=0;"
+            "window.pywebview={api:{take_handoff:async()=>{"
+            "window.__desktopTakeCalls++;return "
+            + json.dumps(record) + ";}}};"
         )
         desktop_assay.goto(f"{BASE}/Assay.html", wait_until="load", timeout=60000)
         ready(desktop_assay)
-        desktop_assay.wait_for_function(
-            f"() => typeof DATA !== 'undefined' && DATA && DATA.rows && DATA.rows.length === {len(exp_rows)}",
-            timeout=90000,
-        )
+        try:
+            desktop_assay.wait_for_function(
+                f"() => typeof DATA !== 'undefined' && DATA && DATA.rows && DATA.rows.length === {len(exp_rows)}",
+                timeout=30000,
+            )
+        except Exception:
+            pass
+        state = desktop_assay.evaluate("""() => ({
+          takeCalls: window.__desktopTakeCalls,
+          bridge: !!(window.pywebview && window.pywebview.api),
+          input: !!document.getElementById('fileInput'),
+          rows: typeof DATA !== 'undefined' && DATA && DATA.rows ? DATA.rows.length : null,
+          file: document.getElementById('fileInput')?.files?.[0]?.name || null
+        })""")
         check("Desktop receiver imports every Core row via file input",
-              desktop_assay.evaluate("DATA.rows.length") == len(exp_rows))
+              state["rows"] == len(exp_rows), str(state))
         br.close()
     print(f"\n  MODULE HANDOFF: {PASSED} passed, {FAILED} failed")
     return 0 if FAILED == 0 else 1

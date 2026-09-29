@@ -28,7 +28,7 @@ import sys
 
 def _find_default_vault() -> str:
     """Auto-detect the GeoSuite vault root by walking up from this file.
-    Falls back to the canonical VPS path if no repo marker is found."""
+    An explicit target or OREBIT_VAULT_PATH is required outside the private checkout."""
     if os.environ.get("OREBIT_VAULT_PATH"):
         return os.environ["OREBIT_VAULT_PATH"]
     here = os.path.dirname(os.path.abspath(__file__))
@@ -43,7 +43,7 @@ def _find_default_vault() -> str:
                 "1. Projects",
                 "GeoSuite",
             )
-    return "/home/ubuntu/orebit-ops/obsidian-system/vault/Obsidian/1. Projects/GeoSuite"
+    return ""
 
 
 _DEFAULT_VAULT = _find_default_vault()
@@ -475,7 +475,9 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    base = Path(PATCHER_CONFIG["vault_path"])
+    if not args.target and not PATCHER_CONFIG["vault_path"]:
+        parser.error("pass a target HTML file or set OREBIT_VAULT_PATH")
+    base = Path(PATCHER_CONFIG["vault_path"]) if PATCHER_CONFIG["vault_path"] else None
 
     if args.check_idempotent:
         return idempotency_check(base, allow_drift=args.allow_drift)

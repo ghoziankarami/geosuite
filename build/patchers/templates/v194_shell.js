@@ -22,6 +22,19 @@
   const QS_CTA_EN = {qs_cta_en!r};
   const QS_CTA_ID = {qs_cta_id!r};
 
+  function orebitIssueUrl(kind) {{
+    var meta = document.querySelector('meta[name="product-version"]');
+    var version = meta ? meta.getAttribute('content') : 'unknown';
+    var build = window.OREBIT_BUILD_ID || 'unknown';
+    var wrong = kind === 'numbers';
+    var title = '[' + LABEL_EN + '] ' + (wrong ? 'Wrong number: ' : 'Bug: ');
+    var body = 'Module: ' + LABEL_EN + '\\nVersion: ' + version +
+      '\\nBuild ID: ' + build + '\\n\\nSteps to reproduce:\\n\\nExpected:\\n\\nActual:\\n';
+    return 'https://github.com/ghoziankarami/geosuite/issues/new?template=' +
+      (wrong ? 'wrong-numbers.md' : 'bug-report.md') +
+      '&title=' + encodeURIComponent(title) + '&body=' + encodeURIComponent(body);
+  }}
+
   const STRINGS = {{
     en: {{
       'nav.tour': 'Tour', 'nav.glossary': 'Glossary', 'nav.help': 'Help',
@@ -517,9 +530,11 @@
     window.__orebitLatest = null;
     (function checkForUpdate() {{
       try {{
-        // file: has no origin to resolve against, and an EXE runs from file:.
-        var base = (location.protocol === 'file:')
-          ? '{PRODUCT_BASE_URL}' : '';
+        // Desktop uses loopback HTTP; local source builds often use localhost.
+        var local = location.protocol === 'file:' ||
+          /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) ||
+          !!window.__OREBIT_RT__;
+        var base = local ? '{PRODUCT_BASE_URL}' : '';
         fetch(base + '/03-latest.json', {{ cache: 'no-store' }})
           .then(function (r) {{ return r.ok ? r.json() : null; }})
           .then(function (j) {{
@@ -600,7 +615,9 @@
           // the header already carries a Documentation link to the same URL,
           // and the help bubble opens the embedded manual. Three doors to one
           // room is what made this menu feel crowded.
-          + '<a href="mailto:{FEEDBACK_EMAIL}?subject=' + encodeURIComponent('Feedback {label_en} ' + (VERSION.indexOf('v') === 0 ? VERSION : 'v' + VERSION)) + '" class="orebit-profile-act" style="text-decoration:none;color:inherit;" rel="noopener"><span>💬 ' + (document.documentElement.lang === 'id' ? 'Kirim Masukan' : 'Send Feedback') + '</span></a>'
+           + '<a href="' + esc(orebitIssueUrl('bug')) + '" target="_blank" class="orebit-profile-act" style="text-decoration:none;color:inherit;" rel="noopener"><span>🐛 ' + (document.documentElement.lang === 'id' ? 'Laporkan Bug' : 'Report Bug') + '</span></a>'
+           + '<a href="' + esc(orebitIssueUrl('numbers')) + '" target="_blank" class="orebit-profile-act" style="text-decoration:none;color:inherit;" rel="noopener"><span>∑ ' + (document.documentElement.lang === 'id' ? 'Laporkan Angka Salah' : 'Report Wrong Number') + '</span></a>'
+           + '<a href="https://github.com/ghoziankarami/geosuite" target="_blank" class="orebit-profile-act" style="text-decoration:none;color:inherit;" rel="noopener"><span>⌘ ' + (document.documentElement.lang === 'id' ? 'Kode Sumber (GPL-3.0)' : 'Source Code (GPL-3.0)') + '</span></a>'
         + '</div>';
       menu.querySelectorAll('.orebit-profile-act, .orebit-profile-edit').forEach(function(b) {{
         b.addEventListener('click', function() {{
@@ -834,7 +851,11 @@
       '</button>' +
       '<button data-action="help">' +
         '<span class="icon"></span><span class="label" data-orebit-i18n="help.help">Help & FAQ</span>' +
-      '</button>';
+      '</button>' +
+      '<a data-action="report-bug" href="' + esc(orebitIssueUrl('bug')) + '" target="_blank" rel="noopener">' +
+        '<span class="icon">🐛</span><span class="label">' + (document.documentElement.lang === 'id' ? 'Laporkan Bug' : 'Report Bug') + '</span></a>' +
+      '<a data-action="report-numbers" href="' + esc(orebitIssueUrl('numbers')) + '" target="_blank" rel="noopener">' +
+        '<span class="icon">∑</span><span class="label">' + (document.documentElement.lang === 'id' ? 'Laporkan Angka Salah' : 'Report Wrong Number') + '</span></a>';
 
     document.body.appendChild(menu);
     document.body.appendChild(btn);

@@ -81,12 +81,12 @@ function ensurePlotly() {
 // file the existing export would have written is handed over through
 // IndexedDB instead, and the next module feeds it into its own upload input --
 // the same import path, report and checks as a manual upload, nothing new to
-// trust. The Desktop EXE runs each module separately (window.__OREBIT_RT__),
-// so the buttons are not shown there. 2026-09-25.
+// trust. The Desktop EXEs use a short-lived file bridge through pywebview; the web
+// build keeps using same-origin IndexedDB.
 var OrebitHandoff = (function () {
   var DB = 'orebit-handoff', STORE = 'handoff', MAX_AGE_MS = 30 * 60 * 1000;
   function available() {
-    try { return typeof indexedDB !== 'undefined' && !window.__OREBIT_RT__; } catch (e) { return false; }
+    try { return !!window.__OREBIT_RT__ || typeof indexedDB !== 'undefined'; } catch (e) { return false; }
   }
   function db() {
     return new Promise(function (resolve, reject) {
@@ -124,10 +124,31 @@ var OrebitHandoff = (function () {
     try { exportFn(); } finally { window.__orebitCaptureDownload = null; }
     return got;
   }
-  // target: 'Assay' | 'Resource'. Opens <target>.html next to this module.
+  // target: 'Assay' | 'Resource'. Web opens the next page; Desktop stores
+  // a short-lived CSV and opens the sibling EXE if it is installed.
   function send(target, exportFn) {
     var file = capture(exportFn);
     if (!file) return Promise.resolve(false);
+    if (window.__OREBIT_RT__) {
+      var api = window.pywebview && window.pywebview.api;
+      if (!api || typeof api.send_handoff !== 'function') {
+        downloadFile(file.name, file.text, 'text/csv');
+        if (typeof toast === 'function') toast('Desktop bridge unavailable; CSV exported for manual import.', 'bad');
+        return Promise.resolve(false);
+      }
+      return api.send_handoff(target, file.name, file.text).then(function (result) {
+        if (!result || !result.ok) {
+          if (typeof toast === 'function') toast('Handoff failed: ' + (result && result.error || 'unknown error'), 'bad');
+          return false;
+        }
+        if (!result.launched && typeof toast === 'function')
+          toast('Handoff ready. Open Orebit-' + target + '.exe within 30 minutes to import.', 'good');
+        return true;
+      }).catch(function (err) {
+        if (typeof toast === 'function') toast('Handoff failed: ' + (err && err.message || err), 'bad');
+        return false;
+      });
+    }
     var w = null;
     try { w = window.open('', '_blank'); } catch (e) { w = null; }
     var url = target + '.html?handoff=1';
@@ -140,21 +161,40 @@ var OrebitHandoff = (function () {
       return false;
     });
   }
-  // Called once by the receiving module: if opened with ?handoff=1, load the file
-  // through the module's own #fileInput, exactly like a manual upload.
+  function importRecord(rec) {
+    if (!rec) return;
+    var input = document.getElementById('fileInput');
+    if (!input || typeof DataTransfer === 'undefined') return;
+    var dt = new DataTransfer();
+    dt.items.add(new File([rec.text], rec.name, { type: 'text/csv' }));
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    if (typeof showTab === 'function') { try { showTab(2); } catch (e) { /* ignore */ } }
+  }
+  // Web consumes the IndexedDB record only when explicitly opened by handoff.
+  // Desktop checks its own short-lived record once after pywebview is ready.
   function receive(target) {
+    if (window.__OREBIT_RT__) {
+      if (target !== 'Assay' && target !== 'Resource') return;
+      var started = false, tries = 0;
+      var timer = setInterval(function () {
+        var api = window.pywebview && window.pywebview.api;
+        if (api && typeof api.take_handoff === 'function') {
+          clearInterval(timer);
+          if (started) return;
+          started = true;
+          api.take_handoff().then(function (rec) {
+            if (rec) setTimeout(function () { importRecord(rec); }, 600);
+          }).catch(function (e) { console.warn('[handoff]', e); });
+        } else if (++tries >= 50) clearInterval(timer);
+      }, 200);
+      return;
+    }
     if (!available() || !/[?&]handoff=1(&|$)/.test(location.search)) return;
     var go = function () {
       take(target).then(function (rec) {
         try { history.replaceState(null, '', location.pathname); } catch (e) { /* ignore */ }
-        if (!rec) return;
-        var input = document.getElementById('fileInput');
-        if (!input || typeof DataTransfer === 'undefined') return;
-        var dt = new DataTransfer();
-        dt.items.add(new File([rec.text], rec.name, { type: 'text/csv' }));
-        input.files = dt.files;
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        if (typeof showTab === 'function') { try { showTab(2); } catch (e) { /* ignore */ } }
+        importRecord(rec);
       }).catch(function (e) { console.warn('[handoff]', e); });
     };
     if (document.readyState === 'complete') setTimeout(go, 600);

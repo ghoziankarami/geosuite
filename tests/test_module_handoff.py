@@ -101,7 +101,7 @@ def main():
         exe.add_init_script("window.__OREBIT_RT__ = {};")
         exe.goto(f"{BASE}/Core.html", wait_until="load")
         exe.wait_for_function("() => typeof showTab === 'function' && typeof OrebitHandoff === 'object'", timeout=60000)
-        check("no handoff in the Desktop EXE", exe.evaluate("OrebitHandoff.available()") is False)
+        check("handoff controls are offered in Desktop mode", exe.evaluate("OrebitHandoff.available()") is True)
         br.close()
     print(f"\n  MODULE HANDOFF: {PASSED} passed, {FAILED} failed")
     return 0 if FAILED == 0 else 1

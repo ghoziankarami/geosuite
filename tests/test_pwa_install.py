@@ -110,7 +110,7 @@ def main():
         deadline = time.time() + 60
         cached = []
         while time.time() < deadline:
-            cached = pg.evaluate("""async (shell) => { const c = await caches.open('geosuite-app-v3');
+            cached = pg.evaluate("""async (shell) => { const c = await caches.open('geosuite-app-v4:/');
                 const out = []; for (const u of shell) if (await c.match(u)) out.push(u); return out; }""", SHELL)
             if len(cached) == len(SHELL):
                 break

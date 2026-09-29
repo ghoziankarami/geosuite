@@ -6,7 +6,7 @@ origin, so "Continue in Assay/Resource" hands the file the existing export would
 written to the next module through IndexedDB, and that module loads it through its own
 upload input. Checked here:
 
-  1. the button exists on the web and not in the Desktop EXE (window.__OREBIT_RT__);
+  1. the button exists in web and Desktop; the Desktop bridge is called;
   2. what arrives in Assay is exactly Core's master export (same rows, same holes);
   3. what arrives in Resource is exactly Assay's composites export;
   4. the handoff is consumed once: reopening the page with ?handoff=1 loads nothing.
@@ -16,6 +16,7 @@ All three modules must be served from ONE origin (port 8767 here), as in product
 
 import csv
 import io
+import json
 import os
 import sys
 import time
@@ -101,7 +102,44 @@ def main():
         exe.add_init_script("window.__OREBIT_RT__ = {};")
         exe.goto(f"{BASE}/Core.html", wait_until="load")
         exe.wait_for_function("() => typeof showTab === 'function' && typeof OrebitHandoff === 'object'", timeout=60000)
-        check("no handoff in the Desktop EXE", exe.evaluate("OrebitHandoff.available()") is False)
+        check("handoff controls are offered in Desktop mode", exe.evaluate("OrebitHandoff.available()") is True)
+        sent = exe.evaluate("""async () => {
+          window.pywebview = { api: { send_handoff: async (...args) => {
+            window.__desktopSent = args; return { ok: true, launched: true };
+          } } };
+          const ok = await OrebitHandoff.send('Assay', () =>
+            downloadFile('bridge.csv', 'hole_id,grade\\nA,1\\n', 'text/csv'));
+          return { ok, args: window.__desktopSent };
+        }""")
+        check("Desktop sends the captured CSV through pywebview", sent["ok"]
+              and sent["args"] == ["Assay", "bridge.csv", "hole_id,grade\nA,1\n"])
+
+        desktop_assay = ctx.new_page()
+        record = {"name": "master.csv", "text": expected, "ts": int(time.time() * 1000)}
+        desktop_assay.add_init_script(
+            "window.__OREBIT_RT__={};window.__desktopTakeCalls=0;"
+            "window.pywebview={api:{take_handoff:async()=>{"
+            "window.__desktopTakeCalls++;return "
+            + json.dumps(record) + ";}}};"
+        )
+        desktop_assay.goto(f"{BASE}/Assay.html", wait_until="load", timeout=60000)
+        ready(desktop_assay)
+        try:
+            desktop_assay.wait_for_function(
+                f"() => typeof DATA !== 'undefined' && DATA && DATA.rows && DATA.rows.length === {len(exp_rows)}",
+                timeout=30000,
+            )
+        except Exception:
+            pass
+        state = desktop_assay.evaluate("""() => ({
+          takeCalls: window.__desktopTakeCalls,
+          bridge: !!(window.pywebview && window.pywebview.api),
+          input: !!document.getElementById('fileInput'),
+          rows: typeof DATA !== 'undefined' && DATA && DATA.rows ? DATA.rows.length : null,
+          file: document.getElementById('fileInput')?.files?.[0]?.name || null
+        })""")
+        check("Desktop receiver imports every Core row via file input",
+              state["rows"] == len(exp_rows), str(state))
         br.close()
     print(f"\n  MODULE HANDOFF: {PASSED} passed, {FAILED} failed")
     return 0 if FAILED == 0 else 1

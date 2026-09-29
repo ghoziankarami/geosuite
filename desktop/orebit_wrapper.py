@@ -11,24 +11,17 @@ import re
 import json
 import base64
 import socket
-import secrets
 import threading
 import webbrowser
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
-# Per-launch runtime token. The bundled index.html carries a guard script
-# (inject-guard.py) that waits for this token before showing the UI. It dates
-# from the paid-licence era; since v3.0.0 (GPL-3.0) it protects nothing, since
-# the source is public, and is kept only until it can be removed together
-# with the EXE tests that assert it.
-RUNTIME_TOKEN = secrets.token_urlsafe(24)
-
-# Licensee identity slots for the "Licensed to" watermark. Always empty since
-# v3.0.0 (GPL-3.0, no activation): kept only so the payload shape the page
-# reads does not change.
-LICENSEE = {"e": "", "o": ""}
+# Marker the page reads to know it runs inside the Desktop app (desktop-only
+# buttons, the "web version" links hidden). It used to also carry a per-launch
+# token for a copy-protection lock screen (inject-guard.py) and a licensee
+# name; both were removed after v3.0.0, when GeoSuite became GPL-3.0.
+DESKTOP_RUNTIME = {"ok": True, "desktop": True}
 
 WINDOW_SIZE = (1400, 900)
 MIN_SIZE = (800, 600)
@@ -200,8 +193,7 @@ def install_webview2_with_ui():
     If the install FAILS and the bundled bootstrapper was used, the popup
     surfaces a clear "download manually" CTA so the user always knows
     the next step. The caller (main) does NOT fall back to webbrowser.open()
-    anymore — opening the app in a browser can bypass the guard, so we
-    fail loud and let the user act instead.
+    anymore; it fails loud and lets the user act instead.
     """
     import urllib.request
     import tempfile
@@ -396,7 +388,7 @@ def install_webview2_with_ui():
                 win.after(1100, win.destroy)
             else:
                 # FAIL — show clear next-step UI instead of silently opening
-                # the app in a browser (which would bypass the guard).
+                # the app in a browser.
                 if _use_ttk:
                     try:
                         pb.stop()
@@ -469,10 +461,7 @@ def main():
 
     # No licence gate (removed 2026-09-25): GeoSuite is GPL-3.0 open source and
     # every module is free, web and Desktop -- owner decision O2 in
-    # docs/PLAN-opensource-dan-excellence.md. LICENSEE stays empty, so no
-    # licensee watermark and no key is synced into the page.
-    global LICENSEE
-    LICENSEE = {"e": "", "o": ""}
+    # docs/PLAN-opensource-dan-excellence.md.
 
     # Read HTML content for title extraction
     with open(html_path, "r", encoding="utf-8") as f:
@@ -482,9 +471,8 @@ def main():
 
     # Start local HTTP server FIRST (avoids WebView2 2MB NavigateToString limit).
     # The server must be up BEFORE any fallback path so that EVERY way of opening
-    # the app goes through http://127.0.0.1, never file://: the bundled guard
-    # script locks a page opened via file://, so a file:// fallback would show
-    # the user a lock screen instead of the app.
+    # the app goes through http://127.0.0.1, never file://: that is where the
+    # page gets window.__OREBIT_RT__ (desktop mode) and its default profile.
     base_dir = get_base_dir()
     port = find_port()
 
@@ -496,49 +484,20 @@ def main():
             pass
 
         def do_GET(self):
-            # Runtime handshake endpoint for the bundled guard (Level A).
-            # Only reachable from inside this wrapper's local server, so a copied
-            # index.html opened elsewhere cannot obtain the token.
-            if self.path.split("?", 1)[0] == "/__orebit_rt__":
-                body = json.dumps(
-                    {
-                        "ok": True,
-                        "t": RUNTIME_TOKEN,
-                        "lic": LICENSEE.get("e", ""),
-                        "ord": LICENSEE.get("o", ""),
-                    }
-                ).encode("utf-8")
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(body)))
-                self.send_header("Cache-Control", "no-store")
-                self.end_headers()
-                self.wfile.write(body)
-                return
-            # Serve index.html with the runtime token injected directly into the
-            # page. This eliminates the fetch() race condition that causes the IP
-            # guard to block the UI when WebView2 is slow to connect or when the
-            # fallback-browser path is taken. The guard reads window.__OREBIT_RT__
-            # synchronously before its own fetch would fire.
+            # Serve index.html with the desktop marker (and an optional default
+            # profile) as synchronous scripts, so they exist before the app's
+            # own scripts read them.
             if self.path.rstrip("/") in ("", "/index.html"):
                 path = os.path.join(base_dir, "index.html")
                 if os.path.exists(path):
                     with open(path, "rb") as f:
                         html = f.read()
-                    # Inject runtime token as a synchronous window var so the guard
-                    # can read it immediately (no fetch, no race).
-                    token_script = (
+                    runtime_script = (
                         b"<script>"
                         b"window.__OREBIT_RT__="
-                        + json.dumps(
-                            {
-                                "ok": True,
-                                "t": RUNTIME_TOKEN,
-                                "lic": LICENSEE.get("e", ""),
-                                "ord": LICENSEE.get("o", ""),
-                            },
-                            separators=(",", ":"),
-                        ).encode("utf-8")
+                        + json.dumps(DESKTOP_RUNTIME, separators=(",", ":")).encode(
+                            "utf-8"
+                        )
                         + b";</script>"
                     )
                     # Optional default profile from __OREBIT_DEFAULT_PROFILE__. This
@@ -550,7 +509,7 @@ def main():
                             profile_json = json.dumps(
                                 json.loads(profile_env), separators=(",", ":")
                             )
-                            token_script += (
+                            runtime_script += (
                                 b"<script>"
                                 b"try{var p=" + profile_json.encode("utf-8") + b";"
                                 b"if(!localStorage.getItem('orebit_profile'))"
@@ -561,7 +520,7 @@ def main():
                             pass
                     idx = html.find(b"<body>")
                     if idx != -1:
-                        html = html[: idx + 6] + token_script + html[idx + 6 :]
+                        html = html[: idx + 6] + runtime_script + html[idx + 6 :]
                     self.send_response(200)
                     self.send_header("Content-Type", "text/html; charset=utf-8")
                     self.send_header("Content-Length", str(len(html)))
@@ -579,15 +538,14 @@ def main():
 
     # WebView2 on Windows — auto-install if missing so the native window works.
     # WebView2 on Windows — auto-install if missing so the native window works.
-    # We DO NOT silently fall back to webbrowser.open() — opening the app in the
-    # system browser can bypass the guard handshake.
+    # We DO NOT silently fall back to webbrowser.open() right away.
     #
     # But: a hard exit on WebView2 install failure is also a dead end for
     # users on locked-down corporate machines where the bootstrapper
     # silently reports "success" but the runtime is incomplete. So we try
     # pywebview first; if every native backend fails, we fall back to the
     # SYSTEM DEFAULT BROWSER (the URL is still http://127.0.0.1:PORT, served
-    # by our local server, so the guard runtime token still works).
+    # by our local server, so the page still runs in desktop mode).
     webview2_installed = True
     if sys.platform == "win32" and not check_webview2():
         print("WebView2 Runtime not found. Auto-installing...", file=sys.stderr)
@@ -655,8 +613,8 @@ def main():
                 continue
 
         # Every native backend failed. Fall back to the system default browser.
-        # The URL is the local HTTP server we just started, so the guard
-        # runtime token is still injected — the user gets a working app
+        # The URL is the local HTTP server we just started, so the desktop
+        # marker is still injected — the user gets a working app
         # in their default browser, with a clear one-time notice about why.
         raise ImportError(f"No pywebview backend available (last: {last_err})")
 
@@ -679,7 +637,7 @@ def _open_in_system_browser_with_notice(url, err_msg, webview2_installed):
 
     Used as a fallback when the native pywebview window cannot start (e.g.
     WebView2 install is broken, no display, GPU issue). The URL is the local
-    HTTP server (not file://), so the guard runtime token still works.
+    HTTP server (not file://), so the page still runs in desktop mode.
     """
     notice_title = "Orebit GeoSuite — Browser Mode"
     if webview2_installed:

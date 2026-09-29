@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 verify-exe-build.py — Extract and verify Orebit EXE contains the expected
-HTML version, profile auto-populate logic, and runtime token injection.
+HTML version and profile auto-populate logic, and none of the retired
+licence/copy-protection code.
 
 Usage:
     python3 verify-exe-build.py /path/to/Orebit-Resource.exe v2.6.0
@@ -84,13 +85,16 @@ def verify(exe_path: Path, expected_version: str) -> dict:
         "ok": found_version == expected_version,
     }
 
-    # 2. inject-guard present
+    # 2. No copy-protection lock screen. The runtime guard (inject-guard.py)
+    # locked the UI unless a per-launch token arrived from the wrapper; it
+    # dated from the paid Desktop Edition and was removed after v3.0.0
+    # (GPL-3.0). Its return would lock users out of a free app.
     has_guard = "__orebit_guard__" in html
-    result["checks"]["inject_guard"] = {
-        "ok": has_guard,
-        "detail": "__orebit_guard__ marker present"
-        if has_guard
-        else "missing __orebit_guard__ marker",
+    result["checks"]["no_copy_guard"] = {
+        "ok": not has_guard,
+        "detail": "no lock-screen guard"
+        if not has_guard
+        else "retired __orebit_guard__ lock screen is back",
     }
 
     # 3. Profile auto-populate injection present

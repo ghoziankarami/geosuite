@@ -171,6 +171,12 @@ def extract_title(html_content):
 MODULE_PORTS = {"Core": 18767, "Assay": 18768, "Resource": 18769}
 
 
+class _ExclusiveServer(HTTPServer):
+    # HTTPServer defaults to SO_REUSEADDR. On Windows this can allow two EXEs
+    # to bind the same port and route a WebView to the wrong module.
+    allow_reuse_address = False
+
+
 def _module_from_html(html):
     match = re.search(r'<meta name="product-stage" content="(Core|Assay|Resource)"', html)
     if not match:
@@ -192,7 +198,7 @@ def _handoff_dir():
 def _bind_server(handler, module):
     """Bind the stable origin first; use an OS-assigned port only if occupied."""
     try:
-        return HTTPServer(("127.0.0.1", MODULE_PORTS[module]), handler)
+        return _ExclusiveServer(("127.0.0.1", MODULE_PORTS[module]), handler)
     except OSError as exc:
         if exc.errno not in (errno.EADDRINUSE, errno.EACCES):
             raise
@@ -202,7 +208,7 @@ def _bind_server(handler, module):
             "and reopen GeoSuite to recover the normal origin.",
             file=sys.stderr,
         )
-        return HTTPServer(("127.0.0.1", 0), handler)
+        return _ExclusiveServer(("127.0.0.1", 0), handler)
 
 
 def check_webview2():

@@ -721,7 +721,7 @@ body.dark .orebit-help-menu {{
   background: var(--bg-alt, #1e293b);
   border-color: rgba(255,255,255,0.1);
 }}
-.orebit-help-menu button {{
+.orebit-help-menu :is(button, a) {{
   display: flex;
   align-items: center;
   gap: 10px;
@@ -735,15 +735,16 @@ body.dark .orebit-help-menu {{
   font-size: 14px;
   color: var(--fg-body, #475569);
   text-align: left;
+  text-decoration: none;
   transition: background 0.12s;
 }}
-.orebit-help-menu button:hover {{
+.orebit-help-menu :is(button, a):hover {{
   background: var(--bg-alt, #f1f5f9);
   color: var(--fg, #0f172a);
 }}
-.orebit-help-menu button .icon {{ font-size: 18px; flex-shrink: 0; width: 22px; text-align: center; }}
-.orebit-help-menu button .label {{ flex: 1; font-weight: 500; }}
-.orebit-help-menu button .kbd {{
+.orebit-help-menu :is(button, a) .icon {{ font-size: 18px; flex-shrink: 0; width: 22px; text-align: center; }}
+.orebit-help-menu :is(button, a) .label {{ flex: 1; font-weight: 500; }}
+.orebit-help-menu :is(button, a) .kbd {{
   font-family: ui-monospace, monospace;
   font-size: 11px;
   color: var(--fg-mute, #94a3b8);

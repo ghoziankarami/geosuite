@@ -17,28 +17,31 @@
 //   vendor, icons, manifest — stale-while-revalidate.
 // Bump CACHE_VERSION only to force every client to re-download the shell.
 
-const CACHE_VERSION = 'geosuite-app-v3';
+const SCOPE_PATH = new URL(self.registration.scope).pathname;
+const CACHE_VERSION = 'geosuite-app-v4:' + SCOPE_PATH;
+const inScope = url => url.pathname.startsWith(SCOPE_PATH);
+const shellURL = rel => new URL(rel, self.registration.scope).href;
 const APP_SHELL = [
-  '/Core.html',
-  '/Assay.html',
-  '/Resource.html',
-  '/vendor/plotly.min.js',
-  '/vendor/jspdf.umd.min.js',
-  '/vendor/html2canvas.min.js',
-  '/vendor/jszip.min.js',
-  '/manifest.webmanifest',
-  '/pwa/icon-192.png',
-  '/pwa/icon-512.png',
-  '/pwa/icon-maskable-512.png',
-  '/pwa/apple-touch-icon.png',
+  './Core.html',
+  './Assay.html',
+  './Resource.html',
+  './vendor/plotly.min.js',
+  './vendor/jspdf.umd.min.js',
+  './vendor/html2canvas.min.js',
+  './vendor/jszip.min.js',
+  './manifest.webmanifest',
+  './pwa/icon-192.png',
+  './pwa/icon-512.png',
+  './pwa/icon-maskable-512.png',
+  './pwa/apple-touch-icon.png',
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_VERSION).then(cache => Promise.all(
-      APP_SHELL.map(url => fetch(url, { cache: 'reload' })
+      APP_SHELL.map(rel => { const url = shellURL(rel); return fetch(url, { cache: 'reload' })
         .then(res => (res.ok ? cache.put(url, res) : null))
-        .catch(() => null))
+        .catch(() => null); })
     )).then(() => self.skipWaiting())
   );
 });
@@ -46,7 +49,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(names => Promise.all(names.filter(n => n !== CACHE_VERSION).map(n => caches.delete(n))))
+      .then(names => Promise.all(names.filter(n => (n.endsWith(':' + SCOPE_PATH) || (SCOPE_PATH === '/' && n === 'geosuite-app-v3')) && n !== CACHE_VERSION).map(n => caches.delete(n))))
       .then(() => self.clients.claim())
   );
 });
@@ -56,8 +59,9 @@ function isModulePage(url) {
 }
 
 function isStaticAsset(url) {
-  return url.pathname.includes('/vendor/') || url.pathname.startsWith('/pwa/') ||
-         url.pathname === '/manifest.webmanifest';
+  const rel = url.pathname.slice(SCOPE_PATH.length);
+  return rel.startsWith('vendor/') || rel.startsWith('pwa/') ||
+         rel === 'manifest.webmanifest';
 }
 
 async function networkFirst(request) {
@@ -88,7 +92,7 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   let url;
   try { url = new URL(request.url); } catch (e) { return; }
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin || !inScope(url)) return;
 
   if (isModulePage(url)) {
     event.respondWith(networkFirst(request));

@@ -22,6 +22,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Desktop origin and handoff contract
+        run: python tests/test_desktop_bridge.py
+
       - name: Build all three modules
         run: npm run build
 
@@ -51,7 +54,10 @@ jobs:
         run: python tests/test_vignettes.py
 
       - name: Installable offline app (macOS / Linux route)
-        run: python tests/test_pwa_install.py
+        run: |
+          python tests/test_pwa_install.py
+          python tests/test_pwa_subpath.py
+          python tests/test_update_and_links.py
 
       - name: Upload built modules
         uses: actions/upload-artifact@v4
@@ -81,4 +87,6 @@ jobs:
             if (-not (Test-Path (Join-Path dist $_))) { throw "Missing dist/$_" }
           }
       - name: Run dependency-free tests
-        run: npm test
+        run: |
+          npm test
+          python tests/test_desktop_bridge.py

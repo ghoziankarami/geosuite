@@ -22,6 +22,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, readdirSync, cpSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { resolvePython } from "./python-launcher.mjs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -133,11 +134,34 @@ function resolveInlineMarkers(buf, phaseName) {
   return Buffer.concat(chunks);
 }
 
+// Build IDs describe the exact inlined source bytes, independent of Git
+// availability (source ZIPs) and working-tree state. No stale "-dirty" stamp
+// from a maintainer's checkout may appear in a user's exported CSV/JSON.
+function replaceOnce(buf, from, to) {
+  const needle = Buffer.from(from);
+  const at = buf.indexOf(needle);
+  if (at < 0 || buf.indexOf(needle, at + needle.length) >= 0)
+    throw new Error(`expected exactly one build stamp: ${from}`);
+  return Buffer.concat([buf.subarray(0, at), Buffer.from(to), buf.subarray(at + needle.length)]);
+}
+
+function stampSourceDigest(buf, name) {
+  const head = buf.subarray(0, 2500).toString("utf8");
+  const version = head.match(/<meta name="product-version" content="(v[0-9.]+)"/)?.[1];
+  const existing = head.match(/window\.OREBIT_BUILD_ID="([^"]+)";/)?.[1];
+  if (!version || !existing || !existing.startsWith(name.toLowerCase() + "-"))
+    throw new Error(`${name}: missing version or invalid source build stamp`);
+  const digest = createHash("sha256").update(buf).digest("hex").slice(0, 12);
+  const id = `${name.toLowerCase()}-${version}-${digest}`;
+  return replaceOnce(replaceOnce(buf, `Build: ${existing}`, `Build: ${id}`),
+    `window.OREBIT_BUILD_ID="${existing}";`, `window.OREBIT_BUILD_ID="${id}";`);
+}
+
 for (const name of phases) {
   const srcPath = path.join(SRC_DIR, `${name}.html`);
   const dstPath = path.join(DIST_DIR, `${name}.html`);
   const srcBytes = readFileSync(srcPath); // Buffer, no text decoding
-  const outBytes = resolveInlineMarkers(srcBytes, name);
+  const outBytes = stampSourceDigest(resolveInlineMarkers(srcBytes, name), name);
   writeFileSync(dstPath, outBytes); // Buffer, no text encoding
   patchToFixedPoint(dstPath, name);
   const finalBytes = readFileSync(dstPath);

@@ -53,12 +53,27 @@ python3 tests/test_lab_conventions.py
 python3 tests/test_estimation_inputs.py
 python3 tests/test_module_handoff.py
 python3 tests/test_pwa_install.py
+python3 tests/test_pwa_subpath.py
+python3 tests/test_update_and_links.py
+python3 tests/test_desktop_bridge.py
 python3 tests/test_vignettes.py
 ```
 
 Stop the background servers afterward. `test_vignettes.py` drives tutorial workflows and may take longer or require access to the public tutorial datasets. The public [CI workflow](../.github/workflows/ci.yml) is the reference for the complete tested command sequence and environment.
 
 For a numeric fix, add a small known-answer case with an independently calculated expected value. A test that calls the same calculation twice will not catch a wrong formula. For a UI or import fix, exercise the user path that was broken, including file upload when the bug only appears after upload.
+
+## Desktop storage and module handoff
+
+The Windows EXEs serve their built HTML at stable loopback origins: Core 18767, Assay 18768, Resource 18769. WebView2 stores projects and preferences in the per-user Orebit profile. If a port is occupied, that session uses a temporary port; close the conflicting process and reopen the EXE to see projects at the normal origin. Never bind the server to a non-loopback interface.
+
+"Continue in Assay/Resource" stores one CSV under the user's Orebit handoff directory for at most 30 minutes. It starts the next EXE when found beside the current EXE; otherwise the user can open it manually. The receiving EXE imports through its existing file-input path and deletes the handoff record. No private drillhole data is sent to GitHub.
+
+The source phase files carry a `-source` placeholder. `npm run build` replaces it in `dist/` with a deterministic ID derived from the module version and SHA-256 of the inlined source bytes. This works for forks and source ZIPs without Git. Do not edit generated `dist/` files or add a `-dirty` stamp to an exported build.
+
+## Hosting in a subfolder
+
+Serve the complete `dist/` folder under one path, such as `/geosuite/`. The manifest, service worker, shortcuts and cached assets resolve relative to that path. Use HTTPS (or localhost) for service workers and open each module online once before relying on offline use. Release checks from a local build contact `https://geosuite.orebit.id/03-latest.json`; geological data stays local.
 
 ## Send a change
 

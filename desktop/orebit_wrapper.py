@@ -11,6 +11,10 @@ import re
 import json
 import base64
 import socket
+import errno
+import subprocess
+import tempfile
+import time
 import threading
 import webbrowser
 import tkinter as tk
@@ -29,6 +33,60 @@ MIN_SIZE = (800, 600)
 
 class FileAPI:
     """Python-side API exposed to JavaScript via pywebview js_api."""
+
+    def __init__(self, module):
+        self.module = module
+
+    def send_handoff(self, target, filename, text):
+        """Store one CSV for the next module; optionally start its sibling EXE."""
+        next_module = {"Core": "Assay", "Assay": "Resource"}.get(self.module)
+        if target != next_module or not isinstance(filename, str) or not isinstance(text, str):
+            return {"ok": False, "error": "Invalid module handoff"}
+        if not filename.lower().endswith(".csv") or len(text.encode("utf-8")) > 32 * 1024 * 1024:
+            return {"ok": False, "error": "CSV handoff must be at most 32 MB"}
+        try:
+            folder = _handoff_dir()
+            path = os.path.join(folder, target + ".json")
+            fd, temp = tempfile.mkstemp(dir=folder, prefix=target + "-", suffix=".tmp")
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump(
+                        {"name": os.path.basename(filename), "text": text, "ts": time.time()},
+                        f, ensure_ascii=False,
+                    )
+                os.replace(temp, path)
+            finally:
+                if os.path.exists(temp):
+                    os.unlink(temp)
+            exe = os.path.join(os.path.dirname(sys.executable), "Orebit-" + target + ".exe")
+            launched = False
+            if sys.platform == "win32" and getattr(sys, "frozen", False) and os.path.isfile(exe):
+                subprocess.Popen([exe], cwd=os.path.dirname(exe), close_fds=True)
+                launched = True
+            return {"ok": True, "launched": launched}
+        except OSError as exc:
+            return {"ok": False, "error": str(exc)}
+
+    def take_handoff(self):
+        """Only this EXE can consume its own fresh handoff, and only once."""
+        if self.module not in ("Assay", "Resource"):
+            return None
+        try:
+            path = os.path.join(_handoff_dir(), self.module + ".json")
+            with open(path, "r", encoding="utf-8") as f:
+                rec = json.load(f)
+            os.unlink(path)
+            if not isinstance(rec, dict):
+                return None
+            if time.time() - rec.get("ts", 0) > 30 * 60 or rec.get("ts", 0) > time.time() + 60:
+                return None
+            if not isinstance(rec.get("text"), str) or not isinstance(rec.get("name"), str):
+                return None
+            if len(rec["text"].encode("utf-8")) > 32 * 1024 * 1024:
+                return None
+            return rec
+        except (OSError, ValueError, TypeError):
+            return None
 
     def save_file(self, filename, content_b64, mime="application/octet-stream"):
         """Save a file from base64-encoded content. Returns path or None."""
@@ -112,11 +170,47 @@ def extract_title(html_content):
     return "Orebit GeoSuite"
 
 
-def find_port():
-    """Find an available port on localhost."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
+MODULE_PORTS = {"Core": 18767, "Assay": 18768, "Resource": 18769}
+
+
+class _ExclusiveServer(HTTPServer):
+    # HTTPServer defaults to SO_REUSEADDR. On Windows this can allow two EXEs
+    # to bind the same port and route a WebView to the wrong module.
+    allow_reuse_address = False
+
+
+def _module_from_html(html):
+    match = re.search(r'<meta name="product-stage" content="(Core|Assay|Resource)"', html)
+    if not match:
+        raise ValueError("Unknown GeoSuite module in bundled HTML")
+    return match.group(1)
+
+
+def _handoff_dir():
+    base = os.environ.get("APPDATA") if sys.platform == "win32" else None
+    if not base:
+        base = os.environ.get("XDG_CONFIG_HOME") or os.path.join(
+            os.path.expanduser("~"), ".config"
+        )
+    path = os.path.join(base, "Orebit", "handoff")
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def _bind_server(handler, module):
+    """Bind the stable origin first; use an OS-assigned port only if occupied."""
+    try:
+        return _ExclusiveServer(("127.0.0.1", MODULE_PORTS[module]), handler)
+    except OSError as exc:
+        if exc.errno not in (errno.EADDRINUSE, errno.EACCES):
+            raise
+        print(
+            f"Port {MODULE_PORTS[module]} unavailable; saved browser projects "
+            "will be hidden during this session. Close the other process "
+            "and reopen GeoSuite to recover the normal origin.",
+            file=sys.stderr,
+        )
+        return _ExclusiveServer(("127.0.0.1", 0), handler)
 
 
 def check_webview2():
@@ -474,7 +568,7 @@ def main():
     # the app goes through http://127.0.0.1, never file://: that is where the
     # page gets window.__OREBIT_RT__ (desktop mode) and its default profile.
     base_dir = get_base_dir()
-    port = find_port()
+    module = _module_from_html(html_content)
 
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
@@ -530,7 +624,8 @@ def main():
                     return
             return super().do_GET()
 
-    server = HTTPServer(("127.0.0.1", port), Handler)
+    server = _bind_server(Handler, module)
+    port = server.server_port
     t = threading.Thread(target=server.serve_forever, daemon=True)
     t.start()
 
@@ -566,7 +661,7 @@ def main():
     try:
         import webview
 
-        api = FileAPI()
+        api = FileAPI(module)
 
         gui_options = ["edgechromium", "mshtml", "gtk", "qt"]
         last_err = None
@@ -646,7 +741,7 @@ def _open_in_system_browser_with_notice(url, err_msg, webview2_installed):
         notice = (
             "Native window tidak dapat dibuka (kemungkinan masalah display/GPU),\n"
             "jadi aplikasi dibuka di browser default kamu.\n\n"
-            "Semua fitur (termasuk aktivasi lisensi & watermark) tetap bekerja normal.\n\n"
+            "Fitur GeoSuite tetap tersedia. Proyek tersimpan mengikuti profil browser yang digunakan.\n\n"
             f"URL: {url}\n\n"
             "Tutup tab browser untuk keluar."
         )
@@ -655,7 +750,7 @@ def _open_in_system_browser_with_notice(url, err_msg, webview2_installed):
         notice = (
             "WebView2 Runtime tidak berhasil dipasang otomatis,\n"
             "jadi aplikasi dibuka di browser default kamu.\n\n"
-            "Semua fitur (termasuk aktivasi lisensi & watermark) tetap bekerja normal.\n\n"
+            "Fitur GeoSuite tetap tersedia. Proyek tersimpan mengikuti profil browser yang digunakan.\n\n"
             "Untuk window native di kemudian hari, install manual:\n"
             "  https://developer.microsoft.com/en-us/microsoft-edge/webview2/\n\n"
             f"URL: {url}\n\n"

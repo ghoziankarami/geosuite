@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <!-- OREBIT_BUILD_START
 Orebit Resource — GeoSuite v3.0.0
-Copyright (c) 2026 Orebit (Ghozian Islam Karami). All rights reserved.
-Build: resource-v3.0.0-20260926-f2808ac-dirty
+Copyright (c) 2026 Orebit (Ghozian Islam Karami). GPL-3.0-only.
+Build: resource-v3.0.0-source
 Terms: https://geosuite.orebit.id/terms
 -- OREBIT_BUILD_END -->
-<script>window.OREBIT_BUILD_ID="resource-v3.0.0-20260926-f2808ac-dirty";</script>
+<script>window.OREBIT_BUILD_ID="resource-v3.0.0-source";</script>
 
 
 
@@ -24,14 +24,14 @@ Terms: https://geosuite.orebit.id/terms
 <meta name="product-version" content="v3.0.0"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
 <meta name="product-name" content="Orebit Resource">
 <meta name="product-stage" content="Resource">
-<!-- CSP: privacy-first. No external network, inline scripts/styles only (we bundle everything). -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com https://*.arcgisonline.com; connect-src 'self' https://orebit.id https://server.arcgisonline.com https://*.arcgisonline.com; font-src 'self' data:; worker-src 'self' blob:; base-uri 'self'; form-action 'self';">
+<!-- CSP: data remains local; optional online services and release checks use explicit origins. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com https://*.arcgisonline.com; connect-src 'self' https://orebit.id https://geosuite.orebit.id https://server.arcgisonline.com https://*.arcgisonline.com; font-src 'self' data:; worker-src 'self' blob:; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Orebit Resource</title>
 <!-- Installable offline app (src/pwa/): the macOS/Linux route to GeoSuite. Absolute paths:
      served from the web root; harmless 404s inside the Desktop EXE. -->
-<link rel="manifest" href="/manifest.webmanifest">
-<link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./pwa/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="GeoSuite">
 <link rel="icon" href="data:image/png;base64,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" type="image/png">
 <!-- Vendor libs (inlined for offline + privacy) -->
@@ -3591,7 +3591,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Enables offline caching for web builds. Skipped for EXE (file://) mode.
 (function registerServiceWorker() {
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    navigator.serviceWorker.register('/service-worker.js').catch(function() {});
+    navigator.serviceWorker.register('./service-worker.js').catch(function() {});
   }
 })();
 
@@ -12998,7 +12998,7 @@ if (typeof deleteProjectFromDB === 'function') window.deleteProjectFromDB = dele
 
     <div class="help-section">
       <h3><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Privacy</h3>
-      <p>This tool is <strong>100% local-only</strong> — no outbound connections (enforced by Content-Security-Policy: <code>connect-src 'none'</code>). All data stays on your laptop.</p>
+      <p>Your project data is processed locally. Optional maps, Google Drive, and update checks may contact external services; see the privacy policy.</p>
     </div>
 
     <div class="help-section">
@@ -13452,7 +13452,7 @@ body header.orebit-header .orebit-phase-pill {
   <p>
     <strong>Orebit GeoSuite</strong> · Orebit Resource · <span id="footerVersion">v3.0.0</span>
     <span class="divider">·</span>
-    © 2026 Orebit. All rights reserved.
+    © 2026 Orebit · <a href="https://github.com/ghoziankarami/geosuite" target="_blank" rel="noopener">GPL-3.0 Source Code</a>
     <span class="divider">·</span>
     <a href="https://orebit.id" target="_blank" rel="noopener">orebit.id</a>
     <span class="divider">·</span>

@@ -20,8 +20,9 @@
 //
 // Usage: node build/build.mjs [Core] [Assay] [Resource]   (default: all three)
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, readdirSync, cpSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { resolvePython } from "./python-launcher.mjs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -67,8 +68,7 @@ const MARKER_CLOSE = Buffer.from(" */");
 // until the bytes stop changing lands on the same joint fixed point from
 // any starting spacing; the cap only guards against a future anchor bug
 // looping forever.
-const PY_EXE = process.platform === "win32" ? "py" : "python3";
-const PY_ARGS = process.platform === "win32" ? ["-3"] : [];
+const { command: PY_EXE, args: PY_ARGS } = resolvePython();
 const PATCHER_DIR = firstDirWith("orebit_v194_patcher.py", path.join(ROOT, "build", "patchers"), path.join(ROOT, "ops", "scripts", "patchers"));
 const PATCHERS = [
   path.join(PATCHER_DIR, "orebit_v194_patcher.py"),
@@ -156,5 +156,9 @@ if (existsSync(PWA_DIR)) {
     copyFileSync(path.join(PWA_DIR, "icons", f), path.join(DIST_DIR, "pwa", f));
   }
 }
+
+const VENDOR_DIR = firstDirWith("plotly.min.js", path.join(ROOT, "vendor"), path.join(ROOT, "exe-wrapper", "pywebview", "vendor"));
+if (!existsSync(VENDOR_DIR)) throw new Error(`Bundled vendor directory missing: ${VENDOR_DIR}`);
+cpSync(VENDOR_DIR, path.join(DIST_DIR, "vendor"), { recursive: true, force: true });
 
 console.log(`\nBuilt ${phases.length} phase(s) into ${path.relative(ROOT, DIST_DIR)}${path.sep}`);

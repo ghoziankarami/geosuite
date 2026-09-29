@@ -7,7 +7,7 @@ This guide is for people changing GeoSuite from the public repository. You do no
 ```text
 phases/*.html + src/shared + src/assets + src/locales
                  ↓ node build/build.mjs
-            dist/{Core,Assay,Resource}.html
+            dist/{Core,Assay,Resource}.html + vendor/ + offline app
                  ↓ optional Windows build
              desktop/dist/Orebit-*.exe
 ```
@@ -23,12 +23,11 @@ phases/*.html + src/shared + src/assets + src/locales
 Install Node.js 18+ and Python 3.9+. From the repository root:
 
 ```bash
-node build/build.mjs Core Assay Resource
-cp -r vendor dist/
+npm run build
 python3 -m http.server 8767 -d dist
 ```
 
-Then open `http://localhost:8767/Core.html`. Windows PowerShell users can replace `cp -r vendor dist/` with `Copy-Item vendor dist/vendor -Recurse` and invoke `python` instead of `python3` where needed. Use a local HTTP server so module navigation and offline features run under a web origin.
+Then open `http://localhost:8767/Core.html`. Windows PowerShell users can invoke `py -3 -m http.server 8767 -d dist` or `python -m http.server 8767 -d dist`. The build checks `py -3`, then `python`, then `python3` for Python 3.9+; no separate vendor copy or npm install is needed. Use a local HTTP server so module navigation and offline features run under a web origin.
 
 For a module-specific change, edit the source in `phases/` or `src/`, rebuild, and verify the corresponding file in `dist/`. If the rule belongs in multiple modules, place it in `src/shared/` once. When changing user-visible text, update both EN and ID locale sources.
 
@@ -40,7 +39,7 @@ Fast checks require no npm dependencies:
 npm test
 ```
 
-To run the browser checks, install Playwright and Chromium for Python, build and copy `vendor/` as above, then start three local servers on ports 8767, 8768, and 8769. The test scripts use those separate origins for module handoff:
+To run the browser checks, install Playwright and Chromium for Python, build with `npm run build`, then start three local servers on ports 8767, 8768, and 8769. The test scripts use those separate origins for module handoff:
 
 ```bash
 python3 -m pip install playwright

@@ -23,10 +23,10 @@ jobs:
           python-version: "3.11"
 
       - name: Build all three modules
-        run: node build/build.mjs Core Assay Resource
+        run: npm run build
 
       - name: Node known-answer and import tests
-        run: node tests/run-node-tests.mjs
+        run: npm test
 
       - name: Install Playwright + Chromium
         run: |
@@ -35,7 +35,6 @@ jobs:
 
       - name: End-to-end known-answer test (Core -> Assay -> Resource)
         run: |
-          cp -r vendor dist/
           python -m http.server 8767 -d dist >/dev/null 2>&1 &
           python -m http.server 8768 -d dist >/dev/null 2>&1 &
           python -m http.server 8769 -d dist >/dev/null 2>&1 &
@@ -56,3 +55,27 @@ jobs:
         with:
           name: geosuite-dist
           path: dist/*.html
+
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install pinned desktop build dependencies
+        run: python -m pip install -r desktop/requirements.txt
+      - name: Build source ZIP layout on Windows
+        run: npm run build
+      - name: Verify all modules and bundled vendor assets
+        shell: pwsh
+        run: |
+          @('Core.html', 'Assay.html', 'Resource.html', 'vendor/plotly.min.js', 'manifest.webmanifest') | ForEach-Object {
+            if (-not (Test-Path (Join-Path dist $_))) { throw "Missing dist/$_" }
+          }
+      - name: Run dependency-free tests
+        run: npm test

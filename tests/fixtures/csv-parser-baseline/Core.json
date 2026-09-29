@@ -1,0 +1,441 @@
+{
+ "01-comma-standard.csv": {
+  "ok": true,
+  "result": {
+   "headers": [
+    "hole_id",
+    "from_m",
+    "to_m",
+    "au_gpt",
+    "cu_pct"
+   ],
+   "name": "01-comma-standard.csv",
+   "rejected": [],
+   "rows": [
+    {
+     "au_gpt": "2.5",
+     "cu_pct": "0.3",
+     "from_m": "0",
+     "hole_id": "DH001",
+     "to_m": "1"
+    },
+    {
+     "au_gpt": "3.1",
+     "cu_pct": "0.25",
+     "from_m": "1",
+     "hole_id": "DH001",
+     "to_m": "2"
+    },
+    {
+     "au_gpt": "1.8",
+     "cu_pct": "0.4",
+     "from_m": "0",
+     "hole_id": "DH002",
+     "to_m": "1"
+    }
+   ]
+  }
+ },
+ "02-semicolon-euro-decimal.csv": {
+  "ok": true,
+  "result": {
+   "headers": [
+    "hole_id",
+    "from_m",
+    "to_m",
+    "au_gpt",
+    "cu_pct"
+   ],
+   "name": "02-semicolon-euro-decimal.csv",
+   "rejected": [],
+   "rows": [
+    {
+     "au_gpt": "2.5",
+     "cu_pct": "0.3",
+     "from_m": "0",
+     "hole_id": "DH001",
+     "to_m": "1"
+    },
+    {
+     "au_gpt": "3.1",
+     "cu_pct": "0.25",
+     "from_m": "1",
+     "hole_id": "DH001",
+     "to_m": "2"
+    },
+    {
+     "au_gpt": "1.8",
+     "cu_pct": "0.4",
+     "from_m": "0",
+     "hole_id": "DH002",
+     "to_m": "1"
+    }
+   ]
+  }
+ },
+ "03-tab-delimited.csv": {
+  "ok": true,
+  "result": {
+   "headers": [
+    "hole_id",
+    "from_m",
+    "to_m",
+    "au_gpt",
+    "cu_pct"
+   ],
+   "name": "03-tab-delimited.csv",
+   "rejected": [],
+   "rows": [
+    {
+     "au_gpt": "2.5",
+     "cu_pct": "0.3",
+     "from_m": "0",
+     "hole_id": "DH001",
+     "to_m": "1"
+    },
+    {
+     "au_gpt": "3.1",
+     "cu_pct": "0.25",
+     "from_m": "1",
+     "hole_id": "DH001",
+     "to_m": "2"
+    },
+    {
+     "au_gpt": "1.8",
+     "cu_pct": "0.4",
+     "from_m": "0",
+     "hole_id": "DH002",
+     "to_m": "1"
+    }
+   ]
+  }
+ },
+ "04-thousands-comma-decimal-dot.csv": {
+  "ok": true,
+  "result": {
+   "headers": [
+    "hole_id",
+    "from_m",
+    "to_m",
+    "au_gpt",
+    "tonnage_kg"
+   ],
+   "name": "04-thousands-comma-decimal-dot.csv",
+   "rejected": [],
+   "rows": [
+    {
+     "au_gpt": "2.5",
+     "from_m": "0",
+     "hole_id": "DH001",
+     "to_m": "1",
+     "tonnage_kg": "1234.56"
+    },
+    {
+     "au_gpt": "3.1",
+     "from_m": "1",
+     "hole_id": "DH001",
+     "to_m": "2",
+     "tonnage_kg": "12345.6"
+    },
+    {
+     "au_gpt": "1.8",
+     "from_m": "0",
+     "hole_id": "DH002",
+     "to_m": "1",
+     "tonnage_kg": "987.65"
+    }
+   ]
+  }
+ },
+ "05-indonesian-headers.csv": {
+  "ok": true,
+  "result": {
+   "headers": [
+    "Lubang",
+    "Dari",
+    "Sampai",
+    "Litho",
+    "Kedalaman",
+    "Deskripsi"
+   ],
+   "name": "05-indonesian-headers.csv",
+   "rejected": [],
+   "rows": [
+    {
+     "Dari": "0",
+     "Deskripsi": "Granit lapuk sedang",
+     "Kedalaman": "1",
+     "Litho": "GRT",
+     "Lubang": "DH001",
+     "Sampai": "1"
+    },
+    {
+     "Dari": "1",
+     "Deskripsi": "Vein kuarsa tipis",
+     "Kedalaman": "2",
+     "Litho": "QTZ",
+     "Lubang": "DH001",
+     "Sampai": "2"
+    },
+    {
+     "Dari": "0",
+     "Deskripsi": "Pasir lepas",
+     "Kedalaman": "1",
+     "Litho": "SND",
+     "Lubang": "DH002",
+     "Sampai": "1"
+    }
+   ]
+  }
+ },
+ "06-datamine-headers.csv": {
+  "ok": true,
+  "result": {
+   "headers": [
+    "BHID",
+    "AT",
+    "AZ",
+    "DIP",
+    "XCOLLAR",
+    "YCOLLAR",
+    "ZCOLLAR"
+   ],
+   "name": "06-datamine-headers.csv",
+   "rejected": [],
+   "rows": [
+    {
+     "AT": "0",
+     "AZ": "45",
+     "BHID": "DH001",
+     "DIP": "-60",
+     "XCOLLAR": "358800",
+     "YCOLLAR": "7749100",
+     "ZCOLLAR": "340"
+    },
+    {
+     "AT": "50",
+     "AZ": "46",
+     "BHID": "DH001",
+     "DIP": "-59.5",
+     "XCOLLAR": "358800",
+     "YCOLLAR": "7749100",
+     "ZCOLLAR": "340"
+    },
+    {
+     "AT": "0",
+     "AZ": "120",
+     "BHID": "DH002",
+     "DIP": "-55",
+     "XCOLLAR": "358900",
+     "YCOLLAR": "7749050",
+     "ZCOLLAR": "338"
+    }
+   ]
+  }
+ },
+ "07-bom-crlf.csv": {
+  "ok": true,
+  "result": {
+   "headers": [
+    "hole_id",
+    "from_m",
+    "to_m",
+    "au_gpt",
+    "cu_pct"
+   ],
+   "name": "07-bom-crlf.csv",
+   "rejected": [],
+   "rows": [
+    {
+     "au_gpt": "2.5",
+     "cu_pct": "0.3",
+     "from_m": "0",
+     "hole_id": "DH001",
+     "to_m": "1"
+    },
+    {
+     "au_gpt": "3.1",
+     "cu_pct": "0.25",
+     "from_m": "1",
+     "hole_id": "DH001",
+     "to_m": "2"
+    },
+    {
+     "au_gpt": "1.8",
+     "cu_pct": "0.4",
+     "from_m": "0",
+     "hole_id": "DH002",
+     "to_m": "1"
+    }
+   ]
+  }
+ },
+ "08-quoted-newline.csv": {
+  "ok": true,
+  "result": {
+   "headers": [
+    "hole_id",
+    "from_m",
+    "to_m",
+    "litho",
+    "notes"
+   ],
+   "name": "08-quoted-newline.csv",
+   "rejected": [],
+   "rows": [
+    {
+     "from_m": "0",
+     "hole_id": "DH001",
+     "litho": "GRT",
+     "notes": "weathered\ngranite, moderate",
+     "to_m": "1"
+    },
+    {
+     "from_m": "1",
+     "hole_id": "DH001",
+     "litho": "QTZ",
+     "notes": "thin vein",
+     "to_m": "2"
+    }
+   ]
+  }
+ },
+ "09-bdl-markers.csv": {
+  "ok": true,
+  "result": {
+   "headers": [
+    "hole_id",
+    "from_m",
+    "to_m",
+    "au_gpt",
+    "cu_pct"
+   ],
+   "name": "09-bdl-markers.csv",
+   "rejected": [],
+   "rows": [
+    {
+     "au_gpt": "0.25",
+     "cu_pct": "0.3",
+     "from_m": "0",
+     "hole_id": "DH001",
+     "to_m": "1"
+    },
+    {
+     "au_gpt": "",
+     "cu_pct": "",
+     "from_m": "1",
+     "hole_id": "DH001",
+     "to_m": "2"
+    },
+    {
+     "au_gpt": "",
+     "cu_pct": "3.1",
+     "from_m": "0",
+     "hole_id": "DH002",
+     "to_m": "1"
+    },
+    {
+     "au_gpt": "",
+     "cu_pct": "0.1",
+     "from_m": "1",
+     "hole_id": "DH002",
+     "to_m": "2"
+    }
+   ]
+  }
+ },
+ "10-short-row.csv": {
+  "ok": true,
+  "result": {
+   "headers": [
+    "hole_id",
+    "from_m",
+    "to_m",
+    "au_gpt",
+    "cu_pct"
+   ],
+   "name": "10-short-row.csv",
+   "rejected": [
+    {
+     "line": 3,
+     "raw": "DH001,1,2,3.1",
+     "reason": "expected 5 column(s), found 4"
+    }
+   ],
+   "rows": [
+    {
+     "au_gpt": "2.5",
+     "cu_pct": "0.3",
+     "from_m": "0",
+     "hole_id": "DH001",
+     "to_m": "1"
+    },
+    {
+     "au_gpt": "1.8",
+     "cu_pct": "0.4",
+     "from_m": "0",
+     "hole_id": "DH002",
+     "to_m": "1"
+    }
+   ]
+  }
+ },
+ "11-schema-comment.csv": {
+  "ok": true,
+  "result": {
+   "headers": [
+    "hole_id",
+    "from_m",
+    "to_m",
+    "au_gpt",
+    "cu_pct"
+   ],
+   "name": "11-schema-comment.csv",
+   "rejected": [],
+   "rows": [
+    {
+     "au_gpt": "2.5",
+     "cu_pct": "0.3",
+     "from_m": "0",
+     "hole_id": "DH001",
+     "to_m": "1"
+    },
+    {
+     "au_gpt": "3.1",
+     "cu_pct": "0.25",
+     "from_m": "1",
+     "hole_id": "DH001",
+     "to_m": "2"
+    },
+    {
+     "au_gpt": "1.8",
+     "cu_pct": "0.4",
+     "from_m": "0",
+     "hole_id": "DH002",
+     "to_m": "1"
+    }
+   ]
+  }
+ },
+ "12-single-column.csv": {
+  "ok": true,
+  "result": {
+   "headers": [
+    "hole_id"
+   ],
+   "name": "12-single-column.csv",
+   "rejected": [],
+   "rows": [
+    {
+     "hole_id": "DH001"
+    },
+    {
+     "hole_id": "DH001"
+    },
+    {
+     "hole_id": "DH002"
+    }
+   ]
+  }
+ }
+}

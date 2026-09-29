@@ -44,6 +44,9 @@ jobs:
           python tests/test_estimation_inputs.py
           python tests/test_module_handoff.py
 
+      - name: CSV import matches committed parser snapshots
+        run: python tests/known-answer/csv-parser-characterization.py
+
       - name: Tutorials on real data still match the app (docs/vignettes)
         run: python tests/test_vignettes.py
 

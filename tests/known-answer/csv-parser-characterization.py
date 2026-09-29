@@ -47,8 +47,10 @@ WHICH ENTRY POINTS THIS CALLS AND WHY THEY ARE THE RIGHT ONES
 
 USAGE
     node build/build.mjs Core Assay Resource   # build dist/ first
-    py -3 _meta/tests/known-answer/csv-parser-characterization.py
-    py -3 _meta/tests/known-answer/csv-parser-characterization.py --record
+    # From a GeoSuite checkout (public repository):
+    python3 tests/known-answer/csv-parser-characterization.py
+    # From the private development checkout, use the corresponding _meta/tests path.
+    # --record deliberately updates the snapshots; review its diff before committing.
 
     Without --record: compares fresh output against the committed snapshots
     in fixtures/csv-parser-baseline/ and fails (exit 1) on any difference.
@@ -89,7 +91,9 @@ def _repo_root() -> Path:
 
 REPO_ROOT = _repo_root()
 DIST = REPO_ROOT / "dist"
-VENDOR = REPO_ROOT / "exe-wrapper" / "pywebview" / "vendor"
+VENDOR = REPO_ROOT / "vendor"
+if not VENDOR.is_dir():  # private development checkout
+    VENDOR = REPO_ROOT / "exe-wrapper" / "pywebview" / "vendor"
 PORT = 8804
 
 

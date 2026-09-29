@@ -28,8 +28,8 @@
     var build = window.OREBIT_BUILD_ID || 'unknown';
     var wrong = kind === 'numbers';
     var title = '[' + LABEL_EN + '] ' + (wrong ? 'Wrong number: ' : 'Bug: ');
-    var body = 'Module: ' + LABEL_EN + '\\nVersion: ' + version +
-      '\\nBuild ID: ' + build + '\\n\\nSteps to reproduce:\\n\\nExpected:\\n\\nActual:\\n';
+    var body = 'Module: ' + LABEL_EN + '\nVersion: ' + version +
+      '\nBuild ID: ' + build + '\n\nSteps to reproduce:\n\nExpected:\n\nActual:\n';
     return 'https://github.com/ghoziankarami/geosuite/issues/new?template=' +
       (wrong ? 'wrong-numbers.md' : 'bug-report.md') +
       '&title=' + encodeURIComponent(title) + '&body=' + encodeURIComponent(body);

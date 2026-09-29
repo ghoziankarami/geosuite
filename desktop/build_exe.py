@@ -59,7 +59,6 @@ def build_one(module: str) -> Path:
     product.write_text(code, encoding="ascii")
     sep = os.pathsep  # PyInstaller's --add-data separator (';' on Windows)
     try:
-        run([sys.executable, "inject-guard.py", str(index)])
         args = [
             sys.executable, "-m", "PyInstaller",
             "--onefile", "--windowed", "--clean", "--noconfirm",

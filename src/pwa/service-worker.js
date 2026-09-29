@@ -49,7 +49,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(names => Promise.all(names.filter(n => (n.endsWith(':' + SCOPE_PATH) || (SCOPE_PATH === '/' && n === 'geosuite-app-v3')) && n !== CACHE_VERSION).map(n => caches.delete(n))))
+      .then(names => Promise.all(names.filter(n => n.startsWith('geosuite-app-') && (n.endsWith(':' + SCOPE_PATH) || (SCOPE_PATH === '/' && n === 'geosuite-app-v3')) && n !== CACHE_VERSION).map(n => caches.delete(n))))
       .then(() => self.clients.claim())
   );
 });

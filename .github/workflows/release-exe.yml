@@ -67,6 +67,12 @@ jobs:
         working-directory: desktop
         run: python verify-exe-build.py
 
+      - name: Record resolved Python dependencies
+        shell: bash
+        run: |
+          python -VV > desktop/dist/PYTHON-DEPENDENCIES.txt
+          python -m pip freeze >> desktop/dist/PYTHON-DEPENDENCIES.txt
+
       - name: Checksums
         shell: bash
         working-directory: desktop/dist
@@ -79,7 +85,7 @@ jobs:
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --verify-tag --title "GeoSuite $TAG" --generate-notes
           fi
-          gh release upload "$TAG" Orebit-Core.exe Orebit-Assay.exe Orebit-Resource.exe SHA256SUMS.txt --clobber
+          gh release upload "$TAG" Orebit-Core.exe Orebit-Assay.exe Orebit-Resource.exe SHA256SUMS.txt PYTHON-DEPENDENCIES.txt --clobber
 
       - name: Keep the EXEs as a workflow artifact too
         uses: actions/upload-artifact@v4

@@ -38,17 +38,16 @@ Open all three modules at least once while online to cache them for offline use.
 
 ## Build from source
 
-Requirements: **Node.js 18+** and **Python 3.9+**. The web build has no npm package installation step.
+Requirements: **Node.js 18+** and **Python 3.9+**. The web build has no npm package installation step. `npm run build` creates a complete `dist/` directory, including the bundled vendor libraries.
 
 ```bash
 git clone https://github.com/ghoziankarami/geosuite.git
 cd geosuite
-node build/build.mjs Core Assay Resource
-cp -r vendor dist/
+npm run build
 python3 -m http.server 8767 -d dist
 ```
 
-Open `http://localhost:8767/Core.html` (or `Assay.html` / `Resource.html`). On Windows PowerShell, replace the copy command with `Copy-Item vendor dist/vendor -Recurse`, and use `python` if `python3` is not available. The three source files in `phases/` contain build markers; open the generated files in `dist/`.
+Open `http://localhost:8767/Core.html` (or `Assay.html` / `Resource.html`). If you downloaded **Source code (zip)** instead of cloning, extract it, open a terminal in the extracted `geosuite-main` folder, and run the same `npm run build` and server commands. On Windows PowerShell, use `py -3 -m http.server 8767 -d dist` or `python -m http.server 8767 -d dist` for the server. The build accepts either `py -3` or `python` (Python 3.9+). Do not open `phases/*.html` directly: they contain build markers; use the generated files in `dist/` through the local server.
 
 Run the fast, dependency-free tests with `npm test`. The [CI workflow](.github/workflows/ci.yml) also builds all modules, runs browser-based known-answer tests, verifies the tutorials, and checks offline installation. For the full local commands and where to edit code, see [Development guide](docs/DEVELOPMENT.md).
 
@@ -74,7 +73,7 @@ The public repository is the place for issues, source review, pull requests, and
 - Want to change code or documentation? Read [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md), then open a PR. Update English and Indonesian UI text together where relevant.
 - Found a vulnerability? Follow [SECURITY.md](SECURITY.md) and report it privately, not in a public issue.
 
-Before a pull request, run `node build/build.mjs Core Assay Resource` and `npm test`. Changes to calculations should include an independently derived known-answer test. The CI runs more extensive browser checks.
+Before a pull request, run `npm run build` and `npm test`. Changes to calculations should include an independently derived known-answer test. The CI runs more extensive browser checks.
 
 ## Tutorials, methods and licences
 

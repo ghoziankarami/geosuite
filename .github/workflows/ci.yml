@@ -67,6 +67,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Install pinned desktop build dependencies
+        run: python -m pip install -r desktop/requirements.txt
       - name: Build source ZIP layout on Windows
         run: npm run build
       - name: Verify all modules and bundled vendor assets

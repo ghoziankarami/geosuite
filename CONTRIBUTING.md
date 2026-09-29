@@ -14,6 +14,15 @@ you do not need to write code.
 - **A file that will not import:** attach it (or its first 20 lines, anonymised). Every
   such file becomes a test case.
 
+## How public contributions reach releases
+
+The public repository is currently exported from selected product paths in the
+private `orebit-ops` repository. A maintainer must carry an accepted public PR
+back to those source paths before the next export. Otherwise the next export
+replaces the public tree and can erase the contribution. Please open PRs here
+as usual; maintainers will track that carry-back as part of merging and release.
+Do not include credentials, customer data, or private infrastructure details.
+
 ## Changing the code
 
 1. `phases/*.html` and `src/` are the source. `dist/` is build output — never edit it.

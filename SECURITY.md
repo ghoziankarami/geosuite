@@ -1,6 +1,9 @@
 # Security policy
 
-GeoSuite runs locally and does not send your data anywhere. The main risks are
+GeoSuite processes geological files locally by default. The app checks a public
+update file; optional Google Drive opening and satellite basemap tiles use
+external services only when selected. See the [privacy policy](https://geosuite.orebit.id/privacy/)
+for what connects to the network and what is stored locally. The main risks are
 malicious input files (script injection through a CSV or project file) and the
 Desktop wrapper.
 

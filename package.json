@@ -6,7 +6,7 @@
   "license": "GPL-3.0-only",
   "scripts": {
     "build": "node build/build.mjs",
-    "test": "node tests/run-node-tests.mjs"
+    "test": "node tests/run-node-tests.mjs && node tests/test_build_setup.mjs"
   },
   "engines": { "node": ">=18" }
 }

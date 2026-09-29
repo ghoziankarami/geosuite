@@ -27,7 +27,7 @@ That is the point of tutorials on real data.
 node build/build.mjs
 python3 docs/vignettes/tools/run_thalanga.py              # ~90 s
 python3 docs/vignettes/tools/run_babbitt.py               # ~130 s; downloads the data on first run
-python3 "obsidian-system/vault/Obsidian/1. Projects/GeoSuite/_meta/tests/test_vignettes.py"
+python3 tests/test_vignettes.py
 ```
 
 ## Writing a new vignette

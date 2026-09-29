@@ -76,6 +76,8 @@ class FileAPI:
             with open(path, "r", encoding="utf-8") as f:
                 rec = json.load(f)
             os.unlink(path)
+            if not isinstance(rec, dict):
+                return None
             if time.time() - rec.get("ts", 0) > 30 * 60 or rec.get("ts", 0) > time.time() + 60:
                 return None
             if not isinstance(rec.get("text"), str) or not isinstance(rec.get("name"), str):

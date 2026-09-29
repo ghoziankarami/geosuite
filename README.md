@@ -1,239 +1,97 @@
 # Orebit GeoSuite
 
-[![Latest release](https://img.shields.io/github/v/release/ghoziankarami/geosuite?label=release)](https://github.com/ghoziankarami/geosuite/releases/latest)
 [![CI](https://github.com/ghoziankarami/geosuite/actions/workflows/ci.yml/badge.svg)](https://github.com/ghoziankarami/geosuite/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/ghoziankarami/geosuite?label=release)](https://github.com/ghoziankarami/geosuite/releases/latest)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
-[![Bahasa: EN | ID](https://img.shields.io/badge/UI-English%20%7C%20Bahasa%20Indonesia-0d9488)](#bahasa-indonesia)
 
-**Drillhole data to a first resource estimate — free, offline, open source.**
-Three connected tools for exploration geologists, in English and Bahasa Indonesia:
+**Free, open-source tools for drillhole data, assay analysis, and preliminary resource-estimation screening.** GeoSuite has three connected modules, available in English and Bahasa Indonesia. You can use the web app without an account, install it for offline use, or download a Windows desktop executable.
 
-| Module | What it does |
+**[Open GeoSuite](https://geosuite.orebit.id/Core.html)** · **[Start the tutorial](https://geosuite.orebit.id/tutorials/)** · **[Windows downloads](https://github.com/ghoziankarami/geosuite/releases/latest)** · **[Bahasa Indonesia](#panduan-singkat-bahasa-indonesia)**
+
+> GeoSuite provides a screening estimate and data-preparation workflow. It does not classify a Mineral Resource. Public reporting under KCMI/JORC requires a Competent Person. Read the [methodology and limitations](docs/METHODOLOGY.md).
+
+## Start here
+
+1. **Open [GeoSuite Core](https://geosuite.orebit.id/Core.html).** Use the built-in sample to explore, or import your own collar, survey, assay, and lithology tables.
+2. **Check and export your data in Core.** Continue with [Assay](https://geosuite.orebit.id/Assay.html) for statistics, domains, compositing, and variography.
+3. **Continue with [Resource](https://geosuite.orebit.id/Resource.html)** for an initial block-model estimate and grade–tonnage screening. Export project files to keep your own backup.
+
+The [Thalanga tutorial](docs/vignettes/en/01-thalanga-vms.md) walks through all three modules with public data. The [data-format guide](docs/DATA-FORMAT.md) explains imports, units, and column names.
+
+| Module | Main tasks |
 | --- | --- |
-| **Orebit Core** | Import collar / survey / assay / lithology tables (any column names, EN or ID headers), validate them, desurvey, QAQC, export a clean master file. |
-| **Orebit Assay** | Statistics per element and domain, top-cut, declustering, automatic or manual domaining, compositing, variography. |
-| **Orebit Resource** | Block model, ordinary kriging / IDW / nearest neighbour, cross-validation, a preliminary confidence screen (not a classification), grade–tonnage, contained metal, a reporting-readiness checklist and PDF report. |
+| [Core](https://geosuite.orebit.id/Core.html) | Import and validate drillhole tables, desurvey, QA/QC, export clean data. |
+| [Assay](https://geosuite.orebit.id/Assay.html) | Explore grades and domains, top-cut, decluster, composite, model variograms. |
+| [Resource](https://geosuite.orebit.id/Resource.html) | Build a block model; screen estimates with kriging, IDW, or nearest neighbour. |
 
-Each module is a single self-contained tool that runs offline on your laptop: your
-data never leaves your computer. No account, no trial, no paid tier.
+Geological files are processed locally in your browser or desktop app. Optional Google Drive opening and satellite basemap tiles use external services when you choose them; the site also checks for updates. See the [privacy policy](https://geosuite.orebit.id/privacy/) for details. There is no account, licence key, trial, or paid tier.
 
-![Orebit Core with the built-in Thalanga drillhole dataset](docs/vignettes/img/thalanga-01-core-dashboard.png)
+## Install and work offline
 
-**Try it now:** [geosuite.orebit.id](https://geosuite.orebit.id) (opens with a sample dataset, nothing to install) ·
-**Desktop (Windows):** [latest release](https://github.com/ghoziankarami/geosuite/releases/latest) ·
-**Tutorials:** [read on the web](https://geosuite.orebit.id/tutorials/) ·
-**Manual:** [geosuite.orebit.id/docs](https://geosuite.orebit.id/docs/) ·
-**Methodology:** [docs/METHODOLOGY.md](docs/METHODOLOGY.md) ·
-**Input format:** [docs/DATA-FORMAT.md](docs/DATA-FORMAT.md)
-
-**Contents:** [Install](#install) · [Learn it with real data](#learn-it-with-real-data) ·
-[Why trust the numbers](#why-trust-the-numbers) · [FAQ](#faq) · [Build from source](#build-from-source) ·
-[Contributing](#contributing) · [License](#license) · [Bahasa Indonesia](#bahasa-indonesia)
-
-## Install
-
-| Your computer | How |
+| Platform | What to do |
 | --- | --- |
-| **Mac** | Open [geosuite.orebit.id/Core.html](https://geosuite.orebit.id/Core.html) in **Safari → File → Add to Dock** (macOS 14 Sonoma or later), or in Chrome/Edge click **Install app**. GeoSuite then opens from the Dock as its own app and works offline. |
-| **Linux, ChromeOS** | Chrome/Edge/Chromium: **Install app** (button in the header, or the install icon in the address bar). |
-| **Windows** | Same as above, or the Desktop Edition from [Releases](https://github.com/ghoziankarami/geosuite/releases). |
-| **No internet at all / your own server** | `node build/build.mjs && cp -r vendor dist/` and serve `dist/` from any static web server — it is a complete installable app. |
+| Mac | Open a module in Safari and use **File → Add to Dock** (macOS 14+), or use **Install app** in Chrome/Edge. |
+| Linux / ChromeOS | Open a module in Chrome, Edge, or Chromium and choose **Install app**. |
+| Windows | Install the web app in Chrome/Edge, or download the **Core**, **Assay**, or **Resource** `.exe` from [GitHub Releases](https://github.com/ghoziankarami/geosuite/releases/latest). Each module is a separate executable; there is no ZIP to extract. |
 
-The installed app caches all three modules on first launch; updates arrive the next time
-it opens with a connection. Your data stays on your computer either way.
-
-> GeoSuite is a screening and data-preparation tool. Its output is not a Mineral
-> Resource classification; public reporting under KCMI 2017 / JORC 2012 needs a
-> Competent Person. See [METHODOLOGY.md](docs/METHODOLOGY.md#methodology--what-geosuite-computes-and-what-it-does-not).
-
-## Learn it with real data
-
-Read them as web pages at **[geosuite.orebit.id/tutorials](https://geosuite.orebit.id/tutorials/)**, or here in the repository:
-
-| Tutorial | Data | What it teaches |
-| --- | --- | --- |
-| [01 — Thalanga VMS](docs/vignettes/en/01-thalanga-vms.md) · [ID](docs/vignettes/01-thalanga-vms.md) | Geological Survey of Queensland, CC BY 4.0 (the built-in sample) | lab codes, validation with an audit trail, cropping a regional compilation, populations vs outliers, grade-shell domaining without lithology, why defaults gave 276 Mt, a check against 1989–1998 production |
-| [02 — Babbitt Cu-Ni](docs/vignettes/en/02-babbitt-cuni.md) · [ID](docs/vignettes/02-babbitt-cuni.md) | NRRI Duluth Complex database via pygslib | files in feet, 61 % of the core never assayed, a justified top-cut, dense data and smoothing, estimate vs an RPEEE-constrained resource |
-
-Every number in these tutorials is produced by a script that drives the real app
-(`docs/vignettes/tools/`), re-derived independently, and re-checked by
-`tests/test_vignettes.py` — the text cannot silently disagree with the software.
-
-More:
-
-- **[Epithermal gold, start to finish](https://gist.github.com/ghoziankarami/957b05c882f57097441d9388c1e3fa5c)** —
-  all three modules on a synthetic vein, with a self-verification script: why pooling
-  domains reports 0.43 g/t where the vein is 5.59 g/t, what a 20 g/t top-cut costs
-  (17.2 % of the metal), why a 7.50 m downhole width is 5.40 m true width.
-- **[orebit-datasets](https://github.com/ghoziankarami/orebit-datasets)** — three synthetic
-  drillhole datasets under CC BY 4.0, same four-file layout:
-
-  | Dataset | Style | Grade CV | The problem it poses |
-  | --- | --- | --- | --- |
-  | `01-emas-epitermal` | Low-sulphidation Au–Ag vein | 1.66 | erratic high grades; top-cut and domaining decide the answer |
-  | `02-nikel-laterit` | Ni–Co laterite over ultramafic | 0.28 | smooth layered regolith; horizon boundaries, not outliers |
-  | `03-timah-placer` | Alluvial cassiterite (kaksa) | 1.42 | thin basal pay layer, volumetric grade in kg/m³ |
-
-## Why trust the numbers
-
-- Every calculation, default and limit is written down in [METHODOLOGY.md](docs/METHODOLOGY.md).
-- A known-answer test drives real CSV files through all three modules and re-derives
-  desurvey, compositing, IDW, kriging (with its own independent solver), grade–tonnage
-  and contained metal, then compares them with what the app reports.
-- Two tutorials drive real public drillhole databases through the whole chain on every
-  change (above). Building them found and fixed more than a dozen defects — no domain
-  boundary in estimation (Thalanga 202 Mt → 3.7 Mt against 4.7 Mt mined), a variogram fit whose
-  "60 % nugget" was the edge of its own search grid, samples stacked
-  on a collar, duplicate composite coordinates, a cross-validation that found neighbours
-  for 10 samples of 200, results that changed from run to run.
-- Imports never drop or change data silently: every upload shows what was loaded,
-  what was rejected and why, and every below-detection or missing-sample code that
-  was converted.
-- Found a wrong number? [Report it](https://github.com/ghoziankarami/geosuite/issues/new?template=wrong-numbers.md)
-  — these reports are fixed first.
-
-## FAQ
-
-**Is it really free? What is the catch?**
-Yes, for everyone, including commercial use: GPL-3.0, no account, no trial, no paid tier, no licence key.
-Development is supported by voluntary donations.
-
-**Does my data leave my computer?**
-No. All calculation runs locally. The web version is a static page; nothing you load is uploaded.
-
-**Does it work offline?**
-Yes. Install it as an app (see [Install](#install)) or use the Windows Desktop Edition; after the first
-launch it needs no connection.
-
-**Which file formats can I import?**
-CSV/TXT (comma, semicolon or tab; dot or comma decimals; what Excel's *Save as CSV* writes in any regional
-setting), with English or Indonesian column names
-(`Dari`/`Sampai`, `Lubang`, `Kedalaman`, ...). Lengths in metres or feet. Lab codes such as `-0.005`,
-`-999` and `>10` are converted and every conversion is listed. See [docs/DATA-FORMAT.md](docs/DATA-FORMAT.md).
-
-**Can I report the result as a Mineral Resource?**
-No. GeoSuite gives a screening estimate and prepares clean data. Public reporting under KCMI 2017 /
-JORC 2012 needs a Competent Person. What GeoSuite does and does not do is in [METHODOLOGY.md](docs/METHODOLOGY.md).
-
-**Mac or Linux?**
-Yes, as an installed web app (Safari *Add to Dock*, or Chrome/Edge *Install app*). The Desktop EXE is Windows-only.
-
-**Where are my projects saved?**
-In the browser or app storage on your computer. Use *Save Project* / export to keep a file copy.
-
-**I found a wrong number.**
-Please [report it](https://github.com/ghoziankarami/geosuite/issues/new?template=wrong-numbers.md) with a small CSV
-that reproduces it. These reports are fixed first.
+Open all three modules at least once while online to cache them for offline use. Keep exported project files as backups; browser storage can be cleared by browser settings. Windows EXEs are unsigned, so verify that your download came from this repository's Releases page and compare it with the release's `SHA256SUMS.txt`.
 
 ## Build from source
 
-Requirements: Node.js ≥ 18 and Python ≥ 3.9 (for the build-time patchers). No npm packages.
+Requirements: **Node.js 18+** and **Python 3.9+**. The web build has no npm package installation step.
 
 ```bash
-node build/build.mjs            # builds dist/Core.html, dist/Assay.html, dist/Resource.html
-npm test                        # fast known-answer and import tests (Node only)
-```
-
-Open `dist/Core.html` from a local web server (`python3 -m http.server -d dist`) —
-the pages load `vendor/` scripts by relative path, so copy `vendor/` next to them
-(`cp -r vendor dist/`).
-
-Full browser test (Playwright + Chromium):
-
-```bash
-pip install playwright && playwright install chromium
+git clone https://github.com/ghoziankarami/geosuite.git
+cd geosuite
+node build/build.mjs Core Assay Resource
 cp -r vendor dist/
-python3 -m http.server 8767 -d dist & python3 -m http.server 8768 -d dist & python3 -m http.server 8769 -d dist &
-python3 tests/test_pipeline_known_answer.py
+python3 -m http.server 8767 -d dist
 ```
 
-### Desktop Edition (Windows EXE)
+Open `http://localhost:8767/Core.html` (or `Assay.html` / `Resource.html`). On Windows PowerShell, replace the copy command with `Copy-Item vendor dist/vendor -Recurse`, and use `python` if `python3` is not available. The three source files in `phases/` contain build markers; open the generated files in `dist/`.
 
-Each release's EXEs are built by [`release-exe.yml`](.github/workflows/release-exe.yml)
-on a GitHub-hosted Windows runner when a `vX.Y.Z` tag is pushed, and attached to the
-release with a `SHA256SUMS.txt`. To build them yourself on Windows (Python ≥ 3.10 with
-tcl/tk, Node.js ≥ 18):
+Run the fast, dependency-free tests with `npm test`. The [CI workflow](.github/workflows/ci.yml) also builds all modules, runs browser-based known-answer tests, verifies the tutorials, and checks offline installation. For the full local commands and where to edit code, see [Development guide](docs/DEVELOPMENT.md).
 
-```bash
-pip install -r desktop/requirements.txt
-python desktop/build_exe.py            # desktop/dist/Orebit-Core.exe, -Assay.exe, -Resource.exe
-cd desktop && python verify-exe-build.py
-```
+## Find your way around the repository
 
-### Repository layout
+| Path | Purpose | Edit? |
+| --- | --- | --- |
+| `phases/{Core,Assay,Resource}.html` | Source markup and module-specific logic. | Yes |
+| `src/shared/`, `src/locales/`, `src/assets/`, `src/pwa/` | Shared calculations and UI, EN/ID text, sample assets, offline app. | Yes |
+| `build/build.mjs`, `build/patchers/` | Inlines sources and builds the three runnable HTML files. | When changing the build |
+| `desktop/` | Windows pywebview wrapper, PyInstaller build and EXE verification. | For desktop changes |
+| `tests/`, `docs/vignettes/` | Known-answer, browser, offline and tutorial checks. | With behaviour changes |
+| `docs/` | [Manual](docs/manual/index.html), [methodology](docs/METHODOLOGY.md), [input format](docs/DATA-FORMAT.md), tutorials and this [development guide](docs/DEVELOPMENT.md). | Yes |
+| `vendor/` | Bundled third-party libraries; see [notices](THIRD_PARTY_NOTICES.md). | Only with licence and version review |
+| `dist/` | Generated web output; created by the build and ignored by Git. | No |
 
-```text
-phases/        Core.html, Assay.html, Resource.html — the application source (edit these)
-src/shared/    code shared by all three modules (import, columns, grade codes, geostatistics, UI)
-src/assets/    fonts and sample datasets, inlined at build time
-src/locales/   English and Indonesian UI text
-build/         build.mjs resolves the @orebit-inline markers, then runs the patchers
-desktop/       Windows Desktop Edition: pywebview wrapper and the PyInstaller build
-vendor/        third-party libraries (see THIRD_PARTY_NOTICES.md)
-tests/         known-answer, browser and tutorial tests
-docs/          methodology, data format, manual, tutorials (docs/vignettes)
-```
+The public repository is the place for issues, source review, pull requests, and releases. Some product paths are currently exported from the maintainer's private development repository. Maintainers carry accepted public changes back to those source paths before the next export, as explained in [CONTRIBUTING.md](CONTRIBUTING.md). Contributors can work entirely from this public repository.
 
-`phases/*.html` contain `/* @orebit-inline: … */` markers and are **not runnable
-before the build**. Always open the files in `dist/`.
+## Contribute and report problems
 
-## Troubleshooting (Windows Desktop Edition)
+- Found a wrong grade, tonnage, or statistic? Use the [wrong-numbers issue template](https://github.com/ghoziankarami/geosuite/issues/new?template=wrong-numbers.md) with the smallest reproducible **synthetic or anonymised** CSV and an independently calculated expected value.
+- Found a crash or import problem? Open a [bug report](https://github.com/ghoziankarami/geosuite/issues/new?template=bug-report.md) with module, version, steps, and browser/Windows details.
+- Want to change code or documentation? Read [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md), then open a PR. Update English and Indonesian UI text together where relevant.
+- Found a vulnerability? Follow [SECURITY.md](SECURITY.md) and report it privately, not in a public issue.
 
-- **"Windows protected your PC" (SmartScreen):** *More info* → *Run anyway*, for a file
-  from the official Releases page only. Or install through Chrome/Edge instead (no warning).
-- **The EXE opens no window:** WebView2 did not install. Get the *Evergreen Standalone
-  Installer* from [Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
-  and run the EXE again.
-- **Older versions asked for a licence key.** From v3.0 there is none; download the
-  current release.
+Before a pull request, run `node build/build.mjs Core Assay Resource` and `npm test`. Changes to calculations should include an independently derived known-answer test. The CI runs more extensive browser checks.
 
-## Contributing
+## Tutorials, methods and licences
 
-Bug reports with a small CSV that reproduces them are the most valuable contribution.
-See [CONTRIBUTING.md](CONTRIBUTING.md). Security issues: [SECURITY.md](SECURITY.md).
+- [Thalanga VMS: Core → Assay → Resource](docs/vignettes/en/01-thalanga-vms.md) ([Bahasa Indonesia](docs/vignettes/01-thalanga-vms.md))
+- [Babbitt Cu-Ni workflow](docs/vignettes/en/02-babbitt-cuni.md) ([Bahasa Indonesia](docs/vignettes/02-babbitt-cuni.md))
+- [Methodology and limitations](docs/METHODOLOGY.md) · [Input data format](docs/DATA-FORMAT.md) · [Online tutorials](https://geosuite.orebit.id/tutorials/)
 
-## Support the project
+GeoSuite is licensed under [GPL-3.0-only](LICENSE), including commercial use under that licence's terms. Bundled libraries and sample datasets retain their own licences and attribution in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The project has a [Code of Conduct](CODE_OF_CONDUCT.md). Development is supported by voluntary [donations](https://saweria.co/orebitindonesia); training and institutional support: <support@orebit.id>.
 
-GeoSuite is free. If it saves you time, you can support development with a donation of
-any amount at [saweria.co/orebitindonesia](https://saweria.co/orebitindonesia).
-Training and institutional support: <support@orebit.id>.
+## Panduan singkat Bahasa Indonesia
 
-## License
+**GeoSuite gratis dan open source** untuk validasi data lubang bor, analisis assay, dan skrining estimasi sumber daya awal. Hasilnya bukan klasifikasi Sumber Daya Mineral untuk pelaporan publik.
 
-GeoSuite is free software under the [GNU General Public License v3.0](LICENSE).
-You may use, study, share and modify it; distributed modified versions must remain
-under the GPL with their source available. Third-party components keep their own
-licences — see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+1. Buka [Core](https://geosuite.orebit.id/Core.html), coba data contoh atau impor tabel collar, survey, assay, dan litologi; periksa lalu ekspor datanya.
+2. Buka [Assay](https://geosuite.orebit.id/Assay.html) untuk statistik, domain, top-cut, komposit, dan variogram.
+3. Buka [Resource](https://geosuite.orebit.id/Resource.html) untuk model blok dan skrining estimasi. Simpan berkas proyek sebagai cadangan.
 
----
+Di Mac/Linux/ChromeOS, pasang versi web melalui browser yang mendukung. Di Windows, gunakan versi web atau unduh `.exe` per modul dari [Releases](https://github.com/ghoziankarami/geosuite/releases/latest). Buka ketiga modul sekali saat online agar tersimpan untuk pemakaian offline. Data geologi diproses secara lokal; layanan pilihan seperti Google Drive dan peta satelit dijelaskan di [kebijakan privasi](https://geosuite.orebit.id/privacy/).
 
-## Bahasa Indonesia
-
-**Dari data bor sampai estimasi sumber daya awal — gratis, offline, open source.**
-Orebit Core (impor, validasi, desurvey, QAQC), Orebit Assay (statistik, top-cut,
-declustering, domain, komposit, variogram) dan Orebit Resource (block model, kriging,
-kurva grade–tonase, logam terkandung, laporan). Data Anda tidak pernah meninggalkan
-laptop. Tanpa akun, tanpa trial, tanpa versi berbayar.
-
-**Pasang di Mac:** buka [geosuite.orebit.id/Core.html](https://geosuite.orebit.id/Core.html) di Safari →
-File → Add to Dock (macOS 14+), atau di Chrome/Edge klik **Install app**. GeoSuite lalu terbuka
-dari Dock sebagai aplikasi sendiri dan bisa dipakai offline. Linux/ChromeOS: Chrome/Edge → Install app.
-Windows: cara yang sama, atau Desktop Edition dari Releases.
-
-Hasil GeoSuite adalah *screening* pra-estimasi, bukan klasifikasi sumber daya;
-pelaporan publik KCMI 2017 / JORC 2012 tetap membutuhkan Competent Person. Semua
-metode, parameter bawaan, dan batasannya tertulis di [docs/METHODOLOGY.md](docs/METHODOLOGY.md).
-
-**Tutorial dengan data nyata:** baca di [geosuite.orebit.id/tutorials](https://geosuite.orebit.id/tutorials/)
-atau di repositori ini: [Thalanga](docs/vignettes/01-thalanga-vms.md) · [Babbitt](docs/vignettes/02-babbitt-cuni.md),
-setiap angka diukur ulang dari aplikasi pada tiap perubahan.
-
-**Tanya jawab singkat.** *Gratis?* Ya, untuk semua orang termasuk pemakaian komersial (GPL-3.0), tanpa akun
-dan tanpa kunci lisensi. *Data saya dikirim ke mana?* Tidak ke mana-mana; semua dihitung di komputer Anda.
-*Bisa offline?* Bisa, setelah dipasang sebagai aplikasi atau memakai Desktop Edition. *Format file?* CSV/TXT
-(koma, titik koma, tab), header Indonesia atau Inggris, meter atau feet; detail di
-[docs/DATA-FORMAT.md](docs/DATA-FORMAT.md).
-
-Menemukan angka yang salah? [Laporkan](https://github.com/ghoziankarami/geosuite/issues/new?template=wrong-numbers.md)
-dengan CSV kecil yang mereproduksinya — laporan seperti ini diprioritaskan.
-Lisensi: GPL-3.0.
+Mulai dari [tutorial Thalanga](docs/vignettes/01-thalanga-vms.md), baca [format data](docs/DATA-FORMAT.md) dan [metodologi](docs/METHODOLOGY.md). Untuk berkontribusi atau melaporkan kesalahan angka, lihat [CONTRIBUTING.md](CONTRIBUTING.md).

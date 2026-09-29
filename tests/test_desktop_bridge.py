@@ -67,6 +67,8 @@ class DesktopBridgeTests(unittest.TestCase):
         path.write_text(json.dumps(record), encoding="utf-8")
         self.assertIsNone(wrapper.FileAPI("Assay").take_handoff())
         self.assertFalse(path.exists())
+        path.write_text('[]', encoding="utf-8")
+        self.assertIsNone(wrapper.FileAPI("Assay").take_handoff())
 
 
 if __name__ == "__main__":

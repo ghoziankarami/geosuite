@@ -47,3 +47,11 @@ By contributing you agree that your contribution is licensed under GPL-3.0.
 ## Code of conduct
 
 See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+
+## Commit authorship
+
+Use the identity of the person responsible for reviewing and submitting the
+change. Do not add development-tool authors, assistant signatures, or automatic
+tool co-author trailers. Preserve credit for human contributors and licensed
+third-party work. Pull requests check newly introduced commit metadata.

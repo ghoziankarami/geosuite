@@ -24,6 +24,13 @@ Start with the [Thalanga tutorial](docs/vignettes/en/01-thalanga-vms.md)
 ([Indonesian version](docs/vignettes/01-thalanga-vms.md)).
 The [data-format guide](docs/DATA-FORMAT.md) covers input columns and units.
 
+The [10-minute quickstart](docs/vignettes/en/00-quickstart.md)
+([Bahasa Indonesia](docs/vignettes/00-quickstart.md)) targets a newer build with
+a 350-hole synthetic nickel-laterite sample. Source checkouts, Windows releases
+and hosted modules may come from different revisions. Check the bundled sample
+name and hole count first; older Thalanga builds should use the tutorial above.
+Installing or refreshing a page does not synchronize those product versions.
+
 GeoSuite supports preliminary screening. It does not assign a Mineral Resource
 classification for public reporting. Review the
 [methodology and limitations](docs/METHODOLOGY.md); reporting under KCMI/JORC

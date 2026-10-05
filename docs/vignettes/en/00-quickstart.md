@@ -1,5 +1,7 @@
 # Quickstart: GeoSuite in 10 minutes
 
+**Check the build first.** This walkthrough targets the build with a **350-hole synthetic nickel laterite** sample. Published source, Windows releases and the hosted web modules can come from different revisions. Earlier builds use a Thalanga sample; installation alone does not replace it. Check the sample name and hole count before following the numbers below. If your build shows Thalanga, use the [Thalanga tutorial](01-thalanga-vms.md), which imports its own public dataset, or wait for the matching product build to be published.
+
 Every module opens with the same sample dataset already loaded: 350 drillholes through a nickel laterite deposit (synthetic, CC BY 4.0, credit Orebit.id). You need no account and no files of your own. Follow the four steps below and you will have seen the whole workflow, from raw drillholes to a grade-tonnage curve.
 
 ## 1. Core: check the drillholes (3 minutes)

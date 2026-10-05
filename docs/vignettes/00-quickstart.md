@@ -1,5 +1,7 @@
 # Mulai cepat: GeoSuite dalam 10 menit
 
+**Periksa build terlebih dahulu.** Panduan ini ditujukan untuk build dengan sampel **laterit nikel sintetis, 350 lubang bor**. Source publik, rilis Windows, dan modul web dapat berasal dari revisi berbeda. Build lama memakai sampel Thalanga; instalasi saja tidak mengganti sampelnya. Periksa nama sampel dan jumlah lubang sebelum mengikuti angka di bawah. Jika build Anda menampilkan Thalanga, gunakan [tutorial Thalanga](01-thalanga-vms.md) yang mengimpor data publiknya sendiri, atau tunggu publikasi build produk yang sesuai.
+
 Setiap modul terbuka dengan dataset contoh yang sudah dimuat: 350 lubang bor pada endapan laterit nikel (sintetis, CC BY 4.0, kredit Orebit.id). Anda tidak perlu akun atau file sendiri. Ikuti empat langkah di bawah dan Anda sudah melihat seluruh alur kerja, dari data bor mentah sampai kurva grade-tonnage.
 
 ## 1. Core: periksa data bor (3 menit)

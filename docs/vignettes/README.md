@@ -1,6 +1,6 @@
 # GeoSuite vignettes — tutorials on real data
 
-The [10-minute quickstart](00-quickstart.md) ([English](en/00-quickstart.md)) uses the synthetic nickel laterite sample bundled with the app. Thalanga and Babbitt use separate real public datasets; opening an app module does not load those tutorial datasets.
+The [10-minute quickstart](00-quickstart.md) ([English](en/00-quickstart.md)) targets the build with a 350-hole synthetic nickel laterite sample. Published source, desktop releases and hosted modules may use different revisions; older builds carry a Thalanga sample. Check the sample name/count before following a walkthrough. The full Thalanga and Babbitt tutorials import their own real public datasets, independently of the app's bundled sample.
 
 Each full vignette follows one real, public drillhole dataset from raw files to a grade-tonnage screen, the way a geologist would work through it: every decision, the reason for it, and what goes wrong if it is skipped. Each one ends with an honest comparison against something known independently, and with the list of what would still be needed before the result could be called a Mineral Resource.
 
@@ -38,4 +38,3 @@ python3 tests/test_vignettes.py
 2. Write `tools/run_<name>.py` with `vignette_kit.py`: drive the app, record every number, recompute the key ones independently, exit 3 if the data cannot be fetched.
 3. Write the text in Indonesian and English from `data/<name>.json` only. No number from memory.
 4. Add a consistency function to `test_vignettes.py` that ties the prose to the JSON.
-

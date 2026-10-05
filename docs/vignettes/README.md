@@ -1,19 +1,21 @@
 # GeoSuite vignettes — tutorials on real data
 
-Each vignette follows one real, public drillhole dataset from raw files to a grade-tonnage screen, the way a geologist would work through it: every decision, the reason for it, and what goes wrong if it is skipped. Each one ends with an honest comparison against something known independently, and with the list of what would still be needed before the result could be called a Mineral Resource.
+The [10-minute quickstart](00-quickstart.md) ([English](en/00-quickstart.md)) uses the synthetic nickel laterite sample bundled with the app. Thalanga and Babbitt use separate real public datasets; opening an app module does not load those tutorial datasets.
+
+Each full vignette follows one real, public drillhole dataset from raw files to a grade-tonnage screen, the way a geologist would work through it: every decision, the reason for it, and what goes wrong if it is skipped. Each one ends with an honest comparison against something known independently, and with the list of what would still be needed before the result could be called a Mineral Resource.
 
 | # | Deposit | What it teaches | Bahasa Indonesia | English |
 |---|---|---|---|---|
 | 01 | **Thalanga** VMS Zn-Pb-Cu-Ag-Au, Queensland (GSQ, CC BY 4.0) | lab codes and missing values · validating and editing with an audit trail · cropping a regional compilation · populations vs outliers (no top-cut) · grade-shell domaining without lithology · why software defaults produced 202 Mt · checking against 1989–1998 production | [01-thalanga-vms.md](01-thalanga-vms.md) | [en/01-thalanga-vms.md](en/01-thalanga-vms.md) |
 | 02 | **Babbitt** Cu-Ni-PGE, Duluth Complex, Minnesota (NRRI via pygslib) | files in feet · 61 % of the core never assayed (unknown ≠ zero) · when a top-cut *is* right · dense data, short variogram range, smoothing · estimate vs RPEEE-constrained resource | [02-babbitt-cuni.md](02-babbitt-cuni.md) | [en/02-babbitt-cuni.md](en/02-babbitt-cuni.md) |
 
-## They cannot go stale
+## Reproduce and check the results
 
 A vignette here is a program as well as a text:
 
 - `tools/run_<name>.py` drives the real app build (`dist/`) in Chromium step by step, exactly as the text describes, and writes every number the text quotes to `data/<name>.json`, plus the screenshots in `img/`.
 - Key numbers are recomputed **outside the app** from the exported files: statistics, metal shares, grade-tonnage, positions of desurveyed samples.
-- `test_vignettes.py` re-runs every runner on every change, fails if the app's numbers move, checks the independent re-derivations against the app, and checks that the prose in both languages quotes the numbers in the JSON.
+- `test_vignettes.py`, when run against a built app, re-runs the runners, fails if the app's numbers move, checks the independent re-derivations against the app, and checks that the prose in both languages quotes the numbers in the JSON.
 
 Building these two vignettes exposed seventeen defects and gaps in GeoSuite itself. All are fixed, and the ones that affect numbers are pinned by tests:
 
@@ -36,3 +38,4 @@ python3 tests/test_vignettes.py
 2. Write `tools/run_<name>.py` with `vignette_kit.py`: drive the app, record every number, recompute the key ones independently, exit 3 if the data cannot be fetched.
 3. Write the text in Indonesian and English from `data/<name>.json` only. No number from memory.
 4. Add a consistency function to `test_vignettes.py` that ties the prose to the JSON.
+

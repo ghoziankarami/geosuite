@@ -8,17 +8,21 @@ GeoSuite contains three connected tools for drillhole validation, assay analysis
 and preliminary resource-estimation screening. The interface supports English
 and Bahasa Indonesia.
 
-[Open the web application](https://geosuite.orebit.id/Core.html) ·
+[Open the web application](https://geosuite.orebit.id/try/Core.html) ·
 [Tutorials](https://geosuite.orebit.id/tutorials/) ·
 [Windows downloads](https://github.com/ghoziankarami/geosuite/releases/latest)
+
+[Local installation from source](docs/INSTALLATION.md) ·
+[Download training CSVs](https://github.com/ghoziankarami/orebit-datasets/blob/main/docs/USE_WITH_GEOSUITE.md) ·
+[Orebit guides](https://orebit.id/docs.html)
 
 ## Workflow
 
 | Module | Tasks |
 | --- | --- |
-| [Core](https://geosuite.orebit.id/Core.html) | Import collar, survey, assay, and lithology tables; validate, desurvey, and export. |
-| [Assay](https://geosuite.orebit.id/Assay.html) | Review grades and domains, top-cut, decluster, composite, and model variograms. |
-| [Resource](https://geosuite.orebit.id/Resource.html) | Build a block model and screen estimates using kriging, IDW, or nearest neighbour. |
+| [Core](https://geosuite.orebit.id/try/Core.html) | Import collar, survey, assay, and lithology tables; validate, desurvey, and export. |
+| [Assay](https://geosuite.orebit.id/try/Assay.html) | Review grades and domains, top-cut, decluster, composite, and model variograms. |
+| [Resource](https://geosuite.orebit.id/try/Resource.html) | Build a block model and screen estimates using kriging, IDW, or nearest neighbour. |
 
 Start with the [Thalanga tutorial](docs/vignettes/en/01-thalanga-vms.md)
 ([Indonesian version](docs/vignettes/01-thalanga-vms.md)).
@@ -63,10 +67,10 @@ there is no `npm install` step.
 git clone https://github.com/ghoziankarami/geosuite.git
 cd geosuite
 npm run build
-python3 -m http.server 8767 -d dist
+python3 -m http.server 8767 --bind 127.0.0.1 -d dist
 ```
 
-Open `http://localhost:8767/Core.html`. The other modules are `Assay.html` and
+Open `http://127.0.0.1:8767/Core.html`. The other modules are `Assay.html` and
 `Resource.html`.
 
 For a source ZIP, extract it and run the build and server commands from
@@ -74,6 +78,9 @@ For a source ZIP, extract it and run the build and server commands from
 `py -3 -m http.server 8767 -d dist` or `python -m http.server 8767 -d dist`.
 Source files in `phases/` contain build markers: serve the generated `dist/`
 directory rather than opening those files directly.
+
+The [installation guide](docs/INSTALLATION.md) includes a complete portable
+web ZIP, offline setup, version checks and troubleshooting.
 
 ## Develop and contribute
 

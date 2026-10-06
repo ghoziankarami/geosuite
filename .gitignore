@@ -7,3 +7,5 @@ __pycache__/
 *.bak-patch
 tests/known-answer/fixtures/big-dataset.csv
 desktop/build/
+
+artifacts/

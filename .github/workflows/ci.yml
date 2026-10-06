@@ -59,11 +59,17 @@ jobs:
           python tests/test_pwa_subpath.py
           python tests/test_update_and_links.py
 
-      - name: Upload built modules
+      - name: Package and verify the complete local web app
+        run: |
+          python build/package_web.py --source-ref "$GITHUB_SHA"
+          python tests/test_web_package.py
+
+      - name: Upload complete local web bundle
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: geosuite-dist
-          path: dist/*.html
+          path: artifacts/*
+          if-no-files-found: error
 
   build-windows:
     runs-on: windows-latest

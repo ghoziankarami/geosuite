@@ -115,7 +115,7 @@ kbd{background:var(--bg-2); border:1px solid var(--border); border-bottom-width:
   background:color-mix(in srgb, var(--teal) 11%, transparent);
   color:var(--teal); font-weight:600; border-left-color:var(--teal);
 }
-.main{flex:1; min-width:0; padding:30px 40px 90px; max-width:900px;}
+.main{flex:1; min-width:0; overflow-wrap:anywhere; padding:30px 40px 90px; max-width:900px;}
 
 /* ============================ content ============================ */
 .crumb{font-size:12.5px; color:var(--muted); margin-bottom:9px; letter-spacing:.02em;}
@@ -255,8 +255,11 @@ figure.shot figcaption{padding:8px 13px; font-size:12.5px; color:var(--muted); b
   .brand .sub{display:none;}
 }
 @media (max-width:620px){
+  .topbar{gap:6px; padding-inline:10px;}
+  .ver-pill{display:none;}
+  .searchbtn{flex:0 1 34px; min-width:34px; padding-inline:8px;}
   .main h1{font-size:25px;} .lede{font-size:15.5px;}
-  .searchbtn{min-width:44px;} .searchbtn span.lbl,.searchbtn .k{display:none;}
+  .searchbtn span.lbl,.searchbtn .k{display:none;}
   .pager{flex-direction:column;} .pager a{max-width:100%;}
 }
 @media print{

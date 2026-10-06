@@ -96,3 +96,7 @@ jobs:
         run: |
           npm test
           python tests/test_desktop_bridge.py
+      - name: Verify portable web packaging on Windows
+        run: |
+          node build/package-web.mjs --source-ref $env:GITHUB_SHA
+          python tests/test_web_package.py

@@ -115,7 +115,7 @@ kbd{background:var(--bg-2); border:1px solid var(--border); border-bottom-width:
   background:color-mix(in srgb, var(--teal) 11%, transparent);
   color:var(--teal); font-weight:600; border-left-color:var(--teal);
 }
-.main{flex:1; min-width:0; padding:30px 40px 90px; max-width:900px;}
+.main{flex:1; min-width:0; overflow-wrap:anywhere; padding:30px 40px 90px; max-width:900px;}
 
 /* ============================ content ============================ */
 .crumb{font-size:12.5px; color:var(--muted); margin-bottom:9px; letter-spacing:.02em;}
@@ -255,8 +255,11 @@ figure.shot figcaption{padding:8px 13px; font-size:12.5px; color:var(--muted); b
   .brand .sub{display:none;}
 }
 @media (max-width:620px){
+  .topbar{gap:6px; padding-inline:10px;}
+  .ver-pill{display:none;}
+  .searchbtn{flex:0 1 34px; min-width:34px; padding-inline:8px;}
   .main h1{font-size:25px;} .lede{font-size:15.5px;}
-  .searchbtn{min-width:44px;} .searchbtn span.lbl,.searchbtn .k{display:none;}
+  .searchbtn span.lbl,.searchbtn .k{display:none;}
   .pager{flex-direction:column;} .pager a{max-width:100%;}
 }
 @media print{
@@ -307,15 +310,15 @@ figure.shot figcaption{padding:8px 13px; font-size:12.5px; color:var(--muted); b
     <div style="max-width:320px;">
       <div style="font-weight:700; margin-bottom:6px;">Orebit GeoSuite</div>
       <p style="color:var(--muted); font-size:13px; margin:0; line-height:1.55;">
-        <span class="l-en">Geological workflow tools. Privacy-first, KCMI/JORC-aligned. This documentation works offline — save the page and take it to site.</span>
-        <span class="l-id">Perangkat alur kerja geologi. Mengutamakan privasi, selaras KCMI/JORC. Dokumentasi ini bisa dipakai offline — simpan halamannya dan bawa ke lapangan.</span>
+        <span class="l-en">Geological workflow tools. Local processing; preliminary screening. This documentation works offline — save the page and take it to site.</span>
+        <span class="l-id">Perangkat alur kerja geologi. Pemrosesan lokal; screening awal. Dokumentasi ini bisa dipakai offline — simpan halamannya dan bawa ke lapangan.</span>
       </p>
     </div>
     <div><h5>Product</h5>
       <a href="https://geosuite.orebit.id">GeoSuite</a>
       <a href="https://geosuite.orebit.id/try/Core.html">Orebit Core</a>
-      <a href="https://geosuite.orebit.id/try-p2/Assay.html">Orebit Assay</a>
-      <a href="https://geosuite.orebit.id/try-p3/Resource.html">Orebit Resource</a>
+      <a href="https://geosuite.orebit.id/try/Assay.html">Orebit Assay</a>
+      <a href="https://geosuite.orebit.id/try/Resource.html">Orebit Resource</a>
     </div>
     <div><h5>Company</h5>
       <a href="https://orebit.id">About</a>
@@ -326,11 +329,11 @@ figure.shot figcaption{padding:8px 13px; font-size:12.5px; color:var(--muted); b
     <div><h5>Legal</h5>
       <a href="https://geosuite.orebit.id/privacy/">Privacy</a>
       <a href="https://geosuite.orebit.id/terms/">Terms</a>
-      <a href="https://geosuite.orebit.id/refund/">Refund</a>
+      <a href="https://saweria.co/orebitindonesia">Voluntary support / Dukungan sukarela</a>
     </div>
   </div>
   <div class="foot-bot">
-    © Orebit.id 2026 · <span class="l-en">Free to use · No resell</span><span class="l-id">Gratis dipakai · Dilarang dijual ulang</span> ·
+    © Orebit.id 2026 · <span class="l-en">GPL-3.0 · Source available</span><span class="l-id">GPL-3.0 · Kode sumber tersedia</span> ·
     <span style="color:var(--teal); font-weight:600;">v3.0.0</span>
   </div>
 </footer>
@@ -436,8 +439,8 @@ var DOCS = [
     id:'install',
     en:'Install & requirements', id_:'Instalasi & persyaratan',
     lede:{
-      en:'Three ways to run GeoSuite — on a Mac, Windows, Linux or ChromeOS — and the machine each one needs.',
-      id:'Tiga cara menjalankan GeoSuite — di Mac, Windows, Linux, atau ChromeOS — dan mesin yang dibutuhkan masing-masing.'
+      en:'Four ways to run GeoSuite — on a Mac, Windows, Linux or ChromeOS — and the machine each one needs.',
+      id:'Empat cara menjalankan GeoSuite — di Mac, Windows, Linux, atau ChromeOS — dan mesin yang dibutuhkan masing-masing.'
     },
     blocks:[
       {t:'h', en:'Option A — run it online (nothing to install)', id:'Opsi A — jalankan daring (tanpa instalasi)'},
@@ -447,16 +450,16 @@ var DOCS = [
       {t:'ul', items:[
         {en:'Orebit Core — <a href="https://geosuite.orebit.id/try/Core.html">geosuite.orebit.id/try/Core.html</a>',
          id:'Orebit Core — <a href="https://geosuite.orebit.id/try/Core.html">geosuite.orebit.id/try/Core.html</a>'},
-        {en:'Orebit Assay — <a href="https://geosuite.orebit.id/try-p2/Assay.html">geosuite.orebit.id/try-p2/Assay.html</a>',
-         id:'Orebit Assay — <a href="https://geosuite.orebit.id/try-p2/Assay.html">geosuite.orebit.id/try-p2/Assay.html</a>'},
-        {en:'Orebit Resource — <a href="https://geosuite.orebit.id/try-p3/Resource.html">geosuite.orebit.id/try-p3/Resource.html</a>',
-         id:'Orebit Resource — <a href="https://geosuite.orebit.id/try-p3/Resource.html">geosuite.orebit.id/try-p3/Resource.html</a>'}
+        {en:'Orebit Assay — <a href="https://geosuite.orebit.id/try/Assay.html">geosuite.orebit.id/try/Assay.html</a>',
+         id:'Orebit Assay — <a href="https://geosuite.orebit.id/try/Assay.html">geosuite.orebit.id/try/Assay.html</a>'},
+        {en:'Orebit Resource — <a href="https://geosuite.orebit.id/try/Resource.html">geosuite.orebit.id/try/Resource.html</a>',
+         id:'Orebit Resource — <a href="https://geosuite.orebit.id/try/Resource.html">geosuite.orebit.id/try/Resource.html</a>'}
       ]},
 
       {t:'h', en:'Option B — install it as an app (Mac, Windows, Linux, ChromeOS)', id:'Opsi B — pasang sebagai aplikasi (Mac, Windows, Linux, ChromeOS)'},
       {t:'p',
-        en:'Open any module once while online, then install it. After that all three modules open from the Dock, Start menu or app launcher and work with no connection at all; a new version arrives the next time you open GeoSuite online. No code signing, no Gatekeeper warning, nothing to unzip.',
-        id:'Buka modul mana pun sekali saat daring, lalu pasang. Setelah itu ketiga modul terbuka dari Dock, menu Start, atau peluncur aplikasi dan berfungsi tanpa koneksi sama sekali; versi baru datang saat Anda membuka GeoSuite lagi ketika daring. Tanpa code signing, tanpa peringatan Gatekeeper, tanpa ekstrak file.'},
+        en:'Open Core, Assay and Resource once while online, then install the web app. Local file processing and calculations work offline. Google Drive, satellite maps and update checks need a connection. Web updates do not update Windows executables or a source checkout. Export project backups before clearing browser storage.',
+        id:'Buka Core, Assay, dan Resource sekali saat daring, lalu pasang aplikasi web. Pemrosesan file dan perhitungan lokal bekerja offline. Google Drive, peta satelit, dan pemeriksaan update memerlukan koneksi. Update web tidak memperbarui EXE Windows atau checkout source. Ekspor cadangan proyek sebelum menghapus penyimpanan browser.'},
       {t:'ul', items:[
         {en:'<b>Mac, Safari (macOS 14 or later):</b> File → Add to Dock.',
          id:'<b>Mac, Safari (macOS 14 ke atas):</b> File → Add to Dock.'},
@@ -468,12 +471,17 @@ var DOCS = [
 
       {t:'h', en:'Option C — Desktop Edition (Windows)', id:'Opsi C — Desktop Edition (Windows)'},
       {t:'p',
-        en:'A Windows application, downloaded once and run with no internet at all — no licence key, no e-mail. Use it where a browser is locked down or the connection is unreliable. Download from the <a href="https://github.com/ghoziankarami/geosuite/releases">releases page</a>.',
-        id:'Aplikasi Windows, diunduh sekali dan berjalan tanpa internet sama sekali — tanpa license key, tanpa email. Pakai bila peramban dibatasi atau koneksinya tidak andal. Unduh dari <a href="https://github.com/ghoziankarami/geosuite/releases">halaman rilis</a>.'},
+        en:'A Windows application: local calculations work offline — no licence key or e-mail required. Optional external services need internet. Use it where a browser is locked down or the connection is unreliable. Download from the <a href="https://github.com/ghoziankarami/geosuite/releases">releases page</a>.',
+        id:'Aplikasi Windows: perhitungan lokal bekerja offline — tanpa license key atau email. Layanan luar yang opsional memerlukan internet. Pakai bila peramban dibatasi atau koneksinya tidak andal. Unduh dari <a href="https://github.com/ghoziankarami/geosuite/releases">halaman rilis</a>.'},
       {t:'note', k:'info',
         en:'Windows SmartScreen may warn on first launch of a new download. Choose “More info” → “Run anyway” — but only for a file downloaded from the official releases page above. If you prefer no warning at all, Option B installs the same modules through the browser.',
         id:'Windows SmartScreen mungkin memberi peringatan saat unduhan baru pertama kali dijalankan. Pilih “More info” → “Run anyway” — tetapi hanya untuk file dari halaman rilis resmi di atas. Bila tidak ingin ada peringatan sama sekali, Opsi B memasang modul yang sama lewat peramban.'},
 
+      {t:'h', en:'Option D — build and run from source', id:'Opsi D — build dan jalankan dari kode sumber'},
+      {t:'p', en:'The public GPL-3.0 repository supports local builds on Windows, macOS and Linux. Install Node.js 18+ and Python 3.9+, download or clone the source, run npm run build, then serve dist over local HTTP. No private repository or account is needed. Follow the <a href="https://github.com/ghoziankarami/geosuite/blob/main/docs/INSTALLATION.md">installation commands and troubleshooting</a>.',
+        id:'Repo publik GPL-3.0 dapat dibangun lokal di Windows, macOS, dan Linux. Pasang Node.js 18+ dan Python 3.9+, unduh atau clone source, jalankan npm run build, lalu sajikan dist melalui HTTP lokal. Tidak perlu repo privat atau akun. Ikuti <a href="https://github.com/ghoziankarami/geosuite/blob/main/docs/INSTALLATION.md">perintah instalasi dan pemecahan masalah</a>.'},
+      {t:'p', en:'Check the sample name and hole count in your build. The public source, hosted modules and EXEs may be different revisions. For matching input files, use one complete <a href="https://github.com/ghoziankarami/orebit-datasets/blob/main/docs/USE_WITH_GEOSUITE.md">synthetic training dataset</a>; do not combine CSVs from different folders.',
+        id:'Periksa nama sampel dan jumlah lubang di build Anda. Source publik, modul web, dan EXE dapat berbeda revisi. Untuk input yang konsisten, pakai satu <a href="https://github.com/ghoziankarami/orebit-datasets/blob/main/docs/USE_WITH_GEOSUITE.md">dataset latihan sintetis</a> yang lengkap; jangan mencampur CSV dari folder berbeda.'},
       {t:'h', en:'Minimum machine', id:'Spesifikasi minimum'},
       {t:'table',
         head:[{en:'Item',id:'Item'},{en:'Minimum',id:'Minimum'},{en:'Comfortable',id:'Nyaman'}],
@@ -484,8 +492,8 @@ var DOCS = [
             {en:'Any current Chrome, Edge or Safari — online or installed app',id:'Chrome, Edge, atau Safari terbaru — daring atau aplikasi terpasang'},
             {en:'Windows 10 or 11 — Desktop Edition',id:'Windows 10 atau 11 — Desktop Edition'}],
           [{en:'Internet',id:'Internet'},
-            {en:'Only to open the page the first time',id:'Hanya untuk membuka halaman pertama kali'},
-            {en:'Not required at all once installed (Option B) or in the Desktop Edition',id:'Tidak dibutuhkan sama sekali setelah dipasang (Opsi B) atau di Desktop Edition'}]
+            {en:'Load all three modules once before offline use',id:'Buka ketiga modul sekali sebelum pemakaian offline'},
+            {en:'Optional Drive, satellite maps and updates need internet',id:'Drive, peta satelit, dan update opsional memerlukan internet'}]
         ]},
       {t:'note', k:'warn',
         en:'Measured, not estimated: the Babbitt tutorial (35,616 assays, 55,119 composites, 237,475 blocks) runs end to end in about two minutes in Chromium, with kriging itself taking a few seconds. Practical ceiling on an 8 GB machine is around 50,000 assay intervals and roughly 500,000 blocks; past that, very large block models may exhaust memory. Enlarge the blocks or tighten the model extent before adding RAM.',

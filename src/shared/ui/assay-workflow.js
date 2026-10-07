@@ -3,6 +3,7 @@
   'use strict';
   const MAIN = [2, 3, 8, 11, 7, 13];
   const NEXT = {1:2, 2:3, 3:8, 8:11, 9:11, 10:11, 11:7, 7:13, 4:8, 5:11, 6:13, 12:13};
+  const ELEMENT_IDS={8:'statsElementSelect',9:'tcElementSelect',10:'lithoElementSelect',11:'domainElementSelect'};
   const KEYS = {1:'dashboard',2:'upload',3:'data',4:'bivariate',5:'multivariate',6:'spacing',7:'composite',8:'stats',9:'topcut',10:'litho',11:'domain',12:'qaqc',13:'report'};
   let entries = {}, current = 1, initialized = false;
   const text = (key, values={}) => Object.entries(values).reduce((s,[k,v])=>s.replaceAll('{'+k+'}',String(v)), window.__t('asy.workflow.'+key));
@@ -16,8 +17,16 @@
     return s.length+':'+(h>>>0).toString(16);
   }
   function element(n) {
-    const ids={8:'statsElementSelect',9:'tcElementSelect',10:'lithoElementSelect',11:'domainElementSelect'};
-    return document.getElementById(ids[n])?.value || (data() ? primaryElement() : null);
+    return document.getElementById(ELEMENT_IDS[n])?.value || (data() ? primaryElement() : null);
+  }
+  function chooseElement(n,value){
+    if(!availableElements().includes(value))return;
+    // Select the view/report target without applying a domain or grade treatment.
+    window._primaryElement=value;
+    Object.values(ELEMENT_IDS).forEach(id=>{const el=document.getElementById(id);if(el&&Array.from(el.options).some(o=>o.value===value))el.value=value;});
+    const origin=document.getElementById(ELEMENT_IDS[n]);
+    if(origin)origin.dispatchEvent(new Event('change',{bubbles:true}));else showTab(n);
+    refresh(n);
   }
   function parameters(n) {
     const controls={};
@@ -51,10 +60,11 @@
         {stage:n,title:label(n),status:'not-reviewed',note:'',parameters:null,insight:null};
     });
   }
-  function reset() {entries={};document.querySelectorAll('.assay-workflow-card').forEach(el=>el.remove());}
+  function reset() {entries={};Object.values(ELEMENT_IDS).forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.querySelectorAll('.assay-workflow-card').forEach(el=>el.remove());}
   function restore(record) {
     entries={};
     if(record?.schema!=='orebit-assay-interpretation'||record.version!==1||!Array.isArray(record.stages))return;
+    if(availableElements().includes(record.targetElement))window._primaryElement=record.targetElement;
     for(const row of record.stages.slice(0,13)){
       if(row&&Number.isInteger(row.stage)&&KEYS[row.stage]&&(typeof row.context==='string'||row.context===null)&&typeof row.note==='string'){
         entries[row.stage]={stage:row.stage,title:label(row.stage),context:row.context,
@@ -67,7 +77,7 @@
   function serialise() {
     return {schema:'orebit-assay-interpretation',version:1,generated:new Date().toISOString(),
       dataset:{name:data()?.name||'',rows:data()?.rows.length||0,columns:data()?.columns||[]},
-      fingerprintPurpose:'Change detection; not file authenticity',stages:snapshot()};
+      fingerprintPurpose:'Change detection; not file authenticity',targetElement:data()?primaryElement():null,stages:snapshot()};
   }
   function insight(n) {
     const d=data();if(!d?.rows?.length)return text('empty');
@@ -139,6 +149,11 @@
     if(card)card.remove();card=node('section',null,'assay-workflow-card');card.setAttribute('aria-label',text('guide'));
     const step=MAIN.indexOf(n);card.append(node('p',step>=0?text('step',{n:step+1,total:MAIN.length}):text('optional'),'workflow-eyebrow'));
     card.append(node('h2',label(n)),node('p',text('purpose'+n),'workflow-purpose'));
+    if(data()&&[3,7,8,9,10,11,13].includes(n)&&availableElements().length){
+      const field=node('label',text('element'),'workflow-element');const select=node('select');select.id='assay-workflow-element-'+n;field.htmlFor=select.id;
+      for(const e of availableElements()){const m=elementMeta(e),option=node('option',m.label+' ('+m.unit+')');option.value=e;select.append(option);}
+      select.value=element(n);select.addEventListener('change',()=>chooseElement(n,select.value));field.append(select);card.append(field);
+    }
     const facts=node('div',null,'workflow-insight');facts.append(node('strong',text('quickInsight')),node('p',insight(n)));card.append(facts);
     card.append(node('p',text('recommend'+n),'workflow-recommendation'));
     const actions=node('div',null,'workflow-actions');

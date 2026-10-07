@@ -19,6 +19,8 @@ CSV export/import remains a supported fallback. Save project backups separately.
 ## Assay: simple first, optional tools when needed
 
 The main route is **Upload → Data/validation → Stats → Domain → Composite → Report**.
+Select the element/commodity near the top of the stage before interpreting its plots.
+The choice changes the view/report target without applying a cap or domain.
 Each stage starts with a quick insight, a recommendation, an action and optional
 interpretation notes. Default calculations do not approve an interpretation.
 You can edit parameters; advanced navigation exposes all original tools.

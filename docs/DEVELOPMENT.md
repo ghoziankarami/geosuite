@@ -104,3 +104,9 @@ Security reports belong through the private channel in [SECURITY.md](../SECURITY
 The guided Assay workflow and native PDF interpretation ledger are exercised by
 `python tests/test_assay_workflow.py`, including an actual upload/download, edited
 controls, stale reviews, long-note pagination and a mobile viewport.
+
+Run `python tests/test_screening_navigation.py` for the common dashboard,
+Advanced sidebar, top stage controls, custom variogram calculation, optional
+diagnostics, report-button revisits and EN/ID mobile layouts. This opens a real
+browser. `test_core_training.py` also imports the one-click imperfect example
+and verifies restoration through the regular file-upload boundary.

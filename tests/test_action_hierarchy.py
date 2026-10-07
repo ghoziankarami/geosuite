@@ -67,10 +67,10 @@ try:
             if name == "Core":
                 page.evaluate("showTab(3)")
                 page.locator(
-                    '.next-step button[data-action-role="next"]'
+                    '#tab3 .assay-workflow-card button[data-action-role="next"]'
                 ).first.wait_for()
                 check(
-                    page.locator('.next-step button[data-action-role="next"]').count()
+                    page.locator('#tab3 .assay-workflow-card button[data-action-role="next"]').count()
                     > 0,
                     "Core next action has an explicit shared role",
                 )

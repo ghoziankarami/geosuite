@@ -16,6 +16,32 @@ the existing CSV export and normal import path; no download/re-upload is needed.
 Desktop transfer uses the installed sibling executable when available. Manual
 CSV export/import remains a supported fallback. Save project backups separately.
 
+## Consistent controls in all three apps
+
+The dashboard starts with the active-data summary and **Start review**. Each
+stage puts insight, stage links and its next action at the top. **Advanced tools**
+in the left sidebar exposes direct access to the other views; Next opens those
+same views, not a separate calculation pipeline. Parameters remain editable.
+Filled buttons run a pending calculation or continue; outlined controls inspect,
+and dashed controls customize. Opening a view never approves an interpretation.
+
+Core's main route is Import → Validation → Desurvey → Merge → Export. Table,
+strip-log, section and optional composite views remain directly accessible.
+**Try imperfect example** in Import uses the normal four-CSV import and exposes
+missing collars, missing geology and mismatched hole IDs. Save your project first;
+restore the original source tables to clear the deliberate failures.
+
+Resource's route is Setup → Variography → Block Model → Estimation → validation
+→ Grade-Tonnage → Report. Compute & fit produces the experimental curve and
+model together. Custom sampling/model controls and continuity diagnostics are
+collapsed initially. A variogram map is a lag-space diagnostic, not a collar map.
+Directional adoption changes search orientation and fills the nested-model form.
+Computing downhole supplies the positive anchor for later matching auto-fits;
+Apply Nugget changes the current model too. Review these choices before applying.
+Grid generation creates cells, not resource tonnage. Only supported estimated
+cells enter the selected reporting population. Density, envelope and optional
+cutoff decisions remain visible in the exported report.
+
 ## Assay: simple first, optional tools when needed
 
 The main route is **Upload → Data/validation → Stats → Domain → Composite → Report**.

@@ -1,0 +1,44 @@
+.assay-workflow-card{margin:0 0 22px;padding:22px;border:1px solid var(--border);border-radius:14px;background:var(--card,var(--bg));box-shadow:0 3px 12px rgba(15,23,42,.035);scroll-margin-top:90px}
+.assay-workflow-card h2{margin:3px 0 8px;font-size:24px}
+.workflow-element{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--fg-mute);margin:12px 0}.workflow-element select{max-width:100%;min-height:36px;padding:6px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--fg)}
+.workflow-eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-mute);margin:0}
+.workflow-purpose,.workflow-recommendation{font-size:13px;line-height:1.6;color:var(--fg-mute);max-width:85ch}
+.workflow-insight{padding:12px 16px;margin:14px 0;border-radius:9px;border-left:3px solid var(--accent,#008c83);background:rgba(0,140,131,.06)}
+.workflow-insight strong{font-size:12px}.workflow-insight p{margin:5px 0 0;line-height:1.6;font-size:14px;color:var(--fg)}
+.workflow-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.workflow-notes{border-top:1px solid var(--border);padding-top:10px;font-size:12px}
+.workflow-notes summary,.workflow-review-list summary{cursor:pointer;color:var(--fg-mute);min-height:30px}
+.workflow-notes label{display:block;margin:8px 0}.workflow-notes textarea{width:100%;box-sizing:border-box;min-height:72px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg)}
+.workflow-status{font-size:11px;color:var(--fg-mute);margin:10px 0 0}
+.workflow-review-list{margin:0 0 20px;padding:16px;border:1px solid var(--border);border-radius:10px}
+.workflow-review-row{padding:12px 0;border-top:1px solid var(--border);font-size:12px;line-height:1.5}
+.workflow-review-row pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.screening-guided .panel>h2{display:none}
+.screening-guided .panel>.next-step{display:none}
+.assay-optional-tools{margin:16px 0;border:1px solid var(--border);border-radius:10px;padding:14px}
+.assay-optional-tools>summary{cursor:pointer;font-size:13px;color:var(--fg-mute);min-height:28px}
+@media(max-width:600px){.assay-workflow-card{padding:16px;margin-bottom:14px}.assay-workflow-card h2{font-size:21px}.workflow-actions .btn{flex:1 1 145px;white-space:normal;min-height:42px}}
+
+body.screening-guided nav.tabs .tab-group-label,body.screening-guided nav.tabs .sidebar-section-label{display:none!important}
+body.screening-guided nav.tabs .tab[data-workflow-advanced="true"]{display:none!important}
+body.screening-guided.screening-advanced-open nav.tabs .tab[data-workflow-advanced="true"]{display:flex!important}
+.screening-advanced-toggle{margin:12px 10px;font-size:12px;min-height:42px}
+.screening-guided .panel .next-step{display:none}
+.workflow-step-links{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;margin:12px 0;padding-bottom:4px}
+.workflow-step-links button{flex:none;white-space:nowrap;padding:7px 11px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--fg);font-size:12px;min-height:36px;cursor:pointer}
+.workflow-step-links button[aria-current="step"]{border-color:var(--accent);background:rgba(0,140,131,.08);font-weight:650}
+.assay-workflow-card.workflow-dashboard{padding:18px 22px}
+.workflow-dashboard .workflow-insight{margin:10px 0;padding:8px 12px}
+.workflow-dashboard .workflow-actions{margin-bottom:0}
+.workflow-dashboard .workflow-purpose{margin:6px 0}
+.workflow-dashboard .workflow-eyebrow{display:none}
+.screening-guided .workflow-dashboard~.hint:first-of-type{display:none}
+.screening-guided.workflow-on-dashboard #domainScopeBar{display:none!important}
+.screening-guided .panel .hint{line-height:1.6}
+.workflow-review-row pre{font-family:inherit;line-height:1.65}
+@media(min-width:901px){body.screening-guided nav.tabs{min-height:calc(100dvh - 100px);align-content:flex-start;flex-wrap:nowrap;overflow-y:auto}.screening-guided nav.tabs .tab{flex:none}}
+
+.screening-guided .panel>.tab-help[data-auto="1"]{display:none}
+.screening-guided.workflow-on-dashboard #dashEmptyCTA{display:none!important}
+
+.screening-guided:not(.assay-guided) nav.tabs .tab-done::after{display:none}

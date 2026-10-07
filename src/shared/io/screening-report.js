@@ -57,13 +57,44 @@
    window._reportExecutiveSnapshot={module,sections:sections.map(row=>row.map(ascii))};
    cards(pdf,module,window._reportExecutiveSnapshot.sections,{insert:true,executive:true,title:tr('title'),subtitle:'Orebit '+module+' | '+tr('subtitle')});
  }
+ // Keep JSON in the downloadable machine record; reports use labelled values.
+ // Recorded labels belong to the review snapshot, including a stale review.
+ // Legacy records remain readable through generic names without discarding fields.
+ function formatParameters(parameters){
+   const tr=key=>window.__t('asy.workflow.pdf.'+key);
+   const human=key=>String(key).replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ').replace(/^./,c=>c.toUpperCase());
+   const names={element:tr('element'),unit:tr('unit'),scope:tr('scope'),controls:tr('controls'),actualDomain:tr('domain'),actualTreatment:tr('treatment'),composite:tr('composite'),length:tr('length'),minimumTail:tr('tail'),breakAtLithology:tr('breakLithology')};
+   const scalar=value=>value==null||value===''?tr('none'):typeof value==='boolean'?tr(value?'yes':'no'):String(value);
+   const lines=[];
+   const visit=(value,path)=>{
+     if(Array.isArray(value)){
+       if(value.every(item=>item==null||typeof item!=='object'))lines.push(path+': '+value.map(scalar).join(', '));
+       else value.forEach((item,i)=>visit(item,path+' '+(i+1)));
+     }else if(value&&typeof value==='object'){
+       const entries=Object.entries(value);
+       if(!entries.length)lines.push(path+': '+tr('none'));
+       for(const [key,item] of entries)visit(item,path+' / '+human(key));
+     }else lines.push(path+': '+scalar(value).replace(/^#\s*/gm,'').trim());
+   };
+   for(const [key,value] of Object.entries(parameters||{})){
+     if(key==='controlLabels')continue;
+     if(key==='controls'&&value&&typeof value==='object'){
+       for(const [id,item] of Object.entries(value))visit(item,parameters.controlLabels?.[id]||human(id));
+       if(!Object.keys(value).length)lines.push(names.controls+': '+tr('none'));
+     }else if(key==='unit')visit(value?unitLabel(value):value,names.unit);
+     else if(key==='composite'&&value&&typeof value==='object'){
+       for(const [field,item] of Object.entries(value))visit(item,names.composite+' / '+(names[field]||human(field)));
+     }else visit(value,names[key]||human(key));
+   }
+   return lines.join('\n');
+ }
  function interpretation(pdf,module,record){
    if(!record||!Array.isArray(record.stages))return;
    window._reportInterpretationSnapshot=record;
    const tr=key=>ascii(window.__t('asy.workflow.'+key)),active=record.stages.filter(r=>r.parameters||r.note),pending=record.stages.filter(r=>!r.parameters&&!r.note);
    const rows=active.map(r=>{
      const status=tr(r.status==='not-reviewed'?'notReviewed':r.status);
-     const body=[status,r.reviewedAt?'Reviewed at: '+r.reviewedAt:'',r.insight||'',r.note?'Interpretation: '+r.note:'Interpretation: no note provided',r.parameters?'Recorded settings (at review):\n'+JSON.stringify(r.parameters,null,2):'No reviewed settings recorded'].filter(Boolean).join('\n\n');
+     const body=[status,r.reviewedAt?'Reviewed at: '+r.reviewedAt:'',r.insight||'',r.note?'Interpretation: '+r.note:'Interpretation: no note provided',r.parameters?'Recorded settings (at review):\n'+formatParameters(r.parameters):'No reviewed settings recorded'].filter(Boolean).join('\n\n');
      return [r.title,body];
    });
    if(pending.length)rows.push([tr('notReviewed'),pending.map(r=>r.title).join(', ')]);
@@ -88,5 +119,5 @@
    catch(error){console.warn('PDF bridge failed, jsPDF fallback:',error);pdf.save(filename);}
    if(typeof window._recordExport==='function')window._recordExport('PDF','Orebit '+module+' - PDF Report',{filename,mime:'application/pdf',content:data.length<=1900000?data:''});
  }
- window.OrebitScreeningReport={prepare,append,prepend,interpretation,unitLabel,save};
+ window.OrebitScreeningReport={prepare,append,prepend,interpretation,formatParameters,unitLabel,save};
 })();

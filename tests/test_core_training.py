@@ -56,7 +56,7 @@ try:
                 writer.writeheader()
                 writer.writerows(rows)
             paths.append(str(path))
-        for kind in ("missing-survey", "overlapping-assay"):
+        for kind in ("missing-survey", "overlapping-assay", "missing-collar-and-geology"):
             page.evaluate("showTab(2)")
             page.locator("#coreTrainingExercises").evaluate("(e)=>e.open=true")
             with page.expect_download() as download:
@@ -96,11 +96,12 @@ try:
             expected_survey = len(data["survey"]) - (
                 2 if kind == "missing-survey" else 0
             )
+            expected_collar = len(data["collar"]) - (1 if kind == "missing-collar-and-geology" else 0)
             expected_assay = len(data["assay"]) + (
                 1 if kind == "overlapping-assay" else 0
             )
             page.wait_for_function(
-                f"() => STATE.survey.length==={expected_survey} && STATE.assay.length==={expected_assay}"
+                f"() => STATE.survey.length==={expected_survey} && STATE.assay.length==={expected_assay} && STATE.collar.length==={expected_collar}"
             )
             page.evaluate("showTab(7)")
             page.wait_for_timeout(300)
@@ -117,6 +118,9 @@ try:
                     ),
                     "Validation identifies the missing survey hole",
                 )
+            elif kind == "missing-collar-and-geology":
+                check(any(c["severity"] == "fail" and "not in Collar" in c["name"] for c in checks), "Missing collar and mismatched identifiers expose orphan records")
+                check(any("without Geology" in c["name"] and c["value"] == "1 hole" for c in checks), "Missing geology log is reported separately")
             else:
                 check(
                     any(
@@ -140,7 +144,7 @@ try:
             page.evaluate("showTab(2)")
             page.locator("#fileInput").set_input_files(paths)
             page.wait_for_function(
-                f'() => STATE.assay.length==={len(data["assay"])} && STATE.survey.length==={len(data["survey"])}'
+                f'() => STATE.assay.length==={len(data["assay"])} && STATE.survey.length==={len(data["survey"])} && STATE.collar.length==={len(data["collar"])}'
             )
             check(
                 page.evaluate("coreGeometryReady()"),
@@ -157,6 +161,14 @@ try:
                 "JSON.stringify({collar:STATE.collar,survey:STATE.survey,assay:STATE.assay,geology:STATE.geology})"
             )
         page.evaluate("showTab(2)")
+        page.evaluate("STATE.desurvey={canary:true};STATE.merged=[{canary:true}]")
+        page.locator('#coreTryValidation').click()
+        page.wait_for_function("() => STATE.collar.length===349 && document.querySelector('#tab7').classList.contains('active')")
+        check(page.evaluate("STATE.desurvey===null && STATE.merged===null"), 'One-click exercise uses CSV import and clears prior derived calculations')
+        check(any(c['severity']=='fail' and 'not in Collar' in c['name'] for c in page.evaluate('_p1RunValidationChecks()')), 'One-click exercise exposes actual linkage failures')
+        page.evaluate('showTab(2)')
+        page.locator('#fileInput').set_input_files(paths)
+        page.wait_for_function("() => STATE.collar.length===350")
         # An arbitrary header uses the existing manual mapping UI, not a new alias.
         density_csv = (
             Path(paths[2]).read_text().replace("density,", "Measured rock value,", 1)

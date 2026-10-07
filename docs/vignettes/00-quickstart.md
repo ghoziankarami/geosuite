@@ -6,9 +6,9 @@ Setiap modul terbuka dengan dataset contoh yang sudah dimuat: 350 lubang bor pad
 
 ## 1. Core: periksa data bor (3 menit)
 
-[Buka Orebit Core](https://geosuite.orebit.id/try/Core.html).
+[Buka Orebit Core](https://geosuite.orebit.id/try/Core.html). Gunakan **Mulai review** untuk alur utama. **Advanced tools** di sidebar membuka tabel dan penampang secara langsung.
 
-- **Dashboard** menampilkan 350 lubang bor, 8.211 sampel assay, dan 8 km pengeboran, dengan overburden, limonit, saprolit, dan batuan dasar tercatat;10lubang berhenti sebelum batuan dasar.
+- **Dashboard** menampilkan 350 lubang bor, 8.896 interval assay, dan 8,8 km pengeboran, dengan overburden, limonit, saprolit, dan batuan dasar tercatat; 10 lubang berhenti sebelum batuan dasar.
 - **Validasi** memeriksa setiap lubang: survey yang hilang, interval tumpang tindih atau berlubang, lubang tanpa log geologi, dan mendaftar setiap temuan beserta alasannya.
 - **Section** menggambar lubang bor pada penampang dengan kadar dan litologi.
 - **Desurvey** mengubah collar dan survey menjadi lintasan lubang 3D.
@@ -25,16 +25,17 @@ Setiap modul terbuka dengan dataset contoh yang sudah dimuat: 350 lubang bor pad
 
 [Buka Orebit Resource](https://geosuite.orebit.id/try/Resource.html).
 
-- Di **Dashboard**, klik **Compute All Plots**. Dalam sekitar satu menit aplikasi mencocokkan variogram, membangun model blok, menjalankan kriging, dan menggambar semua grafik.
-- **Variography** menampilkan variogram hasil fitting untuk setiap arah.
-- **Grade-Tonnage** memberi tonase dan kadar di setiap cut-off.
-- **3D View** menampilkan blok dan lubang bor bersama-sama.
+- Di **Dashboard**, klik **Mulai review**. Pada Setup pilih Ni, satuan persen dan satu horizon seperti saprolit; estimasi limonit terpisah jika sesuai interpretasi.
+- **Variografi:** klik **Hitung & fit variogram**, lalu periksa titik eksperimen, jumlah pasangan dan model. Parameter custom serta pemeriksaan arah/downhole tersedia di bawah.
+- **Block Model:** periksa ukuran sel, densitas dan envelope sebelum membuat grid. Lalu estimasi dan periksa cross-validation serta swath.
+- **Grade-Tonnage** membandingkan cutoff. **Laporan** mencatat cutoff pilihan Anda atau tanpa cutoff, metode dan batasannya. Hasil screening bukan resource tersertifikasi.
+- **Advanced tools** membuka tampilan opsional langsung. Pola aksi di atas dan sidebar yang sama berlaku pada Core dan Assay.
 
 ## 4. Data Anda sendiri
 
 Di Core, buka **Import** dan masukkan file CSV collar, survey, assay, dan geologi Anda. Nama kolom seperti `Au (g/t)` atau `Cu (%)` dikenali otomatis, dan kode lab seperti `-0.005` (di bawah batas deteksi) atau `-999` (kosong) langsung ditangani. Impor CSV dan perhitungan berjalan lokal. Google Drive, peta satelit, dan pemeriksaan update opsional memerlukan internet.
 
-Ekspor komposit dari Core lalu muat di tab **Upload** pada Assay, kemudian teruskan ekspor Assay ke Resource dengan cara yang sama.
+Ekspor data master yang sudah divalidasi dari Core lalu muat di tab **Upload** pada Assay, kemudian teruskan ekspor Assay ke Resource dengan cara yang sama.
 
 ## Selanjutnya
 

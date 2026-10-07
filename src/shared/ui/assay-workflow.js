@@ -29,13 +29,15 @@
     refresh(n);
   }
   function parameters(n) {
-    const controls={};
+    const controls={},controlLabels={};
     document.querySelectorAll('#tab'+n+' input[id],#tab'+n+' select[id]').forEach(el=>{
       if(el.closest('.assay-workflow-card') || el.type==='file' || el.type==='button')return;
       controls[el.id]=el.type==='checkbox'?el.checked:el.multiple?Array.from(el.selectedOptions,o=>o.value):el.value;
+      const label=el.closest('label')?.cloneNode(true);
+      if(label){label.querySelectorAll('input,select,button,svg').forEach(node=>node.remove());controlLabels[el.id]=label.textContent.replace(/\s+/g,' ').replace(/:\s*$/,'').trim();}
     });
     const e=element(n);
-    return {element:e,unit:e?elementMeta(e).unit:null,scope:window._domainScope||'All',controls,
+    return {element:e,unit:e?elementMeta(e).unit:null,scope:window._domainScope||'All',controls,controlLabels,
       actualDomain:window._domainAudit?clone(window._domainAudit):null,
       actualTreatment:typeof _treatmentCsvHeader==='function'?_treatmentCsvHeader():null,
       composite:n===7||n===13?{length:_reportCompositeLength(),minimumTail:0.5,breakAtLithology:_compBreakAtLitho()}:null};
@@ -126,7 +128,8 @@
   }
   function decorateNavigation(n) {
     const nav=document.querySelector('nav.tabs');if(!nav)return;
-    document.body.classList.add('assay-guided');
+    document.body.classList.add('assay-guided','screening-guided');
+    document.body.classList.toggle('workflow-on-dashboard',n===1);
     const foot=nav.querySelector('.orebit-rail-foot');if(foot)foot.style.order='999';
     nav.querySelectorAll('.tab').forEach((el,i)=>{
       const tab=i+1;el.dataset.workflowAdvanced=String(tab!==1&&!MAIN.includes(tab));
@@ -146,9 +149,11 @@
     let card=panel.querySelector('.assay-workflow-card');
     const oldNote=document.getElementById('assay-stage-note-'+n)?.value;
     const notesOpen=card?.querySelector('.workflow-notes')?.open;
+    if(n===1){OrebitScreeningWorkflow.dashboard(panel,insight(1),text('purpose1'),data()?.rows?.length?3:2);return;}
     if(card)card.remove();card=node('section',null,'assay-workflow-card');card.setAttribute('aria-label',text('guide'));
     const step=MAIN.indexOf(n);card.append(node('p',step>=0?text('step',{n:step+1,total:MAIN.length}):text('optional'),'workflow-eyebrow'));
     card.append(node('h2',label(n)),node('p',text('purpose'+n),'workflow-purpose'));
+    card.append(OrebitScreeningWorkflow.links(MAIN,n));
     if(data()&&[3,7,8,9,10,11,13].includes(n)&&availableElements().length){
       const field=node('label',text('element'),'workflow-element');const select=node('select');select.id='assay-workflow-element-'+n;field.htmlFor=select.id;
       for(const e of availableElements()){const m=elementMeta(e),option=node('option',m.label+' ('+m.unit+')');option.value=e;select.append(option);}
@@ -182,7 +187,7 @@
     for(const r of snapshot()){
       const row=node('div',null,'workflow-review-row');row.append(node('strong',r.title+' - '+text(r.status==='not-reviewed'?'notReviewed':r.status)));
       if(r.insight)row.append(node('p',r.insight));if(r.note)row.append(node('p',r.note));
-      if(r.parameters){const d=node('details');d.append(node('summary',text('parameters')),node('pre',JSON.stringify(r.parameters,null,2)));row.append(d);}
+      if(r.parameters){const d=node('details');d.append(node('summary',text('parameters')),node('pre',OrebitScreeningReport.formatParameters(r.parameters)));row.append(d);}
       list.append(row);
     }
     card.after(list);

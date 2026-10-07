@@ -81,6 +81,7 @@ try:
   check(b'Custom 3.5 m composite' in data and b'Recorded settings' in data,'PDF includes stage notes and recorded settings')
   with fitz.open(pdf) as doc:
    text=' '.join(' '.join(page.get_text().split()) for page in doc)
+   check('"controls":' not in text and '"actualDomain":' not in text and '"minimumTail":' not in text,'PDF shows readable parameter labels instead of raw JSON')
    check('earlier data/parameter state' in text and 'not a prerequisite' in text,'PDF explains stale reviews and optional stages honestly')
    bad=[(i+1,word) for i,page in enumerate(doc) for word in page.get_text('words') if not(word[0]>=0 and word[1]>=0 and word[2]<=page.rect.width+1 and word[3]<=page.rect.height+1)]
    check(not bad,'PDF text stays within each page: '+str(bad[:8]))

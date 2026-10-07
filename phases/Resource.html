@@ -2173,6 +2173,9 @@ input[type="checkbox"], input[type="radio"] {
 </style>
 <style>
 /* @orebit-inline: shared/ui/action-roles.css */
+/* @orebit-inline: shared/ui/workflow.css */
+.panel :is(.grid-2,.grid-3,.fb-grid,[style*="display:grid"],[style*="display: grid"]):has(.plot-container,.js-plotly-plot){grid-template-columns:minmax(0,1fr)!important}
+.resource-block-flow{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 </style>
 <style>
 /* Resource reading layout: one figure per row; diagnostic controls are disclosed. */
@@ -2896,6 +2899,7 @@ const EMBEDDED_DATA = /* @orebit-inline: assets/sample/resource.json */;
 /* @orebit-inline: shared/io/import.js */
 /* @orebit-inline: shared/ui/column-mapper.js */
 /* @orebit-inline: shared/ui/pwa.js */
+/* @orebit-inline: shared/ui/screening-workflow.js */
 /* @orebit-inline: shared/data/dataset.js */
 // ============= CONSTANTS =============
 const DB_NAME    = 'orebit-projects';
@@ -5450,7 +5454,10 @@ async function renderVariography() {
  const ID = (document.documentElement.lang === 'id');
  div.innerHTML = `
  <div class="card">
- <h3>Step 1 · ${t('res.renderDeclusterResult.experimentalConfiguration')}</h3>
+ <h3>${t('res.flow.varTitle')}</h3>
+ <p class="hint">${t('res.flow.varHelp')}</p>
+ <button id="varComputeBtn" data-action-role="apply" class="btn" onclick="computeVariogram()">${t('res.flow.computeFit')}</button>
+ <details class="resource-disclosure" id="variogramSampling"><summary>${t('res.flow.customSampling')}</summary>
  <div class="row-controls">
 <label>${t('res.renderDeclusterResult.element')}: <strong>${escapeHtml(ELEMENT_LABEL[setupState.element] || setupState.element)}</strong></label>
 <label>Domain: <strong>${setupState.domain === 'all'? (t('res.renderDeclusterResult.all')) : 'D' + escapeHtml(String(setupState.domain))}</strong></label>
@@ -5466,9 +5473,8 @@ async function renderVariography() {
  <label>${t('res.vg.nLags')} <input type="number" id="varN" value="15" min="3" max="40" style="width:70px;" title="Number of lag bins. Total range covered = N × lag size."></label>
  <label title="Angle tolerance: angular window for directional binning">${t('res.vg.tolAngle')} <input type="number" id="varTol" value="22.5" min="5" max="90" style="width:80px;" title="Angle tolerance: angular window for directional binning. Larger = more pairs but less directional purity."></label>
  <label>Max h (m): <input type="number" id="varMaxH" value="" placeholder="auto" style="width:90px;" title="Maximum lag distance. Auto = clamp to ½ data extent."></label>
- <button data-action-role="apply" class="btn" onclick="computeVariogram()"> ${t('res.renderDeclusterResult.compute')} ${abbr('Variogram', 'variogram')}</button>
- <button data-action-role="custom" class="btn secondary" onclick="autoFitVariogram()"> ${t('res.renderDeclusterResult.autoFit')}</button>
  </div>
+ </details>
  <div id="varStatus" style="margin-top:10px;font-size:13px;color:var(--fg-mute);">${t('res.renderDeclusterResult.pressComputeVariogramStart')}</div>
  </div>
 
@@ -5478,7 +5484,7 @@ async function renderVariography() {
  <div id="varPlot" class="plot-container" style="min-height:380px;"></div>
  </div>
  <div class="card">
- <h3> ${t('res.renderDeclusterResult.modelFit')}</h3>
+ <details class="resource-disclosure" id="variogramModelCustom"><summary>${t('res.flow.customModel')}</summary><p class="hint">${t('res.flow.modelHelp')}</p>
  <div class="row-controls">
  <label>${t('res.renderDeclusterResult.type')}:
  <select id="varModelType" title="Variogram model family. Spherical = most common; Exponential = asymptotic plateau; Gaussian = smooth low-nugget structure.">
@@ -5492,16 +5498,21 @@ async function renderVariography() {
  <label>${abbr('Range', 'range')} (m): <input type="number" id="varRange" step="5" style="width:90px;" title="a: distance dimana variogram mencapai sill. Beyond = uncorrelated."></label>
  <button data-action-role="custom" class="btn secondary" onclick="updateModel()">${t('res.renderDeclusterResult.apply')}</button>
  </div>
+ <button data-action-role="custom" class="btn secondary" onclick="autoFitVariogram()">${t('res.renderDeclusterResult.autoFit')}</button>
+ </details>
  <div id="varModelSummary" style="margin-top:14px;"></div>
  </div>
  </div>
 
+ <details class="resource-disclosure card" id="variogramAdvanced">
+ <summary>${t('res.flow.advancedContinuity')}</summary>
+ <p class="hint">${t('res.flow.advancedHelp')}</p>
  <div class="card" style="margin-top:14px;">
  <details>
- <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">${t('res.vg.step2')}</summary>
+ <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">${t('res.flow.mapTitle')}</summary>
  <div style="margin-top:10px;">
  <p style="font-size:13px;color:var(--fg-mute);margin-top:-4px;">
- ${t('res.variogramMapHelp.text').replace('{anisotropyAbbr}', abbr('anisotropy', 'anisotropy'))}
+ ${t('res.flow.mapHelp')}
  </p>
  <div class="row-controls">
  <label>${t('res.vg.cellLag')} <input type="number" id="vmapLag" value="50" min="2" step="5" style="width:90px;"></label>
@@ -5511,16 +5522,15 @@ async function renderVariography() {
   <div id="vmapStatus" style="font-size:13px;color:var(--fg-mute);margin-top:6px;">${t('res.vg.pressComputeMap')}</div>
  <div id="vmapPlot" class="plot-container" style="min-height:420px;"></div>
  </div>
- </div>
  </details>
  </div>
 
  <div class="card" style="margin-top:14px;">
  <details>
- <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">${t('res.vg.step3')}</summary>
+ <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">${t('res.flow.scanTitle')}</summary>
  <div style="margin-top:10px;">
  <p style="font-size:13px;color:var(--fg-mute);margin-top:-4px;">
- ${t('res.vg.sweepIntro')} ${variogramState.directionalScan.tolHor}${t('res.vg.sweepCurve')} <strong>γ ${t('res.lowestGammaFarLags')}</strong> ${t('res.vg.bestContinuity')} ${abbr('major axis', 'anisotropy')}). ${t('res.directionalConfirm')}
+ ${t('res.flow.scanHelp')}
  </p>
  <div class="row-controls">
  <label>${t('res.vg.scanStep')} <input type="number" id="dsStep" value="${variogramState.directionalScan.scanStep}" min="10" max="45" step="2.5" style="width:80px;"></label>
@@ -5534,17 +5544,16 @@ async function renderVariography() {
  <div id="dsPlot" class="plot-container" style="min-height:360px;"></div>
  <div id="dsSummary" style="margin-top:8px;"></div>
  </div>
- </div>
  </details>
  </div>
 
  <div class="grid-2" style="margin-top:14px;">
  <div class="card">
  <details>
- <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">${t('res.vg.downholeTitle')} ${abbr('nugget', 'nugget')}</summary>
+ <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">${t('res.flow.downholeTitle')}</summary>
  <div style="margin-top:10px;">
   <p style="font-size:13px;color:var(--fg-mute);margin-top:-4px;">
-  ${t('res.vg.downholeHint')}
+  ${t('res.flow.downholeHelp')}
   </p>
  <div class="row-controls">
  <label>Lag (m): <input type="number" id="dhLag" value="${variogramState.downhole.lagSize}" min="0.5" step="0.5" style="width:80px;"></label>
@@ -5555,15 +5564,14 @@ async function renderVariography() {
  <div id="dhStatus" style="font-size:13px;color:var(--fg-mute);margin-top:6px;">${t('res.vg.notComputed')}</div>
  <div id="dhPlot" class="plot-container" style="min-height:280px;"></div>
  </div>
- </div>
  </details>
  </div>
  <div class="card">
  <details>
- <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">${t('res.vg.nestedTitle')}</summary>
+ <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">${t('res.flow.nestedTitle')}</summary>
  <div style="margin-top:10px;">
  <p style="font-size:13px;color:var(--fg-mute);margin-top:-4px;">
- ${t('res.vg.nestedIntro')} ${abbr('anisotropy', 'anisotropy')} ${t('res.vg.nestedBody')}
+ ${t('res.flow.nestedHelp')}
  </p>
  <div class="row-controls">
  <label>${t('res.vg.majorAzimuth')} <input type="number" id="nmAzimuth" value="0" min="0" max="180" step="2.5" style="width:90px;"></label>
@@ -5608,10 +5616,10 @@ async function renderVariography() {
  <div id="nmSummary" style="margin-top:10px;font-size:12.5px;color:var(--fg-mute);">${t('res.vg.seedHintFull')}</div>
  </div>
  </div>
- </div>
  </details>
  </div>
  </div>
+ </details>
  ${typeof renderNextStep === 'function'? renderNextStep(4) : ''}
  `;
 
@@ -7442,9 +7450,9 @@ function renderBlockModel() {
  const [bx, by, bz] = blockState.size;
 
  div.innerHTML = `
- <div class="grid-2">
+ <div class="resource-block-flow">
  <div class="card">
- <h3 data-i18n="res.blockSize"> Block Size</h3>
+ <h3>${t('res.flow.gridTitle')}</h3><p class="hint">${t('res.flow.gridHelp')}</p>
  <p style="font-size:13px;color:var(--fg-mute);">${t('res.renderBlockSetup.autoDerived').replace('{bx}', bx).replace('{by}', by).replace('{bz}', bz)}</p>
  <div class="row-controls" style="margin-top:10px;">
  <label>X (m): <input type="number" id="bmX" value="${bx}" min="2" step="5" style="width:90px;" oninput="updateBlockPreview()"></label>
@@ -7454,8 +7462,8 @@ function renderBlockModel() {
  </div>
  ${_isVolGrade ? `<p style="margin-top:8px;font-size:12px;color:var(--accent);">${t('res.renderBlockSetup.volumetricNote')}</p>` : ''}
  <div class="row-controls" style="margin-top:10px;">
- <button class="btn btn-ghost" onclick="autoSuggestBlockSize()" title="${t('res.renderBlockSetup.autoSuggestTitle').replace('{n}', ESTIMATE_CONFIRM_BLOCKS.toLocaleString('en-US'))}" data-i18n="res.autoSuggestSize">Auto-suggest size</button>
- <button class="btn" id="bmGenBtn" onclick="generateBlocks()" data-i18n="res.generateGrid"> Generate Grid</button>
+ <button data-action-role="custom" class="btn btn-ghost" onclick="autoSuggestBlockSize()" title="${t('res.renderBlockSetup.autoSuggestTitle').replace('{n}', ESTIMATE_CONFIRM_BLOCKS.toLocaleString('en-US'))}" data-i18n="res.autoSuggestSize">Auto-suggest size</button>
+ <button data-action-role="apply" class="btn" id="bmGenBtn" onclick="generateBlocks()" data-i18n="res.generateGrid"> Generate Grid</button>
  </div>
  <div class="row-controls" style="margin-top:10px;">
  <label>${t('res.envelope.label')} <select id="bmEnvelopeMode" onchange="setResourceEnvelope(this.value,document.getElementById('bmEnvelopeRadius').value)">
@@ -7467,6 +7475,9 @@ function renderBlockModel() {
  <p class="hint">${t('res.envelope.hint')}</p>
  <div id="blockPreview" style="margin-top:10px;"></div>
  </div>
+ <details class="card resource-disclosure" id="blockAdvanced">
+ <summary>${t('res.flow.customGrid')}</summary>
+ <p class="hint">${t('res.flow.customGridHelp')}</p>
  <div class="card">
  <h3 data-i18n="res.variableDensity"> Variable Density Table</h3>
  <p style="font-size:13px;color:var(--fg-mute);">${t('res.bm.densityHint2')}</p>
@@ -7491,6 +7502,7 @@ function renderBlockModel() {
  <tr><td>Z</td><td>${zExt[0].toFixed(1)}</td><td>${zExt[1].toFixed(1)}</td><td>${(zExt[1] - zExt[0]).toFixed(1)} m</td></tr>
  </table>
  </div>
+ </details>
  </div>
  <div id="blockGridSummary" style="margin-top:14px;"></div>
  `;
@@ -8136,7 +8148,7 @@ function renderEstimation() {
  <label>${t('res.search.minSecond')} <input id="sPassMin" type="number" min="2" max="50" value="${searchState.secondPassMin||4}" style="width:70px;"></label>
  <label title="${t('res.renderEstimation.octantSearchDivideSearchEllipsoid')}"><input type="checkbox" id="sOctant" ${searchState.useOctant ? 'checked' : ''}> Octant search</label>
  <label title="${escapeHtml(t('res.est.domainBoundaryTitle'))}"><input type="checkbox" id="sDomainBound" ${searchState.domainBoundary ? 'checked' : ''}> ${t('res.est.domainBoundary')}</label>
- <button class="btn" onclick="runEstimation()" ${!haveModel ||!haveBlocks? 'disabled' : ''}> ${t('res.renderEstimation.runEstimationIdwOkNn')}</button>
+ <button id="resourceRunEstimate" class="btn" onclick="runEstimation()" ${!haveModel ||!haveBlocks? 'disabled' : ''}> ${t('res.renderEstimation.runEstimationIdwOkNn')}</button>
  </div>
  <div id="estimStatus" style="margin-top:12px;font-size:13px;"></div>
  </div>
@@ -9063,7 +9075,7 @@ function renderCrossVal() {
  <div class="row-controls" style="margin-top:10px;">
  <label>${t('res.cv.sampleLimit')} <input type="number" id="cvLimit" value="200" min="50" max="5000" step="50" style="width:100px;"></label>
  <span style="font-size:12px;color:var(--fg-mute);">${t('res.cv.looNote')}</span>
- <button class="btn" onclick="runCrossVal()" ${!haveModel? 'disabled' : ''} data-i18n="res.runCrossVal"> Run Cross-Val</button>
+ <button id="resourceRunCrossval" class="btn" onclick="runCrossVal()" ${!haveModel? 'disabled' : ''} data-i18n="res.runCrossVal"> Run Cross-Val</button>
  </div>
  <div id="cvStatus" style="margin-top:10px;font-size:13px;"></div>
  </div>

@@ -3820,7 +3820,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Enables offline caching for web builds. Skipped for EXE (file://) mode.
 (function registerServiceWorker() {
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    navigator.serviceWorker.register('./service-worker.js').catch(function(e) { console.warn('[SW Registration Failed]', e.message); });
+    navigator.serviceWorker.register('./service-worker.js', {updateViaCache:'none'}).catch(function(e) { console.warn('[SW Registration Failed]', e.message); });
   }
 })();
 
@@ -4191,6 +4191,7 @@ function init() {
 }
 
 function resetToSample() {
+  window.__coreTrainingActive = false;
   _lastUploadedFiles = null;
   setCoreProvidedXYZ(false);
   const xyzToggle = document.getElementById('coreProvidedXYZ'); if (xyzToggle) xyzToggle.checked = false;
@@ -4515,8 +4516,8 @@ function p1IsTabReady(n) {
     case 7: return STATE.collar.length > 0 && STATE.assay.length > 0;
     case 8: return STATE.collar.length > 0 && STATE.assay.length > 0;
     case 9: return STATE.collar.length > 0 && STATE.assay.length > 0;
-    case 10: return STATE.collar.length > 0 && STATE.survey.length > 0 && (typeof STATE.desurveyTrace !== 'undefined' && STATE.desurveyTrace);
-    case 11: return STATE.collar.length > 0 && STATE.assay.length > 0 && STATE.survey.length > 0;
+    case 10: return coreGeometryReady() && Object.values(STATE.desurvey?.holes || {}).some(h => h.trace?.length > 0) && !(STATE.desurvey?.invalidHoleIds || []).length;
+    case 11: return !!STATE.merged?.length && coreGeometryReady();
     case 12: return !!(STATE.merged && STATE.merged.length > 0);
     case 13: return !!(STATE.merged && STATE.merged.length > 0);
     default: return false;
@@ -5969,6 +5970,7 @@ function applyCoreGateMapping(pfIdx) {
 }
 
 function handleUpload(evt) {
+  window.__coreTrainingActive = false;
   const files = [...evt.target.files];
   if (!files.length) return;
   // Keep the raw File handles so a later number-format override can re-parse
@@ -6510,6 +6512,19 @@ async function loadTrainingExercise(kind) {
   // Use the normal CSV import boundary, including manual mapping and derived-state reset.
   const files = Object.entries(tables).map(([name, rows]) => new File([trainingExerciseCSV(rows)], name + '.csv', {type:'text/csv'}));
   document.getElementById('fileInput').value = '';
+  await handleUpload({target:{files}});
+  window.__coreTrainingActive = true;
+  window.__coreTrainingRows = Object.fromEntries(['collar','survey','assay','geology'].map(name=>[name,STATE.rawRows[name]]));
+  showTab(7);
+}
+function isCoreTrainingExample() {
+  return !!window.__coreTrainingActive && ['collar','survey','assay','geology'].every(name=>window.__coreTrainingRows?.[name]===STATE.rawRows[name]);
+}
+async function restoreTrainingExample() {
+  if (!isCoreTrainingExample() || !await orebitConfirm(t('flow.trainingRestoreConfirm'))) return;
+  // Restore known synthetic sources through the same four-CSV import path, never invented field data.
+  const files = ['collar','survey','assay','geology'].map(name => new File([trainingExerciseCSV(SAMPLE_DATA[name])],name+'.csv',{type:'text/csv'}));
+  document.getElementById('fileInput').value='';
   await handleUpload({target:{files}});
   showTab(7);
 }

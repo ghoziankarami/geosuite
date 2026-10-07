@@ -42,3 +42,5 @@ body.screening-guided.screening-advanced-open nav.tabs .tab[data-workflow-advanc
 .screening-guided.workflow-on-dashboard #dashEmptyCTA{display:none!important}
 
 .screening-guided:not(.assay-guided) nav.tabs .tab-done::after{display:none}
+
+.workflow-related{border-top:1px solid var(--border);margin-top:12px;padding-top:10px}.workflow-related-title{font-size:12px;color:var(--fg-mute);margin:0 0 8px}.workflow-related-actions{display:flex;gap:8px;flex-wrap:wrap}.workflow-related .btn{font-size:12px;white-space:normal;min-height:40px}.workflow-gate{font-size:13px;line-height:1.6;border-left:3px solid var(--warn,#d97706);padding:8px 12px}.workflow-training{border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:18px;font-size:13px;line-height:1.6}.workflow-training p{max-width:90ch;color:var(--fg-mute)}

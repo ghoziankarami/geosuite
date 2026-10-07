@@ -13,6 +13,7 @@
  }
  const ink=[24,41,54],teal=[0,112,108],muted=[94,111,122];
  function header(pdf,module,title,subtitle){
+   pdf.internal.getCurrentPageInfo().pageContext.orebitSectionTitle=ascii(title);
    const W=pdf.internal.pageSize.getWidth();
    pdf.setFillColor(...teal);pdf.rect(0,0,W,4,'F');
    pdf.setFont('helvetica','bold');pdf.setTextColor(...teal);pdf.setFontSize(10);pdf.text('OREBIT / '+ascii(module).toUpperCase(),15,16);
@@ -102,7 +103,10 @@
    cards(pdf,module,rows,{title:tr('reviewRecord'),subtitle:'Orebit Assay | Stage decisions, notes and actual recorded settings'});
  }
  function footers(pdf,module){
+   pdf.setProperties({title:'Orebit '+module+' screening report',author:'Orebit',subject:'Results, assumptions, interpretation and calculation audit',keywords:'screening, geology, due diligence'});
    const W=pdf.internal.pageSize.getWidth(),H=pdf.internal.pageSize.getHeight(),n=pdf.internal.getNumberOfPages();
+   const seen=new Set();
+   if(pdf.outline){for(let i=1;i<=n;i++){const title=pdf.internal.getPageInfo(i).pageContext.orebitSectionTitle;if(title&&!seen.has(title)){pdf.outline.add(null,title,{pageNumber:i});seen.add(title);}}}
    for(let i=1;i<=n;i++){
      pdf.setPage(i);pdf.setFillColor(255);pdf.rect(10,H-14,W-20,10,'F');pdf.setDrawColor(219,228,231);pdf.line(15,H-15,W-15,H-15);
      pdf.setFont('helvetica','normal');pdf.setFontSize(8);pdf.setTextColor(...muted);pdf.text('Orebit '+module+' | Screening | '+new Date().toISOString().slice(0,10),15,H-9);pdf.text(i+' / '+n,W-15,H-9,{align:'right'});

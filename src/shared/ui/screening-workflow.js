@@ -15,12 +15,41 @@
     }
     moved.clear();
   }
-  const main = () => resource()?[2,3,4,5,6,7,10,12]:[2,7,10,11,13];
+  const main = () => resource()?[2,3,4,5,6,7,10,12]:(window._coreUseProvidedXYZ?[2,7,11,13]:[2,7,10,11,13]);
   function navigate(n) {showTab(n);document.getElementById('tab'+n)?.scrollIntoView({block:'start',behavior:'smooth'});}
   function links(stages,n) {
     const row=node('nav',null,'workflow-step-links');row.setAttribute('aria-label',tr('workflow'));
     for(const [i,stage] of stages.entries()){const b=button(label(stage),'inspect',()=>navigate(stage));if(stage===n)b.setAttribute('aria-current','step');row.append(b);}
     return row;
+  }
+  // One inventory serves every module. Links reveal existing owners; they never apply a treatment.
+  const RELATED = {
+    core:{2:[[3,'collar'],[4,'survey'],[5,'assay'],[6,'geology']],7:[[3,'collar'],[4,'survey'],[5,'assay'],[6,'geology']],10:[[8,'strips'],[9,'section']],11:[[12,'composite']],13:[[12,'composite'],[7,'validation']]},
+    assay:{3:[[12,'qaqc'],[6,'spacing']],8:[[9,'topcut'],[4,'bivariate'],[5,'multivariate']],11:[[10,'lithology'],[5,'multivariate']],7:[[6,'spacing'],[12,'qaqc']],13:[[12,'qaqc'],[9,'topcut']]},
+    resource:{3:[[3,'decluster','resourceSetupAdvanced']],4:[[4,'anisotropy','variogramAdvanced']],5:[[5,'density','blockAdvanced']],6:[[11,'viewer']],7:[[8,'swath'],[9,'confidence'],[11,'viewer']],10:[[11,'viewer'],[9,'confidence']],12:[[11,'viewer'],[8,'swath'],[9,'confidence']]}
+  };
+  const origins=new Map();
+  function related(module,n,go) {
+    const row=node('section',null,'workflow-related');row.setAttribute('aria-label',tr('related'));
+    const origin=origins.get(module+':'+n);
+    if(origin&&origin!==n){row.append(button(tr('return',{stage:label(origin)}),'inspect',()=>go(origin)));}
+    const tools=RELATED[module]?.[n]||[];
+    if(tools.length){row.append(node('p',tr('related'),'workflow-related-title'));
+      const actions=node('div',null,'workflow-related-actions');
+      for(const [stage,key,id] of tools){const b=button(tr('tool.'+key),'inspect',()=>{
+        if(stage!==n){origins.set(module+':'+stage,n);go(stage);}
+        if(id){const el=document.getElementById(id);if(el){el.open=true;el.scrollIntoView({block:'start',behavior:'smooth'});el.querySelector('summary')?.focus();}}
+      });b.dataset.relatedStage=String(stage);if(id)b.dataset.relatedTarget=id;actions.append(b);}
+      row.append(actions);
+    }
+    row.hidden=!tools.length&&!origin;
+    return row;
+  }
+  function training(panel,n) {
+    if(resource()||![1,7].includes(n)||(!STATE.usingSample&&!isCoreTrainingExample()))return;
+    const box=node('aside',null,'workflow-training');box.append(node('strong',tr('trainingTitle')),node('p',tr(isCoreTrainingExample()?'trainingFixHint':'trainingHint')));
+    box.append(button(tr(isCoreTrainingExample()?'trainingRestore':'trainingTry'),'inspect',()=>isCoreTrainingExample()?restoreTrainingExample():loadTrainingExercise('missing-collar-and-geology')));
+    panel.querySelector('.assay-workflow-card').after(box);
   }
   function dashboard(panel, insight, purpose, first) {
     panel.querySelector('.assay-workflow-card')?.remove();
@@ -45,6 +74,7 @@
   }
   function next(n) {
     if(resource())return n===1?3:n===2?3:n===10?12:n<10?n+1:n===11?12:null;
+    if(n===7&&window._coreUseProvidedXYZ)return 11;
     return ({1:7,2:7,3:4,4:5,5:6,6:7,7:10,8:9,9:10,10:11,11:13,12:13})[n]||null;
   }
   function ready(n) {
@@ -71,6 +101,7 @@
   function sync() {
     const panel=document.getElementById('tab'+current),card=panel?.querySelector('.assay-workflow-card');if(!card)return;
     card.querySelector('.workflow-insight p').textContent=facts(current);
+    const gate=card.querySelector('.workflow-gate');if(gate){gate.hidden=ready(current);gate.textContent=tr(!resource()&&[7,10].includes(current)?'blockedGeometry':'blocked');}
     const onward=card.querySelector('[data-workflow-next]');if(onward)onward.disabled=!ready(current);
     const inspect=card.querySelector('[data-workflow-inspect]');if(inspect&&resource()&&[4,6,7].includes(current))inspect.disabled=!ready(current);
     // Move the owner's real button into the focused action area; retain its handler and ID.
@@ -89,8 +120,8 @@
   function refresh(n=current) {
     if(!initialized)return;restoreActions();current=n;navigation(n);const panel=document.getElementById('tab'+n);if(!panel)return;
     if(!resource()&&n===7)validation=_p1RunValidationChecks();
-    panel.querySelector('.assay-workflow-card')?.remove();
-    if(n===1){const loaded=resource()?!!DATA?.rows?.length:!!STATE.collar.length&&!!STATE.assay.length;dashboard(panel,facts(n),tr('purpose1'),loaded?(resource()?3:7):2);return;}
+    panel.querySelector('.assay-workflow-card')?.remove();panel.querySelector('.workflow-training')?.remove();
+    if(n===1){const loaded=resource()?!!DATA?.rows?.length:!!STATE.collar.length&&!!STATE.assay.length;dashboard(panel,facts(n),tr('purpose1'),loaded?(resource()?3:7):2);training(panel,n);return;}
     const card=node('section',null,'assay-workflow-card');card.setAttribute('aria-label',tr('guide'));
     const stages=main(),i=stages.indexOf(n);card.append(node('p',i<0?tr('optional'):tr('step',{n:i+1,total:stages.length}),'workflow-eyebrow'),node('h2',label(n)));
     const purpose=window.__t('flow.purpose'+n);if(purpose!=='flow.purpose'+n)card.append(node('p',purpose,'workflow-purpose'));
@@ -111,7 +142,9 @@
     }
     actions.append(button(tr('custom'),'custom',()=>customize(panel)));card.append(actions);
     const key=node('div',null,'action-key');for(const role of ['next','inspect','custom','advanced'])key.append(node('span',window.__t('ux.action.'+role),'action-key-'+role));card.append(key);
-    panel.prepend(card);sync();
+    if(target){const gate=node('p',null,'workflow-gate');gate.setAttribute('role','status');card.append(gate);}
+    card.append(related(resource()?'resource':'core',n,navigate));
+    panel.prepend(card);training(panel,n);sync();
   }
   function boot() {
     if(assay()||typeof showTab!=='function'||initialized)return;initialized=true;
@@ -121,6 +154,6 @@
     // Only update view state: no calculations, parameter changes or approval marks.
     setInterval(sync,1000);refresh(typeof currentTab==='number'?currentTab:1);
   }
-  window.OrebitScreeningWorkflow={dashboard,links,refresh};
+  window.OrebitScreeningWorkflow={dashboard,links,related,refresh};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else setTimeout(boot,0);
 })();

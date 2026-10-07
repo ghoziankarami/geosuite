@@ -19,6 +19,8 @@ def dl(p,sel,path):
 def pdf_layout(data,module):
  with fitz.open(stream=data,filetype='pdf') as doc:
   outside=[];stale=[];numbering=[]
+  check(doc.metadata.get('title','').startswith('Orebit '),module+' PDF carries a readable document title')
+  toc=doc.get_toc();check(len(toc)>=2 and toc[0][2]==1 and all(1<=row[2]<=len(doc) for row in toc),module+' PDF bookmarks reach the final summary and audit pages after insertion')
   for i,page in enumerate(doc,1):
    blocks=page.get_text('blocks');footer='\n'.join(b[4] for b in blocks if b[1]>page.rect.height-45)
    numbering.append(re.search(r'(?m)^'+re.escape(f'{i} / {len(doc)}')+r'$' ,footer) is not None)

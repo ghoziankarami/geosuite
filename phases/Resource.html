@@ -3630,7 +3630,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Enables offline caching for web builds. Skipped for EXE (file://) mode.
 (function registerServiceWorker() {
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    navigator.serviceWorker.register('./service-worker.js').catch(function() {});
+    navigator.serviceWorker.register('./service-worker.js', {updateViaCache:'none'}).catch(function() {});
   }
 })();
 
@@ -3974,6 +3974,7 @@ let DATA = EMBEDDED_DATA;
 // than one list per entry point (they drifted: docs/PLAN-integritas-data-assay.md §10).
 function setActiveDataset(input, opts) {
   DATA = createDataset(input, opts);
+  window._blockViewSettings = null;
 
   // ----- Dataset-scoped reset -----
   // Resource has nine `*State` objects (setupState, variogramState,
@@ -9854,10 +9855,12 @@ function render3D() {
  </label>
  <label>Representation:
  <select id="d3Rep">
- <option value="solid">Solid blocks</option>
+ <option value="surface">${t("res.viewer.surface")}</option>
+ <option value="solid">${t("res.viewer.solidSample")}</option>
  <option value="points">Points (fast)</option>
  </select>
  </label>
+ </div><details class="workflow-notes"><summary>${t("res.viewer.filters")}</summary><div class="row-controls">
  <label>Cutoff min: <input type="number" id="d3Cut" placeholder="(none)" style="width:120px;"></label>
  <label>Class filter:
  <select id="d3Class" ${!classState.labels? 'disabled' : ''}>
@@ -9866,15 +9869,16 @@ function render3D() {
  <option value="M">High confidence only</option>
  </select>
  </label>
- <label>Sub-sample: <input type="number" id="d3Sub" value="2000" min="500" step="500" style="width:100px;"></label>
+ <label>Point / individual-block limit: <input type="number" id="d3Sub" value="2000" min="500" step="500" style="width:100px;"></label>
  <label>Vertical exaggeration:
  <input type="range" id="d3Exag" min="0.25" max="4" step="0.25" value="1"
         oninput="document.getElementById('d3ExagVal').textContent=this.value+'×'" onchange="render3DPlot()"
         style="vertical-align:middle;width:110px;">
  <span id="d3ExagVal" style="font-variant-numeric:tabular-nums;">1×</span>
  </label>
- <button class="btn" onclick="render3DPlot();renderBlockSection()"> Render</button>
- </div>
+ </div></details>
+ <p class="hint">${t("res.viewer.hint")}</p>
+ <button class="btn" onclick="render3DPlot();renderBlockSection()">${t("res.viewer.render")}</button>
  </div>
  <div class="card" style="margin-top:14px;">
  <div id="d3Plot" style="min-height:560px;"></div>
@@ -9887,6 +9891,12 @@ function render3D() {
  <div id="blockSectionNote" style="font-size:11px;color:var(--fg-mute);margin-top:6px;"></div>
  </div>
  `;
+ const viewControls=['d3Mode','d3Rep','d3Cut','d3Class','d3Sub','d3Exag'];
+ for(const id of viewControls){const el=document.getElementById(id),saved=window._blockViewSettings?.[id];
+   if(saved!==undefined && (el.tagName!=='SELECT'||Array.from(el.options).some(o=>o.value===saved)))el.value=saved;
+   el.addEventListener('change',()=>{window._blockViewSettings=Object.fromEntries(viewControls.map(key=>[key,document.getElementById(key).value]));render3DPlot();renderBlockSection();});
+ }
+ document.getElementById('d3ExagVal').textContent=document.getElementById('d3Exag').value+'×';
  render3DPlot();
  renderBlockSection();
 }
@@ -9911,6 +9921,7 @@ function render3D() {
 // print the effective exaggeration factor under the plot.
 function scene3dConfig(userExag) {
  userExag = userExag || 1;
+ const axisInk=getComputedStyle(document.body).getPropertyValue('--fg').trim()||'#334155';
  const blocks = blockState.blocks || [];
  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity;
  for (const b of blocks) {
@@ -9930,24 +9941,24 @@ function scene3dConfig(userExag) {
    title: { text: 'Easting (m)', font: { size: 12 } },
    backgroundcolor: 'rgba(15,23,42,0.03)',
    gridcolor: 'rgba(100,116,139,0.2)',
-   showgrid: true, zeroline: false, color: 'rgba(100,116,139,0.5)',
-   tickfont: { size: 10, color: 'rgba(100,116,139,0.8)' },
+   showgrid: true, zeroline: false, color: axisInk,
+   tickfont: { size: 11, color: axisInk },
    showspikes: true, spikesides: true, spikethickness: 1, spikecolor: 'rgba(100,116,139,0.25)'
  },
  yaxis: {
    title: { text: 'Northing (m)', font: { size: 12 } },
    backgroundcolor: 'rgba(15,23,42,0.03)',
    gridcolor: 'rgba(100,116,139,0.2)',
-   showgrid: true, zeroline: false, color: 'rgba(100,116,139,0.5)',
-   tickfont: { size: 10, color: 'rgba(100,116,139,0.8)' },
+   showgrid: true, zeroline: false, color: axisInk,
+   tickfont: { size: 11, color: axisInk },
    showspikes: true, spikesides: true, spikethickness: 1, spikecolor: 'rgba(100,116,139,0.25)'
  },
  zaxis: {
    title: { text: 'Elevation (m)', font: { size: 12 } },
    backgroundcolor: 'rgba(15,23,42,0.03)',
    gridcolor: 'rgba(100,116,139,0.2)',
-   showgrid: true, zeroline: false, color: 'rgba(100,116,139,0.5)',
-   tickfont: { size: 10, color: 'rgba(100,116,139,0.8)' },
+   showgrid: true, zeroline: false, color: axisInk,
+   tickfont: { size: 11, color: axisInk },
    showspikes: true, spikesides: true, spikethickness: 1, spikecolor: 'rgba(100,116,139,0.25)'
  },
  aspectmode: 'manual',
@@ -9996,17 +10007,7 @@ function renderBlockSection() {
 // colorOpts: { colorscale, cmin, cmax, colorbar } -- caller decides the
 // colour treatment (quantile-discrete for grade, continuous Viridis for
 // variance); this function only builds the box geometry. See T10.1.
-function _blockMeshTrace(xs, ys, zs, cs, bx, by, bz, colorOpts) {
- const vx = [], vy = [], vz = [], intensity = [], ii = [], jj = [], kk = [];
- const faces = [[0,1,2],[0,2,3],[4,6,5],[4,7,6],[0,4,5],[0,5,1],[2,6,7],[2,7,3],[0,4,7],[0,7,3],[1,5,6],[1,6,2]];
- for (let n = 0; n < xs.length; n++) {
-  const o = vx.length, x = xs[n], y = ys[n], z = zs[n], hx = bx/2, hy = by/2, hz = bz/2;
-  [[x-hx,y-hy,z-hz],[x+hx,y-hy,z-hz],[x+hx,y+hy,z-hz],[x-hx,y+hy,z-hz],[x-hx,y-hy,z+hz],[x+hx,y-hy,z+hz],[x+hx,y+hy,z+hz],[x-hx,y+hy,z+hz]].forEach(p => { vx.push(p[0]); vy.push(p[1]); vz.push(p[2]); intensity.push(cs[n]); });
-  for (const f of faces) { ii.push(o+f[0]); jj.push(o+f[1]); kk.push(o+f[2]); }
- }
- return {type:'mesh3d',x:vx,y:vy,z:vz,i:ii,j:jj,k:kk,intensity,colorscale:colorOpts.colorscale,cmin:colorOpts.cmin,cmax:colorOpts.cmax,showscale:true,flatshading:true,opacity:0.82,colorbar:colorOpts.colorbar,hoverinfo:'skip'};
-}
-
+/* @orebit-inline: shared/geo/block-mesh.js */
 // Same quantile-class helpers Core's 3D Drillhole View uses (Core.html,
 // gradeClassBreaks/gradeDiscreteColorscale/GRADE_PALETTE_5) -- copied
 // verbatim rather than sharing a module, since Resource's build does not
@@ -10205,7 +10206,7 @@ function render3DPlot() {
  const cutVal = +document.getElementById('d3Cut').value;
  const useCut =!isNaN(cutVal) && document.getElementById('d3Cut').value!== '';
  const classFilter = document.getElementById('d3Class').value;
- const subN = +document.getElementById('d3Sub').value;
+ const subN = Math.max(1, Math.min(50000, Math.floor(+document.getElementById('d3Sub').value)||2000));
  const userExag = parseFloat(document.getElementById('d3Exag')?.value || '1') || 1;
 
  // WebGL guard (2026-08-05): if hardware WebGL is unavailable, don't let Plotly
@@ -10213,7 +10214,7 @@ function render3DPlot() {
  if (!webglAvailable()) { renderBlockModelFallback(); return; }
 
  // Categorical legend mode: split into 3 traces (high/medium/low confidence + Outside hidden).
- if (mode === 'class' && classState.labels) {
+ if (mode === 'class' && classState.labels && document.getElementById('d3Rep').value === 'points') {
  const buckets = { 3: [], 2: [], 1: [] }; // M, I, Inf
  for (let i = 0; i < blocks.length; i++) {
  if (!Number.isFinite(r.ok[i])) continue;
@@ -10278,9 +10279,10 @@ function render3DPlot() {
  if (classFilter === 'MI' && cl < 2) continue;
  if (classFilter === 'M' && cl < 3) continue;
  }
- const cv = mode === 'variance'? r.variance[i] : r.ok[i];
+ if(mode==='class' && classState.labels && classState.labels[i]<1)continue;
+ const cv = mode === 'class' && classState.labels ? classState.labels[i] : mode === 'variance'? r.variance[i] : r.ok[i];
  xs.push(blocks[i].cx); ys.push(blocks[i].cy); zs.push(blocks[i].cz); cs.push(cv);
- texts.push(`Grade: ${r.ok[i].toFixed(2)}<br>σ²: ${r.variance[i].toFixed(2)}<br>n: ${r.nNb[i]}`);
+ texts.push(`E: ${blocks[i].cx.toFixed(1)} m<br>N: ${blocks[i].cy.toFixed(1)} m<br>Z: ${blocks[i].cz.toFixed(1)} m<br>${elementLabelFor(setupState.element)}: ${r.ok[i].toFixed(3)}<br>σ²: ${r.variance[i].toFixed(3)}<br>n: ${r.nNb[i]}`);
  }
  // Subsample for perf
  let plotXs = xs, plotYs = ys, plotZs = zs, plotCs = cs, plotTx = texts, subStep = 1;
@@ -10299,7 +10301,11 @@ function render3DPlot() {
  // set (cs), not the subsampled one, so the legend doesn't shift depending
  // on which blocks happened to survive subsampling. See T10.1.
  let colorCs = plotCs, colorOpts;
- if (mode === 'variance') {
+ const surfaceView=document.getElementById('d3Rep')?.value==='surface';
+ if(surfaceView){plotXs=xs;plotYs=ys;plotZs=zs;plotCs=cs;plotTx=texts;subStep=1;colorCs=plotCs;}
+ if (mode === 'class' && classState.labels) {
+   colorOpts={colorscale:[[0,'#94a3b8'],[0.333,'#94a3b8'],[0.333,'#f59e0b'],[0.666,'#f59e0b'],[0.666,'#16a34a'],[1,'#16a34a']],cmin:1,cmax:3,colorbar:{tickvals:[1,2,3],ticktext:['Low','Medium','High'],title:{text:t('res.viewer.confidence')}}};
+ } else if (mode === 'variance') {
    colorOpts = { colorscale: 'Viridis', cmin: undefined, cmax: undefined,
      colorbar: { title: { text: 'σ²', font: { size: 11 } }, thickness: 18, len: 0.65, x: 1.02 } };
  } else {
@@ -10318,12 +10324,18 @@ function render3DPlot() {
    };
  }
 
- const rep = document.getElementById('d3Rep')?.value || 'solid';
- if (rep === 'solid') {
-  const mesh = _blockMeshTrace(plotXs, plotYs, plotZs, colorCs, blockState.size[0], blockState.size[1], blockState.size[2], colorOpts);
-  const meshLayout = {...plotTheme(), height:560, margin:{l:0,r:0,t:24,b:0}, title:`${plotXs.length.toLocaleString('en-US')} solid blocks${xs.length > subN ? ' (subsampled)' : ''}`, scene:scene3dConfig(userExag)};
+ const rep = document.getElementById('d3Rep')?.value || 'surface';
+ if (rep === 'solid' || rep === 'surface') {
+  let mesh = _blockMeshTrace(plotXs, plotYs, plotZs, colorCs, ...blockState.size, colorOpts, rep==='surface',plotTx);
+  let fallback=false;
+  if(!mesh){fallback=true;subStep=Math.max(1,Math.ceil(xs.length/subN));const indices=xs.map((_,i)=>i).filter(i=>i%subStep===0);
+    plotXs=indices.map(i=>xs[i]);plotYs=indices.map(i=>ys[i]);plotZs=indices.map(i=>zs[i]);
+    mesh=_blockMeshTrace(plotXs,plotYs,plotZs,indices.map(i=>colorCs[i]),...blockState.size,colorOpts,false,indices.map(i=>texts[i]));
+  }
+  const meshLayout = {...plotTheme(), paper_bgcolor:getComputedStyle(document.body).getPropertyValue('--bg').trim()||'#ffffff', height:560, margin:{l:0,r:0,t:24,b:0}, title:t(rep==='surface'&&!fallback?'res.viewer.surface':'res.viewer.solidSample'), scene:scene3dConfig(userExag)};
   Plotly.newPlot('d3Plot', [mesh], meshLayout, {responsive:true,displayModeBar:true,doubleClick:'reset',scrollZoom:true});
   _print3DExagNote(plotXs.length, xs.length, r.estimated, subStep);
+  const note=document.getElementById('d3PlotNote');if(note)note.textContent+=(rep==='surface'&&!fallback?' · '+t('res.viewer.completeSurface'):' · '+t('res.viewer.sampleNote'))+` · ${blockState.size.join(' × ')} m`;
   return;
  }
  const trace = {

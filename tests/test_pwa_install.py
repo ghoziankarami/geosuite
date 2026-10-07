@@ -22,7 +22,9 @@ Starts its own HTTP server on a free port; no other server required.
 """
 
 import functools
+import os
 import http.server
+import urllib.parse
 import shutil
 import socket
 import sys
@@ -67,8 +69,15 @@ def serve(directory: Path):
     class Quiet(http.server.SimpleHTTPRequestHandler):
         def log_message(self, *args):
             pass
+        def do_GET(self):
+            failure=self.server.test_responses.get(urllib.parse.urlsplit(self.path).path)
+            if failure:
+                status,body=failure
+                self.send_response(status);self.send_header('Content-Type','text/html');self.end_headers();self.wfile.write(body.encode());return
+            return super().do_GET()
     handler = functools.partial(Quiet, directory=str(directory))
     httpd = http.server.ThreadingHTTPServer(("127.0.0.1", port), handler)
+    httpd.test_responses={}
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     return httpd, f"http://localhost:{port}"
 
@@ -80,7 +89,7 @@ SHELL = ["/Core.html", "/Assay.html", "/Resource.html", "/vendor/plotly.min.js",
 
 def main():
     root = repo_root()
-    dist = root / "dist"
+    dist = Path(os.environ.get("OREBIT_TEST_DIST",root / "dist"))
     if not (dist / "Core.html").exists() or not (dist / "manifest.webmanifest").exists():
         print("FATAL: run `node build/build.mjs` first (dist/ has no Core.html or manifest)")
         return 2
@@ -137,6 +146,39 @@ def main():
             except Exception as e:  # noqa: BLE001 -- the failure text is the finding
                 check(f"offline: {mod} opens with its sample data and Plotly", False, str(e).splitlines()[0][:200])
             op.close()
+        ctx.set_offline(False)
+
+        print("\n── Update and recovery ──")
+        pg.evaluate("localStorage.setItem('pwa-project-canary','keep-project')")
+        cached_before=pg.evaluate("async()=>{const c=await caches.open('geosuite-app-v4:/');return (await c.match('/Core.html')).text()}")
+        httpd.test_responses['/Core.html']=(503,'temporary upstream failure')
+        pg.goto(f"{base}/Core.html?source=app",wait_until='load')
+        pg.wait_for_function("() => window.__i18nBooted===true")
+        check('transient HTTP503 opens the working cached app',pg.evaluate("typeof showTab==='function'"))
+        httpd.test_responses['/Core.html']=(401,'Sign in required')
+        pg.goto(f"{base}/Core.html?source=app",wait_until='load')
+        check('authentication failure stays visible rather than being bypassed with cache','Sign in required' in pg.inner_text('body'))
+        httpd.test_responses['/Core.html']=(200,'<html><body>Wrong deployment page</body></html>')
+        pg.goto(f"{base}/Core.html?source=app",wait_until='load')
+        cached_after=pg.evaluate("async()=>{const c=await caches.open('geosuite-app-v4:/');return (await c.match('/Core.html')).text()}")
+        check('an HTTP200 error page does not overwrite the valid offline module',cached_before==cached_after)
+        ctx.set_offline(True)
+        pg.goto(f"{base}/Core.html?source=app",wait_until='load')
+        pg.wait_for_function("() => window.__i18nBooted===true")
+        check('offline launch still works after failed update',pg.evaluate("localStorage.getItem('pwa-project-canary')==='keep-project'"))
+        await_deleted=pg.evaluate("async()=>{const c=await caches.open('geosuite-app-v4:/');for(const key of await c.keys())if(new URL(key.url).pathname==='/Core.html')await c.delete(key)}")
+        pg.goto(f"{base}/Core.html?source=app",wait_until='load')
+        check('missing offline shell shows a useful retry screen instead of blank content','GeoSuite is not available offline yet' in pg.inner_text('body') and pg.get_by_role('button').count()==1)
+        check('recovery never clears local project storage',pg.evaluate("localStorage.getItem('pwa-project-canary')==='keep-project'"))
+        ctx.set_offline(False);httpd.test_responses.clear()
+        core=site/'Core.html';core.write_text(core.read_text().replace('<head>','<head><script>window.__pwaUpdateCanary="new-version";</script>',1))
+        pg.goto(f"{base}/Core.html?source=app",wait_until='load')
+        pg.wait_for_function("() => window.__i18nBooted===true")
+        check('reconnection opens the new app without reinstalling',pg.evaluate("window.__pwaUpdateCanary==='new-version' && localStorage.getItem('pwa-project-canary')==='keep-project'"))
+        ctx.set_offline(True)
+        pg.goto(f"{base}/Core.html?source=app",wait_until='load')
+        pg.wait_for_function("() => window.__i18nBooted===true")
+        check('updated module is available on the next offline launch',pg.evaluate("window.__pwaUpdateCanary==='new-version'"))
         ctx.set_offline(False)
 
         print("\n── Install button ──")

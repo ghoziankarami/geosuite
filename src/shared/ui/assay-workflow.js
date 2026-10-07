@@ -167,7 +167,7 @@
     if(n!==2&&n!==13){const next=button(text('recordContinue'),()=>record(n,true),false,'next');next.disabled=!data()?.rows?.length;actions.append(next);}
     if(n===13&&typeof OrebitHandoff!=='undefined'&&OrebitHandoff.available())actions.append(button(window.__t('handoff.toResource'),()=>OrebitHandoff.send('Resource',exportMasterForEstimation),true));
     if([7,8,9,10,11].includes(n))actions.append(button(text('custom'),()=>{const control=Array.from(panel.querySelectorAll('select,input[type=number]')).find(el=>!el.closest('.assay-workflow-card'));if(control){control.scrollIntoView({block:'center',behavior:'smooth'});control.focus({preventScroll:true});}},true,'custom'));
-    card.append(actions);
+    card.append(actions);card.append(OrebitScreeningWorkflow.related('assay',n,navigate));
     const key=node('div',null,'action-key');for(const role of ['next','inspect','custom','advanced'])key.append(node('span',window.__t('ux.action.'+role),'action-key-'+role));card.append(key);
     const details=node('details',null,'workflow-notes');details.open=!!notesOpen;details.append(node('summary',text('notes')));
     const noteLabel=node('label',text('noteLabel'));noteLabel.htmlFor='assay-stage-note-'+n;

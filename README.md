@@ -114,7 +114,9 @@ Contributors can clone, build, test and submit a PR entirely in this public repo
 
 For an installed web app, open all three modules online before going offline.
 Chrome/Edge/Chromium provide **Install app**; Safari on macOS 14+ provides
-**File → Add to Dock**. Export project backups before clearing browser storage.
+**File → Add to Dock** from an open **Core app**, rather than the product landing page.
+Online launch checks for updates; a failed update retains a valid offline copy.
+If app files have not been cached, reconnect and use Retry. Export project backups before clearing browser storage.
 Optional Drive access, basemaps and update checks contact external services;
 see the [privacy policy](https://geosuite.orebit.id/privacy/).
 

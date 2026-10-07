@@ -33,7 +33,7 @@ jobs:
 
       - name: Install Playwright + Chromium
         run: |
-          pip install playwright
+          pip install playwright "PyMuPDF>=1.26,<2"
           python -m playwright install --with-deps chromium
 
       - name: End-to-end known-answer test (Core -> Assay -> Resource)
@@ -48,6 +48,7 @@ jobs:
           python tests/test_module_handoff.py
           python tests/test_resource_compatibility.py
           python tests/test_screening_reports.py
+          python tests/test_assay_workflow.py
 
       - name: CSV import matches committed parser snapshots
         run: python tests/known-answer/csv-parser-characterization.py

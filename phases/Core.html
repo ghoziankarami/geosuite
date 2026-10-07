@@ -11855,6 +11855,7 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
   try {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    OrebitScreeningReport.prepare(pdf);
     const W = pdf.internal.pageSize.getWidth();
     const H = pdf.internal.pageSize.getHeight();
 

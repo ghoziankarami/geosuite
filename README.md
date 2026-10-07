@@ -33,6 +33,11 @@ Windows: jangan mencari `.exe` di **Code → Download ZIP**.
    variography, set block geometry/density/search, estimate, validate and review
    grade–tonnage. Export results, plots and the PDF insight report.
 
+Use **Continue in Assay/Resource** for direct data transfer when available.
+Assay now offers a six-stage guided route with editable parameters and optional
+advanced tools; the [workflow guide](docs/WORKFLOW.md) explains review records
+and what travels between modules.
+
 Read the [input format and units](docs/DATA-FORMAT.md) before importing your own
 files. Nonstandard headers use manual column assignment; a missing value is not
 zero. Keep backups of CSVs and project exports between modules.

@@ -40,7 +40,7 @@ try:
   tab(r,10);png=dl(r,'#gtPlotExportPngBtn',tmp/'resource.png');check(png.startswith(b'\x89PNG\r\n\x1a\n'),'Resource native PNG download works')
   r.evaluate("_recordExport('PNG','oversize-canary',{filename:'large.png',mime:'image/png',content:'data:image/png;base64,'+'A'.repeat(2000001)})");check(r.evaluate("JSON.parse(localStorage.getItem('orebitExportHistory'))[0].content===''"),'Oversized PNG is never stored as a corrupt partial download')
   for pg,name in [(c,'Core'),(a,'Assay'),(r,'Resource')]:
-   check(not pg.errors and pg.evaluate('window.__reportRenderFailures.length===0'),name+' reports produce no page or swallowed renderer failures')
+   check(not pg.errors and pg.evaluate('window.__reportRenderFailures.length===0'),name+' reports produce no page or swallowed renderer failures: '+str(pg.errors)+' / '+str(pg.evaluate('window.__reportRenderFailures')))
   check(r.evaluate("(() => {const old=setupState.reportCutoff;setActiveDataset(DATA,{source:'upload'});const ok=setupState.reportCutoff===null&&document.getElementById('reportCutoff').value==='';setupState.reportCutoff=old;return ok})()"),'Every dataset entry resets the previous report cutoff')
   b.close()
 finally:server.shutdown();server.server_close()

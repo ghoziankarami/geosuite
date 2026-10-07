@@ -42,7 +42,7 @@ npm test
 To run the browser checks, install Playwright and Chromium for Python, build with `npm run build`, then start three local servers on ports 8767, 8768, and 8769. The test scripts use those separate origins for module handoff:
 
 ```bash
-python3 -m pip install playwright
+python3 -m pip install playwright "PyMuPDF>=1.26,<2"
 python3 -m playwright install chromium
 python3 -m http.server 8767 -d dist &
 python3 -m http.server 8768 -d dist &
@@ -83,3 +83,7 @@ Serve the complete `dist/` folder under one path, such as `/geosuite/`. The mani
 4. Open a PR here. The maintainer records the matching change in the canonical development source before the next public export; you do not need that private checkout. See the PR template for carry-back status.
 
 Security reports belong through the private channel in [SECURITY.md](../SECURITY.md). For input examples, prefer synthetic or anonymised data. Public issues and PR attachments are visible to everyone.
+
+The guided Assay workflow and native PDF interpretation ledger are exercised by
+`python tests/test_assay_workflow.py`, including an actual upload/download, edited
+controls, stale reviews, long-note pagination and a mobile viewport.

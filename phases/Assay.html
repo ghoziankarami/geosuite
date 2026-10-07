@@ -2176,7 +2176,33 @@ input[type="checkbox"], input[type="radio"] {
     <div style="font-size:12px;color:#94a3b8;font-family:Inter,system-ui,sans-serif;margin-top:4px;">Preparing your workspace</div>
   </div>
 </div>
-<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+<style>@keyframes spin{to{transform:rotate(360deg)}}
+.assay-guided nav.tabs .sidebar-section-label{display:none}
+body.assay-guided nav.tabs .tab[data-workflow-advanced="true"]{display:none!important}
+body.assay-guided.assay-advanced-open nav.tabs .tab[data-workflow-advanced="true"]{display:flex!important}
+.assay-guided nav.tabs .tab-done::after{display:none}
+.assay-guided nav.tabs .workflow-reviewed::after{content:'✓';display:inline;margin-left:auto;color:var(--good)}
+#assayAdvancedToggle{margin:12px 10px;font-size:12px;white-space:normal;min-height:40px}
+.assay-workflow-card{margin:0 0 22px;padding:22px;border:1px solid var(--border);border-radius:14px;background:var(--card,var(--bg));box-shadow:0 3px 12px rgba(15,23,42,.035);scroll-margin-top:90px}
+.assay-workflow-card h2{margin:3px 0 8px;font-size:24px}
+.workflow-eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-mute);margin:0}
+.workflow-purpose,.workflow-recommendation{font-size:13px;line-height:1.6;color:var(--fg-mute);max-width:85ch}
+.workflow-insight{padding:12px 16px;margin:14px 0;border-radius:9px;border-left:3px solid var(--accent,#008c83);background:rgba(0,140,131,.06)}
+.workflow-insight strong{font-size:12px}.workflow-insight p{margin:5px 0 0;line-height:1.6;font-size:14px;color:var(--fg)}
+.workflow-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.workflow-notes{border-top:1px solid var(--border);padding-top:10px;font-size:12px}
+.workflow-notes summary,.workflow-review-list summary{cursor:pointer;color:var(--fg-mute);min-height:30px}
+.workflow-notes label{display:block;margin:8px 0}.workflow-notes textarea{width:100%;box-sizing:border-box;min-height:72px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg)}
+.workflow-status{font-size:11px;color:var(--fg-mute);margin:10px 0 0}
+.workflow-review-list{margin:0 0 20px;padding:16px;border:1px solid var(--border);border-radius:10px}
+.workflow-review-row{padding:12px 0;border-top:1px solid var(--border);font-size:12px;line-height:1.5}
+.workflow-review-row pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.assay-guided .panel>h2{display:none}
+.assay-guided .panel>.next-step{display:none}
+.assay-optional-tools{margin:16px 0;border:1px solid var(--border);border-radius:10px;padding:14px}
+.assay-optional-tools>summary{cursor:pointer;font-size:13px;color:var(--fg-mute);min-height:28px}
+@media(max-width:600px){.assay-workflow-card{padding:16px;margin-bottom:14px}.assay-workflow-card h2{font-size:21px}.workflow-actions .btn{flex:1 1 145px;white-space:normal;min-height:42px}}
+</style>
 
 <!-- Page loading spinner -->
 <div class="page-loader" id="pageLoader">
@@ -2510,16 +2536,18 @@ input[type="checkbox"], input[type="radio"] {
 <div class="panel" id="tab8" role="tabpanel">
   <h2><span data-i18n="asy.st.title">EDA Stats — Comprehensive Distribution Analysis</span></h2>
   <div class="hint"><span data-i18n="asy.st.hint">A high CV (&gt;1.5) flags the need for a top-cut. Log-skewed distributions are candidates for a log-transform before kriging.</span></div>
-
+  <div id="st"></div>
+  <details class="assay-optional-tools" id="assayStatsAdvanced">
+    <summary data-i18n="asy.workflow.statsAdvanced">Optional: treatment proposals, metal contribution and declustering</summary>
   <div class="card">
     <h3><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <span data-i18n="asy.st.autopilot">Auto-Pilot</span></h3>
     <button class="btn" onclick="autoClean()"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <span data-i18n="asy.st.autoClean">Auto Clean &amp; Analyze</span></button>
     <p style="font-size:12px;color:var(--fg-mute);margin-top:8px;"><span data-i18n="asy.st.autoCleanHint">Runs a P99 top-cut, K-Means clustering, and ANOVA validation in one go.</span></p>
   </div>
 
-  <div id="st"></div>
   <div id="gradeContrib"></div>
   <div id="declusterPanel"></div>
+  </details>
 </div>
 
 <!-- TAB 9: TOP-CUT -->
@@ -2913,6 +2941,7 @@ let DATA = EMBEDDED_DATA;
 /* @orebit-inline: shared/i18n/index.js */
 /* @orebit-inline: shared/io/index.js */
 /* @orebit-inline: shared/io/screening-report.js */
+/* @orebit-inline: shared/ui/assay-workflow.js */
 /* @orebit-inline: shared/io/parse.js */
 /* @orebit-inline: shared/io/grades.js */
 /* @orebit-inline: shared/io/columns.js */
@@ -3615,7 +3644,8 @@ function buildBundle(projectName) {
     // DATA.rows and are saved either way — while the audit trail read "nothing has
     // been applied", which is a false statement about data that HAD been changed.
     // The pipeline's raw baseline is what makes undo possible after a reload.
-    treatments: _serialiseTreatments()
+    treatments: _serialiseTreatments(),
+    interpretation: window.OrebitAssayWorkflow?.serialise()
   };
 }
 
@@ -3692,6 +3722,7 @@ function setActiveDataset(input, opts) {
 //                  a legacy bundle whose record was never captured (marked unknown)
 //   projectName -- the project this data belongs to, or null for unsaved data
 function _resetDatasetState(treatments, projectName) {
+  if (window.OrebitAssayWorkflow) window.OrebitAssayWorkflow.reset();
   window._domainTagged = null;
   window._domainNames = null;
   window._domainMethod = null;
@@ -3816,6 +3847,7 @@ function applyBundle(bundle) {
   window._lastSchemaMeta = null;
   window._lastUnitConversions = [];
   window._lastUnitAssumptions = [];
+  if (window.OrebitAssayWorkflow) window.OrebitAssayWorkflow.restore(bundle.interpretation);
   _numberFormatMode = 'auto';
   // _domainTagged/_domainNames/_domainMethod are already reset by
   // _resetDatasetState() called from setActiveDataset(); only the render-output
@@ -13178,6 +13210,7 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
   try {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    OrebitScreeningReport.prepare(pdf);
     const W = pdf.internal.pageSize.getWidth();
     const H = pdf.internal.pageSize.getHeight();
     const methodBasis=document.getElementById('assayReportNote')?.value.trim() || t('asy.reportInsight.notJustified');
@@ -13202,6 +13235,7 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
         ['Method justification',methodBasis],
         ['Result',noGrades]
       ]);
+      OrebitScreeningReport.interpretation(pdf,'Assay',window.OrebitAssayWorkflow?.serialise());
       await OrebitScreeningReport.save(pdf,'Assay',`Pre-Estimation-EDA-Report-${new Date().toISOString().slice(0,10)}.pdf`);
       return;
     }
@@ -13591,21 +13625,21 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
     pdf.setTextColor(75, 85, 99);
 
     const interp = [];
-    const cvDelta = ((sComp.cv - s.cv) / s.cv * 100);
+    const cvDelta = s.cv > 0 ? ((sComp.cv - s.cv) / s.cv * 100) : null;
     if (sCapped.cv < s.cv) {
       interp.push(`• Hypothetical P99 cap (NOT applied by report) reduces CV ${s.cv.toFixed(2)} → ${sCapped.cv.toFixed(2)} (drop ${(s.max - sCapped.max).toFixed(3)} dari max).`);
     }
     if (sComp.cv < s.cv) {
-      interp.push(`• Compositing reduces CV ${cvDelta.toFixed(1)}% → distribution more homogeneouseous, ready for variography.`);
+      interp.push(`• Compositing changes CV by ${cvDelta.toFixed(1)}%. Review grade distribution and geological continuity before variography.`);
     } else {
-      interp.push(`• CV after compositing remains high (${sComp.cv.toFixed(2)}) — consider a larger composite length or domain split.`);
+      interp.push(`• CV after compositing is ${sComp.cv.toFixed(2)}. This descriptive statistic alone does not justify a cap or domain split.`);
     }
     if (sComp.mean > s.mean * 1.05) {
       interp.push(`• Mean naik ${((sComp.mean - s.mean)/s.mean*100).toFixed(1)}% post-composite — high-grade interval terbobot panjangnya.`);
     } else if (sComp.mean < s.mean * 0.95) {
       interp.push(`• Mean drops ${((s.mean - sComp.mean)/s.mean*100).toFixed(1)}% post-composite — distribution smoothed by weighted-average.`);
     } else {
-      interp.push(`• Mean stable (Δ ${pct(s.mean, sComp.mean)}) — dataset is well-supported.`);
+      interp.push(`• Mean change ${pct(s.mean, sComp.mean)}. Similar means do not establish adequate drilling or geological support.`);
     }
     interp.push(`• P99 is a hypothetical sensitivity, not a treatment record. Actual composite ${compositeLen}m uses informed-length weighting; review SMU separately.`);
 
@@ -13915,6 +13949,7 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
       ['Next step','Export the actual composited master and preserve treatment, units and geometry notes for Resource']
     ]);
     const _pdfName = `Pre-Estimation-EDA-Report-${today}.pdf`;
+    OrebitScreeningReport.interpretation(pdf,'Assay',window.OrebitAssayWorkflow?.serialise());
     await OrebitScreeningReport.save(pdf,'Assay',_pdfName);
     maybeShowSupportMoment();
   } catch (err) {

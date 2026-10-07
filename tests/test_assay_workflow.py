@@ -1,0 +1,102 @@
+"""Guided workflow through real upload, editable controls, review provenance and PDF download."""
+import functools,http.server,json,tempfile,threading,os,shutil
+import fitz
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+ROOT=next(p for p in Path(__file__).resolve().parents if (p/'build/build.mjs').exists())
+passed=0
+class Quiet(http.server.SimpleHTTPRequestHandler):
+ def log_message(self,*args):pass
+server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(Quiet,directory=str(ROOT/'dist')))
+threading.Thread(target=server.serve_forever,daemon=True).start()
+def check(condition,message):
+ global passed
+ assert condition,message
+ passed+=1;print('PASS:',message,flush=True)
+def stage(p,n):
+ p.locator(f'nav.tabs .tab[onclick="showTab({n})"]').click();p.wait_for_timeout(180)
+def status(p,n):return p.evaluate('(n)=>OrebitAssayWorkflow.snapshot().find(r=>r.stage===n).status',n)
+try:
+ with tempfile.TemporaryDirectory() as tmp,sync_playwright() as pw:
+  b=pw.chromium.launch(headless=True,args=['--no-sandbox'])
+  p=b.new_page(accept_downloads=True,viewport={'width':1440,'height':1000});errors=[];p.on('pageerror',lambda e:errors.append(str(e)))
+  p.add_init_script("localStorage.setItem('lang','en');localStorage.setItem('orebit.lang','en');localStorage.setItem('orebit_tour_seen_P2','1')")
+  p.goto(f'http://127.0.0.1:{server.server_port}/Assay.html');p.wait_for_function('() => window.OrebitAssayWorkflow && document.body.classList.contains("assay-guided")')
+  if p.locator('.tour-skip').is_visible():p.locator('.tour-skip').click()
+  p.evaluate('''() => {window.__workflowFailures=[];const old=safeRender;window.safeRender=(name,fn)=>old(name,()=>{try{return fn()}catch(e){window.__workflowFailures.push(name+':'+e.message);throw e}});safeRender('canary',()=>{throw Error('workflow-canary')});}''')
+  check(p.evaluate("window.__workflowFailures.some(e=>e.includes('workflow-canary'))"),'Swallowed renderer detector is live')
+  p.evaluate('window.__workflowFailures=[]')
+  csv=Path(tmp)/'general-gold.csv';csv.write_text('hole_id,from_m,to_m,au_gpt,midx,midy,midz,domain\n'+''.join(f'H{i//4}, {i%4*2}, {i%4*2+2}, {i}, {100+i//4*30}, 200, {300-i%4*2}, D\n' for i in range(12)))
+  stage(p,2);p.locator('#fileInput').set_input_files(str(csv));p.wait_for_function('() => DATA.rows.length===12&&currentTab===3')
+  check(p.locator('nav.tabs .tab:visible').count()==7,'Main navigation has dashboard plus six steps: '+str(p.evaluate("[...document.querySelectorAll('nav.tabs .tab')].map(e=>[e.textContent,e.dataset.workflowAdvanced,getComputedStyle(e).display])"))+str(errors))
+  check(p.locator('#tab3 .assay-workflow-card').is_visible(),'Upload leads to the real validation stage')
+  check(status(p,3)=='not-reviewed','Opening a tab never claims analyst review')
+  p.wait_for_timeout(100)
+  check(p.locator('nav.tabs .tab[onclick="showTab(3)"]').evaluate("e=>getComputedStyle(e,'::after').display==='none'"),'Visited tab does not show a false reviewed checkmark')
+  p.locator('#tab3 .workflow-notes summary').click();p.locator('#assay-stage-note-3').fill('Initial data validation reviewed.');p.locator('#tab3 .workflow-notes button').click()
+  check(status(p,3)=='reviewed','Validation is recorded explicitly')
+  p.wait_for_timeout(100)
+  check(p.locator('nav.tabs .tab[onclick="showTab(3)"]').evaluate("e=>getComputedStyle(e,'::after').display!=='none'"),'Explicit review has a visible review checkmark')
+  p.evaluate("DATA.rows[0][colIdx('au_gpt')]=-1")
+  check(status(p,3)=='stale','Changed grades invalidate the validation review')
+  p.evaluate("DATA.rows[0][colIdx('au_gpt')]=0")
+  stage(p,8);check(p.locator('#assayStatsAdvanced').evaluate('(e)=>!e.open'),'Advanced statistics are optional and collapsed')
+  check(p.locator('#statHist').is_visible(),'Primary distribution plot remains visible')
+  p.locator('#tab8 .workflow-notes summary').click();p.locator('#assay-stage-note-8').fill('Distribution reviewed; retain valid zero; no cap applied.')
+  p.locator('#tab8 .workflow-notes button').click();check(status(p,8)=='reviewed','Explicit review captures the distribution decision')
+  check(p.evaluate("!window._capLog.au_gpt"),'Recommended review does not silently cap grades')
+  stage(p,11);p.locator('#domainMethodSelect').select_option('cutoff');p.locator('#domainCutoff').fill('0');p.locator('#domainCutoff').press('Tab');p.wait_for_timeout(200)
+  p.locator('#tab11 .workflow-notes summary').click();p.locator('#assay-stage-note-11').fill('Zero cutoff for grouping only, not economics.');p.locator('#tab11 .workflow-notes button').last.click()
+  check(p.evaluate("OrebitAssayWorkflow.snapshot().find(r=>r.stage===11).parameters.actualDomain.cutoff===0"),'Ledger keeps exact zero domain cutoff and actual method')
+  p.locator('#domainCutoff').fill('1.25');p.locator('#domainCutoff').press('Tab');p.wait_for_timeout(200);check(status(p,11)=='stale','Changed domain parameters invalidate prior review')
+  p.locator('#tab11 .workflow-notes button').last.click();check(status(p,11)=='reviewed','Re-review records the edited domain parameters')
+  stage(p,7);p.locator('#compLength').fill('3.5');p.locator('#compLength').press('Tab');p.wait_for_timeout(180)
+  p.locator('#tab7 .workflow-notes summary').click();p.locator('#assay-stage-note-7').fill('Custom 3.5 m composite selected for screening.');p.locator('#tab7 .workflow-notes button').click()
+  check(p.evaluate("OrebitAssayWorkflow.snapshot().find(r=>r.stage===7).parameters.composite.length===3.5"),'Custom composite length is retained in reviewed settings')
+  p.locator('#compLength').fill('4');p.locator('#compLength').press('Tab');p.wait_for_timeout(180);check(status(p,7)=='stale','Changed composite length invalidates prior review')
+  p.locator('#tab7 .workflow-notes button').click()
+  p.locator('#assayAdvancedToggle').click();check(p.locator('nav.tabs .tab:visible').count()==13,'All thirteen tools remain reachable in advanced navigation')
+  stage(p,9);p.locator('#customCut').fill('0');p.locator('#tab9 .workflow-notes summary').click();p.locator('#assay-stage-note-9').fill('<img src=x onerror="window.__noteExecuted=true"> No treatment selected.');p.locator('#tab9 .workflow-notes button').click()
+  check(p.evaluate("OrebitAssayWorkflow.snapshot().find(r=>r.stage===9).parameters.controls.customCut==='0'"),'Exact unapplied zero control is distinguished from applied treatment')
+  p.locator('#customCut').fill('5');p.locator('#customCut').press('Tab');p.wait_for_timeout(180);check(status(p,9)=='stale','Edited treatment proposal invalidates prior settings review')
+  bundle=p.evaluate("() => buildBundle('workflow-project')");p.evaluate('applyBundle',bundle);p.wait_for_timeout(300)
+  check(any(r['note'].startswith('Custom 3.5') for r in p.evaluate('OrebitAssayWorkflow.snapshot()')),'Project bundle round-trip preserves interpretation notes')
+  p.evaluate('showTab(13)');p.wait_for_timeout(300)
+  check(p.evaluate('window.__noteExecuted!==true') and p.locator('.workflow-review-list img').count()==0,'Free-text interpretation remains inert markup')
+  with p.expect_download(timeout=90000) as download:p.locator('#btnReportPdf').click()
+  pdf=Path(tmp)/'assay.pdf';download.value.save_as(str(pdf));data=pdf.read_bytes()
+  evidence=os.environ.get('GEOSUITE_EVIDENCE_DIR')
+  if evidence:
+   out=Path(evidence);out.mkdir(parents=True,exist_ok=True);shutil.copy2(pdf,out/'assay-workflow.pdf');p.screenshot(path=str(out/'assay-report-desktop.png'))
+  check(data.startswith(b'%PDF-') and b'%%EOF' in data,'Native Assay PDF download succeeds')
+  check(b'Custom 3.5 m composite' in data and b'Recorded settings' in data,'PDF includes stage notes and recorded settings')
+  with fitz.open(pdf) as doc:
+   text=' '.join(' '.join(page.get_text().split()) for page in doc)
+   check('earlier data/parameter state' in text and 'not a prerequisite' in text,'PDF explains stale reviews and optional stages honestly')
+   bad=[(i+1,word) for i,page in enumerate(doc) for word in page.get_text('words') if not(word[0]>=0 and word[1]>=0 and word[2]<=page.rect.width+1 and word[3]<=page.rect.height+1)]
+   check(not bad,'PDF text stays within each page: '+str(bad[:8]))
+  check(p.evaluate("window._reportInterpretationSnapshot.stages.some(r=>r.stage===9&&r.status==='stale')"),'PDF exports actual stale state instead of inventing approval')
+  if p.locator('#orebit-support-moment .support-close-btn').is_visible():p.locator('#orebit-support-moment .support-close-btn').click()
+  p.evaluate('showTab(8)');p.wait_for_timeout(200)
+  if not p.locator('#tab8 .workflow-notes').evaluate('(e)=>e.open'):p.locator('#tab8 .workflow-notes summary').click()
+  long_note='Long interpretation for pagination. '*130+'END-OF-LONG-INTERPRETATION'
+  p.locator('#assay-stage-note-8').fill(long_note);p.locator('#tab8 .workflow-notes button').click();p.evaluate('showTab(13)')
+  if p.locator('#orebit-support-moment .support-close-btn').is_visible():p.locator('#orebit-support-moment .support-close-btn').click()
+  with p.expect_download(timeout=90000) as download:p.locator('#btnReportPdf').click()
+  long_pdf=Path(tmp)/'long.pdf';download.value.save_as(str(long_pdf))
+  with fitz.open(long_pdf) as doc:
+   check('END-OF-LONG-INTERPRETATION' in ''.join(page.get_text() for page in doc),'Long interpretation survives pagination to its final marker')
+   last=doc[-1].get_text();check(f'{len(doc)} / {len(doc)}' in last,'Footer accounts for every added interpretation page')
+  if p.locator('#orebit-support-moment .support-close-btn').is_visible():p.locator('#orebit-support-moment .support-close-btn').click()
+  p.evaluate("applyLanguage('id')");check('Catatan' in p.locator('#tab13 .workflow-notes').inner_text(),'Language switch updates the guided workflow')
+  p.set_viewport_size({'width':390,'height':844});p.evaluate('showTab(8)');p.wait_for_timeout(200)
+  check(p.evaluate('document.documentElement.scrollWidth<=window.innerWidth'),'Guided workflow fits a 390 px mobile viewport')
+  check(p.locator('#tab8 .workflow-actions button').first.is_visible(),'Main action remains visible on mobile')
+  csv2=Path(tmp)/'second.csv';csv2.write_text('hole_id,from_m,to_m,cu_pct,midx,midy,midz\nC1,0,2,0,10,10,20\nC2,0,2,1,40,10,20\n')
+  p.evaluate('showTab(2)');p.locator('#fileInput').set_input_files(str(csv2));p.wait_for_function('() => DATA.rows.length===2&&currentTab===3')
+  check(all(r['status']=='not-reviewed' and r['note']=='' for r in p.evaluate('OrebitAssayWorkflow.snapshot()')),'New commodity upload clears previous reviews and notes')
+  p.evaluate("OrebitAssayWorkflow.restore({schema:'orebit-assay-interpretation',version:1,stages:{invalid:true}})");check(p.evaluate('OrebitAssayWorkflow.snapshot().length===13'),'Malformed optional ledger cannot break legacy project loading')
+  check(not errors and p.evaluate('window.__workflowFailures.length===0'),'Actual workflow has no page or swallowed rendering errors')
+  b.close()
+finally:server.shutdown();server.server_close()
+print('ASSAY WORKFLOW:',passed,'passed',flush=True)

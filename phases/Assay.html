@@ -7422,10 +7422,9 @@ function renderMultivariate() {
   }
 }
 let _compositeCache = null;
-// Separate from _compositeCache: the sensitivity sweep on the Composite tab
-// calls computeComposites() in a loop over 8 test lengths, so _compositeCache
-// ends up holding whatever length that loop last tried, not what the user
-// actually chose. This tracks only the value renderCompositing() reads from
+// Track the chosen length independently of panel lifetime. Sensitivity trials
+// must not replace the selected preview/cache used by review and CSV export.
+// This tracks only the value renderCompositing() reads from
 // the #compLength input -- it survives tab navigation (showTab() tears down
 // other tabs' DOM), which is why the Report tab reads this instead of the
 // input directly.
@@ -7586,7 +7585,7 @@ function _refreshDomainScopeSelectors() {
   if (bar) bar.style.display = domains.length > 1 ? 'flex' : 'none';
 }
 
-function computeComposites(length = 1.0, minLength = 0.5, breakAtLitho = false) {
+function computeComposites(length = 1.0, minLength = 0.5, breakAtLitho = false, cacheResult = true) {
   if (!DATA) return null;
   const fi = colIdx('from_m'), ti = colIdx('to_m'), li = colIdx('lithology'), di = colIdx('domain');
   const elemCols = availableElements();
@@ -7762,14 +7761,15 @@ function computeComposites(length = 1.0, minLength = 0.5, breakAtLitho = false) 
   // above) or because it never had a valid from/to at all. Both are the same
   // fact from a reconciliation standpoint: this hole is not in the output.
   const droppedHoles = holes.filter(h => !holesWithComposites.has(h));
-  _compositeCache = {
+  const result = {
     length, minLength, breakAtLitho: !!(breakAtLitho && li >= 0), composites,
     droppedTailLength: +droppedTailLength.toFixed(3),
     gapLength: +gapLength.toFixed(3),
     overlapCount,
     droppedHoles,
   };
-  return _compositeCache;
+  if (cacheResult) _compositeCache = result;
+  return result;
 }
 
 // ============= SPRINT 2 v2.3: COMPOSITE LENGTH SENSITIVITY (Feature 3) =============
@@ -7794,7 +7794,7 @@ function renderCompositeSensitivity() {
   const testLengths = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0];
   const breakAtLitho = _compBreakAtLitho();
   const results = testLengths.map(len => {
-    const res = computeComposites(len, 0.5, breakAtLitho);
+    const res = computeComposites(len, 0.5, breakAtLitho, false);
     if (!res || !res.composites.length) return { len, n: 0, mean: null, sd: null, cv: null };
     const vals = res.composites.map(c => c[elemCol + '_comp']).filter(v => typeof v === 'number');
     if (!vals.length) return { len, n: 0, mean: null, sd: null, cv: null };
@@ -8014,7 +8014,8 @@ function renderCompositing() {
 }
 
 function exportComposites() {
-  if (!_compositeCache) computeComposites(_reportCompositeLength(), 0.5, _compBreakAtLitho());
+  // Recalculate against the current data/settings, just as the master export does.
+  computeComposites(_reportCompositeLength(), 0.5, _compBreakAtLitho());
   if (!_compositeCache) return;
   const cols = Object.keys(_compositeCache.composites[0] || {});
   const lines = [cols.join(',')];

@@ -1,5 +1,6 @@
 """Real PDF/PNG downloads plus hand-known report numbers; no customer fixtures."""
-import functools,http.server,json,struct,tempfile,threading
+import functools,http.server,json,struct,tempfile,threading,re
+import fitz
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 ROOT=next(p for p in Path(__file__).resolve().parents if (p/'build/build.mjs').exists());passed=0
@@ -15,10 +16,22 @@ def openpage(b,phase):
 def dl(p,sel,path):
  with p.expect_download(timeout=90000) as d:p.locator(sel).click()
  d.value.save_as(str(path));return path.read_bytes()
+def pdf_layout(data,module):
+ with fitz.open(stream=data,filetype='pdf') as doc:
+  outside=[];stale=[];numbering=[]
+  for i,page in enumerate(doc,1):
+   blocks=page.get_text('blocks');footer='\n'.join(b[4] for b in blocks if b[1]>page.rect.height-45)
+   numbering.append(re.search(r'(?m)^'+re.escape(f'{i} / {len(doc)}')+r'$' ,footer) is not None)
+   if re.search(r'\bPage\s+\d+\s+of\s+\d+\b',footer):stale.append(i)
+   outside.extend((i,b[4][:80]) for b in blocks if b[0]<-.5 or b[1]<-.5 or b[2]>page.rect.width+.5 or b[3]>page.rect.height+.5)
+  check(not outside,module+' PDF text remains inside every page: '+repr(outside))
+  check(not stale and all(numbering),module+' PDF has final numbering on every page with no legacy totals: '+repr(stale))
 def pdf(p,sel,path,module):
  data=dl(p,sel,path);p.wait_for_timeout(200);
  if p.locator('#orebit-support-moment .support-close-btn').is_visible():p.locator('#orebit-support-moment .support-close-btn').click()
- check(data.startswith(b'%PDF-') and b'%%EOF' in data and b'Screening due-diligence insight' in data,module+' PDF downloads with audit appendix');check(b'Results and next steps' in data,module+' PDF opens with a readable executive summary');return dict(p.evaluate('() => window._reportAuditSnapshot.rows'))
+ check(data.startswith(b'%PDF-') and b'%%EOF' in data and b'Screening due-diligence insight' in data,module+' PDF downloads with audit appendix');check(b'Results and next steps' in data,module+' PDF opens with a readable executive summary')
+ pdf_layout(data,module)
+ return dict(p.evaluate('() => window._reportAuditSnapshot.rows'))
 try:
  with tempfile.TemporaryDirectory() as t,sync_playwright() as pw:
   tmp=Path(t);b=pw.chromium.launch(headless=True,args=['--no-sandbox'])
@@ -36,9 +49,11 @@ try:
   r.locator('#reportCutoff').fill('1.5');r.locator('#reportCutoffNote').fill('Independent comparison threshold; no economic assumptions.');cutoff_report=pdf(r,'#pdf-export-btn',tmp/'resource-cutoff.pdf','Resource exact cutoff');headline=r.evaluate('() => window._resourceReportSnapshot');check(headline['cutoff']==1.5 and headline['generated']['mt']==4e-6 and headline['estimated']['mt']==4e-6 and headline['selected']['mt']==3e-6 and headline['selected']['meanGrade']==3 and abs(headline['metalTonnes']-9e-6)<1e-15,'Exact PDF cutoff between curve points reconciles generated, estimated and selected tonnage to hand answer');check('Cutoff >= 1.5 g/t' in cutoff_report['Headline result'] and '3 blocks' not in cutoff_report['Headline result'],'Readable PDF headline declares cutoff and actual block count');check(before==r.evaluate('() => window._gtCurveSnapshot'),'Headline cutoff leaves original curve controls and results unchanged');check(cutoff_report['Cutoff justification']=='Independent comparison threshold; no economic assumptions.','User cutoff rationale is carried into the PDF without inventing economics')
   r.locator('#reportCutoff').fill('0.0000001');tiny_report=pdf(r,'#pdf-export-btn',tmp/'tiny-cutoff.pdf','Resource tiny cutoff');check('1e-7' in tiny_report['Report cutoff and confidence scope'] and r.evaluate('window._resourceReportSnapshot.cutoff')==1e-7,'Tiny report cutoff is recorded exactly without rounding to zero')
   r.locator('#reportCutoffNote').fill('');r.locator('#reportCutoff').fill('4');pdf(r,'#pdf-export-btn',tmp/'resource-empty.pdf','Resource empty selection');empty=r.evaluate('() => window._resourceReportSnapshot');check(empty['selected']['blocks']==0 and empty['selected']['meanGrade'] is None and empty['metalTonnes'] is None,'No blocks above report cutoff produces no invented grade or metal');check('No justification provided' in r.evaluate('window._resourceReportSnapshot.justification'),'Missing justification is explicitly recorded');r.locator('#reportCutoff').fill('1.5');r.evaluate("setReportCutoff('1.5');saveResourceSession();setupState.reportCutoff=null;restoreResourceSession()");check(r.evaluate('setupState.reportCutoff===1.5'),'Report cutoff persists for the matching dataset');
-  tab(r,10);r.evaluate('classState.labels[0]=1');r.locator('#gtClass').check();r.locator('button[onclick="computeGT()"]').click();tab(r,12);r.locator('#reportCutoff').fill('');filtered=pdf(r,'#pdf-export-btn',tmp/'confidence-only.pdf','Resource confidence filter');filtered_state=r.evaluate('window._resourceReportSnapshot');check(filtered_state['cutoff'] is None and filtered_state['useClass'] and filtered_state['selected']['mt']==3e-6 and 'High + medium confidence only' in filtered['Headline result'],'PDF records the current confidence filter with an explicit no-cutoff selection');r.evaluate("applyLanguage('id')");indonesian=dl(r,'#pdf-export-btn',tmp/'resource-id.pdf');check(b'Ringkasan hasil dan langkah berikutnya' in indonesian and r.evaluate('window._resourceReportSnapshot.selected.mt')==3e-6,'Indonesian readable summary retains the same selected tonnes');r.evaluate("applyLanguage('en')");
+  tab(r,10);r.evaluate('classState.labels[0]=1');r.locator('#gtClass').check();r.locator('button[onclick="computeGT()"]').click();tab(r,12);r.locator('#reportCutoff').fill('');filtered=pdf(r,'#pdf-export-btn',tmp/'confidence-only.pdf','Resource confidence filter');filtered_state=r.evaluate('window._resourceReportSnapshot');check(filtered_state['cutoff'] is None and filtered_state['useClass'] and filtered_state['selected']['mt']==3e-6 and 'High + medium confidence only' in filtered['Headline result'],'PDF records the current confidence filter with an explicit no-cutoff selection');r.evaluate("applyLanguage('id')");indonesian=dl(r,'#pdf-export-btn',tmp/'resource-id.pdf');check(b'Ringkasan hasil dan langkah berikutnya' in indonesian and r.evaluate('window._resourceReportSnapshot.selected.mt')==3e-6,'Indonesian readable summary retains the same selected tonnes');pdf_layout(indonesian,'Resource Indonesian');r.evaluate("applyLanguage('en')");
   tab(r,10);png=dl(r,'#gtPlotExportPngBtn',tmp/'resource.png');check(png.startswith(b'\x89PNG\r\n\x1a\n'),'Resource native PNG download works')
   r.evaluate("_recordExport('PNG','oversize-canary',{filename:'large.png',mime:'image/png',content:'data:image/png;base64,'+'A'.repeat(2000001)})");check(r.evaluate("JSON.parse(localStorage.getItem('orebitExportHistory'))[0].content===''"),'Oversized PNG is never stored as a corrupt partial download')
+  for pg,name,selector in [(c,'Core','#pdf-export-btn'),(a,'Assay','#btnReportPdf')]:
+   pg.evaluate("applyLanguage('id')");pdf_layout(dl(pg,selector,tmp/(name+'-id.pdf')),name+' Indonesian');pg.evaluate("applyLanguage('en')")
   for pg,name in [(c,'Core'),(a,'Assay'),(r,'Resource')]:
    check(not pg.errors and pg.evaluate('window.__reportRenderFailures.length===0'),name+' reports produce no page or swallowed renderer failures: '+str(pg.errors)+' / '+str(pg.evaluate('window.__reportRenderFailures')))
   check(r.evaluate("(() => {const old=setupState.reportCutoff;setActiveDataset(DATA,{source:'upload'});const ok=setupState.reportCutoff===null&&document.getElementById('reportCutoff').value==='';setupState.reportCutoff=old;return ok})()"),'Every dataset entry resets the previous report cutoff')

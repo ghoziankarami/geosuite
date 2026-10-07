@@ -13267,15 +13267,11 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
     ]);
 
     // Helper to add header/footer
-    let pageNum = 0;
-    const totalPages = 7;
     const addFooter = () => {
-      pageNum++;
       pdf.setFontSize(8);
       pdf.setTextColor(120);
       var leftText = 'Orebit Assay \u00b7 ' + today;
       pdf.text(leftText, 15, H - 8);
-      pdf.text('Page ' + pageNum + ' of ' + totalPages, W - 30, H - 8);
       // Task 5: product/version/timestamp watermark on EVERY page.
       pdf.setFontSize(7);
       pdf.setTextColor(153);

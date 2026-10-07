@@ -49,6 +49,8 @@ jobs:
           python tests/test_resource_compatibility.py
           python tests/test_screening_reports.py
           python tests/test_assay_workflow.py
+          python tests/test_action_hierarchy.py
+          python tests/test_core_training.py
 
       - name: CSV import matches committed parser snapshots
         run: python tests/known-answer/csv-parser-characterization.py

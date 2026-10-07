@@ -156,6 +156,38 @@ try:
             original = page.evaluate(
                 "JSON.stringify({collar:STATE.collar,survey:STATE.survey,assay:STATE.assay,geology:STATE.geology})"
             )
+        page.evaluate("showTab(2)")
+        # An arbitrary header uses the existing manual mapping UI, not a new alias.
+        density_csv = (
+            Path(paths[2]).read_text().replace("density,", "Measured rock value,", 1)
+        )
+        page.locator("#fileInput").set_input_files(
+            {
+                "name": "assay.csv",
+                "mimeType": "text/csv",
+                "buffer": density_csv.encode(),
+            }
+        )
+        page.wait_for_function(
+            "() => STATE.rawHeaders.assay.includes('Measured rock value')"
+        )
+        page.evaluate("showTab(7)")
+        page.locator("#map_assay_density").select_option("Measured rock value")
+        page.locator("button[onclick=\"applyColumnMapping('assay')\"]").click()
+        expected_density = [r["density"] for r in data["assay"]]
+        check(
+            page.evaluate("STATE.assay.map(r=>r.density)") == expected_density,
+            "Manual density assignment of an arbitrary header preserves every measured value",
+        )
+        check(
+            "density" not in page.evaluate("getActualGradeColumns()"),
+            "Density never appears among detected grade columns",
+        )
+        check(
+            page.locator("button[onclick*=\"markAsGradeColumn('density')\"]").count()
+            == 0,
+            "Validation does not offer measured density as an unrecognized grade",
+        )
         check(
             page.evaluate("JSON.stringify(SAMPLE_DATA)") == pristine,
             "Exercise downloads and uploads never mutate the embedded source",

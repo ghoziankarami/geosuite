@@ -19,7 +19,7 @@
   "core.imp.gdriveTitle": "Buka dari Google Drive",
   "core.imp.gdriveHint": "Baca berkas CSV dari Google Drive Anda. Berkasnya tetap di peramban — tidak ada yang diunggah ke server mana pun.",
   "core.imp.gdriveLoadFailed": "Google Drive tidak bisa dimuat. Kalau tautan ini dibuka lewat browser di dalam aplikasi lain (WhatsApp, Instagram, dll), buka di Chrome/Safari langsung — Google sengaja memblokir login di dalamnya.",
-  "core.imp.resetHint": "Kembali ke data bawaan Thalanga VMS (717 lubang, prospek Thalanga).",
+  "core.imp.resetHint": "Kembali ke contoh sintetis laterit nikel dengan 350 lubang, termasuk assay kosong dan lubang yang berhenti sebelum batuan dasar.",
   "core.imp.templateHint": "Pakai ini sebagai contoh format untuk mengunggah data Anda sendiri.",
   "core.imp.collarTemplate": "Contoh collar",
   "core.imp.surveyTemplate": "Contoh survey",
@@ -490,7 +490,7 @@
   "panel.merge.title": "Gabung — Tabel Master Drillhole",
   "panel.export.title": "Ekspor — drillhole-clean.csv",
   "btn.openHelp": "Buka Bantuan",
-  "btn.resetSample": "↺ Reset ke data contoh Thalanga",
+  "btn.resetSample": "↺ Reset ke contoh nikel",
   "btn.downloadPdf": "Unduh Laporan PDF",
   "btn.exportPng": "Ekspor PNG",
   "btn.exportPngTitle": "Ekspor PNG ukuran tetap untuk marketing/dokumentasi, tidak tergantung ukuran window atau layar kamu",
@@ -822,5 +822,8 @@
   "core.training.missing": "Contoh survey tidak lengkap",
   "core.training.overlap": "Contoh interval tumpang tindih",
   "core.training.safe": "Mengunduh tidak mengubah proyek Anda. Kesalahan ini sengaja dibuat hanya untuk latihan.",
-  "core.training.unavailable": "Alat ZIP latihan belum dimuat. Muat ulang aplikasi lalu coba lagi."
+  "core.training.unavailable": "Alat ZIP latihan belum dimuat. Muat ulang aplikasi lalu coba lagi.",
+  "core.cm.otherColumns": "Kolom lain tetap disimpan. Tandai sebagai kadar hanya setelah memeriksa makna dan satuannya.",
+  "core.cm.unrecognized": "{n} kolom belum dikenali; periksa maknanya di bawah",
+  "core.dashboard.tableCounts": "{collar} collar · {assay} assay · {geology} geologi"
 }

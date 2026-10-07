@@ -4127,8 +4127,8 @@ const TABLE_SCHEMA = {
     },
   },
   assay: {
-    cols: ['hole_id', 'from_m', 'to_m', 'sample_id', 'au_gpt', 'cu_ppm', 'pb_ppm', 'zn_ppm', 'ag_gpt', 'as_ppm', 'fe_pct', 's_pct', 'sn_pct', 'sno2_pct', 'wo3_pct'],
-    types: { from_m: 'num', to_m: 'num', au_gpt: 'num', cu_ppm: 'num', pb_ppm: 'num', zn_ppm: 'num', ag_gpt: 'num', as_ppm: 'num', fe_pct: 'num', s_pct: 'num', sn_pct: 'num', sno2_pct: 'num', wo3_pct: 'num' },
+    cols: ['hole_id', 'from_m', 'to_m', 'sample_id', 'au_gpt', 'cu_ppm', 'pb_ppm', 'zn_ppm', 'ag_gpt', 'as_ppm', 'fe_pct', 's_pct', 'sn_pct', 'sno2_pct', 'wo3_pct', 'density'],
+    types: { from_m: 'num', to_m: 'num', au_gpt: 'num', cu_ppm: 'num', pb_ppm: 'num', zn_ppm: 'num', ag_gpt: 'num', as_ppm: 'num', fe_pct: 'num', s_pct: 'num', sn_pct: 'num', sno2_pct: 'num', wo3_pct: 'num', density: 'num' },
     required: ['hole_id', 'from_m', 'to_m'],
     aliases: {
       hole_id: ['hole_id','holeid','bhid','HoleID','Hole_ID','HoleId','hole','lubang','no_lubang','kode_lubang'],
@@ -4149,6 +4149,7 @@ const TABLE_SCHEMA = {
       sn_pct: ['sn_pct','sn','Sn','SN','tin','Kadar_Sn','kadar_sn'],
       sno2_pct: ['sno2_pct','sno2','SnO2','SNO2','cassiterite','Kadar_SnO2','kadar_sno2'],
       wo3_pct: ['wo3_pct','wo3','WO3','tungsten','Kadar_WO3'],
+      density: ALIASES.density,
     },
   },
   geology: {
@@ -4574,7 +4575,7 @@ function updateDataTag() {
   // upload their own projects). Default i18n text only shows before any load.
   const sub = document.getElementById('dashSubtitle');
   if (sub && (STATE.collar.length || STATE.assay.length)) {
-    sub.textContent = `${STATE.collar.length} collar · ${STATE.assay.length} assay · ${STATE.geology.length} geology`;
+    sub.textContent = t('core.dashboard.tableCounts').replace('{collar}', STATE.collar.length).replace('{assay}', STATE.assay.length).replace('{geology}', STATE.geology.length);
     sub.removeAttribute('data-i18n');
   }
   // Also refresh DQ badge whenever data tag updates
@@ -4600,6 +4601,9 @@ function updateDataTag() {
  * still needs saying. This helper is the single place those numbers are
  * derived, so the three screens cannot drift apart again.
  * ---------------------------------------------------------------------- */
+window.__i18nPostApplyHooks = window.__i18nPostApplyHooks || [];
+window.__i18nPostApplyHooks.push(updateDataTag);
+
 function holeCountSummary() {
   const collar = STATE.collar || [];
   const assay = STATE.assay || [];
@@ -6951,7 +6955,7 @@ function filterHoleStatus() {
 const STRUCTURAL_MAP_COLS = {
   collar: null,   // null = use schema.cols as-is (small, fixed, all structural)
   survey: null,
-  assay: ['hole_id', 'from_m', 'to_m', 'sample_id'],
+  assay: ['hole_id', 'from_m', 'to_m', 'sample_id', 'density'],
   geology: null,
 };
 
@@ -7034,12 +7038,12 @@ function renderColumnMapping(container) {
       // audit (visible in the UI as Ni_pct/Co_pct listed both as an
       // auto-detected grade chip and as a leftover column).
       const matchedRawHeaders = new Set(Object.values(autoMap));
-      const gradeColSet = new Set(gradeCols);
+      const gradeColSet = new Set([...gradeCols, ...getActualDensityColumns()]);
       const leftovers = detectedCols.filter(rawH => !matchedRawHeaders.has(rawH) && !gradeColSet.has(rawH) && rows[0].hasOwnProperty(rawH));
       unmatchedGradeCount = leftovers.length;
       const leftoverHTML = leftovers.length
         ? `<div style="margin-top:4px;">
-            <p style="font-size:12px;color:var(--fg-mute);margin:0 0 4px;">Other columns in this file — not required, but mark one if it's actually a grade the auto-detector missed:</p>
+            <p style="font-size:12px;color:var(--fg-mute);margin:0 0 4px;">${t('core.cm.otherColumns')}</p>
             <div style="display:flex;flex-wrap:wrap;gap:6px;">
               ${leftovers.map(c => `<button class="btn small secondary" onclick="markAsGradeColumn('${escapeHtml(c)}'); return false;" style="font-family:monospace;font-size:11px;">+ ${escapeHtml(c)}</button>`).join('')}
             </div>
@@ -7060,7 +7064,7 @@ function renderColumnMapping(container) {
     const matchedCount = targetCols.filter(c => autoMap[c]).length;
     const summaryLine = allGood
       ? `<span class="badge good">✓</span> ${tableName} — ${matchedCount}/${targetCols.length} ${t('core.cm.structuralMatched')}${tableName === 'assay' ? t('core.cm.gradeColsOk') : ''}`
-      : `<span class="badge ${missingReq.length ? 'bad' : 'warn'}">${missingReq.length ? '✕' : '△'}</span> ${tableName} — ${missingReq.length ? `${t('core.cm.missingRequiredInline')} ${missingReq.join(', ')}` : `${unmatchedGradeCount} unrecognized column${unmatchedGradeCount > 1 ? 's' : ''}, review below`}`;
+      : `<span class="badge ${missingReq.length ? 'bad' : 'warn'}">${missingReq.length ? '✕' : '△'}</span> ${tableName} — ${missingReq.length ? `${t('core.cm.missingRequiredInline')} ${missingReq.join(', ')}` : t('core.cm.unrecognized').replace('{n}', unmatchedGradeCount)}`;
 
     return `
       <details style="margin-bottom:12px;" ${allGood ? '' : 'open'}>

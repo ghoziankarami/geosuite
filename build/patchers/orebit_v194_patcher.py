@@ -13,6 +13,8 @@ Safe-inject pattern as v1.9.3:
   - Mutates DOM at runtime, never touches <head>
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 import argparse
 import hashlib
@@ -357,7 +359,7 @@ def detect_phase(path: Path) -> tuple[str, dict] | tuple[None, None]:
     return None, None
 
 
-def idempotency_check(base: Path, allow_drift: bool = False) -> int:
+def idempotency_check(base: Path, allow_drift: bool = False, phases_dir: Path | None = None) -> int:
     """Run detection+transform twice in memory; 2nd run must be a no-op.
     ALSO checks for template drift: does the file's CURRENT shell block
     already match what today's templates would produce?
@@ -386,7 +388,7 @@ def idempotency_check(base: Path, allow_drift: bool = False) -> int:
     print("Idempotency + drift self-check (in-memory, no writes):")
     all_ok = True
     for rel, cfg in PHASE_CFG.items():
-        p = base / rel
+        p = phases_dir / Path(rel).name if phases_dir else base / rel
         if not p.exists():
             print(f"  MISSING: {p}")
             all_ok = False
@@ -473,14 +475,15 @@ def main() -> int:
         "instead of a failure. Rarely what you want -- see the docstring "
         "on idempotency_check().",
     )
+    parser.add_argument("--phases-dir", type=Path, help="Check resolved Core/Assay/Resource HTML in this directory (no vault dependency).")
     args = parser.parse_args()
 
-    if not args.target and not PATCHER_CONFIG["vault_path"]:
+    if not args.target and not args.phases_dir and not PATCHER_CONFIG["vault_path"]:
         parser.error("pass a target HTML file or set OREBIT_VAULT_PATH")
     base = Path(PATCHER_CONFIG["vault_path"]) if PATCHER_CONFIG["vault_path"] else None
 
     if args.check_idempotent:
-        return idempotency_check(base, allow_drift=args.allow_drift)
+        return idempotency_check(base, allow_drift=args.allow_drift, phases_dir=args.phases_dir)
 
     # Single explicit target file.
     if args.target:

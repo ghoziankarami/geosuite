@@ -92,8 +92,13 @@ def main():
     httpd, base = serve(site)
 
     with sync_playwright() as p:
-        br = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-gpu"])
-        ctx = br.new_context()
+        # Installation is a normal-profile workflow. Recent Chromium correctly
+        # reports `in-incognito` for Browser.new_context(), regardless of whether
+        # the manifest and offline shell are valid. Keep the assertion strict;
+        # exercise a profile a user can actually install an application into.
+        profile = Path(tempfile.mkdtemp(prefix="pwa-profile-"))
+        ctx = p.chromium.launch_persistent_context(
+            str(profile), headless=True, args=["--no-sandbox", "--disable-gpu"])
         pg = ctx.new_page()
 
         print("\n── Manifest and installability ──")
@@ -145,7 +150,9 @@ def main():
             btn.click()
             check("clicking it opens the browser's install prompt", pg.evaluate("window.__prompted === true"))
         ctx.close()
+        shutil.rmtree(profile, ignore_errors=True)
 
+        br = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-gpu"])
         exe = br.new_context()
         exe.add_init_script("window.__OREBIT_RT__ = { key: null };")
         ep = exe.new_page()

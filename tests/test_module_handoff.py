@@ -55,11 +55,11 @@ def main():
         core = ctx.new_page()
         core.goto(f"{BASE}/Core.html", wait_until="load", timeout=60000)
         ready(core)
-        core.wait_for_function("() => STATE.assay.length > 9000", timeout=60000)
+        core.wait_for_function("() => STATE.assay.length > 8000", timeout=60000)
         time.sleep(1.5)
         expected = core.evaluate("(() => { const f = OrebitHandoff.capture(exportMasterCSV); return f && f.text; })()")
         exp_rows = rows_of(expected)
-        check("Core's master export can be captured", len(exp_rows) > 9000, str(len(exp_rows)))
+        check("Core's master export can be captured", len(exp_rows) > 8000, str(len(exp_rows)))
         buttons = core.evaluate("""(() => { for (let i = 1; i <= 14; i++) { try { showTab(i); } catch (e) {}
             if (document.querySelector('[data-handoff="Assay"]')) return true; } return false; })()""")
         check("a 'Continue in Assay' button is rendered on the web", buttons)

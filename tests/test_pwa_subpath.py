@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """A fork hosted below /geosuite/ installs and works offline."""
+
 import http.server
 import shutil
 import socket
@@ -18,9 +19,10 @@ def main():
         with socket.socket() as sock:
             sock.bind(("127.0.0.1", 0))
             port = sock.getsockname()[1]
-        handler = lambda *args, **kwargs: http.server.SimpleHTTPRequestHandler(
-            *args, directory=tmp, **kwargs
-        )
+
+        def handler(*args, **kwargs):
+            return http.server.SimpleHTTPRequestHandler(*args, directory=tmp, **kwargs)
+
         server = http.server.ThreadingHTTPServer(("127.0.0.1", port), handler)
         threading.Thread(target=server.serve_forever, daemon=True).start()
         try:
@@ -37,19 +39,33 @@ def main():
                 manifest = context.new_cdp_session(page).send("Page.getAppManifest")
                 assert manifest["url"] == base + "manifest.webmanifest", manifest
                 import json
+
                 data = json.loads(manifest["data"])
-                assert data["scope"] == "./" and data["start_url"].startswith("./"), data
-                shell = ["Core.html", "Assay.html", "Resource.html",
-                         "vendor/plotly.min.js", "manifest.webmanifest",
-                         "pwa/icon-192.png"]
-                page.wait_for_function("""async (items) => {
+                assert data["scope"] == "./" and data["start_url"].startswith(
+                    "./"
+                ), data
+                shell = [
+                    "Core.html",
+                    "Assay.html",
+                    "Resource.html",
+                    "vendor/plotly.min.js",
+                    "manifest.webmanifest",
+                    "pwa/icon-192.png",
+                ]
+                page.wait_for_function(
+                    """async (items) => {
                     const cache = await caches.open('geosuite-app-v4:/geosuite/');
                     return (await Promise.all(items.map(x => cache.match('/geosuite/' + x))))
                       .every(Boolean);
-                }""", arg=shell, timeout=60000)
+                }""",
+                    arg=shell,
+                    timeout=60000,
+                )
                 context.set_offline(True)
                 assay = context.new_page()
-                assay.goto(base + "Assay.html?source=app", wait_until="load", timeout=60000)
+                assay.goto(
+                    base + "Assay.html?source=app", wait_until="load", timeout=60000
+                )
                 assay.wait_for_function(
                     "() => typeof DATA !== 'undefined' && DATA && DATA.rows && DATA.rows.length > 0",
                     timeout=60000,

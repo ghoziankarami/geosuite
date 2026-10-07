@@ -124,12 +124,12 @@ const semi = 'hole_id;from;to;au_gpt\nA;0;1;>10,5\nA;1;2;0,7\n';
 const ps = parseDrillholeCSV(semi);
 eq('comma-decimal file: ">10,5" -> 10.5', ps.rows[0].au_gpt.value, 10.5);
 
-section('real data — the bundled Thalanga VMS sample (src/assets/sample/core.json)');
+section('real data — Thalanga VMS data (_meta/tests/fixtures/thalanga-core.json, the former default sample)');
 // Known answer computed by hand from the JSON (audit 2026-09-25): the only
 // negatives larger than their column's maximum are the database codes
 // -995000 (pb_ppm x15), -9910000 (ag_gpt x19); every other negative is a
 // genuine limit from some lab/era (-0.01, -0.05, -0.1 Au; -5 Cu; -1 Ag ...).
-const sample = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'src', 'assets', 'sample', 'core.json'), 'utf8'));
+const sample = JSON.parse(fs.readFileSync(new URL('../fixtures/thalanga-core.json', import.meta.url), 'utf8'));
 const cols = ['au_gpt', 'cu_ppm', 'pb_ppm', 'zn_ppm', 'ag_gpt', 'as_ppm'];
 const count = (col, v) => sample.assay.filter(r => r[col] === v).length;
 const expectPb = count('pb_ppm', -995000), expectAg = count('ag_gpt', -9910000);

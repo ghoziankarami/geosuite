@@ -15,6 +15,8 @@ The Babbitt deposit (now known as Mesaba) is disseminated Cu-Ni-PGE mineralisati
 
 ---
 
+> **Calculation update, 7 October 2026:** this recording uses the physical fitted range for scalar covariance. Search radii select neighbours; they no longer substitute for the model range. Tables and UI screenshots were regenerated from real CSV uploads, with exported grade-tonnage checked independently. Saved historical sessions require refitting to use this corrected mode.
+
 ## 1. Files that don't state their units
 
 ```
@@ -185,9 +187,9 @@ Search 200 × 200 × 30 m (horizontal, about twice the hole spacing; vertically 
 |---|---:|---:|
 | Blocks estimated | 74,940 | **26,842** |
 | Blocks within reach removed by the boundary | — | 209,506 |
-| Mean Cu grade (OK) | 0.474 % | **0.503 %** |
+| Mean Cu grade (OK) | 0.475 % | **0.500 %** |
 | Tonnes (2.8 t/m³) | 7,869 Mt | **2,818 Mt** |
-| Cu metal | 37.3 Mt | **14.2 Mt** |
+| Cu metal | 37.3 Mt | **14.1 Mt** |
 
 ![Estimate with the domain boundary](../img/babbitt-10-resource-estimate.png)
 
@@ -195,7 +197,7 @@ On dense data the boundary removes almost two-thirds of the tonnage: blocks with
 
 Note a hidden decision: Assay labels **unassayed** composites M0, so 33,236 composites of unassayed core act as boundary too. For cover rock above the intrusion that is right. For intervals *inside* the zone that were skipped by the assay budget, it can cut out ore. That is a geologist's decision and must be written down (§3).
 
-Global mean check (with the boundary): OK **0.503 %** and NN **0.509 %**, 1.1 % apart. Tonnage recheck: 26,842 blocks × 37,500 m³ × 2.8 t/m³ = 2,818 Mt. It matches.
+Global mean check (with the boundary): OK **0.500 %** and NN **0.509 %**, 1.8 % apart. Tonnage recheck: 26,842 blocks × 37,500 m³ × 2.8 t/m³ = 2,818 Mt. It matches.
 
 ---
 
@@ -207,11 +209,11 @@ The earlier leave-one-out searched for neighbours **only among the 200 random sa
 
 | n = 194 of 200 | OK | IDW | NN |
 |---|---:|---:|---:|
-| Slope (estimate on actual) | **0.62** | 0.68 | 0.68 |
-| r² | 0.67 | 0.62 | 0.47 |
-| Mean bias | +0.02 | +0.03 | +0.02 |
+| Slope (estimate on actual) | **0.64** | 0.68 | 0.68 |
+| r² | 0.64 | 0.64 | 0.47 |
+| Mean bias | +0.03 | +0.03 | +0.02 |
 
-The estimate is globally unbiased, but **a slope of 0.62 means substantial smoothing**: high grades are strongly under-estimated and low grades over-estimated. That is what a range shorter than the hole spacing produces (§5). With the old grid-ceiling nugget of 60 % the slope was 0.50; reading the nugget from the holes improved it, but no variogram can make up for drill spacing. On the grade-tonnage curve this means **too many tonnes at low cut-offs and too low a grade at high cut-offs**. The curve must not be used to choose a mining cut-off without a change-of-support correction.
+The estimate is globally unbiased, but **a slope of 0.64 means substantial smoothing**: high grades are strongly under-estimated and low grades over-estimated. That is what a range shorter than the hole spacing produces (§5). With the old grid-ceiling nugget of 60 % the slope was 0.50; reading the nugget from the holes improved it, but no variogram can make up for drill spacing. On the grade-tonnage curve this means **too many tonnes at low cut-offs and too low a grade at high cut-offs**. The curve must not be used to choose a mining cut-off without a change-of-support correction.
 
 ---
 
@@ -221,18 +223,23 @@ The estimate is globally unbiased, but **a slope of 0.62 means substantial smoot
 
 | Cu cut-off | Tonnes (Mt) | Cu grade |
 |---|---:|---:|
-| 0.2 % | 2,818 | 0.503 % |
-| 0.3 % | 2,671 | 0.516 % |
-| 0.4 % | 1,960 | 0.575 % |
-| 0.5 % | 1,203 | 0.655 % |
-| 0.6 % | 656 | 0.745 % |
-| 0.8 % | 150 | 0.952 % |
+| 0.2 % | 2,818 | 0.500 % |
+| 0.2 % | 2,798 | 0.502 % |
+| 0.3 % | 2,679 | 0.512 % |
+| 0.3 % | 2,375 | 0.535 % |
+| 0.4 % | 1,990 | 0.567 % |
+| 0.5 % | 1,577 | 0.604 % |
+| 0.5 % | 1,187 | 0.646 % |
+| 0.6 % | 869 | 0.691 % |
+| 0.6 % | 623 | 0.737 % |
+| 0.8 % | 209 | 0.884 % |
+| 0.8 % | 130 | 0.951 % |
 
 Against the public description (**> 1 billion tonnes @ ~0.43 % Cu**), the grade is comparable. Without the domain boundary our tonnage was about 8 times larger; with it, still **about 2.8 times**. The remaining gap is not units (feet were converted) and no longer extrapolation into wall rock. It is the reporting principle most often forgotten:
 
 **A Mineral Resource must have *reasonable prospects for eventual economic extraction* (RPEEE).** Our estimate is a **geological inventory**: every block inside the 0.2 % Cu domain, down to 869 m below surface. A reported resource is bounded by:
 
-- an **economic cut-off** (for Cu-Ni-PGE usually an NSR value, not Cu alone). A 0.4 % Cu cut-off alone already brings the tonnage down to 1,960 Mt;
+- an **economic cut-off** (for Cu-Ni-PGE usually an NSR value, not Cu alone). A 0.4 % Cu cut-off alone already brings the tonnage down to 1,990 Mt;
 - an **optimised pit shell**, so deep blocks below the pit floor are not counted;
 - sensible confidence classification, so blocks far from data are left out.
 

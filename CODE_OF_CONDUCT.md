@@ -7,6 +7,6 @@ rather than people, and help newcomers — many users are students and early-car
 geologists. Harassment, personal attacks and publishing others' private data
 (including confidential drilling data) are not tolerated.
 
-Report unacceptable behaviour to **support@orebit.id**. Reports are handled
+Report unacceptable behaviour to **orebit.id@gmail.com**. Reports are handled
 confidentially; the maintainer may warn, temporarily ban or permanently ban
 participants, following the Contributor Covenant enforcement guidelines.

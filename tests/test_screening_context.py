@@ -45,6 +45,7 @@ try:
         for stage in (3,4,5,6):
             c.locator(f'#tab7 [data-related-stage="{stage}"]').click()
             check(c.locator(f'#tab{stage}').evaluate('e=>e.classList.contains("active")'),'Validation opens source table '+str(stage)+' directly')
+            check(c.locator('#orebitCrumb').inner_text()==c.locator('nav.tabs .tab').nth(stage-1).inner_text().strip(),'Core header follows directly opened source table '+str(stage))
             c.locator(f'#tab{stage} .workflow-related').get_by_role('button',name='← Back to Validation',exact=True).click()
         check(before==c.evaluate('JSON.stringify([STATE.collar,STATE.assay,STATE.geology])'),'Source inspections preserve measured data')
         c.locator('#tab7 [data-workflow-next]').click()
@@ -88,6 +89,7 @@ try:
                 a.evaluate('(n)=>showTab(n)',origin)
                 a.locator(f'#tab{origin} [data-related-stage="{target}"]').click()
                 check(a.locator(f'#tab{target}').evaluate('e=>e.classList.contains("active")'),'Assay related tool '+str(target)+' opens directly from '+str(origin))
+                check(a.locator('#orebitCrumb').inner_text()==a.locator('nav.tabs .tab').nth(target-1).inner_text().strip(),'Assay header follows directly opened related tool '+str(target))
                 a.locator(f'#tab{target} .workflow-related').get_by_role('button',name='← Back to '+a.locator(f'nav.tabs .tab').nth(origin-1).inner_text().strip(),exact=True).click()
         check(snapshot==a.evaluate('JSON.stringify(DATA.rows)'),'Optional Assay navigation preserves selected raw population')
         check(a.evaluate('renderFailures.length===0'),'Assay related inspections have no swallowed render failures')
@@ -104,6 +106,7 @@ try:
         r.evaluate("""() => {blockState.blocks=Array.from({length:2100},(_,i)=>({cx:(i%30)*10,cy:(Math.floor(i/30)%10)*10,cz:Math.floor(i/300)*5}));blockState.size=[10,10,5];estimState.results={ok:Array.from({length:2100},(_,i)=>i%5),idw:Array(2100).fill(1),nn:Array(2100).fill(1),variance:Array(2100).fill(2),nNb:Array(2100).fill(6),estimated:2100};estimState.done=true;classState.labels=null;window.webglAvailable=()=>true;window._plots=[];window._realNewPlot=Plotly.newPlot;Plotly.newPlot=function(id,data,layout){if(id==='d3Plot'){_plots.push({data,layout});document.getElementById(id).textContent='known-geometry-render';return Promise.resolve()}return _realNewPlot.apply(this,arguments)};showTab(6)}""")
         values=r.evaluate('JSON.stringify([blockState.blocks,estimState.results])')
         r.locator('#tab6 [data-related-stage="11"]').click()
+        check(r.locator('#orebitCrumb').inner_text()==r.locator('nav.tabs .tab').nth(10).inner_text().strip(),'Resource header follows direct 3D inspection')
         check(r.locator('#d3Rep').input_value()=='surface','Estimated geometry starts as a connected full-grid surface')
         check(r.evaluate('_plots.at(-1).data[0].type==="mesh3d" && Math.max(..._plots.at(-1).data[0].x)===295'),'Default surface includes outermost cells even beyond 2000 display limit')
         check('All filtered cells represented' in r.locator('#d3PlotNote').inner_text(),'Viewer explicitly discloses full filtered surface and cell dimensions')

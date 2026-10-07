@@ -185,10 +185,19 @@ def main():
         pg.reload(wait_until="load")
         pg.wait_for_function("() => typeof showTab === 'function'", timeout=60000)
         pg.evaluate("""() => { const e = new Event('beforeinstallprompt'); e.prompt = () => { window.__prompted = true; };
-            e.userChoice = Promise.resolve({ outcome: 'dismissed' }); window.dispatchEvent(e); }""")
+            e.userChoice = Promise.resolve({ outcome: 'dismissed' }); window.__testInstallPrompt=e; window.dispatchEvent(e); }""")
         btn = pg.locator("[data-install-app]")
         check("the browser's install event shows an 'Install app' button", btn.count() == 1 and btn.is_visible())
         if btn.count():
+            # Native Chromium installability can emit another event after reload
+            # between fixture dispatch and the trusted Playwright click. Re-emit
+            # the mock in click capture so this assertion tests the app handler
+            # against that fixture in the same task, not which event won a race.
+            # Real installability is independently checked with CDP above.
+            btn.evaluate("""el => el.addEventListener('click', () => {
+              window.__prompted=false;
+              window.dispatchEvent(window.__testInstallPrompt);
+            }, {capture:true,once:true})""")
             btn.click()
             check("clicking it opens the browser's install prompt", pg.evaluate("window.__prompted === true"))
         ctx.close()

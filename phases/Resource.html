@@ -11878,7 +11878,7 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
  const num=(v,dec=3)=>v==null?'n/a':Number(v).toLocaleString('en-US',{maximumFractionDigits:dec});
  const scopeClass=text(report?.useClass?'highMedium':'allClasses');
  const cutoffForReport=setupState.reportCutoff;
- const cutLabel=cutoffForReport==null?text('allGrades'):text('cutoff',{cutoff:num(cutoffForReport,6),unit:gradeUnitFor(setupState.element)});
+ const cutLabel=cutoffForReport==null?text('allGrades'):text('cutoff',{cutoff:String(cutoffForReport),unit:gradeUnitFor(setupState.element)});
  const selected=report?.selected;
  const reportBasis=setupState.reportCutoffNote?.trim() || text(cutoffForReport==null?'noCutoffBasis':'notJustified');
  if(report)report.justification=reportBasis;

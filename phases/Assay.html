@@ -13889,13 +13889,14 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
     for(const row of DATA.rows){const grade=row[ei],len=row[ti]-row[fi];if(Number.isFinite(grade)&&grade>=0&&Number.isFinite(len)&&len>0){inputLength+=len;inputGradeLength+=grade*len;}}
     for(const c of compRes.composites){const grade=c[elemCol+'_comp'],len=c._elementSupport ? c._elementSupport[elemCol] : c.informed_length;if(Number.isFinite(grade)&&grade>=0&&Number.isFinite(len)&&len>0){compLength+=len;compGradeLength+=grade*len;}}
     const insightText=(key,values={})=>Object.entries(values).reduce((out,[k,v])=>out.replaceAll('{'+k+'}',String(v)),t(['asy.reportInsight',key].join('.')));
+    const actualTreatmentDisplay=_treatmentCsvHeader().split('\n').map(line=>line.replace(/^#\s*/, '').trim()).filter(Boolean).join('; ');
     const domainAudit=window._domainAudit;
     const domainDescription=insightText('domain',{method:domainAudit?.method||(colIdx('domain')>=0?t('asy.reportInsight.domainUnknown'):t('asy.reportInsight.noDomain')),element:domainAudit?.element||elemCol,controls:domainAudit?.method==='cutoff'?`cutoff >= ${domainAudit.cutoff} ${OrebitScreeningReport.unitLabel(elementMeta(domainAudit.element).unit)}`:domainAudit?.method==='grade'||domainAudit?.method==='auto'?`P33=${domainAudit.breakpoints[0]}, P67=${domainAudit.breakpoints[1]}, P80=${domainAudit.breakpoints[2]}`:'no grade cutoff recorded'});
     OrebitScreeningReport.prepend(pdf,'Assay',[
       [t('asy.reportSummary.result'),insightText('result',{rows:DATA.rows.length,valid:vals.length,element:elementMeta(elemCol).label+' ('+OrebitScreeningReport.unitLabel(elementMeta(elemCol).unit)+')',missing:DATA.rows.length-vals.length,mean:s.mean.toFixed(3),median:s.p50.toFixed(3),cv:s.cv.toFixed(2),composites:compRes.composites.length,length:compositeLen})],
       [t('asy.reportSummary.meaning'),insightText('meaning')],
       [t('asy.reportSummary.checks'),insightText('support',{before:inputLength.toFixed(3),after:compLength.toFixed(3),change:inputGradeLength?((compGradeLength/inputGradeLength-1)*100).toFixed(4):'n/a',tails:compRes.droppedTailLength,gaps:compRes.gapLength})],
-      [t('asy.reportSummary.scope'),domainDescription+' '+insightText('scope',{treatment:_treatmentCsvHeader()})+' '+methodBasis],
+      [t('asy.reportSummary.scope'),domainDescription+' '+insightText('scope',{treatment:actualTreatmentDisplay})+' '+methodBasis],
       [t('asy.reportSummary.next'),insightText('next')]
     ]);
     OrebitScreeningReport.append(pdf,'Assay',[

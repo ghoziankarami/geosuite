@@ -85,6 +85,8 @@ Serve the complete `dist/` folder under one path, such as `/geosuite/`. The mani
 
 4. Open a PR here. The maintainer records the matching change in the canonical development source before the next public export; you do not need that private checkout. See the PR template for carry-back status.
 
+Core exports structural density under the canonical `density` field; standard SG/BD_TM3 headers map to it, and other headers can be assigned manually. Measured zeros are retained as grades; blank grade columns are excluded. Preserve the values, units and schema metadata when continuing to Assay/Resource.
+
 ### UI and teaching-data regression coverage
 
 The action/disclosure and Core exercise suites own isolated local servers:

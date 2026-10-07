@@ -23,11 +23,13 @@ phases/*.html + src/shared + src/assets + src/locales
 Install Node.js 18+ and Python 3.9+. From the repository root:
 
 ```bash
-npm run build
-python3 -m http.server 8767 -d dist
+npm run doctor
+npm run dev
 ```
 
-Then open `http://localhost:8767/Core.html`. Windows PowerShell users can invoke `py -3 -m http.server 8767 -d dist` or `python -m http.server 8767 -d dist`. The build checks `py -3`, then `python`, then `python3` for Python 3.9+; no separate vendor copy or npm install is needed. Use a local HTTP server so module navigation and offline features run under a web origin.
+The preview builds all modules and prints the Core address; the same commands work in Windows PowerShell, macOS and Linux/cloud. It serves only `dist/`, defaults to loopback, and needs no npm install. Stop with Ctrl+C and restart after editing to rebuild. An occupied port can be changed with `npm run dev -- --port 8768`; `npm run dev -- --no-build` serves an existing complete build. The build checks platform-appropriate Python candidates for Python 3.9+ and works from source ZIPs without Git. `doctor` checks prerequisites, not application correctness or deployment.
+
+On a remote cloud machine, the printed loopback address belongs to that machine. Use its supported port forwarding or run Playwright there; opening that address on a laptop reaches the laptop. Publishing to a VPS additionally needs a verified artifact, target configuration and a supported transport. HTTPS access and a working browser terminal do not prove raw SSH access. Development and tests do not require those deployment credentials.
 
 For a module-specific change, edit the source in `phases/` or `src/`, rebuild, and verify the corresponding file in `dist/`. If the rule belongs in multiple modules, place it in `src/shared/` once. When changing user-visible text, update both EN and ID locale sources.
 
@@ -39,7 +41,7 @@ Fast checks require no npm dependencies:
 npm test
 ```
 
-To run the browser checks, install Playwright and Chromium for Python, build with `npm run build`, then start three local servers on ports 8767, 8768, and 8769. The test scripts use those separate origins for module handoff:
+To run the browser checks, install Playwright and Chromium for Python, build with `npm run build`, then start three local servers on ports 8767, 8768, and 8769. Most older integration scripts use those ports; cross-module handoff uses all three modules on one origin (port 8767):
 
 ```bash
 python3 -m pip install playwright "PyMuPDF>=1.26,<2"
@@ -80,7 +82,20 @@ Serve the complete `dist/` folder under one path, such as `/geosuite/`. The mani
 1. Search [issues](https://github.com/ghoziankarami/geosuite/issues) and read [CONTRIBUTING.md](../CONTRIBUTING.md).
 2. Change editable source, docs, and relevant tests. Do not commit `dist/`, secrets, customer data, or confidential drillhole files.
 3. Build all three modules, run `npm test`, and run relevant browser checks. Describe the expected value and observed output for calculation changes.
+
 4. Open a PR here. The maintainer records the matching change in the canonical development source before the next public export; you do not need that private checkout. See the PR template for carry-back status.
+
+### UI and teaching-data regression coverage
+
+The action/disclosure and Core exercise suites own isolated local servers:
+
+```bash
+python tests/test_action_hierarchy.py
+python tests/test_core_training.py
+```
+
+They exercise real Chromium pages, editable settings, keyboard disclosure, mobile overflow, plot layout, missing vs zero grades, and ZIP → CSV upload → validation → corrected re-upload. Run `python tests/test_module_handoff.py` with all modules on port 8767 to verify rows and density between phases. These tests supplement the independent numerical and report suites; a build alone does not certify a screening result.
+
 
 Security reports belong through the private channel in [SECURITY.md](../SECURITY.md). For input examples, prefer synthetic or anonymised data. Public issues and PR attachments are visible to everyone.
 

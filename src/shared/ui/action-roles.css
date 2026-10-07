@@ -1,0 +1,20 @@
+/* Shared action hierarchy. Roles describe effects; calculations remain in their owners. */
+button[data-action-role]{min-height:42px;border-radius:9px;font-weight:650;white-space:normal;line-height:1.35;cursor:pointer}
+button[data-action-role="next"],button[data-action-role="apply"],button[data-action-role="export"]{background:#087e82!important;border:2px solid #087e82!important;color:#fff!important;padding:10px 16px}
+button[data-action-role="next"]::after{content:' →';font-size:1.15em}
+button[data-action-role="inspect"]{background:transparent!important;border:1px solid #53729a!important;color:var(--fg)!important;padding:10px 16px}
+button[data-action-role="custom"]{background:transparent!important;border:1px dashed var(--accent,#087e82)!important;color:var(--fg)!important;padding:10px 16px}
+button[data-action-role="advanced"]{background:transparent!important;border:1px solid var(--border)!important;color:var(--fg)!important;padding:10px 14px}
+button[data-action-role]:disabled{opacity:.5;cursor:not-allowed;filter:grayscale(.5)}
+button[data-action-role]:focus-visible,.resource-disclosure>summary:focus-visible{outline:3px solid #53729a;outline-offset:3px}
+.action-key{display:flex;gap:8px 18px;flex-wrap:wrap;font-size:12px;color:var(--fg-mute);margin:8px 0 14px}
+.action-key span{display:inline-flex;align-items:center;gap:6px}
+.action-key span::before{content:'';display:inline-block;width:13px;height:13px;border-radius:3px;flex:none}
+.action-key .action-key-next::before{background:#087e82}
+.action-key .action-key-inspect::before{border:1px solid #53729a}
+.action-key .action-key-custom::before{border:1px dashed var(--accent,#087e82)}
+.action-key .action-key-advanced::before{border:1px solid var(--border);border-radius:50%}
+
+/* Keep explanatory text readable in both themes. */
+html:not([data-theme="dark"]) body:not(.dark){--fg-mute:#526078}
+html[data-theme="dark"] .action-key,body.dark .action-key{color:#b7c3d4}

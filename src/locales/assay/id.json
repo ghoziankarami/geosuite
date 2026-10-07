@@ -1134,5 +1134,10 @@
   "asy.workflow.recommend12": "Jika kontrol tidak tersedia, catat keterbatasan itu. QA/QC yang hilang tidak dianggap lulus.",
   "asy.workflow.recommend13": "Tinjau keputusan lama dan asumsi. Export CSV serta catatan parameter/interpretasi untuk modelling lanjutan; recovery dan cutoff ekonomis tidak diasumsikan.",
   "asy.workflow.statsAdvanced": "Opsional: usulan perlakuan, kontribusi logam dan declustering",
-  "asy.workflow.element": "Elemen / komoditas"
+  "asy.workflow.element": "Elemen / komoditas",
+  "ux.action.next": "Aksi utama / lanjut",
+  "ux.action.inspect": "Periksa hasil",
+  "ux.action.custom": "Parameter custom",
+  "ux.action.advanced": "Tools lanjutan · opsional",
+  "asy.workflow.custom": "Parameter custom"
 }

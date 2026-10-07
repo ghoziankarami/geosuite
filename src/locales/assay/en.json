@@ -1134,5 +1134,10 @@
   "asy.workflow.recommend12": "If controls are unavailable, record that limitation. Do not report missing QA/QC as a pass.",
   "asy.workflow.recommend13": "Review stale decisions and assumptions. Export CSV plus this parameter/interpretation record for further modelling; no recovery or economic cutoff is inferred.",
   "asy.workflow.statsAdvanced": "Optional: treatment proposals, metal contribution and declustering",
-  "asy.workflow.element": "Element / commodity"
+  "asy.workflow.element": "Element / commodity",
+  "ux.action.next": "Main action / continue",
+  "ux.action.inspect": "Inspect results",
+  "ux.action.custom": "Custom parameters",
+  "ux.action.advanced": "Advanced tools · optional",
+  "asy.workflow.custom": "Custom parameters"
 }

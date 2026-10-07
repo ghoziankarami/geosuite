@@ -812,5 +812,15 @@
   "core.reportInsight.notReady": "Interval ini belum siap untuk estimasi spasial. Lengkapi atau perbaiki collar/survey atau koordinat midpoint yang dipasok, lalu validasi dan gabungkan ulang.",
   "core.reportInsight.coordinates": "Sumber koordinat: {source}. CRS: {crs}. XYZ hasil gabungan yang kosong: {missing}. Koordinat pasokan dan survey terukur perlu diverifikasi secara independen.",
   "core.reportInsight.next": "Periksa kegagalan dan peringatan yang tercantum terlebih dahulu. Ekspor master gabungan ke Assay. Simpan file asli dan catatan koordinat/satuan agar hasil berikutnya dapat ditelusuri.",
-  "core.reportInsight.evidence": "Peta menunjukkan cakupan bor, bukan batas bijih. Tabel validasi menjelaskan tautan yang hilang, interval tidak valid, dan geometri. Statistik kadar hanya menjelaskan sampel; Core belum menghitung tonase Resource."
+  "core.reportInsight.evidence": "Peta menunjukkan cakupan bor, bukan batas bijih. Tabel validasi menjelaskan tautan yang hilang, interval tidak valid, dan geometri. Statistik kadar hanya menjelaskan sampel; Core belum menghitung tonase Resource.",
+  "ux.action.next": "Aksi utama / lanjut",
+  "ux.action.inspect": "Periksa hasil",
+  "ux.action.custom": "Parameter custom",
+  "ux.action.advanced": "Tools lanjutan · opsional",
+  "core.training.title": "Coba latihan validasi",
+  "core.training.hint": "Unduh contoh sintetis, ekstrak ZIP lalu impor keempat CSV. Periksa Validasi, kemudian perbaiki data sumber dan impor kembali.",
+  "core.training.missing": "Contoh survey tidak lengkap",
+  "core.training.overlap": "Contoh interval tumpang tindih",
+  "core.training.safe": "Mengunduh tidak mengubah proyek Anda. Kesalahan ini sengaja dibuat hanya untuk latihan.",
+  "core.training.unavailable": "Alat ZIP latihan belum dimuat. Muat ulang aplikasi lalu coba lagi."
 }

@@ -65,20 +65,18 @@ containing `package.json`.
 git clone https://github.com/ghoziankarami/geosuite.git
 cd geosuite
 npm run build
-python3 -m http.server 8767 --bind 127.0.0.1 -d dist
+npm run dev -- --no-build
 ```
 
-On Windows PowerShell, replace the last command with:
-
-```powershell
-py -3 -m http.server 8767 --bind 127.0.0.1 -d dist
-```
+These commands also work in Windows PowerShell. For a single build-and-preview command use `npm run dev`; run `npm run doctor` to check prerequisites. Source ZIPs, checkout paths containing spaces and a working directory outside the checkout are supported when invoking the script by its path.
 
 Open **http://127.0.0.1:8767/Core.html**. You should see the Core dashboard and
 sample data; choose **Import** to use your own files. Assay and Resource are at
 `/Assay.html` and `/Resource.html` on the same address. Keep the terminal open;
 **Ctrl+C** stops the server. The web build uses bundled dependencies, so it has
 **no `npm install` step**.
+
+Restart the preview after editing to rebuild. Use `npm run dev -- --port 8768` if the default port is occupied. A cloud machine's loopback address is local to that machine; use supported port forwarding or browser tests there. VPS/SSH access is a separate deployment requirement.
 
 Serve generated **`dist/`**. Source **`phases/`** files contain build markers and
 are not directly runnable. Keep `vendor/` and offline assets with the built modules.

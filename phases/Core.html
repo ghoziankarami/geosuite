@@ -2413,6 +2413,9 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 </style>
+<style>
+/* @orebit-inline: shared/ui/action-roles.css */
+</style>
 </head>
 <body>
 
@@ -2733,6 +2736,17 @@ input[type="checkbox"], input[type="radio"] {
       <button class="btn secondary" onclick="downloadEmbeddedTable('geology')"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="core.imp.geologyTemplate">Geology template</span></button>
     </div>
   </div>
+
+
+  <details class="card" id="coreTrainingExercises">
+    <summary data-i18n="core.training.title">Try a validation exercise</summary>
+    <p class="hint" data-i18n="core.training.hint">Download a synthetic example, unzip it and import all four CSV files. Inspect Validation, then correct the source data and import again.</p>
+    <div class="row-controls">
+      <button class="btn secondary" type="button" data-action-role="inspect" onclick="downloadTrainingExercise('missing-survey')" data-i18n="core.training.missing">Missing survey example</button>
+      <button class="btn secondary" type="button" data-action-role="inspect" onclick="downloadTrainingExercise('overlapping-assay')" data-i18n="core.training.overlap">Overlapping intervals example</button>
+    </div>
+    <p class="hint" data-i18n="core.training.safe">Downloading keeps your current project unchanged. These intentional errors belong only to the exercises.</p>
+  </details>
 
   <div class="card">
     <h3 data-i18n="core.projectFolder">Project Folder</h3>
@@ -4516,7 +4530,7 @@ function renderNextStepP1(n) {
       <div class="next-step-text">
         ${ICONS.check} <strong>${doneQ}</strong> ${continueTo} <strong>${tabWord} ${info.tab} — ${label}</strong>: ${reason}.${note}
       </div>
-      <button onclick="showTab(${info.tab})" ${ready ? '' : 'disabled'}>${continueTo} ${label} →</button>
+      <button class="btn" data-action-role="next" onclick="showTab(${info.tab})" ${ready ? '' : 'disabled'}>${continueTo} ${label} →</button>
     </div>
   `;
 }
@@ -6456,6 +6470,33 @@ function downloadEmbeddedTable(tableName) {
   const csv = [cols.join(',')];
   rows.forEach(r => csv.push(cols.map(c => csvEscape(r[c])).join(',')));
   downloadFile(`${tableName}-template.csv`, addCSVWatermark(csv.join('\n')), 'text/csv');
+}
+
+async function downloadTrainingExercise(kind) {
+  if (!['missing-survey', 'overlapping-assay'].includes(kind)) return;
+  if (typeof JSZip === 'undefined') { toast(t('core.training.unavailable'), 'warn'); return; }
+  const tables = Object.fromEntries(['collar', 'survey', 'assay', 'geology'].map(name =>
+    [name, SAMPLE_DATA[name].map(row => ({...row}))]));
+  const hole = tables.collar[0].hole_id;
+  if (kind === 'missing-survey') tables.survey = tables.survey.filter(row => row.hole_id !== hole);
+  else {
+    const first = tables.assay.find(row => row.hole_id === hole);
+    tables.assay.push({...first, from_m: (first.from_m + first.to_m) / 2});
+  }
+  const zip = new JSZip();
+  for (const [name, rows] of Object.entries(tables)) {
+    const cols = [...new Set(rows.flatMap(row => Object.keys(row)))];
+    const csv = [cols.map(csvEscape).join(','), ...rows.map(row => cols.map(col => csvEscape(row[col])).join(','))].join('\n');
+    zip.file(name + '.csv', csv + '\n');
+  }
+  zip.file('README.txt', 'Orebit.id synthetic nickel laterite / CC BY 4.0\n' +
+    'Exercise: ' + kind + '. Affected hole: ' + hole + '.\n' +
+    'Import all four CSV files, open Validation, inspect the affected hole.\n' +
+    (kind === 'missing-survey' ? 'Restore its measured survey from the original sample before desurveying. Do not invent a survey.\n' :
+      'Remove the intentionally duplicated interval after checking the original log. Do not silently average duplicates.\n') +
+    'Reset to Sample Data restores the original complete teaching dataset.\n');
+  const blob = await zip.generateAsync({type: 'blob'});
+  downloadFile('orebit-nickel-' + kind + '.zip', blob, 'application/zip');
 }
 
 function csvEscape(v) {
@@ -9496,7 +9537,7 @@ function renderDesurvey() {
         <div class="stat-box"><div class="label">${t('core.renderDesurvey.verticalAssumed')}</div><div class="value">${holes.length - inclined}</div></div>
       </div>
       <div class="row-controls">
-        <button class="btn small" onclick="computeDesurvey(); renderDesurvey(); toast(t('core.renderDesurvey.recomputed'), 'good');">↻ ${t('core.renderDesurvey.recompute')}</button>
+        <button data-action-role="apply" class="btn small" onclick="computeDesurvey(); renderDesurvey(); toast(t('core.renderDesurvey.recomputed'), 'good');">↻ ${t('core.renderDesurvey.recompute')}</button>
         <button class="btn small secondary" onclick="exportDesurveyCSV()">${ICONS.download} ${t('core.renderDesurvey.exportTraceCsv')}</button>
       </div>
     </div>
@@ -10189,7 +10230,7 @@ function renderMerge() {
         <strong>${mIsId ? 'Audit join' : 'Join audit'}:</strong> ${audit.assayWithoutCollar?.length || 0} ${mIsId ? 'hole assay tanpa collar' : 'assay holes without collar'} · ${audit.assayWithoutSurvey?.length || 0} ${mIsId ? 'tanpa survey' : 'without survey'} · ${audit.intervalsWithoutXYZ || 0} ${mIsId ? 'interval tanpa XYZ' : 'intervals without XYZ'} · ${audit.intervalsWithoutGeology || 0} ${mIsId ? 'interval tanpa geology' : 'intervals without geology'}.
         ${audit.geologyWithoutAssay?.length ? `<br>${mIsId ? 'Hole geology-only yang tidak dipakai' : 'Geology-only holes not used'}: ${audit.geologyWithoutAssay.length}.` : ''}
       </div>
-      <button class="btn small" onclick="computeMerge(); renderMerge(); toast(t('core.renderMerge.reMerged'), 'good');">↻ ${mIsId ? 'Hitung ulang merge' : 'Recompute merge'}</button>
+      <button data-action-role="apply" class="btn small" onclick="computeMerge(); renderMerge(); toast(t('core.renderMerge.reMerged'), 'good');">↻ ${mIsId ? 'Hitung ulang merge' : 'Recompute merge'}</button>
     </div>
     <div class="card">
       <h3>${mIsId ? 'Pratinjau (20 baris pertama)' : 'Preview (first 20 rows)'}</h3>
@@ -11397,7 +11438,7 @@ function renderExport() {
           : '';
       })()}
       <div class="row-controls" style="margin-top:14px;">
-        <button class="btn" onclick="exportMasterCSV()">${ICONS.download} ${t('core.ex.downloadMaster')}</button>
+        <button data-action-role="export" class="btn" onclick="exportMasterCSV()">${ICONS.download} ${t('core.ex.downloadMaster')}</button>
         ${OrebitHandoff.available() ? `<button class="btn" data-handoff="Assay" onclick="OrebitHandoff.send('Assay', exportMasterCSV)" title="${escapeHtml(t('handoff.toAssayTitle'))}">${t('handoff.toAssay')}</button>` : ''}
         <button class="btn secondary" onclick="exportFullPackage()">${ICONS.package} ${t('core.ex.downloadAll')}</button>
       </div>

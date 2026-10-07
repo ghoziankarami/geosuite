@@ -812,5 +812,15 @@
   "core.reportInsight.notReady": "Do not use these intervals for spatial estimation yet. Complete or correct their collar/survey or supplied midpoint coordinates, then validate and merge again.",
   "core.reportInsight.coordinates": "Coordinate source: {source}. CRS: {crs}. Missing merged XYZ: {missing}. Supplied coordinates and measured surveys need independent verification.",
   "core.reportInsight.next": "Review the listed failures and warnings first. Export the merged master to Assay. Keep the original files and coordinate/unit notes so every later result can be traced.",
-  "core.reportInsight.evidence": "The map shows drill coverage, not an ore boundary. Validation tables explain missing links, invalid intervals and geometry. Grade summaries describe samples only; Core does not calculate Resource tonnes."
+  "core.reportInsight.evidence": "The map shows drill coverage, not an ore boundary. Validation tables explain missing links, invalid intervals and geometry. Grade summaries describe samples only; Core does not calculate Resource tonnes.",
+  "ux.action.next": "Main action / continue",
+  "ux.action.inspect": "Inspect results",
+  "ux.action.custom": "Custom parameters",
+  "ux.action.advanced": "Advanced tools · optional",
+  "core.training.title": "Try a validation exercise",
+  "core.training.hint": "Download a synthetic example, unzip it and import all four CSV files. Inspect Validation, then correct the source data and import again.",
+  "core.training.missing": "Missing survey example",
+  "core.training.overlap": "Overlapping intervals example",
+  "core.training.safe": "Downloading keeps your current project unchanged. These intentional errors belong only to the exercises.",
+  "core.training.unavailable": "The exercise ZIP tool has not loaded. Reload the app and try again."
 }

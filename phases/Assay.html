@@ -2166,6 +2166,9 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 </style>
+<style>
+/* @orebit-inline: shared/ui/action-roles.css */
+</style>
 </head>
 <body>
 
@@ -5579,7 +5582,7 @@ function renderNextStepP2(n) {
       <div class="next-step-text">
         ${ICONS.check} <strong data-i18n="asy.doneStep">Done with this step?</strong> ${t('asy.ns.continueToTab')} <strong>${t('asy.ns.tabWord')} ${info.tab} — ${label}</strong>: ${t(info.reasonKey)}.${note}
       </div>
-      <button onclick="showTab(${info.tab})" ${ready ? '' : 'disabled'}>${t('asy.continueTo')} ${label} →</button>
+      <button class="btn" data-action-role="next" onclick="showTab(${info.tab})" ${ready ? '' : 'disabled'}>${t('asy.continueTo')} ${label} →</button>
     </div>
   `;
 }

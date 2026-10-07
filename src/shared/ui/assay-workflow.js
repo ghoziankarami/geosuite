@@ -99,7 +99,7 @@
     return text('loaded',{rows:d.rows.length,elements:availableElements().length});
   }
   function node(tag,content,className) {const el=document.createElement(tag);if(content!=null)el.textContent=content;if(className)el.className=className;return el;}
-  function button(title,fn,secondary=false) {const el=node('button',title,'btn'+(secondary?' secondary':''));el.type='button';el.addEventListener('click',fn);return el;}
+  function button(title,fn,secondary=false,role='inspect') {const el=node('button',title,'btn'+(secondary?' secondary':''));el.type='button';el.dataset.actionRole=role;el.addEventListener('click',fn);return el;}
   function navigate(n){showTab(n);document.querySelector('#tab'+n+' .assay-workflow-card')?.scrollIntoView({block:'start',behavior:'smooth'});}
   function record(n,advance) {
     if(!data()?.rows?.length)return;
@@ -136,7 +136,7 @@
       const r=entries[tab];el.classList.toggle('workflow-reviewed',!!r&&r.context===context(tab));
     });
     let toggle=document.getElementById('assayAdvancedToggle');
-    if(!toggle){toggle=button('',()=>{document.body.classList.toggle('assay-advanced-open');decorateNavigation(current);},true);toggle.id='assayAdvancedToggle';toggle.style.order='90';nav.append(toggle);}
+    if(!toggle){toggle=button('',()=>{document.body.classList.toggle('assay-advanced-open');decorateNavigation(current);},true);toggle.dataset.actionRole='advanced';toggle.id='assayAdvancedToggle';toggle.style.order='90';nav.append(toggle);}
     if(n!==1&&!MAIN.includes(n))document.body.classList.add('assay-advanced-open');
     const open=document.body.classList.contains('assay-advanced-open');toggle.textContent=text(open?'hideAdvanced':'advanced');toggle.setAttribute('aria-expanded',String(open));
   }
@@ -157,11 +157,13 @@
     const facts=node('div',null,'workflow-insight');facts.append(node('strong',text('quickInsight')),node('p',insight(n)));card.append(facts);
     card.append(node('p',text('recommend'+n),'workflow-recommendation'));
     const actions=node('div',null,'workflow-actions');
-    const calc=button(text(n===2?'chooseFile':n===3?'checkData':n===8?'reviewTail':n===7?'useMedian':n===13?'pdf':'refresh'),()=>recommend(n));
+    const calc=button(text(n===2?'chooseFile':n===3?'checkData':n===8?'reviewTail':n===7?'useMedian':n===13?'pdf':'refresh'),()=>recommend(n),false,n===2?'apply':n===13?'export':n===7?'custom':'inspect');
     calc.disabled=n!==2&&!data()?.rows?.length;actions.append(calc);
-    if(n!==2&&n!==13){const next=button(text('recordContinue'),()=>record(n,true),true);next.disabled=!data()?.rows?.length;actions.append(next);}
+    if(n!==2&&n!==13){const next=button(text('recordContinue'),()=>record(n,true),false,'next');next.disabled=!data()?.rows?.length;actions.append(next);}
     if(n===13&&typeof OrebitHandoff!=='undefined'&&OrebitHandoff.available())actions.append(button(window.__t('handoff.toResource'),()=>OrebitHandoff.send('Resource',exportMasterForEstimation),true));
+    if([7,8,9,10,11].includes(n))actions.append(button(text('custom'),()=>{const control=Array.from(panel.querySelectorAll('select,input[type=number]')).find(el=>!el.closest('.assay-workflow-card'));if(control){control.scrollIntoView({block:'center',behavior:'smooth'});control.focus({preventScroll:true});}},true,'custom'));
     card.append(actions);
+    const key=node('div',null,'action-key');for(const role of ['next','inspect','custom','advanced'])key.append(node('span',window.__t('ux.action.'+role),'action-key-'+role));card.append(key);
     const details=node('details',null,'workflow-notes');details.open=!!notesOpen;details.append(node('summary',text('notes')));
     const noteLabel=node('label',text('noteLabel'));noteLabel.htmlFor='assay-stage-note-'+n;
     const note=node('textarea');note.id=noteLabel.htmlFor;note.rows=2;note.maxLength=5000;note.value=oldNote??entries[n]?.note??'';

@@ -60,6 +60,11 @@ def main():
         expected = core.evaluate("(() => { const f = OrebitHandoff.capture(exportMasterCSV); return f && f.text; })()")
         exp_rows = rows_of(expected)
         check("Core's master export can be captured", len(exp_rows) > 8000, str(len(exp_rows)))
+        source_density = core.evaluate("STATE.assay.map(r => r.density)")
+        check("Core exports every measured density without changing its value",
+              len(source_density) == len(exp_rows) and all(float(row['density']) == float(d)
+              for row, d in zip(exp_rows, source_density)))
+
         buttons = core.evaluate("""(() => { for (let i = 1; i <= 14; i++) { try { showTab(i); } catch (e) {}
             if (document.querySelector('[data-handoff="Assay"]')) return true; } return false; })()""")
         check("a 'Continue in Assay' button is rendered on the web", buttons)
@@ -73,6 +78,11 @@ def main():
         got_holes = set(assay.evaluate("(() => { const i = colIdx('hole_id'); return [...new Set(DATA.rows.map(r => String(r[i])))]; })()"))
         check("Assay received every row of Core's export", True, f"{len(exp_rows)} rows")
         check("…and every hole", got_holes == {r["hole_id"] for r in exp_rows}, f"{len(got_holes)} holes")
+        got_density = assay.evaluate("DATA.rows.map(r => r[colIdx('density')])")
+        check("Core → Assay preserves the exact density vector",
+              len(got_density) == len(exp_rows) and all(float(v) == float(row['density'])
+              for v, row in zip(got_density, exp_rows)))
+
         check("the ?handoff=1 marker is removed from the address", "handoff" not in assay.url, assay.url)
 
         print("\n── Assay → Resource ──")
@@ -86,6 +96,11 @@ def main():
         ready(res)
         res.wait_for_function(f"() => typeof DATA !== 'undefined' && DATA && DATA.rows && DATA.rows.length === {len(comp_rows)}", timeout=90000)
         check("Resource received every composite", True, f"{len(comp_rows)} composites")
+        got_density = res.evaluate("DATA.rows.map(r => r[colIdx('density')])")
+        check("Assay → Resource preserves every exported composite density",
+              len(got_density) == len(comp_rows) and all(float(v) == float(row['density'])
+              for v, row in zip(got_density, comp_rows)))
+
         doms = res.evaluate("(() => { const s = document.getElementById('setupDomain'); showTab(3); const t = document.getElementById('setupDomain'); return t ? [...t.options].map(o => o.value) : []; })()")
         check("…with the domains Assay assigned", {"M0-Background", "M1-Mineralised"} <= set(doms) or len(doms) > 1, str(doms))
 

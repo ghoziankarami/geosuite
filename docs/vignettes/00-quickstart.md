@@ -8,14 +8,14 @@ Setiap modul terbuka dengan dataset contoh yang sudah dimuat: 350 lubang bor pad
 
 [Buka Orebit Core](https://geosuite.orebit.id/try/Core.html).
 
-- **Dashboard** menampilkan 350 lubang bor, 8.278 sampel assay, dan 8 km pengeboran, dengan overburden, limonit, saprolit, dan batuan dasar tercatat di setiap lubang.
+- **Dashboard** menampilkan 350 lubang bor, 8.211 sampel assay, dan 8 km pengeboran, dengan overburden, limonit, saprolit, dan batuan dasar tercatat;10lubang berhenti sebelum batuan dasar.
 - **Validasi** memeriksa setiap lubang: survey yang hilang, interval tumpang tindih atau berlubang, lubang tanpa log geologi, dan mendaftar setiap temuan beserta alasannya.
 - **Section** menggambar lubang bor pada penampang dengan kadar dan litologi.
 - **Desurvey** mengubah collar dan survey menjadi lintasan lubang 3D.
 
 ## 2. Assay: pahami kadarnya (3 menit)
 
-[Buka Orebit Assay](https://geosuite.orebit.id/try/Assay.html). Modul ini terbuka dengan komposit 1 m dari seluruh 350 lubang: Ni, Co, Fe, MgO, SiO2, Al2O3, dan Cr2O3, dibagi menjadi domain saprolit dan limonit.
+[Buka Orebit Assay](https://geosuite.orebit.id/try/Assay.html). Modul ini terbuka dengan interval nominal 1 m dari seluruh 350 lubang: Ni, Co, Fe, MgO, SiO2, Al2O3, dan Cr2O3, dibagi menjadi domain saprolit dan limonit.
 
 - **Stats** memberi rata-rata, CV, dan persentil per unsur dan per domain.
 - **Top-Cut** menunjukkan di mana ekor atas distribusi mulai pecah dan menyarankan batas atasnya.
@@ -47,3 +47,5 @@ Versi web tidak memerlukan instalasi. Pada Chrome atau Edge, pilih **Install app
 Pengguna Windows juga bisa mengunduh tiga executable terpisah melalui [GitHub Releases](https://github.com/ghoziankarami/geosuite/releases/latest). Executable belum ditandatangani; bandingkan berkas dengan daftar checksum rilis.
 
 Ekspor proyek sebagai cadangan. Penyimpanan browser mengikuti profil browser dan origin situs; menghapusnya dapat menghilangkan pekerjaan tersimpan. Simpan file ekspor di luar browser. Untuk build dari source, ikuti [panduan instalasi repo](https://github.com/ghoziankarami/geosuite#build-from-source).
+
+Pola bor mengikuti prospek berarah jurus dengan batas tidak beraturan dan infill terpilih. Core menyimpan semua horizon mentah; contoh awal Assay/Resource memilih LIM/SAP. Density terukur tetap dibawa saat handoff. Untuk latihan validasi, gunakan [kasus survey hilang dan assay overlap](https://github.com/ghoziankarami/orebit-datasets/tree/main/exercises); periksa dan perbaiki sebelum export.

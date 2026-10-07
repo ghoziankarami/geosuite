@@ -2171,6 +2171,31 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 </style>
+<style>
+/* @orebit-inline: shared/ui/action-roles.css */
+</style>
+<style>
+/* Resource reading layout: one figure per row; diagnostic controls are disclosed. */
+.resource-setup-main .row-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+.resource-setup-main .row-controls label{display:flex;flex-direction:column;gap:8px;min-width:0}
+.resource-setup-main .row-controls select{width:100%;min-height:44px}
+.resource-setup-target{padding:24px!important}
+.resource-setup-help{color:var(--fg-mute);font-size:13px;line-height:1.65;margin:8px 0 16px}
+.resource-setup-actions{display:flex;justify-content:flex-end;margin:16px 0}
+.resource-quick-insight{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
+.resource-quick-insight>div{padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px}
+.resource-quick-insight span{display:block;font-size:12px;color:var(--fg-mute);margin-bottom:4px}
+.resource-quick-insight strong{font-size:19px}
+.resource-disclosure{margin:14px 0;padding:18px;border:1px solid var(--border);border-radius:12px;background:var(--card,var(--bg))}
+.resource-disclosure>summary{font-weight:650;cursor:pointer;min-height:32px;line-height:1.6}
+.resource-inspect{border-left:3px solid #53729a}.resource-advanced{border-left:3px solid var(--border)}
+.resource-inspect-grid,.resource-advanced-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;min-width:0}
+.resource-inspect-grid .metric-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+.resource-inspect-grid .card,.resource-advanced-grid .card{margin-top:0!important;min-width:0}
+.panel :is(.grid-2,.grid-3,.fb-grid):has(.plot-container,.js-plotly-plot){grid-template-columns:minmax(0,1fr)!important}
+.panel .js-plotly-plot{min-width:0;max-width:100%}
+@media(max-width:650px){.resource-setup-main .row-controls,.resource-quick-insight{grid-template-columns:minmax(0,1fr)}.resource-setup-target,.resource-disclosure{padding:16px!important}.resource-inspect-grid .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.resource-setup-actions button{width:100%}.resource-inspect-grid .thin{font-size:11px;table-layout:fixed;overflow-wrap:anywhere}}
+</style>
 </head>
 <body>
 
@@ -2437,7 +2462,7 @@ input[type="checkbox"], input[type="radio"] {
 <div class="panel" id="tab3" data-panel="setup" role="tabpanel">
   <h2 data-i18n="panel.setup.title">Estimation Setup</h2>
   <div class="hint">
-    <p>Select target element, domains to estimate, and declustering parameters. Default = auto-pilot (conservative parameters).</p>
+    <p>Select target element, domains to estimate, and declustering parameters. Review the defaults and change parameters when your geology requires it.</p>
   </div>
 
   <div id="setupContent"></div>
@@ -5020,6 +5045,8 @@ function initDragDrop() {
  ============================================================ */
 function renderSetupTab() {
  const div = document.getElementById('setupContent');
+ const inspectOpen=!!document.getElementById('resourceSetupInspect')?.open;
+ const advancedOpen=!!document.getElementById('resourceSetupAdvanced')?.open;
  const doms = uniqueDomains();
  const elsAvailable = detectActiveElements().filter(e => DATA.cols.includes(e));
  const rowsAll = DATA.rows;
@@ -5055,13 +5082,14 @@ function renderSetupTab() {
  if (setupState.declusterCell == null) setupState.declusterCell = Math.round(avgSpacing);
 
  div.innerHTML = `
- <div class="grid-2">
- <div class="card">
- <h3 data-i18n="res.targetElement"> Target Element</h3>
+ <section class="resource-setup-main">
+ <div class="card resource-setup-target">
+ <h3>${t('res.guide.target')}</h3>
+ <p class="resource-setup-help">${t('res.guide.targetHint')}</p>
  <div class="row-controls">
  <label>${t('res.st.element')}
  <select id="setupElement">
- ${elsAvailable.map(e => `<option value="${escapeHtml(e)}" ${setupState.element === e? 'selected' : ''}>${escapeHtml(ELEMENT_LABEL[e] || e)}</option>`).join('')}
+ ${elsAvailable.map(e => `<option value="${escapeHtml(e)}" ${setupState.element === e? 'selected' : ''}>${escapeHtml(elementLabelFor(e))}</option>`).join('')}
  </select>
  </label>
 <label>${t('res.domain')}
@@ -5083,8 +5111,18 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
  </div>
  <p style="margin-top:8px;font-size:12px;color:var(--fg-mute);">${t('res.activeUnit')} <strong>${escapeHtml(gradeUnitFor(setupState.element))}</strong>. ${gradeUnitFor(setupState.element) === 'kg/m³' ? t('res.unitVolumetric') : t('res.unitMass')}</p>
  <div id="setupDomainWarn">${_allDomainsWarnHtml()}</div>
- <div id="elementSummary" style="margin-top:12px;"></div>
+ <div id="resourceSetupQuickInsight" class="resource-quick-insight"></div>
  </div>
+ </section>
+ <div class="resource-setup-actions">
+ <button class="btn" id="resourceSetupNext" type="button" data-action-role="next" onclick="showTab(4)">${t('res.guide.next')}</button>
+ </div>
+ <div class="action-key"><span class="action-key-next">${t('ux.action.next')}</span><span class="action-key-inspect">${t('ux.action.inspect')}</span><span class="action-key-custom">${t('ux.action.custom')}</span><span class="action-key-advanced">${t('ux.action.advanced')}</span></div>
+ <details class="resource-disclosure resource-inspect" id="resourceSetupInspect" ${inspectOpen?'open':''}>
+ <summary>${t('res.guide.inspect')}</summary>
+ <p class="resource-setup-help">${t('res.guide.inspectHint')}</p>
+ <div class="resource-inspect-grid">
+ <div class="card"><h3>${t('res.guide.inspectStats')}</h3><div id="elementSummary"></div></div>
  <div class="card">
  <h3 data-i18n="res.dataExtent"> Data Extent</h3>
  <table class="thin">
@@ -5098,7 +5136,7 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
 
     <div class="card" style="margin-top:14px;">
     <h3 data-i18n="res.spatialMap">Spatial Map — Collar Plan View</h3>
-    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:10px;">${t('res.st.collarMapFull')} <strong>${escapeHtml(ELEMENT_LABEL[setupState.element] || setupState.element || 'grade')}</strong>${t('res.st.collarMapHint2')}</p>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:10px;">${t('res.st.collarMapFull')} <strong>${escapeHtml(elementLabelFor(setupState.element || 'grade'))}</strong>${t('res.st.collarMapHint2')}</p>
     
               <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
                 <label style="font-size:13px;display:flex;align-items:center;gap:6px;">CRS:
@@ -5114,6 +5152,12 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
               <div id="setupSpatialMap" style="height:440px;"></div>
     </div>
 
+ </div>
+ </details>
+ <details class="resource-disclosure resource-advanced" id="resourceSetupAdvanced" ${advancedOpen?'open':''}>
+ <summary>${t('res.guide.advanced')}</summary>
+ <p class="resource-setup-help">${t('res.guide.advancedHint')}</p>
+ <div class="resource-advanced-grid">
     <div class="card" style="margin-top:14px;">
     <h3 data-i18n="res.cellDeclustering"> Cell Declustering</h3>
  <p style="font-size:13px;color:var(--fg-mute);margin-bottom:10px;">${t('res.dc.hint')}</p>
@@ -5121,7 +5165,7 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
  <label>${t('res.dc.cellSize')}
  <input type="number" id="declusterCell" value="${setupState.declusterCell}" min="5" max="2000" step="5" style="width:120px;">
  </label>
- <button class="btn" onclick="runDeclustering()" data-i18n="res.runDecluster"> Run Declustering</button>
+ <button class="btn" data-action-role="custom" onclick="runDeclustering()" data-i18n="res.runDecluster"> Run Declustering</button>
  <button class="btn secondary" onclick="resetDeclustering()">${t('res.dc.reset')}</button>
  </div>
  <div id="declusterResult" style="margin-top:14px;"></div>
@@ -5134,14 +5178,13 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
   <label>${t('res.tc.value')}
    <input type="number" id="topCutVal" value="" placeholder="auto (P99)" style="width:120px;" step="0.01">
   </label>
-  <button class="btn" onclick="runTopCutAnalysis()" data-i18n="res.analyze"> Analyze</button>
+  <button class="btn" data-action-role="inspect" onclick="runTopCutAnalysis()" data-i18n="res.analyze"> Analyze</button>
  </div>
  <div id="topCutResult" style="margin-top:14px;"></div>
  </div>
 
- <div class="hint" style="margin-top:14px;">
- <p><strong data-i18n="res.next">Next:</strong> ${t('res.st.nextTab4')} Declustering is optional but recommended when there is clear cluster bias.</p>
  </div>
+ </details>
  `;
 
  document.getElementById('setupElement').addEventListener('change', e => {
@@ -5175,6 +5218,7 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
  classState = { thresholds: null, labels: null };
  crossvalState = { results: null, metrics: null };
  renderElementSummary();
+ if(document.getElementById('resourceSetupInspect')?.open)renderSetupSpatialMap();
  });
  document.getElementById('declusterCell').addEventListener('change', e => {
  setupState.declusterCell = +e.target.value;
@@ -5182,7 +5226,9 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
 
  renderElementSummary();
  if (setupState.decluster) renderDeclusterResult();
- setTimeout(() => { if (typeof renderSetupSpatialMap === 'function') renderSetupSpatialMap(); }, 30);
+ const inspect=document.getElementById('resourceSetupInspect');
+ inspect.addEventListener('toggle',()=>{if(inspect.open&&typeof renderSetupSpatialMap==='function')requestAnimationFrame(()=>renderSetupSpatialMap());});
+ if(inspect.open)setTimeout(()=>renderSetupSpatialMap(),30);
 }
 
 // Plan-view collar map for the Setup tab: one point per hole, colored by mean grade
@@ -5218,9 +5264,21 @@ function renderSetupSpatialMap() {
     const my = h.ys.reduce((a, b) => a + b, 0) / h.ys.length;
     const mg = h.gs.length ? h.gs.reduce((a, b) => a + b, 0) / h.gs.length : null;
     xs.push(mx); ys.push(my); gs.push(mg);
-    txt.push(`${id}${mg !== null ? '<br>mean ' + (ELEMENT_LABEL[el] || el) + ': ' + mg.toFixed(3) : ''}`);
+    txt.push(`${id}${mg !== null ? '<br>mean ' + elementLabelFor(el) + ': ' + mg.toFixed(3) + ' ' + gradeUnitFor(el) : ''}`);
   });
-  const hasGrade = gs.some(v => v !== null);
+  const validIdx = gs.map((g,i) => g === null ? -1 : i).filter(i => i >= 0);
+  const missingIdx = gs.map((g,i) => g === null ? i : -1).filter(i => i >= 0);
+  const markerFor = measured => measured
+    ? {size: 9, color: validIdx.map(i => gs[i]), colorscale: 'Viridis', showscale: true,
+       colorbar: {title: elementLabelFor(el || 'grade'), thickness: 12},
+       line: {width: 0.5, color: '#ffffff'}}
+    : {size: 9, color: '#8794a8', line: {width: 0.5, color: '#ffffff'}};
+  const traceFor = (indices, measured, coordinates, map=false) => ({
+    type: map ? 'scattermapbox' : 'scatter', mode: 'markers',
+    ...Object.fromEntries(Object.entries(coordinates).map(([key,values]) => [key, indices.map(i => values[i])])),
+    text: indices.map(i => txt[i] + (measured ? '' : '<br>' + t('res.guide.missingGrade'))),
+    hoverinfo: 'text', marker: markerFor(measured), name: measured ? elementLabelFor(el) : t('res.guide.missingGrade')
+  });
 
   // ---- Satellite basemap mode (opt-in via toggle + valid UTM CRS) ----
   const satEl = document.getElementById('setupSatToggle');
@@ -5236,14 +5294,8 @@ function renderSetupSpatialMap() {
       const lons = ll.map(c => c[0]), lats = ll.map(c => c[1]);
       const clon = lons.reduce((a, b) => a + b, 0) / lons.length;
       const clat = lats.reduce((a, b) => a + b, 0) / lats.length;
-      const satTrace = {
-        type: 'scattermapbox', lon: lons, lat: lats, mode: 'markers', text: txt, hoverinfo: 'text',
-        marker: hasGrade
-          ? { size: 11, color: gs.map(v => v === null ? 0 : v), colorscale: 'YlOrRd', showscale: true,
-              colorbar: { title: ELEMENT_LABEL[el] || el || 'grade', thickness: 12 } }
-          : { size: 10, color: '#16a34a' },
-      };
-      Plotly.newPlot(gd, [satTrace], {
+      const satTraces = [validIdx.length ? traceFor(validIdx,true,{lon:lons,lat:lats},true) : null, missingIdx.length ? traceFor(missingIdx,false,{lon:lons,lat:lats},true) : null].filter(Boolean);
+      Plotly.newPlot(gd, satTraces, {
         ...(typeof plotTheme === 'function' ? plotTheme() : {}), height: 440,
         margin: { l: 0, r: 0, t: 0, b: 0 }, showlegend: false,
         mapbox: { style: 'white-bg', center: { lon: clon, lat: clat }, zoom: 12,
@@ -5253,16 +5305,10 @@ function renderSetupSpatialMap() {
     }
   }
 
-  const trace = {
-    x: xs, y: ys, mode: 'markers', type: 'scatter', text: txt, hoverinfo: 'text',
-    marker: hasGrade
-      ? { size: 11, color: gs.map(v => v === null ? 0 : v), colorscale: 'YlOrRd', showscale: true,
-          colorbar: { title: ELEMENT_LABEL[el] || el || 'grade', thickness: 12 }, line: { width: 0.6, color: '#333' } }
-      : { size: 10, color: '#0d9488', line: { width: 0.6, color: '#333' } },
-  };
-  Plotly.newPlot(gd, [trace], {
+  const traces = [validIdx.length ? traceFor(validIdx,true,{x:xs,y:ys}) : null, missingIdx.length ? traceFor(missingIdx,false,{x:xs,y:ys}) : null].filter(Boolean);
+  Plotly.newPlot(gd, traces, {
     ...(typeof plotTheme === 'function' ? plotTheme() : {}), height: 440,
-    margin: { l: 60, r: 10, t: 10, b: 50 }, showlegend: false,
+    margin: { l: 80, r: 24, t: 20, b: 65 }, showlegend: false,
     xaxis: { title: t('res.ax.eastingX'), scaleanchor: 'y', scaleratio: 1 },
     yaxis: { title: t('res.ax.northingY') },
   }, { responsive: true, displayModeBar: false });
@@ -5284,10 +5330,12 @@ function exportSetupSpatialMap() {
 function renderElementSummary() {
  const div = document.getElementById('elementSummary');
  if (!div) return;
+ const quick=document.getElementById('resourceSetupQuickInsight');
+ const next=document.getElementById('resourceSetupNext');
  const rows = rowsFiltered();
  const vals = elementValues(setupState.element, rows);
  if (vals.length === 0) {
- div.innerHTML = '<div class="hint warn">No data for this filter.</div>';
+ div.textContent=t('res.guide.empty');if(quick)quick.textContent=t('res.guide.empty');if(next)next.disabled=true;
  return;
  }
  vals.sort((a, b) => a - b);
@@ -5297,6 +5345,8 @@ function renderElementSummary() {
  const variance = vals.reduce((a, b) => a + (b - mean) ** 2, 0) / n;
  const sd = Math.sqrt(variance);
  const cv = sd / mean;
+ if(next)next.disabled=false;
+ if(quick)quick.innerHTML=`<div><span>${t('res.guide.grades')}</span><strong>${n.toLocaleString('en-US')}</strong></div><div><span>${t('res.guide.mean')}</span><strong>${mean.toFixed(2)} ${escapeHtml(gradeUnitFor(setupState.element))}</strong></div><div><span>${t('res.guide.variability')}</span><strong>${Number.isFinite(cv)?cv.toFixed(2):'—'}</strong></div>`;
  div.innerHTML = `
  <h4><span data-i18n="res.st.statsPrefix">Stats:</span> ${escapeHtml(ELEMENT_LABEL[setupState.element] || setupState.element)}${setupState.domain!== 'all'? ` · Domain ${setupState.domain}` : ''}</h4>
  <div class="metric-grid">
@@ -5413,8 +5463,8 @@ async function renderVariography() {
  <label>${t('res.vg.nLags')} <input type="number" id="varN" value="15" min="3" max="40" style="width:70px;" title="Number of lag bins. Total range covered = N × lag size."></label>
  <label title="Angle tolerance: angular window for directional binning">${t('res.vg.tolAngle')} <input type="number" id="varTol" value="22.5" min="5" max="90" style="width:80px;" title="Angle tolerance: angular window for directional binning. Larger = more pairs but less directional purity."></label>
  <label>Max h (m): <input type="number" id="varMaxH" value="" placeholder="auto" style="width:90px;" title="Maximum lag distance. Auto = clamp to ½ data extent."></label>
- <button class="btn" onclick="computeVariogram()"> ${t('res.renderDeclusterResult.compute')} ${abbr('Variogram', 'variogram')}</button>
- <button class="btn secondary" onclick="autoFitVariogram()"> ${t('res.renderDeclusterResult.autoFit')}</button>
+ <button data-action-role="apply" class="btn" onclick="computeVariogram()"> ${t('res.renderDeclusterResult.compute')} ${abbr('Variogram', 'variogram')}</button>
+ <button data-action-role="custom" class="btn secondary" onclick="autoFitVariogram()"> ${t('res.renderDeclusterResult.autoFit')}</button>
  </div>
  <div id="varStatus" style="margin-top:10px;font-size:13px;color:var(--fg-mute);">${t('res.renderDeclusterResult.pressComputeVariogramStart')}</div>
  </div>
@@ -5437,7 +5487,7 @@ async function renderVariography() {
  <label>${abbr('Nugget', 'nugget')}: <input type="number" id="varNugget" step="0.01" style="width:90px;" title="C0: variogram intercept at h=0. Micro-scale variability + measurement error."></label>
  <label>${abbr('Sill', 'sill')}: <input type="number" id="varSill" step="0.01" style="width:90px;" title="C0+C: variogram plateau = total variance saat h ≥ range."></label>
  <label>${abbr('Range', 'range')} (m): <input type="number" id="varRange" step="5" style="width:90px;" title="a: distance dimana variogram mencapai sill. Beyond = uncorrelated."></label>
- <button class="btn secondary" onclick="updateModel()">${t('res.renderDeclusterResult.apply')}</button>
+ <button data-action-role="custom" class="btn secondary" onclick="updateModel()">${t('res.renderDeclusterResult.apply')}</button>
  </div>
  <div id="varModelSummary" style="margin-top:14px;"></div>
  </div>
@@ -5453,7 +5503,7 @@ async function renderVariography() {
  <div class="row-controls">
  <label>${t('res.vg.cellLag')} <input type="number" id="vmapLag" value="50" min="2" step="5" style="width:90px;"></label>
  <label>Max h (m): <input type="number" id="vmapMaxH" value="" placeholder="auto" style="width:90px;"></label>
- <button class="btn" onclick="computeVariogramMap()" data-i18n="res.computeVarMap"> Compute Variogram Map</button>
+ <button data-action-role="inspect" class="btn" onclick="computeVariogramMap()" data-i18n="res.computeVarMap"> Compute Variogram Map</button>
  </div>
   <div id="vmapStatus" style="font-size:13px;color:var(--fg-mute);margin-top:6px;">${t('res.vg.pressComputeMap')}</div>
  <div id="vmapPlot" class="plot-container" style="min-height:420px;"></div>
@@ -5474,8 +5524,8 @@ async function renderVariography() {
  <label title="Horizontal tolerance: angular window for directional binning">Tol hor (°): <input type="number" id="dsTol" value="${variogramState.directionalScan.tolHor}" min="5" max="45" step="2.5" style="width:80px;" title="Horizontal tolerance: angular window for directional binning. Defines azimuth bandwidth."></label>
  <label>Lag (m): <input type="number" id="dsLag" value="50" min="2" step="5" style="width:90px;"></label>
  <label>Max h (m): <input type="number" id="dsMaxH" value="" placeholder="auto" style="width:90px;"></label>
- <button class="btn" onclick="computeDirectionalScan()" data-i18n="res.scanDirectional"> Scan Directional</button>
- <button class="btn secondary" onclick="adoptMajorFromScan()" id="dsAdoptBtn" disabled>${t('res.renderDeclusterResult.adoptMajor')}</button>
+ <button data-action-role="inspect" class="btn" onclick="computeDirectionalScan()" data-i18n="res.scanDirectional"> Scan Directional</button>
+ <button data-action-role="custom" class="btn secondary" onclick="adoptMajorFromScan()" id="dsAdoptBtn" disabled>${t('res.renderDeclusterResult.adoptMajor')}</button>
  </div>
   <div id="dsStatus" style="font-size:13px;color:var(--fg-mute);margin-top:6px;">${t('res.vg.pressScan')}</div>
  <div id="dsPlot" class="plot-container" style="min-height:360px;"></div>
@@ -5496,8 +5546,8 @@ async function renderVariography() {
  <div class="row-controls">
  <label>Lag (m): <input type="number" id="dhLag" value="${variogramState.downhole.lagSize}" min="0.5" step="0.5" style="width:80px;"></label>
  <label>Max h (m): <input type="number" id="dhMaxH" value="${variogramState.downhole.maxDist}" min="20" step="10" style="width:90px;"></label>
- <button class="btn" onclick="computeDownholeVariogram()"> ${t('res.renderDeclusterResult.computeDownhole')}</button>
- <button class="btn secondary" onclick="applyDownholeNugget()" id="dhApplyBtn" disabled>${t('res.vg.applyNugget')}</button>
+ <button data-action-role="inspect" class="btn" onclick="computeDownholeVariogram()"> ${t('res.renderDeclusterResult.computeDownhole')}</button>
+ <button data-action-role="custom" class="btn secondary" onclick="applyDownholeNugget()" id="dhApplyBtn" disabled>${t('res.vg.applyNugget')}</button>
  </div>
  <div id="dhStatus" style="font-size:13px;color:var(--fg-mute);margin-top:6px;">${t('res.vg.notComputed')}</div>
  <div id="dhPlot" class="plot-container" style="min-height:280px;"></div>
@@ -12246,7 +12296,7 @@ function renderNextStep(currentTabN) {
  <div class="next-step-text">
  <span style="color:var(--good);"></span> <strong>${done}</strong> ${cont} <strong>${t('next.tabWord')} ${info.tab} \u2014 ${label}</strong>: ${reason}.${note}
  </div>
- <button onclick="showTab(${info.tab})" ${ready? '' : 'disabled'}>${btnLbl}</button>
+ <button class="btn" data-action-role="next" onclick="showTab(${info.tab})" ${ready? '' : 'disabled'}>${btnLbl}</button>
  </div>
  `;
 }

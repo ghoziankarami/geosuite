@@ -8,14 +8,14 @@ Every module opens with the same sample dataset already loaded: 350 drillholes t
 
 [Open Orebit Core](https://geosuite.orebit.id/try/Core.html).
 
-- **Dashboard** shows 350 drillholes, 8,278 assay samples and 8 km of drilling, with the overburden, limonite, saprolite and bedrock logged in each hole.
+- **Dashboard** shows 350 drillholes, 8,211 assay samples and 8 km of drilling, with overburden, limonite, saprolite and bedrock logged; 10 holes stop before bedrock.
 - **Validation** checks every hole for missing surveys, overlapping or gapped intervals and holes without a geology log, and lists each finding with the reason.
 - **Section** draws the holes on a cross-section with grades and lithology.
 - **Desurvey** turns collar and survey into 3D hole traces.
 
 ## 2. Assay: understand the grades (3 minutes)
 
-[Open Orebit Assay](https://geosuite.orebit.id/try/Assay.html). It opens with 1 m composites from all 350 holes: Ni, Co, Fe, MgO, SiO2, Al2O3 and Cr2O3, split into a saprolite and a limonite domain.
+[Open Orebit Assay](https://geosuite.orebit.id/try/Assay.html). It opens with nominal 1 m intervals from all 350 holes: Ni, Co, Fe, MgO, SiO2, Al2O3 and Cr2O3, split into a saprolite and a limonite domain.
 
 - **Stats** gives mean, CV and percentiles per element and per domain.
 - **Top-Cut** shows where the upper tail breaks up and suggests a cap.
@@ -47,3 +47,5 @@ No installation is required for the web version. On Chrome or Edge, use **Instal
 Windows users can also download the three separate executables from [GitHub Releases](https://github.com/ghoziankarami/geosuite/releases/latest). The executables are unsigned; compare the files with the release checksum list.
 
 Export projects as backups. Browser storage belongs to the browser profile and site origin; clearing it can remove saved work. Save the exported files outside the browser. To build from source, follow the [repository installation guide](https://github.com/ghoziankarami/geosuite#build-from-source).
+
+The collar programme follows an irregular strike-oriented prospect with selective infill. Core retains all raw horizons; the initial Assay/Resource example selects LIM/SAP. Measured density is retained in handoffs. For validation practice, use the [missing-survey and overlapping-assay exercises](https://github.com/ghoziankarami/orebit-datasets/tree/main/exercises); inspect and correct them before export.

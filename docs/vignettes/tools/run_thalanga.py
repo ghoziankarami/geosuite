@@ -68,10 +68,14 @@ TABLES = ("collar", "survey", "assay", "geology")
 
 def write_thalanga_csvs(tmp) -> Path:
     """The former default sample (Queensland ds100103, CC BY 4.0) as four CSVs."""
-    fx = (
-        K.repo_root()
-        / "tests/geosuite/fixtures/thalanga-core.json"
+    root = K.repo_root()
+    candidates = (
+        root / "tests/geosuite/fixtures/thalanga-core.json",  # canonical checkout
+        root / "tests/fixtures/thalanga-core.json",  # public source package
     )
+    fx = next((path for path in candidates if path.is_file()), None)
+    if fx is None:
+        raise FileNotFoundError("Thalanga fixture missing from canonical/public source layout")
     data = json.loads(fx.read_text())
     out = Path(tmp) / "thalanga-src"
     out.mkdir(exist_ok=True)

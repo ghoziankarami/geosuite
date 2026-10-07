@@ -250,6 +250,30 @@ try:
                     and "Grade not measured" in traces[1]["text"][0],
                     "Unmeasured grades are separate gray points instead of numeric zero",
                 )
+            if name in ("Assay", "Resource"):
+                page.evaluate("showTab(2)")
+                raw = "hole_id,from_m,to_m,midx,midy,midz,ni_pct,au_gpt,domain\nZ1,0,1,100,200,10,0,,D1\nZ2,0,1,110,200,10,0,,D1\nZ3,0,1,120,200,10,0,,D1\n"
+                page.locator("#fileInput").set_input_files(
+                    {
+                        "name": "measured-zero.csv",
+                        "mimeType": "text/csv",
+                        "buffer": raw.encode(),
+                    }
+                )
+                page.wait_for_function("() => DATA.rows.length===3")
+                detected = page.evaluate(
+                    "availableElements()"
+                    if name == "Assay"
+                    else "detectActiveElements()"
+                )
+                check(
+                    "ni_pct" in detected,
+                    name + " retains a grade column containing only measured zeros",
+                )
+                check(
+                    "au_gpt" not in detected,
+                    name + " excludes an entirely unmeasured schema column",
+                )
             check(
                 not page.evaluate("window.__uxRenderFailures"),
                 name + " has no swallowed renderer failures",

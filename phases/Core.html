@@ -5394,14 +5394,14 @@ function getActualGradeColumns() {
     return standardPattern.test(col) || compoundPattern.test(col) ||
            (STATE.manualGradeCols && STATE.manualGradeCols.has(col));
   });
-  // Filter: only keep columns with at least one non-null non-zero numeric value
+  // Keep a grade with any measured numeric value, including a legitimate zero
   // (drops schema-default empty Au/Cu/Pb/Zn columns when data is e.g. tin-only).
   const result = candidates.filter(col => {
     return STATE.assay.some(r => {
       const v = r[col];
       if (v === null || v === undefined || v === '') return false;
       const n = Number(v);
-      return isFinite(n) && n !== 0;
+      return isFinite(n);
     });
   });
   _cachedGradeCols = result;

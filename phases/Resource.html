@@ -4065,7 +4065,14 @@ const ELEMENTS = ['au_gpt', 'cu_pct', 'pb_pct', 'zn_pct', 'fe_pct'];
 function detectActiveElements(candidate) {
  const ds = candidate || DATA;
  if (!ds ||!ds.cols) return ELEMENTS.filter(e => ds && ds.cols && ds.cols.includes(e));
- const registered = ELEMENTS.filter(e => ds.cols.includes(e));
+ const hasMeasuredValue = col => {
+ const idx = ds.cols.indexOf(col);
+ return idx >= 0 && (ds.rows || []).some(r => {
+ const value = r[idx];
+ return value !== null && value !== undefined && String(value).trim() !== '' && Number.isFinite(Number(value));
+ });
+ };
+ const registered = ELEMENTS.filter(e => ds.cols.includes(e) && hasMeasuredValue(e));
  // Oxide suffix widened to (\d?o\d?)? (from a single (o2|o3|_gpt|...) alternation)
  // and mg/si/al added to the element list — mirrors the identical fix in
  // Core.html's getActualGradeColumns() and Assay.html's availableElements().
@@ -4099,11 +4106,7 @@ function detectActiveElements(candidate) {
  if (lc.includes('density') || lc.includes('berat') || lc.includes('volume') ||
  lc.includes('water') || lc.includes('teoritis') || lc.includes('lapisan')) return false;
  if (!(standardPattern.test(trimmed) || compoundPattern.test(trimmed) || declaredGradeByUpstream(trimmed))) return false;
- const idx = ds.cols.indexOf(trimmed);
- return idx >= 0 && (ds.rows || []).some(r => {
- const v = r[idx]; const n = Number(v);
- return isFinite(n) && n!== 0;
- });
+ return hasMeasuredValue(trimmed);
  });
  return [...registered,...extras];
 }

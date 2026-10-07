@@ -4174,15 +4174,13 @@ const ELEMENT_REGISTRY = {
 function availableElements() {
   // Return registered elements that exist in DATA + any extra grade-like columns
   // (oxide forms like SnO2, Indonesian "Kadar SnO2 Taksasi (Kg/m3)", etc).
-  // IMPORTANT: an element only counts if it has at least one non-zero numeric
-  // value. A column that exists but is all null/zero (e.g. au_gpt in a tin-only
-  // deposit) must NOT lead, or downstream stats return null and renders crash.
+  // Empty schema columns are absent; a measured zero is valid data.
   const hasData = (col) => {
     const idx = colIdx(col);
     if (idx < 0) return false;
     return DATA && DATA.rows && DATA.rows.some(r => {
-      const n = Number(r[idx]);
-      return isFinite(n) && n !== 0;
+      const value = r[idx];
+      return value !== null && value !== undefined && String(value).trim() !== '' && Number.isFinite(Number(value));
     });
   };
   const registered = Object.keys(ELEMENT_REGISTRY).filter(c => colIdx(c) >= 0 && hasData(c));
@@ -4230,7 +4228,7 @@ function availableElements() {
     const idx = colIdx(col);
     if (idx < 0) return 0;
     let n = 0;
-    DATA.rows.forEach(r => { const v = Number(r[idx]); if (isFinite(v) && v !== 0) n++; });
+    DATA.rows.forEach(r => { const value = r[idx]; if (value !== null && value !== undefined && String(value).trim() !== '' && Number.isFinite(Number(value))) n++; });
     return n;
   };
   return [...registered, ...extras].sort((a, b) => density(b) - density(a));

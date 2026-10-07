@@ -188,6 +188,29 @@ try:
             == 0,
             "Validation does not offer measured density as an unrecognized grade",
         )
+        page.evaluate("showTab(2)")
+        zero_csv = io.StringIO()
+        w = csv.DictWriter(zero_csv, fieldnames=list(data["assay"][0]))
+        w.writeheader()
+        w.writerows({**r, "ni_pct": 0} for r in data["assay"])
+        page.locator("#fileInput").set_input_files(
+            {
+                "name": "assay.csv",
+                "mimeType": "text/csv",
+                "buffer": zero_csv.getvalue().encode(),
+            }
+        )
+        page.wait_for_function(
+            "() => STATE.assay.length>8000 && STATE.assay.every(r=>r.ni_pct===0)"
+        )
+        check(
+            "ni_pct" in page.evaluate("getActualGradeColumns()"),
+            "Core retains a measured all-zero grade column",
+        )
+        check(
+            "au_gpt" not in page.evaluate("getActualGradeColumns()"),
+            "Core does not activate an unmeasured schema grade",
+        )
         check(
             page.evaluate("JSON.stringify(SAMPLE_DATA)") == pristine,
             "Exercise downloads and uploads never mutate the embedded source",

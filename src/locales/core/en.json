@@ -866,7 +866,7 @@
   "flow.blocked": "Complete this stage before continuing. Inspect the result or adjust its parameters.",
   "flow.blockedGeometry": "Check Validation and the measured geometry before continuing. Missing or invalid source data must be corrected first.",
   "flow.trainingTitle": "Learn validation with imperfect data",
-  "flow.trainingHint": "This reference sample passes structure checks; that is not a guarantee of geological quality. Try missing collars, incomplete geology and mismatched IDs, then restore the known source CSVs. Save your project before replacing it.",
+  "flow.trainingHint": "Structure checks pass, not geological quality. Try missing collars, geology and mismatched IDs; restore the source CSVs to fix them. Save your project first.",
   "flow.trainingFixHint": "This is the intentionally imperfect exercise. Inspect Collar, Assay and Geology above to locate the affected records. Restore the original synthetic CSVs and rerun Validation; do not invent coordinates or logs for field data.",
   "flow.trainingTry": "Try imperfect data",
   "flow.trainingRestore": "Restore original exercise CSVs & validate",

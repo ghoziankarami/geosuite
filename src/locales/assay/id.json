@@ -1182,7 +1182,7 @@
   "flow.blocked": "Selesaikan tahap ini sebelum lanjut. Periksa hasil atau ubah parameternya.",
   "flow.blockedGeometry": "Periksa Validasi dan geometri terukur sebelum lanjut. Perbaiki data sumber yang hilang atau tidak valid terlebih dahulu.",
   "flow.trainingTitle": "Belajar validasi dengan data tidak lengkap",
-  "flow.trainingHint": "Contoh referensi ini lolos pemeriksaan struktur; itu bukan jaminan kualitas geologi. Coba collar hilang, geologi tidak lengkap dan ID tidak cocok, lalu pulihkan CSV sumber yang asli. Simpan proyek sebelum menggantinya.",
+  "flow.trainingHint": "Struktur lolos, bukan jaminan kualitas geologi. Coba collar/geologi hilang dan ID tidak cocok; pulihkan CSV sumber untuk memperbaikinya. Simpan proyek dahulu.",
   "flow.trainingFixHint": "Ini latihan dengan kesalahan yang disengaja. Periksa Collar, Assay dan Geologi di atas untuk menemukan baris terkait. Pulihkan CSV sintetis asli lalu ulangi Validasi; jangan mengarang koordinat atau log untuk data lapangan.",
   "flow.trainingTry": "Coba data tidak lengkap",
   "flow.trainingRestore": "Pulihkan CSV latihan asli & validasi",

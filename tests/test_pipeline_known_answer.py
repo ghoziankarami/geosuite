@@ -135,8 +135,14 @@ def rotate_aniso(dx, dy, dz, az_deg, dip_deg):
 
 
 def gamma(dx, dy, dz, model, search):
-    maj, semi, mn = rotate_aniso(dx, dy, dz, search["azDeg"], search["dipDeg"])
-    h = math.sqrt((maj / search["rMaj"]) ** 2 + (semi / search["rSemi"]) ** 2 + (mn / search["rMin"]) ** 2)
+    if model.get("covarianceMode") == "model-range":
+        # A fitted scalar model is isotropic: h is physical distance / range.
+        # Search axes select neighbors and cannot set covariance scale.
+        h = math.sqrt(dx * dx + dy * dy + dz * dz) / model["range"]
+    else:
+        # Preserve the documented historical search-coupled model semantics.
+        maj, semi, mn = rotate_aniso(dx, dy, dz, search["azDeg"], search["dipDeg"])
+        h = math.sqrt((maj / search["rMaj"]) ** 2 + (semi / search["rSemi"]) ** 2 + (mn / search["rMin"]) ** 2)
     return model["nugget"] + (model["sill"] - model["nugget"]) * spherical_gamma_unit(h)
 
 
@@ -510,8 +516,10 @@ def test_tin_volumetric_end_to_end(tmpdir):
     corpus = next((a / "data" / "dataset-demo" / "repo" / "03-timah-placer" for a in here.parents
                    if (a / "data" / "dataset-demo" / "repo" / "03-timah-placer").is_dir()), None)
     if corpus is None:
-        print("  SKIP: tin corpus not present in this checkout")
-        return
+        corpus = next((a / "fixtures" / "columns" / "tin-placer" for a in here.parents
+                       if (a / "fixtures" / "columns" / "tin-placer").is_dir()), None)
+    if corpus is None:
+        raise FileNotFoundError("Tin corpus and shipped tin-placer fixture are both missing")
     files = [str(corpus / n) for n in ("collar.csv", "survey.csv", "assay.csv", "litho.csv")]
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-gpu"])
@@ -942,6 +950,7 @@ def main():
         check("Resource: NN matches nearest neighbor's grade", close_enough(full["nn"], closest["v"]), f"app={full['nn']}, expected={closest['v']}")
 
         # Independent Ordinary Kriging (from-scratch solver above).
+        check("Resource: new scalar fit declares physical model-range covariance", full["model"].get("covarianceMode") == "model-range")
         ok_expected, var_expected, _ = independent_ok(full["block"], full["neighbors"], full["model"], full["search"])
         check("Resource: OK kriging estimate matches independent solve", close_enough(full["ok"], ok_expected), f"app={full['ok']}, expected={ok_expected}")
         check("Resource: kriging variance matches independent solve", close_enough(full["variance"], var_expected), f"app={full['variance']}, expected={var_expected}")

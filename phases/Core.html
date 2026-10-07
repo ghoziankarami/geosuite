@@ -18,6 +18,8 @@ Terms: https://geosuite.orebit.id/terms
 
 
 
+
+
 <head>
 <meta charset="UTF-8">
 <meta name="product-version" content="v3.0.0"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
@@ -2703,6 +2705,9 @@ input[type="checkbox"], input[type="radio"] {
         <input type="text" id="coreCRS" placeholder="e.g. WGS84 UTM 48S / EPSG:32748" oninput="setCRS(this.value)" style="margin-left:6px;padding:4px 8px;width:240px;" aria-label="Coordinate reference system" data-i18n-attr="aria-label:a11y.crs">
       </label>
     </div>
+    <p><label><input id="coreProvidedXYZ" type="checkbox" onchange="setCoreProvidedXYZ(this.checked)">
+      <span data-i18n="core.imp.providedXYZ">Use supplied assay interval midpoint XYZ</span></label></p>
+    <p class="hint" data-i18n="core.imp.providedXYZHint">Assign midpoint coordinates in Column Mapping when needed. This mode preserves supplied positions; it does not reconstruct or verify a directional survey. Empty coordinates remain missing.</p>
     <p style="font-size:12px;color:var(--fg-mute);margin-top:8px;"><svg class="lucide-icon" viewBox="0 0 24 24" style="width:13px;height:13px;vertical-align:middle;" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> <span data-i18n="core.imp.crsHintFull">The coordinate system is recorded in your project metadata and written into exports (satisfying the KCMI 2017 / JORC 2012 requirement that the CRS be stated). It also enables the satellite basemap on the spatial map.</span></p>
   </div>
 
@@ -2913,7 +2918,7 @@ input[type="checkbox"], input[type="radio"] {
       extra: (extra && typeof extra === 'object') ? (extra.extra || '') : (extra || ''),
       filename: (extra && extra.filename) || '',
       mime: (extra && extra.mime) || '',
-      content: (extra && typeof extra.content === 'string') ? extra.content.slice(0, 2000000) : ''
+      content: (extra && typeof extra.content === 'string' && extra.content.length <= 2000000) ? extra.content : ''
     });
     _save(arr);
     if (typeof _renderExportHistory === 'function') {
@@ -3135,6 +3140,7 @@ const SAMPLE_DATA = /* @orebit-inline: assets/sample/core.json */;
 /* @orebit-inline: shared/ui/index.js */
 /* @orebit-inline: shared/i18n/index.js */
 /* @orebit-inline: shared/io/index.js */
+/* @orebit-inline: shared/io/screening-report.js */
 /* @orebit-inline: shared/io/parse.js */
 /* @orebit-inline: shared/io/grades.js */
 /* @orebit-inline: shared/io/columns.js */
@@ -4162,7 +4168,11 @@ function init() {
 }
 
 function resetToSample() {
-  STATE.lengthUnitSource = 'm'; // the bundled sample is in metres
+  _lastUploadedFiles = null;
+  setCoreProvidedXYZ(false);
+  const xyzToggle = document.getElementById('coreProvidedXYZ'); if (xyzToggle) xyzToggle.checked = false;
+  STATE.lengthUnitSource = 'm'; window._coreLengthUnit = 'm';
+  const lengthUnitSelect = document.getElementById('coreLengthUnit'); if (lengthUnitSelect) lengthUnitSelect.value = 'm'; // sample is metres
 
   // Populate data preview (best-effort, may be empty until data loaded)
   try { setTimeout(function() {
@@ -4170,8 +4180,8 @@ function resetToSample() {
     if (Array.isArray(d) && d.length) window._renderDataPreview(d, null, {maxRows: 10});
   }, 100); } catch (e) { console.warn("preview", e); }
   STATE.collar = SAMPLE_DATA.collar.map(r => ({...r}));
-  // Senior geologist fix 2026-06-21: auto-set CRS for Thalanga VHMS sample (GDA94/MGA Zone 55)
-  STATE.crs = 'EPSG:32755';
+  // Auto-set CRS for the sample (nickel laterite, Southeast Sulawesi = WGS 84 / UTM 51S)
+  STATE.crs = 'EPSG:32751';
   STATE.survey = SAMPLE_DATA.survey.map(r => ({...r}));
   STATE.assay = SAMPLE_DATA.assay.map(r => ({...r}));
   _cachedGradeCols = null;
@@ -4841,17 +4851,21 @@ function renderRichDashboard() {
   const qVal = document.getElementById('dashQualityVal'), qSub = document.getElementById('dashQualitySub');
   const warnCount = checks.filter(c => c.warn).length;
   const qPct = collar.length ? Math.max(0, Math.round(100 * (checks.length - warnCount) / checks.length)) : 0;
-  if (qVal) qVal.innerHTML = (collar.length ? '<span style="color:' + (qPct >= 90 ? '#16a34a' : '#d97706') + ';">' + qPct + '</span><span style="font-size:15px;color:var(--fg-mute);"> %</span>' : '—');
+  // The bundled sample is unedited public data: its findings are the demo,
+  // not a verdict, so it gets the accent colour and a plain sentence instead
+  // of an orange "25 %" that reads as "this tool or this data is broken".
+  const sampleView = typeof window.__isSampleData === 'function' && window.__isSampleData() && warnCount > 0;
+  if (qVal) qVal.innerHTML = (collar.length ? '<span style="color:' + (sampleView ? 'var(--accent)' : qPct >= 90 ? '#16a34a' : '#d97706') + ';">' + qPct + '</span><span style="font-size:15px;color:var(--fg-mute);"> %</span>' : '—');
   // The tile used to print a bare percentage. It is a checks-PASSED rate over
   // the validation checks listed on this same screen — not the DQ/100 score in
   // the header badge, which is a different formula entirely. Saying which
   // number this is, out of how many checks, is what makes it defensible.
   if (qSub) {
     const passed = checks.length - warnCount;
-    qSub.textContent = collar.length
-      ? t('core.renderRichDashboard.checksPassing').replace('{passed}', passed).replace('{total}', checks.length)
-        + (warnCount ? t('core.renderRichDashboard.warningCount').replace('{n}', warnCount).replace('{s}', warnCount === 1 ? '' : 's') : '')
-      : '—';
+    qSub.textContent = !collar.length ? '—' : sampleView
+      ? t('core.renderRichDashboard.sampleFindings').replace('{n}', warnCount)
+      : t('core.renderRichDashboard.checksPassing').replace('{passed}', passed).replace('{total}', checks.length)
+        + (warnCount ? t('core.renderRichDashboard.warningCount').replace('{n}', warnCount).replace('{s}', warnCount === 1 ? '' : 's') : '');
     qSub.removeAttribute('data-i18n');
   }
   // Full, itemised breakdown of both quality numbers, so neither is a figure
@@ -5846,8 +5860,8 @@ function _coreGateTable(cls, mapped, rejected) {
 // every master export carries a '# lengths:' line saying what was done.
 const _FT_TO_M = 0.3048;
 const _LENGTH_FIELDS = { collar: ['x', 'y', 'z', 'depth'], survey: ['depth'], assay: ['from_m', 'to_m'], geology: ['from_m', 'to_m'] };
-function _coreApplyLengthUnit(cls, mapped) {
-  if (window._coreLengthUnit !== 'ft') { STATE.lengthUnitSource = 'm'; return mapped; }
+function _coreApplyLengthUnit(cls, mapped, sourceUnit = window._coreLengthUnit) {
+  if (sourceUnit !== 'ft') { STATE.lengthUnitSource = 'm'; return mapped; }
   const f = _LENGTH_FIELDS[cls] || [];
   mapped.forEach(r => f.forEach(k => { if (typeof r[k] === 'number' && isFinite(r[k])) r[k] = r[k] * _FT_TO_M; }));
   STATE.lengthUnitSource = 'ft';
@@ -5864,7 +5878,8 @@ function _lengthTag() {
     : '# lengths: metres';
 }
 
-function _coreLoadTable(cls, mapped, headers, rows) {
+function _coreLoadTable(cls, mapped, headers, rows, opts = {}) {
+  if (cls === 'assay' && !opts.preserveCoordinateMode) setCoreProvidedXYZ(false);
   STATE[cls] = _coreApplyLengthUnit(cls, mapped);
   STATE.rawHeaders[cls] = headers;
   STATE.rawRows[cls] = rows;
@@ -5932,6 +5947,7 @@ function handleUpload(evt) {
   if (!files.length) return;
   // Keep the raw File handles so a later number-format override can re-parse
   // from source (readCSV's tryNumber output is lossy once parsed).
+  const sameUpload = !evt.type && _lastUploadedFiles && files.length === _lastUploadedFiles.length && files.every((f,i)=>f===_lastUploadedFiles[i]);
   _lastUploadedFiles = files;
   const status = document.getElementById('uploadStatus');
   status.innerHTML = `<div class="hint">${ICONS.clock} ${coreMsg('core.upload.reading', {n: files.length})}</div>`;
@@ -5972,7 +5988,7 @@ function handleUpload(evt) {
         anyNoteworthy = true;
         return;
       }
-      _coreLoadTable(cls, mapped, headers, rows);
+      _coreLoadTable(cls, mapped, headers, rows, {preserveCoordinateMode:!!sameUpload});
       usedTables.add(cls);
       PENDING_FILES.push({name, rows, headers, rejected, assignedTo: cls});
       if (gate.report.rejected.length || gate.report.warnings.some(w => w.indexOf('rejected_rows') !== 0)) anyNoteworthy = true;
@@ -6921,11 +6937,18 @@ function renderColumnMapping(container) {
     const targetCols = structuralOverride
       ? [...new Set([...requiredCols, ...structuralOverride])]
       : [...requiredCols, ...schema.cols.filter(c => !requiredCols.includes(c))];
+    if (tableName === 'assay' && window._coreUseProvidedXYZ) targetCols.push('midx','midy','midz');
     // canonical target -> the raw header actually auto-matched to it (for
     // dropdown pre-selection — same alias logic as remapRows/detectColumnMap).
     const autoMap = STATE.manualMap[tableName]
       || ((typeof detectColumnMap === 'function') ? detectColumnMap(detectedCols, tableName) : {});
 
+    if (tableName === 'assay' && window._coreUseProvidedXYZ && !STATE.manualMap.assay) {
+      ['midx','midy','midz'].forEach((k,i) => {
+        const source = [k,['x','y','z'][i]].find(h=>detectedCols.includes(h));
+        if (source) autoMap[k] = source;
+      });
+    }
     const mappingRows = targetCols.map(reqCol => {
       const isReq = requiredCols.includes(reqCol);
       const current = autoMap[reqCol] || '';
@@ -7041,6 +7064,7 @@ function applyColumnMapping(tableName) {
   const targetCols = structuralOverride
     ? [...new Set([...schema.required, ...structuralOverride])]
     : [...schema.required, ...schema.cols.filter(c => !schema.required.includes(c))];
+  if (tableName === 'assay' && window._coreUseProvidedXYZ) targetCols.push('midx','midy','midz');
   const mapping = {};       // canonical target -> source CSV column
   const mappedSources = new Set();
   targetCols.forEach(reqCol => {
@@ -7085,7 +7109,8 @@ function applyColumnMapping(tableName) {
     return newRow;
   });
 
-  STATE[tableName] = remapped;
+  STATE[tableName] = sourceRows === STATE.rawRows[tableName] ? _coreApplyLengthUnit(tableName, remapped, STATE.lengthUnitSource) : remapped;
+  STATE.desurvey = null; STATE.merged = null; STATE.mergeAudit = null; STATE.composite = null;
   // Record what the user actually chose so the Column Mapping badge reports the
   // mapping in effect. rawHeaders must stay the TRUE file headers — overwriting
   // them with canonical names (as this did before 2026-08-22) left the dropdowns
@@ -7223,9 +7248,11 @@ function renderValidation() {
     const empties = optionalCols.filter(c => rows.every(r => r[c] === null || r[c] === undefined || r[c] === ''));
     if (empties.length) emptyOptionalByTable[t] = empties;
   });
-  const hasEmptyOptional = Object.keys(emptyOptionalByTable).length > 0;
+  // The bundled sample has no lith2/weathering/color/comment by design; the notice is for the user's own files.
+  const hasEmptyOptional = !STATE.usingSample && Object.keys(emptyOptionalByTable).length > 0;
 
   const linkOK = !orphanAssay.length && !orphanSurvey.length && !orphanGeo.length;
+  const geometryReady = coreGeometryReady();
 
   // Linkage rows with expandable detail (audit fix: full list, not truncated to 5)
   // Every hole id here is a link into the table where that finding is fixed,
@@ -7307,7 +7334,7 @@ function renderValidation() {
       </div>
       <div class="qi-row">
         <div><strong>${t('core.verdict')}:</strong> ${
-          (linkV.cls === 'qi-ok' && compV.cls === 'qi-ok' && bdlV.cls === 'qi-ok' && gapVerdict.cls === 'qi-ok')
+          (geometryReady && linkV.cls === 'qi-ok' && compV.cls === 'qi-ok' && bdlV.cls === 'qi-ok' && gapVerdict.cls === 'qi-ok')
             ? '<span class="qi-ok">' + ICONS.check + (qiIsId ? ' Data siap untuk desurvey + merge' : ' Data ready for desurvey + merge') + '</span>'
             : (linkV.cls === 'qi-warn' || gapVerdict.cls === 'qi-warn')
               ? '<span class="qi-warn">' + ICONS.warn + (qiIsId ? ' Perbaiki linkage/gap sebelum desurvey' : ' Fix linkage/gaps before desurvey') + '</span>'
@@ -7508,7 +7535,8 @@ function renderValidation() {
     })()}
     <div class="card">
       <h3 data-i18n="core.verdict">Verdict</h3>
-      ${linkOK ? `<div class="hint good"><strong>${t('core.vc.readyTitle')}</strong> ${t('core.vc.readyBody')}</div>`
+      ${linkOK && geometryReady ? (window._coreUseProvidedXYZ ? '<div class="hint good">' + t('core.vc.suppliedReady') + '</div>' : `<div class="hint good"><strong>${t('core.vc.readyTitle')}</strong> ${t('core.vc.readyBody')}</div>`)
+               : !geometryReady ? '<div class="hint bad">' + t('core.vc.geometryMissing') + '</div>'
                : `<div class="hint bad"><strong>${ICONS.warn} ${t('core.vc.fixTitle')}</strong> ${t('core.vc.fixBody')}</div>`}
     </div>
     ${(() => {
@@ -10000,8 +10028,23 @@ function buildMasterExportCols(rows) {
   return { baseCols, gradeCols, densityCols, tailCols, outCols: [...baseCols, ...gradeCols, ...densityCols, ...tailCols] };
 }
 
+function coreGeometryReady() {
+  const surveyIds=new Set(STATE.survey.map(r=>r.hole_id));
+  const finiteInput = v => v !== null && v !== undefined && String(v).trim() !== '' && Number.isFinite(Number(v));
+  return window._coreUseProvidedXYZ
+    ? STATE.assay.length > 0 && STATE.assay.every(a => ['midx','midy','midz'].every((k,i)=>finiteInput(a[k] == null ? a[['x','y','z'][i]] : a[k])))
+    : STATE.collar.length > 0 && STATE.survey.length > 0 &&
+      STATE.collar.every(c=>['x','y','z'].every(k=>finiteInput(c[k]))) &&
+      STATE.survey.every(s=>['depth','dip','azimuth'].every(k=>finiteInput(s[k]))) &&
+      [...new Set(STATE.assay.map(r=>r.hole_id))].every(h=>surveyIds.has(h));
+}
+function setCoreProvidedXYZ(enabled) {
+  window._coreUseProvidedXYZ = !!enabled;
+  const toggle = document.getElementById('coreProvidedXYZ'); if (toggle) toggle.checked = !!enabled;
+  STATE.merged = null; STATE.mergeAudit = null; STATE.composite = null;
+}
 function computeMerge() {
-  if (!STATE.desurvey) computeDesurvey();
+  if (!window._coreUseProvidedXYZ && !STATE.desurvey) computeDesurvey();
   // Build geology lookup by hole + depth range
   const geoByHole = {};
   STATE.geology.forEach(g => {
@@ -10021,7 +10064,15 @@ function computeMerge() {
     assayHoles.add(a.hole_id);
     const f = Number(a.from_m), t = Number(a.to_m);
     const mid = (f + t) / 2;
-    const xyz = getXYZAtDepth(a.hole_id, mid) || { x: null, y: null, z: null };
+    // Explicit input mode: interval midpoint XYZ supplied by the data owner.
+    // This is not a directional survey and must never be silently inferred.
+    const supplied = ['midx','midy','midz'].map((k,i) => {
+      const v = a[k] == null ? a[['x','y','z'][i]] : a[k];
+      return v == null || String(v).trim() === '' ? NaN : Number(v) * (STATE.lengthUnitSource === 'ft' ? _FT_TO_M : 1);
+    });
+    const xyz = window._coreUseProvidedXYZ
+      ? (supplied.every(Number.isFinite) ? {x:supplied[0],y:supplied[1],z:supplied[2]} : {x:null,y:null,z:null})
+      : (getXYZAtDepth(a.hole_id, mid) || { x: null, y: null, z: null });
     if (![xyz.x, xyz.y, xyz.z].every(Number.isFinite)) intervalsWithoutXYZ++;
     // Find geology interval that contains midpoint
     const geos = geoByHole[a.hole_id] || [];
@@ -10067,6 +10118,7 @@ function computeMerge() {
     assayWithoutSurvey: [...assayHoles].filter(h => !surveyHoles.has(h)),
     geologyWithoutAssay: [...geologyHoles].filter(h => !assayHoles.has(h)),
     intervalsWithoutXYZ,
+    coordinateSource: window._coreUseProvidedXYZ ? 'supplied-assay-midpoints' : 'minimum-curvature-survey',
     intervalsWithoutGeology
   };
   return merged;
@@ -11394,6 +11446,7 @@ if (!STATE.merged) computeMerge();
     '# units: ' + (unitSummary || 'unitless'),
     _lengthTag(),
     '# notes: BDL applied per STATE.bdlMode. Grade columns dynamically detected from input.',
+    '# coordinates: ' + (STATE.mergeAudit && STATE.mergeAudit.coordinateSource || 'minimum-curvature-survey'),
     outCols.join(',')
   ];
 
@@ -11482,7 +11535,7 @@ function _p1RunValidationChecks() {
   checks.push({ name: 'Holes in Assay but not in Collar', value: `${orphanAssay.length} orphan`,  severity: orphanAssay.length ? 'fail' : 'ok' });
   checks.push({ name: 'Holes in Survey but not in Collar', value: `${orphanSurvey.length} orphan`, severity: orphanSurvey.length ? 'fail' : 'ok' });
   checks.push({ name: 'Holes in Geology but not in Collar', value: `${orphanGeo.length} orphan`,   severity: orphanGeo.length ? 'fail' : 'ok' });
-  checks.push({ name: 'Collar without Survey (assumed vertical)', value: `${collarNoSurvey.length} hole`, severity: collarNoSurvey.length ? 'warn' : 'ok' });
+  checks.push({ name: 'Collar without measured directional Survey', value: `${collarNoSurvey.length} hole`, severity: collarNoSurvey.length ? 'warn' : 'ok' });
   checks.push({ name: 'Collar without Assay', value: `${collarNoAssay.length} hole`, severity: collarNoAssay.length ? 'warn' : 'ok' });
   checks.push({ name: 'Collar without Geology', value: `${collarNoGeo.length} hole`, severity: collarNoGeo.length ? 'warn' : 'ok' });
 
@@ -11540,7 +11593,10 @@ function _p1RunValidationChecks() {
 
   // Verdict (linkage gate)
   const linkOK = !orphanAssay.length && !orphanSurvey.length && !orphanGeo.length && !dupCollar.length;
-  checks.push({ name: 'Linkage verdict — ready for Desurvey', value: linkOK ? 'READY' : 'FIX REQUIRED', severity: linkOK ? 'ok' : 'fail' });
+  const geometryReady=coreGeometryReady();
+  checks.push({name:'Coordinate source',value:window._coreUseProvidedXYZ?'Supplied assay interval midpoint XYZ (not independently surveyed here)':'Minimum-curvature directional survey',severity:'warn'});
+  checks.push({name:'Assay geometry readiness',value:geometryReady?'READY':'MISSING / INVALID XYZ OR SURVEY',severity:geometryReady?'ok':'fail'});
+  checks.push({ name: 'Linkage and geometry verdict', value: linkOK && geometryReady ? 'READY' : 'FIX REQUIRED', severity: linkOK && geometryReady ? 'ok' : 'fail' });
 
   return checks;
 }
@@ -11814,7 +11870,7 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
     const gradeCols = getActualGradeColumns();
     const elementStats = [];
     gradeCols.forEach(c => {
-      const vals = STATE.assay.map(r => Number(r[c])).filter(v => isFinite(v) && v > 0);
+      const vals = STATE.assay.map(r => r[c]).filter(v => v != null && String(v).trim() !== '' && Number.isFinite(Number(v)) && Number(v) >= 0).map(Number);
       if (vals.length) {
         const s = _p1Stats(vals);
         if (s) elementStats.push({ col: c, ...s });
@@ -11941,9 +11997,9 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
     pdf.setFont('helvetica','normal');
     pdf.setFontSize(9);
     [
-      'Page 2 · Validation results — linkage, completeness, interval QC',
-      'Page 3 · Hole inventory — collar coords, depth, orientation, intervals',
-      'Page 4 · Univariate stats per element + KCMI Section 1 manual checklist',
+      'Validation results — linkage, completeness, interval QC',
+      'Hole inventory — collar coords, depth, orientation, intervals',
+      'Univariate stats per element + KCMI Section 1 manual checklist',
     ].forEach((t,i) => pdf.text(t, 15, yEl + 16 + i*6));
 
     // Disclaimer footer
@@ -12222,13 +12278,30 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
     }
     addFooter();
 
+    const insightText=(key,values={})=>Object.entries(values).reduce((out,[k,v])=>out.replaceAll('{'+k+'}',String(v)),t(['core.reportInsight',key].join('.')));
+    const findings=checks.filter(c=>c.severity==='fail'||c.severity==='warn');
+    OrebitScreeningReport.prepend(pdf,'Core',[
+      [t('core.reportSummary.result'),insightText('result',{holes:collar.length,assays:STATE.assay.length,merged:STATE.merged?.length||0,failed:checks.filter(c=>c.severity==='fail').length,warns:checks.filter(c=>c.severity==='warn').length})],
+      [t('core.reportSummary.meaning'),insightText(coreGeometryReady()?'ready':'notReady')],
+      [t('core.reportSummary.checks'),findings.slice(0,4).map(c=>c.name+': '+c.value).join('. ')||'No failed or warning checks in this validation.'],
+      [t('core.reportSummary.scope'),insightText('coordinates',{source:window._coreUseProvidedXYZ?'supplied interval midpoint XYZ':'minimum-curvature survey',crs:STATE.crs||'not declared',missing:STATE.mergeAudit?.intervalsWithoutXYZ??'merge not run'})],
+      [t('core.reportSummary.next'),insightText('next')],
+      [t('core.reportSummary.evidence'),insightText('evidence')]
+    ]);
+    OrebitScreeningReport.append(pdf,'Core',[
+      ['Purpose','Initial data-preparation and geometry screening. This report does not verify geological Resource accuracy.'],
+      ['Coordinate source',window._coreUseProvidedXYZ?'Supplied assay interval midpoint XYZ; directional survey not reconstructed or independently verified':'Minimum-curvature survey; inspect measured dip/azimuth and collar control'],
+      ['Geometry readiness',coreGeometryReady()?'READY for the selected coordinate workflow':'FIX REQUIRED: missing or invalid geometry'],
+      ['CRS',STATE.crs || 'Not declared; verify projected CRS before spatial estimation'],
+      ['Length units',_lengthTag()],
+      ['Data coverage',`Collar ${STATE.collar.length}; survey ${STATE.survey.length}; assay ${STATE.assay.length}; geology ${STATE.geology.length}; merged ${STATE.merged?STATE.merged.length:'not run'}`],
+      ['Missing merged coordinates',STATE.mergeAudit?STATE.mergeAudit.intervalsWithoutXYZ:'Merge not run'],
+      ['Grade statistics population','Finite nonnegative grades including valid zero values; missing and negative BDL placeholders excluded'],
+      ['Further evidence needed','Assay certificates, QA/QC controls, survey verification, geological interpretation and measured density require independent project evidence'],
+      ['Next step','Export the merged master, inspect coordinate/source notes, then review treatment and compositing in Assay before Resource estimation']
+    ]);
     const _pdfName = `Orebit-Core-Report-${today}.pdf`;
-    const _pdfDataUri = pdf.output('datauristring');
-    try { await orebitSaveFile(_pdfName, _pdfDataUri, 'application/pdf'); }
-    catch (e2) { console.warn('PDF bridge failed, jsPDF fallback:', e2); pdf.save(_pdfName); };
-    if (typeof window._recordExport === 'function') {
-      window._recordExport('PDF', 'Orebit Core — PDF Report', _pdfDataUri.length <= 1900000 ? { filename: _pdfName, mime: 'application/pdf', content: _pdfDataUri } : { filename: _pdfName, mime: 'application/pdf', content: '' });
-    }
+    await OrebitScreeningReport.save(pdf,'Core',_pdfName);
     if (mapFailedToCapture && typeof toast === 'function') {
       toast(t('core.maybeShowSupportMoment.chartExportUnavailablePdfMay'), 'warn');
     }
@@ -12287,7 +12360,12 @@ document.addEventListener('keydown', (e) => {
     }
     const lines = [cols.join(',')];
     rows.forEach(r => {
-      lines.push(cols.map(c => csvEscape(r[c])).join(','));
+      lines.push(cols.map(c => {
+        const v = r[c];
+        // Bundles contain metre coordinates, just like the canonical master.
+        const midpoint = tableName === 'assay' && window._coreUseProvidedXYZ && ['midx','midy','midz','x','y','z'].includes(c);
+        return csvEscape(midpoint && STATE.lengthUnitSource === 'ft' && v != null && String(v).trim() !== '' && Number.isFinite(Number(v)) ? Number(v)*_FT_TO_M : v);
+      }).join(','));
     });
     return lines.join('\n');
   }
@@ -12308,6 +12386,7 @@ document.addEventListener('keydown', (e) => {
         '# units: ' + (unitSummary || 'unitless'),
         _lengthTag(),
         '# notes: BDL applied per STATE.bdlMode. Grade columns dynamically detected from input.',
+        '# coordinates: ' + (STATE.mergeAudit && STATE.mergeAudit.coordinateSource || 'minimum-curvature-survey'),
         outCols.join(',')
       ];
       const lines = header.slice();
@@ -12371,6 +12450,8 @@ document.addEventListener('keydown', (e) => {
         composite_length_m: (STATE.composite && STATE.composite.length) ? STATE._compLen : null,
         composite_count:    (STATE.composite || []).length,
         merged_count:  STATE.merged ? STATE.merged.length : 0,
+        coordinate_mode: window._coreUseProvidedXYZ ? 'supplied-assay-midpoints' : 'minimum-curvature-survey',
+        source_length_unit: STATE.lengthUnitSource || 'm',
         bdl_mode:      STATE.bdlMode,
         units:         STATE.units || {},
       },
@@ -12408,6 +12489,10 @@ document.addEventListener('keydown', (e) => {
 
   /* ---- Load bundle data into STATE ---- */
   function applyBundle(bundle) {
+    _lastUploadedFiles = null;
+    setCoreProvidedXYZ(bundle.metadata && bundle.metadata.coordinate_mode === 'supplied-assay-midpoints');
+    STATE.lengthUnitSource = 'm'; window._coreLengthUnit = 'm';
+    const lengthUnitSelect = document.getElementById('coreLengthUnit'); if (lengthUnitSelect) lengthUnitSelect.value = 'm';
     const p = bundle.phase1 || {};
     const tables = ['collar','survey','assay','geology'];
     const csvKeys = { collar:'collar_csv', survey:'survey_csv', assay:'assay_csv', geology:'geology_csv' };
@@ -12931,7 +13016,7 @@ window.toggleMobileMenu = function() {
   <p>
     <strong>Orebit GeoSuite</strong> · Orebit Core · <span id="footerVersion">v3.0.0</span>
     <span class="divider">·</span>
-     © 2026 Orebit · <a href="https://github.com/ghoziankarami/geosuite" target="_blank" rel="noopener">GPL-3.0 Source Code</a>
+     © 2026 Orebit · <a href="https://github.com/ghoziankarami/geosuite" target="_blank" rel="noopener" data-i18n="footer.sourceCode">GPL-3.0 Source Code</a>
     <span class="divider">·</span>
     <a href="https://orebit.id" target="_blank" rel="noopener">orebit.id</a>
     <span class="divider">·</span>

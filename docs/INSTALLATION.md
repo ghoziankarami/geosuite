@@ -14,6 +14,24 @@ available here: you can inspect, modify, build and redistribute it under the
 licence. A local web build does not require the maintainer's private repository,
 an account, a licence key, or a VPS.
 
+## Windows executables
+
+1. Open [Releases](https://github.com/ghoziankarami/geosuite/releases/latest)
+   and expand **Assets**. Download the Core, Assay and Resource `.exe` files
+   from the same release, plus `SHA256SUMS.txt`.
+2. Compare each checksum before running it. In PowerShell use
+   `Get-FileHash .\Orebit-Core.exe -Algorithm SHA256`, substituting the actual
+   downloaded filename; compare with that file's line in `SHA256SUMS.txt`.
+3. Open Core. The dashboard should show its module/version and built-in sample.
+   Node/Python are not needed for these executables. Follow Import → validation
+   → master export, then import that file in Assay and its composite master in
+   Resource. Save project exports as backups.
+
+Executables are unsigned; check source/release provenance rather than assuming
+an OS reputation warning proves either safety or a broken installation.
+**Code → Download ZIP** contains source, not the executables. macOS/Linux use
+web/PWA or the local source build below.
+
 ## Build and run locally / Jalankan dari kode sumber
 
 Check `node --version` and `python3 --version` (Windows: `py -3 --version`).
@@ -33,7 +51,9 @@ Windows PowerShell uses the same build command, then:
 py -3 -m http.server 8767 --bind 127.0.0.1 -d dist
 ```
 
-Open **http://127.0.0.1:8767/Core.html**. Assay and Resource are at
+Open **http://127.0.0.1:8767/Core.html**. Expect the Core dashboard, module/version
+and sample data. Use Import for your own CSVs, then follow the tutorial chooser
+below. Assay and Resource are at
 `/Assay.html` and `/Resource.html` on that same address. Keep the terminal open;
 press **Ctrl+C** to stop it. There is no `npm install` step for the web build.
 
@@ -73,8 +93,7 @@ Download a new EXE, or update the source and rebuild, for those routes.
 
 ## Choose the matching tutorial
 
-Check the sample name and hole count in your build first. The current public
-source includes **Thalanga, 717 collars**; use the
+Check the sample name and hole count in your build first. Builds carrying **Thalanga, 717 collars**, use the
 [Thalanga tutorial](vignettes/en/01-thalanga-vms.md)
 ([Bahasa Indonesia](vignettes/01-thalanga-vms.md)). The
 [10-minute tutorial](vignettes/en/00-quickstart.md) targets the newer 350-hole

@@ -15,6 +15,8 @@ Writes docs/vignettes/data/thalanga.json (+ img/thalanga-*.png unless --no-shots
 
 from __future__ import annotations
 
+import csv
+import json
 import statistics as st
 import sys
 import tempfile
@@ -61,14 +63,46 @@ def settle(pg, ms=800):
     pg.wait_for_timeout(ms)
 
 
+TABLES = ("collar", "survey", "assay", "geology")
+
+
+def write_thalanga_csvs(tmp) -> Path:
+    """The former default sample (Queensland ds100103, CC BY 4.0) as four CSVs."""
+    root = K.repo_root()
+    candidates = (
+        root / "tests/geosuite/fixtures/thalanga-core.json",  # canonical checkout
+        root / "tests/fixtures/thalanga-core.json",  # public source package
+    )
+    fx = next((path for path in candidates if path.is_file()), None)
+    if fx is None:
+        raise FileNotFoundError("Thalanga fixture missing from canonical/public source layout")
+    data = json.loads(fx.read_text())
+    out = Path(tmp) / "thalanga-src"
+    out.mkdir(exist_ok=True)
+    for t in TABLES:
+        cols = list(data[t][0])
+        with open(out / f"{t}.csv", "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(cols)
+            for r in data[t]:
+                w.writerow(["" if r.get(c) is None else r[c] for c in cols])
+    return out
+
+
 def core_stage(br, site, tmp, R):
     pg = br.new_page(viewport={"width": 1440, "height": 900}, accept_downloads=True)
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
     pg.goto(site.base + "/Core.html", wait_until="load")
     K.ready(pg)
+    # The bundled sample is nickel laterite; Thalanga is loaded from its published tables.
+    pg.wait_for_function("() => STATE.assay.length > 0", timeout=90000)
+    src = write_thalanga_csvs(tmp)
+    pg.evaluate("showTab(2)")
+    pg.locator("#fileInput").set_input_files([str(src / f"{t}.csv") for t in TABLES])
     pg.wait_for_function(
-        "() => STATE.assay.length > 9000 && STATE.collar.length > 700", timeout=90000
+        "() => STATE.assay.length === 9073 && STATE.collar.length === 717",
+        timeout=120000,
     )
     settle(pg, 2500)
     R["core"] = c = {}

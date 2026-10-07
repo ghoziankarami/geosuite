@@ -15,6 +15,8 @@ Endapan Babbitt (sekarang dikenal sebagai Mesaba) adalah mineralisasi Cu-Ni-PGE 
 
 ---
 
+> **Pembaruan perhitungan, 7 Oktober 2026:** rekaman ini memakai range fisik hasil fit untuk covariance scalar. Radius pencarian memilih neighbour; tidak lagi menggantikan range model. Tabel dan screenshot UI direkam ulang dari upload CSV; grade-tonnage ekspor dihitung ulang independen. Session historis perlu di-refit untuk memakai mode yang dikoreksi.
+
 ## 1. File yang tidak mengatakan satuannya
 
 ```
@@ -185,9 +187,9 @@ Radius pencarian 200 × 200 × 30 m (horizontal, sekitar dua kali jarak lubang; 
 |---|---:|---:|
 | Blok terestimasi | 74.940 | **26.842** |
 | Blok dalam jangkauan yang dikeluarkan batas | — | 209.506 |
-| Kadar rata-rata Cu (OK) | 0,474 % | **0,503 %** |
+| Kadar rata-rata Cu (OK) | 0,475 % | **0,500 %** |
 | Tonase (2,8 t/m³) | 7.869 Mt | **2.818 Mt** |
-| Logam Cu | 37,3 Mt | **14,2 Mt** |
+| Logam Cu | 37,3 Mt | **14,1 Mt** |
 
 ![Estimasi dengan batas domain](img/babbitt-10-resource-estimate.png)
 
@@ -195,7 +197,7 @@ Pada data rapat, batas domain membuang hampir dua pertiga tonase: blok-blok yang
 
 Perhatikan satu keputusan tersembunyi: Assay memberi label M0 pada komposit yang **tidak dianalisis**, jadi 33.236 komposit core tak dianalisis ikut menjadi batas. Untuk batuan penutup di atas intrusi itu tepat. Untuk interval *di dalam* zona yang terlewat analisis, itu bisa memangkas bijih. Ini keputusan geologis yang harus ditulis (§3).
 
-Cek rata-rata global (dengan batas domain): OK **0,503 %** dan NN **0,509 %**, selisih 1,1 %. Cek ulang tonase: 26.842 blok × 37.500 m³ × 2,8 t/m³ = 2.818 Mt. Cocok.
+Cek rata-rata global (dengan batas domain): OK **0,500 %** dan NN **0,509 %**, selisih 1,8 %. Cek ulang tonase: 26.842 blok × 37.500 m³ × 2,8 t/m³ = 2.818 Mt. Cocok.
 
 ---
 
@@ -207,11 +209,11 @@ Validasi silang *leave-one-out* versi sebelumnya mencari tetangga **hanya di ant
 
 | n = 194 dari 200 | OK | IDW | NN |
 |---|---:|---:|---:|
-| Slope (estimasi terhadap aktual) | **0,62** | 0,68 | 0,68 |
-| r² | 0,67 | 0,62 | 0,47 |
-| Bias rata-rata | +0,02 | +0,03 | +0,02 |
+| Slope (estimasi terhadap aktual) | **0,64** | 0,68 | 0,68 |
+| r² | 0,64 | 0,64 | 0,47 |
+| Bias rata-rata | +0,03 | +0,03 | +0,02 |
 
-Tidak bias secara global, tetapi **slope 0,62 berarti perataan yang cukup besar**: kadar tinggi sangat diremehkan dan kadar rendah dilebih-lebihkan. Itulah akibat range yang lebih pendek dari jarak lubang (§5). Dengan nugget 60 % dari batas grid yang lama, slope-nya 0,50; membaca nugget dari lubang bor memperbaikinya, tetapi tidak ada variogram yang bisa menggantikan jarak bor. Akibatnya pada kurva grade-tonnage, **tonase di cut-off rendah terlalu besar dan kadar di cut-off tinggi terlalu rendah**. Kurva ini tidak boleh dipakai untuk memilih cut-off penambangan tanpa koreksi *change of support*.
+Tidak bias secara global, tetapi **slope 0,64 berarti perataan yang cukup besar**: kadar tinggi sangat diremehkan dan kadar rendah dilebih-lebihkan. Itulah akibat range yang lebih pendek dari jarak lubang (§5). Dengan nugget 60 % dari batas grid yang lama, slope-nya 0,50; membaca nugget dari lubang bor memperbaikinya, tetapi tidak ada variogram yang bisa menggantikan jarak bor. Akibatnya pada kurva grade-tonnage, **tonase di cut-off rendah terlalu besar dan kadar di cut-off tinggi terlalu rendah**. Kurva ini tidak boleh dipakai untuk memilih cut-off penambangan tanpa koreksi *change of support*.
 
 ---
 
@@ -221,18 +223,23 @@ Tidak bias secara global, tetapi **slope 0,62 berarti perataan yang cukup besar*
 
 | Cut-off Cu | Tonase (Mt) | Kadar Cu |
 |---|---:|---:|
-| 0,2 % | 2.818 | 0,503 % |
-| 0,3 % | 2.671 | 0,516 % |
-| 0,4 % | 1.960 | 0,575 % |
-| 0,5 % | 1.203 | 0,655 % |
-| 0,6 % | 656 | 0,745 % |
-| 0,8 % | 150 | 0,952 % |
+| 0,2 % | 2.818 | 0,500 % |
+| 0,2 % | 2.798 | 0,502 % |
+| 0,3 % | 2.679 | 0,512 % |
+| 0,3 % | 2.375 | 0,535 % |
+| 0,4 % | 1.990 | 0,567 % |
+| 0,5 % | 1.577 | 0,604 % |
+| 0,5 % | 1.187 | 0,646 % |
+| 0,6 % | 869 | 0,691 % |
+| 0,6 % | 623 | 0,737 % |
+| 0,8 % | 209 | 0,884 % |
+| 0,8 % | 130 | 0,951 % |
 
 Dibanding deskripsi publik (**> 1 miliar ton @ ~0,43 % Cu**): kadarnya sebanding. Tanpa batas domain tonase kita sekitar 8 kali lebih besar; dengan batas domain masih **sekitar 2,8 kali**. Selisih yang tersisa bukan soal satuan (feet sudah dikonversi) dan bukan lagi soal ekstrapolasi ke batuan samping. Penyebabnya prinsip pelaporan yang paling sering dilupakan:
 
 **Sumber Daya Mineral harus punya *reasonable prospects for eventual economic extraction* (RPEEE).** Estimasi kita adalah **inventaris geologi**: semua blok di dalam domain 0,2 % Cu, sampai kedalaman 869 m di bawah permukaan. Sumber daya yang dilaporkan dibatasi oleh:
 
-- **cut-off ekonomi** (untuk Cu-Ni-PGE biasanya berbasis NSR, bukan Cu saja). Pada cut-off 0,4 % Cu saja tonase sudah turun ke 1.960 Mt;
+- **cut-off ekonomi** (untuk Cu-Ni-PGE biasanya berbasis NSR, bukan Cu saja). Pada cut-off 0,4 % Cu saja tonase sudah turun ke 1.990 Mt;
 - **cangkang tambang terbuka yang dioptimasi** (*pit shell*), sehingga blok dalam di bawah dasar pit tidak dihitung;
 - klasifikasi keyakinan yang wajar, sehingga blok jauh dari data tidak masuk.
 

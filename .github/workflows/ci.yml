@@ -46,6 +46,8 @@ jobs:
           python tests/test_lab_conventions.py
           python tests/test_estimation_inputs.py
           python tests/test_module_handoff.py
+          python tests/test_resource_compatibility.py
+          python tests/test_screening_reports.py
 
       - name: CSV import matches committed parser snapshots
         run: python tests/known-answer/csv-parser-characterization.py

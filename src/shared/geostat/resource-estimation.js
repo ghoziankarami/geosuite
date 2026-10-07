@@ -58,7 +58,13 @@ function gammaAniso(dx, dy, dz, model, anis) {
  }
  return g;
  }
- // legacy single-structure: anisotropy borrowed from search ellipsoid
+ // Newly fitted/manual scalar models have one physical, isotropic range.
+ // Search changes neighbor selection, never the fitted covariance function.
+ // Historical sessions remain explicitly reproducible until the user refits.
+ if (model.covarianceMode === 'model-range') {
+   return variogramModelEval(Math.hypot(dx,dy,dz),model);
+ }
+ // Legacy single-structure compatibility: anisotropy borrowed from search.
  const r = rotateAniso(dx, dy, dz, anis.azDeg, anis.dipDeg);
  const h = Math.sqrt((r.maj / anis.rMaj) ** 2 + (r.semi / anis.rSemi) ** 2 + (r.min / anis.rMin) ** 2);
  return model.nugget + (model.sill - model.nugget) * gammaUnit(h, model.type);
@@ -76,6 +82,10 @@ function neighborsAround(idx, x, y, z, samples, search) {
   const ncx = Math.floor(x / cs), ncy = Math.floor(y / cs), ncz = Math.floor(z / cs);
   const span = Math.ceil(maxR / cs);
   const maxN = search.maxNeighbors;
+  // Apply a drillhole cap BEFORE the global top-k cut. Filtering an already
+  // truncated list loses valid candidates from more distant drillholes.
+  const holeCap = Math.max(0, Math.floor(search.maxPerHole || 0));
+  const cappedCandidates = holeCap ? [] : null;
 
   // Sprint C: Octant search — divide search ellipsoid into 8 octants
   // (4 horizontal quadrants × 2 vertical halves) and limit per-octant
@@ -109,11 +119,18 @@ function neighborsAround(idx, x, y, z, samples, search) {
         if (!list) continue;
         for (let li = 0; li < list.length; li++) {
           const si = list[li];
+          // LOO targets do not consume a drillhole quota or a top-k slot.
+          if (si === search.excludeIndex) continue;
           const s = samples[si];
           const ddx = s.x - x, ddy = s.y - y, ddz = s.z - z;
           const ndist = ellipsoidDist(ddx, ddy, ddz, search);
           if (ndist > 1.0) continue;
           const eu = Math.sqrt(ddx * ddx + ddy * ddy + ddz * ddz);
+
+          if (cappedCandidates) {
+            cappedCandidates.push({idx: si, ndist, eu, oct: (ddx >= 0 ? 1 : 0) | (ddy >= 0 ? 2 : 0) | (ddz >= 0 ? 4 : 0)});
+            continue;
+          }
 
           if (useOctant) {
             // Determine octant from the un-rotated spatial relationship
@@ -163,6 +180,22 @@ function neighborsAround(idx, x, y, z, samples, search) {
         }
       }
     }
+  }
+
+  if (cappedCandidates) {
+    cappedCandidates.sort((a,b) => a.ndist - b.ndist || a.idx - b.idx);
+    const holes = new Map(), octants = new Int32Array(8), selected = [];
+    for (const candidate of cappedCandidates) {
+      const id = samples[candidate.idx].rid;
+      // Unknown drillhole IDs must not all collapse into one fictional hole.
+      const key = id == null || id === '' ? Symbol() : String(id);
+      if ((holes.get(key) || 0) >= holeCap || (useOctant && octants[candidate.oct] >= perOctantMax)) continue;
+      holes.set(key, (holes.get(key) || 0) + 1);
+      octants[candidate.oct]++;
+      selected.push({idx: candidate.idx, ndist: candidate.ndist, eu: candidate.eu});
+      if (selected.length === maxN) break;
+    }
+    return selected;
   }
 
   if (useOctant) {
@@ -250,7 +283,55 @@ function nearestNeighbor(neighbors, samples) {
  return samples[neighbors[0].idx].v;
 }
 
-  window.OrebitGeostat = { variogramModelEval: variogramModelEval, gammaAniso: gammaAniso, ellipsoidDist: ellipsoidDist, neighborsAround: neighborsAround, ordinaryKriging: ordinaryKriging, nearestNeighbor: nearestNeighbor };
+// Enumerate only cells within a 3D distance of samples. Walking a deposit's
+// entire bounding box can exceed memory limits even when its actual informed
+// volume is small. Keep the original lattice/origin and deduplicate overlaps.
+function sparseEnvelopeBlocks(samples, origin, size, dims, radius, limit) {
+ if (![origin,size,dims].every(v=>Array.isArray(v)&&v.length===3) ||
+     !Number.isSafeInteger(limit) || limit<1 || !Number.isFinite(radius) || radius <= 0 || !size.every(v => Number.isFinite(v) && v > 0) ||
+     !origin.every(Number.isFinite) || !dims.every(v => Number.isSafeInteger(v) && v > 0)) throw new Error('Invalid 3D envelope geometry');
+ const total = dims[0] * dims[1] * dims[2];
+ if (!Number.isSafeInteger(total)) throw new Error('Grid lattice exceeds safe indexing limits');
+ const cells = new Set();
+ let visits = 0;
+ const maxVisits = 50_000_000;
+ for (const s of samples) {
+  if (![s.x,s.y,s.z].every(Number.isFinite)) throw new Error('Sample XYZ must be finite');
+  const p = [s.x,s.y,s.z];
+  const lo = p.map((v,j) => Math.max(0, Math.ceil((v - radius - origin[j]) / size[j] - 0.5)));
+  const hi = p.map((v,j) => Math.min(dims[j]-1, Math.floor((v + radius - origin[j]) / size[j] - 0.5)));
+  visits += Math.max(0,hi[0]-lo[0]+1) * Math.max(0,hi[1]-lo[1]+1) * Math.max(0,hi[2]-lo[2]+1);
+  if (visits > maxVisits) throw new Error('3D envelope is too costly; reduce radius or increase block size');
+  for (let iz=lo[2];iz<=hi[2];iz++) for (let iy=lo[1];iy<=hi[1];iy++) for (let ix=lo[0];ix<=hi[0];ix++) {
+   const cx=origin[0]+(ix+.5)*size[0],cy=origin[1]+(iy+.5)*size[1],cz=origin[2]+(iz+.5)*size[2];
+   if ((cx-s.x)**2+(cy-s.y)**2+(cz-s.z)**2 > radius*radius) continue;
+   cells.add(ix+iy*dims[0]+iz*dims[0]*dims[1]);
+   if (cells.size > limit) throw new Error('3D envelope exceeds the block memory limit');
+  }
+ }
+ return Array.from(cells).sort((a,b)=>a-b).map((flat,idx) => {
+  const iz=Math.floor(flat/(dims[0]*dims[1])), rem=flat-iz*dims[0]*dims[1];
+  const iy=Math.floor(rem/dims[0]), ix=rem-iy*dims[0];
+  return {cx:origin[0]+(ix+.5)*size[0],cy:origin[1]+(iy+.5)*size[1],cz:origin[2]+(iz+.5)*size[2],idx};
+ });
+}
+
+
+function summarizeBlocks(indices, grades, volumePerBlock, densityAt, volumetric = false) {
+ if (!(Number.isFinite(volumePerBlock) && volumePerBlock > 0)) throw new Error('Invalid block volume');
+ let n=0,tonnes=0,volume=0,sum=0,weights=0,sumSq=0;
+ for (const i of indices) {
+   const grade=grades[i]; if (!Number.isFinite(grade)) continue;
+   const density=typeof densityAt === 'function' ? densityAt(i) : densityAt[i];
+   if (!(Number.isFinite(density) && density > 0)) throw new Error('Invalid block density');
+   const mass=volumePerBlock*density, weight=volumetric ? volumePerBlock : mass;
+   n++; tonnes+=mass; volume+=volumePerBlock; sum+=weight*grade; sumSq+=weight*grade*grade; weights+=weight;
+ }
+ const meanGrade=weights>0 ? sum/weights : null;
+ return {blocks:n,tonnes,volume,meanGrade,sd:weights>0?Math.sqrt(Math.max(0,sumSq/weights-meanGrade*meanGrade)):null};
+}
+
+  window.OrebitGeostat = { variogramModelEval: variogramModelEval, gammaAniso: gammaAniso, ellipsoidDist: ellipsoidDist, neighborsAround: neighborsAround, ordinaryKriging: ordinaryKriging, nearestNeighbor: nearestNeighbor, sparseEnvelopeBlocks: sparseEnvelopeBlocks, summarizeBlocks: summarizeBlocks };
 })();
 // Top-level aliases keep every existing call site working unchanged.
 var variogramModelEval = window.OrebitGeostat.variogramModelEval;
@@ -259,6 +340,8 @@ var ellipsoidDist = window.OrebitGeostat.ellipsoidDist;
 var neighborsAround = window.OrebitGeostat.neighborsAround;
 var ordinaryKriging = window.OrebitGeostat.ordinaryKriging;
 var nearestNeighbor = window.OrebitGeostat.nearestNeighbor;
+var sparseEnvelopeBlocks = window.OrebitGeostat.sparseEnvelopeBlocks;
+var summarizeBlocks = window.OrebitGeostat.summarizeBlocks;
 function gammaUnitOfStruct(h, type) {
  if (h <= 0) return 0;
  if (type === 'spherical') return h >= 1? 1 : (1.5 * h - 0.5 * h * h * h);

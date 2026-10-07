@@ -190,7 +190,7 @@ def core_stage(br, site, src, tmp, R):
     pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
     pg.goto(site.base + "/Core.html", wait_until="load")
     K.ready(pg)
-    pg.wait_for_function("() => STATE.assay.length > 9000", timeout=90000)
+    pg.wait_for_function("() => STATE.assay.length > 8000", timeout=90000)
     settle(pg, 1500)
     pg.evaluate(
         "() => { showTab(2); document.getElementById('coreLengthUnit').value = 'ft'; applyLengthUnit('ft'); }"

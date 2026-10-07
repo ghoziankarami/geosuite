@@ -229,21 +229,35 @@ def main():
         print("no vignette data found")
         return 1
     with tempfile.TemporaryDirectory(prefix="vignette-verify-") as tmp:
+        # The runners are independent (each drives its own Chromium through
+        # Core -> Assay -> Resource), so start them all at once and collect
+        # the results in order: run one after another they were the slowest
+        # suite of the pr tier. Each gets its own output directory.
+        running = {}
         for name in names:
             runner = VIG / "tools" / f"run_{name}.py"
             check(runner.exists(), f"{name}: no runner {runner.name}")
             if not runner.exists():
                 continue
             print(f"── {name}: re-running {runner.name}")
-            env = dict(os.environ, VIGNETTE_OUT_DIR=tmp)
-            res = subprocess.run([sys.executable, str(runner), "--no-shots"], env=env,
-                                 capture_output=True, text=True, timeout=900)
-            if res.returncode == 3:
-                print(f"  SKIP {name}: its public data is not available offline ({(res.stdout or '').strip()[-160:]})")
+            out_dir = Path(tmp) / name
+            out_dir.mkdir()
+            env = dict(os.environ, VIGNETTE_OUT_DIR=str(out_dir))
+            running[name] = (out_dir, subprocess.Popen(
+                [sys.executable, str(runner), "--no-shots"], env=env,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True))
+        for name, (out_dir, proc) in running.items():
+            try:
+                stdout, stderr = proc.communicate(timeout=900)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                stdout, stderr = proc.communicate()
+            if proc.returncode == 3:
+                print(f"  SKIP {name}: its public data is not available offline ({(stdout or '').strip()[-160:]})")
                 continue
-            fresh = Path(tmp) / f"{name}.json"
-            check(res.returncode == 0 and fresh.exists(),
-                  f"{name}: runner failed ({res.returncode}): {(res.stderr or res.stdout)[-600:]}")
+            fresh = out_dir / f"{name}.json"
+            check(proc.returncode == 0 and fresh.exists(),
+                  f"{name}: runner failed ({proc.returncode}): {(stderr or stdout)[-600:]}")
             if not fresh.exists():
                 continue
             committed = json.loads((VIG / "data" / f"{name}.json").read_text(encoding="utf-8"))

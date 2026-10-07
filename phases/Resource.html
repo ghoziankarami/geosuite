@@ -18,6 +18,7 @@ Terms: https://geosuite.orebit.id/terms
 
 
 
+
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
@@ -2531,6 +2532,11 @@ input[type="checkbox"], input[type="radio"] {
     </div>
     <div class="card" style="margin-top:10px;">
       <h3 data-i18n="kcmi.exportReportTitle"> Export Report</h3>
+      <label style="display:block;margin:8px 0;" for="reportCutoff" data-i18n="res.reportInsight.cutoffLabel">PDF headline cutoff (native grade unit)</label>
+      <input type="number" id="reportCutoff" min="0" step="any" style="width:140px;" aria-label="PDF headline cutoff" onchange="setReportCutoff(this.value)">
+      <p data-i18n="res.reportInsight.cutoffHint">Blank = all estimated blocks. Enter a comparison cutoff explicitly. The current grade-tonnage confidence filter also applies.</p>
+      <label for="reportCutoffNote" style="display:block;margin:8px 0;" data-i18n="res.reportInsight.noteLabel">Cutoff basis / comparison purpose (optional)</label>
+      <textarea id="reportCutoffNote" rows="2" maxlength="5000" style="width:100%;" onchange="setupState.reportCutoffNote=this.value;saveResourceSession()"></textarea>
       <button class="btn" id="pdf-export-btn" onclick="exportPDF()" data-i18n="kcmi.exportPdfBtn">Generate Handoff PDF Report</button>
       <button class="btn secondary" onclick="saveAllPlotsZip()" title="Download all rendered charts as a single ZIP file" data-i18n-attr="title:kcmi.savePlotsZipTitle" data-i18n="kcmi.savePlotsZipBtn">📦 Save All Plots (ZIP)</button>
     <p style="font-size:12px;color:var(--fg-mute);margin-top:8px;" data-i18n="kcmi.pdfHint">8-page PDF: cover, variogram, block model, grade estimation, swath validation, classification, cut-off sensitivity, and KCMI commentary.</p>
@@ -2603,7 +2609,7 @@ input[type="checkbox"], input[type="radio"] {
       extra: (extra && typeof extra === 'object') ? (extra.extra || '') : (extra || ''),
       filename: (extra && extra.filename) || '',
       mime: (extra && extra.mime) || '',
-      content: (extra && typeof extra.content === 'string') ? extra.content.slice(0, 2000000) : ''
+      content: (extra && typeof extra.content === 'string' && extra.content.length <= 2000000) ? extra.content : ''
     });
     _save(arr);
     if (typeof _renderExportHistory === 'function') {
@@ -2709,7 +2715,7 @@ input[type="checkbox"], input[type="radio"] {
       // covered by Save All Plots (ZIP). Regenerate this from
       // `grep -oE "Plotly\.newPlot\('[a-zA-Z]+'" Resource.html` if new
       // charts are added, rather than hand-editing from memory.
-      return ["varPlot", "dsPlot", "vmapPlot", "dhPlot", "blockSectionPlot", "estimHist", "estimCompScatter", "estimCompDivHist", "classChart", "sensTornado", "cvScatter", "gtPlot"];
+      return Array.from(new Set([...Array.from(document.querySelectorAll('.js-plotly-plot[id]')).map(el=>el.id).filter(id=>!id.startsWith('__')), ...["varPlot", "dsPlot", "vmapPlot", "dhPlot", "blockSectionPlot", "estimHist", "estimCompScatter", "estimCompDivHist", "classChart", "sensTornado", "cvScatter", "gtPlot"]]));
     }
     return [];
   }
@@ -2820,16 +2826,19 @@ input[type="checkbox"], input[type="radio"] {
   (function hookPlotlyForExportButtons() {
     if (typeof Plotly === 'undefined' || Plotly.__orebitExportHooked) return;
     Plotly.__orebitExportHooked = true;
-    const targets = _orebitGetPlotIds(_orebitAppName());
-    const origNewPlot = Plotly.newPlot;
-    Plotly.newPlot = function(gd) {
-      const result = origNewPlot.apply(this, arguments);
-      const id = typeof gd === 'string' ? gd : (gd && gd.id);
-      if (id && targets.includes(id) && result && typeof result.then === 'function') {
-        result.then(function() { _attachChartExportButton(id); }).catch(function() {});
-      }
-      return result;
-    };
+    // Attach export to every real chart, including charts created by queued
+    // Plotly.react calls. A new chart does not need another hard-coded ID.
+    for (const method of ['newPlot','react']) {
+      const original=Plotly[method];
+      Plotly[method]=function(gd) {
+        const result=original.apply(this,arguments);
+        const id=typeof gd==='string'?gd:(gd&&gd.id);
+        if(id&&!id.startsWith('__')&&result&&typeof result.then==='function') {
+          result.then(()=>_attachChartExportButton(id)).catch(()=>{});
+        }
+        return result;
+      };
+    }
   })();
 })();
 </script>
@@ -2855,6 +2864,7 @@ const EMBEDDED_DATA = /* @orebit-inline: assets/sample/resource.json */;
 /* @orebit-inline: shared/ui/index.js */
 /* @orebit-inline: shared/i18n/index.js */
 /* @orebit-inline: shared/io/index.js */
+/* @orebit-inline: shared/io/screening-report.js */
 /* @orebit-inline: shared/io/parse.js */
 /* @orebit-inline: shared/io/grades.js */
 /* @orebit-inline: shared/io/columns.js */
@@ -3944,6 +3954,9 @@ function setActiveDataset(input, opts) {
 
   // Setup: domain + decluster result (NOT cell SIZE, see note below) follow the dataset.
   setupState.domain = 'all';
+  setupState.reportCutoff = null;setupState.reportCutoffNote="";
+  if(document.getElementById("reportCutoffNote"))document.getElementById("reportCutoffNote").value="";
+  if(document.getElementById('reportCutoff')) document.getElementById('reportCutoff').value='';
   setupState.decluster = null;
   // setupState.element and setupState.gradeUnit stay PER-CALL -- resetToSample()
   // picks the detected element or 'au_gpt', and finalizeUploadLoad() picks from
@@ -3959,6 +3972,7 @@ function setActiveDataset(input, opts) {
 
   // Block model belongs to the dataset's own drill spacing.
   blockState.size = null; blockState.origin = null; blockState.dims = null; blockState.blocks = null;
+  blockState.envelopeMode = 'xy'; blockState.envelopeRadius = 25; window._gtCurveSnapshot=null;
   // blockState.densityTable / .densityTableActive / .blockDensities are intentionally
   // NOT reset here -- finalizeUploadLoad() nulls them on its own after applying the
   // newly-parsed CSV's density meta, and resetToSample() historically never touched
@@ -3972,6 +3986,8 @@ function setActiveDataset(input, opts) {
   // and finalizeUploadLoad() now uses (D13 -- an upload-specific radius silently
   // carried into the next dataset in the same session).
   searchState.rMaj = 200; searchState.rSemi = 200; searchState.rMin = 50;
+  searchState.maxPerHole = 0; searchState.secondPass = false;
+  searchState.secondPassFactor = 2; searchState.secondPassMin = 4;
 
   // STATE.usingSample is intentionally NOT touched here. resetToSample() leaves
   // it alone (it isn't a set-true anywhere we can see), and finalizeUploadLoad()
@@ -3990,8 +4006,10 @@ let currentTab = 1;
 // unification for why that split is deliberate, not drift.
 window.__i18nActiveTabIndex = function () { return currentTab; };
 let setupState = {
- element: 'zn_pct', // CHANGED 2026-07-28: Zn is primary commodity for Thalanga VMS (Au is by-product)
+ element: 'ni_pct', // default sample is nickel laterite (src/assets/sample); loading other data re-detects the element
  domain: 'all',
+ reportCutoffNote: "",
+ reportCutoff: null, // explicit PDF headline selection; blank means no cutoff
  gradeUnit: null, // null = auto-detect from column name; else '%' | 'g/t' | 'ppm' | 'kg/m³' (user override, Setup tab)
  declusterCell: null, // m
  decluster: null // {weights:Map<rowIdx,w>, summary:{...}}
@@ -4884,13 +4902,13 @@ function resetToSample() {
     if (Array.isArray(d) && d.length) window._renderDataPreview(d, null, {maxRows: 10});
   }, 100); } catch (e) { console.warn("preview", e); }
  setActiveDataset(EMBEDDED_DATA, { source: DATASET_SOURCE.SAMPLE });
- // Senior geologist fix 2026-06-21: auto-set CRS for sample data (Thalanga = GDA94/MGA Zone 55)
+ // Auto-set CRS for the sample data (nickel laterite, Southeast Sulawesi = WGS 84 / UTM 51S)
  // Otherwise satellite basemap silently fails — see geosuite-tab-injection skill
  if (typeof STATE !== 'undefined') {
-   STATE.crs = 'EPSG:32755'; // GDA94 / MGA Zone 55 (Queensland VHMS)
+   STATE.crs = 'EPSG:32751'; // WGS 84 / UTM 51S
  }
  if (typeof window.GEO_CRS !== 'undefined') {
-   window.GEO_CRS = 'EPSG:32755';
+   window.GEO_CRS = 'EPSG:32751';
  }
  setupState.element = (typeof detectActiveElements === 'function'? detectActiveElements()[0] : null) || 'au_gpt';
  setUploadStatus(t('res.resetToSample.toast').replace('{name}', escapeHtml(DATA.name)).replace('{n}', DATA.rows.length.toLocaleString('en-US')));
@@ -5128,6 +5146,7 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
 
  document.getElementById('setupElement').addEventListener('change', e => {
  setupState.element = e.target.value;
+ setupState.reportCutoff=null;setupState.reportCutoffNote='';if(document.getElementById('reportCutoffNote'))document.getElementById('reportCutoffNote').value='';if(document.getElementById('reportCutoff'))document.getElementById('reportCutoff').value='';
  // Element changed → invalidate ALL downstream state (variogram, blocks-results, classification, cross-val).
  variogramState.experimental = null;
  variogramState.model = null;
@@ -5140,6 +5159,7 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
  document.getElementById('setupGradeUnit').addEventListener('change', e => {
  // Empty value = auto-detect. Otherwise force the unit (overrides column-name guess).
  setupState.gradeUnit = e.target.value || null;
+ setupState.reportCutoff=null;setupState.reportCutoffNote='';if(document.getElementById('reportCutoffNote'))document.getElementById('reportCutoffNote').value='';if(document.getElementById('reportCutoff'))document.getElementById('reportCutoff').value='';
  // Unit changes downstream tonnage/contained-metal math + density relevance → re-render Setup
  // (refreshes the "Unit aktif" hint) and invalidate block/estimation results that assumed old unit.
  renderSetupTab();
@@ -5714,7 +5734,7 @@ async function autoFitVariogram(replot = true) {
  // Guard: empty values or degenerate variance → fallback to experimental max gamma
  if (vals.length === 0 || dataVar <= 0 || !isFinite(dataVar)) {
    const fallbackSill = Math.max(...ex.gammas) * 1.2;
-   const fallback = { type: 'exponential', nugget: 0, sill: isFinite(fallbackSill) ? fallbackSill : 1, range: ex.lags[ex.lags.length - 1] };
+   const fallback = { covarianceMode: 'model-range', type: 'exponential', nugget: 0, sill: isFinite(fallbackSill) ? fallbackSill : 1, range: ex.lags[ex.lags.length - 1] };
    variogramState.model = fallback;
    updateModelInputs();
    const statusEl = document.getElementById('varStatus');
@@ -5772,7 +5792,7 @@ async function autoFitVariogram(replot = true) {
  }
  }
 
- variogramState.model = { type: best.type, nugget: best.nugget, sill: best.sill, range: best.range };
+ variogramState.model = { covarianceMode: 'model-range', type: best.type, nugget: best.nugget, sill: best.sill, range: best.range };
  // Say so when the answer is an edge of the search, not a fit.
  const atBounds = [];
  variogramState.fitNuggetFrom = fixedNug !== null ? 'downhole' : 'fit';
@@ -5828,12 +5848,15 @@ async function updateModel() {
  toast(t('res.updateModelInputs.computeVariogramFirst'), 'warn');
  return;
  }
- variogramState.model = {
+ const proposedModel = {
  type: document.getElementById('varModelType').value,
  nugget: +document.getElementById('varNugget').value,
  sill: +document.getElementById('varSill').value,
- range: +document.getElementById('varRange').value
+ range: +document.getElementById('varRange').value,
+ covarianceMode: 'model-range'
  };
+ if (![proposedModel.nugget,proposedModel.sill,proposedModel.range].every(Number.isFinite) || proposedModel.nugget<0 || proposedModel.sill<proposedModel.nugget || proposedModel.range<=0) { toast(t('res.covariance.invalid'),'warn'); return; }
+ variogramState.model=proposedModel;
  renderModelSummary();
  saveResourceSession();
  await plotVariogram();
@@ -6709,7 +6732,8 @@ let blockState = {
  // uniform density is the VMS default above, not a measurement -- a nickel
  // laterite (~1.6-1.8 t/m³) run on it overstates tonnage by ~60%, and the
  // KCMI/PDF reports used to call it just "Uniform". Reports now say "assumed".
- densityUserSet: false
+ densityUserSet: false,
+ envelopeMode: 'xy', envelopeRadius: 25
 };
 // Economic / RPE assumption register. These are explicit user inputs and are
 // carried into the KCMI/PDF narrative; they do not create a reserve or replace
@@ -6725,6 +6749,7 @@ let searchState = {
   azDeg: 0, dipDeg: 0,
   minNeighbors: 2,
   maxNeighbors: 16,
+  maxPerHole: 0, secondPass: false, secondPassFactor: 2, secondPassMin: 4,
   // CHANGED 2026-07-28: senior geologist audit #11 — octant default false for sparse data
   // (was true; octant search too restrictive for early-stage exploration with wide spacing)
   useOctant: false,  // Sprint C: octant search for spatially balanced neighbor selection
@@ -6791,15 +6816,22 @@ function saveResourceSession() {
    element: setupState.element,
    domain: setupState.domain,
    gradeUnit: setupState.gradeUnit,
+   reportCutoff: setupState.reportCutoff,
+   reportCutoffNote: setupState.reportCutoffNote,
    variogram: variogramState.model ? {
     type: variogramState.model.type,
     nugget: variogramState.model.nugget,
     sill: variogramState.model.sill,
     range: variogramState.model.range,
-    struct2: variogramState.model.struct2 || null
+    struct1: variogramState.model.struct1 || null,
+    struct2: variogramState.model.struct2 || null,
+    azDeg: variogramState.model.azDeg,
+    aniso: variogramState.model.aniso || null,
+    covarianceMode: variogramState.model.struct1 ? undefined : (variogramState.model.covarianceMode || 'legacy-search')
    } : null,
    direction: variogramState.direction,
    blockSize: blockState.size,
+   envelopeMode: blockState.envelopeMode, envelopeRadius: blockState.envelopeRadius,
    blockDims: blockState.dims,
    blockOrigin: blockState.origin,
    density: blockState.density,
@@ -6809,7 +6841,9 @@ function saveResourceSession() {
     azDeg: searchState.azDeg, dipDeg: searchState.dipDeg,
     minNeighbors: searchState.minNeighbors, maxNeighbors: searchState.maxNeighbors,
     useOctant: searchState.useOctant,
-    domainBoundary: searchState.domainBoundary
+    domainBoundary: searchState.domainBoundary,
+    maxPerHole: searchState.maxPerHole, secondPass: searchState.secondPass,
+    secondPassFactor: searchState.secondPassFactor, secondPassMin: searchState.secondPassMin
    }
   };
   localStorage.setItem(RESOURCE_SESSION_KEY, JSON.stringify(payload));
@@ -6841,17 +6875,25 @@ function restoreResourceSession() {
   return null;
  }
  let restored = false;
+ setupState.reportCutoffNote=typeof p.reportCutoffNote==="string"?p.reportCutoffNote:"";if(document.getElementById("reportCutoffNote"))document.getElementById("reportCutoffNote").value=setupState.reportCutoffNote;
+ if(p.reportCutoff==null || (Number.isFinite(p.reportCutoff)&&p.reportCutoff>=0)){setupState.reportCutoff=p.reportCutoff??null;if(document.getElementById("reportCutoff"))document.getElementById("reportCutoff").value=setupState.reportCutoff??"";}
  if (p.variogram && Number.isFinite(p.variogram.range) && p.variogram.range > 0) {
   variogramState.model = {
    type: p.variogram.type, nugget: p.variogram.nugget,
    sill: p.variogram.sill, range: p.variogram.range
   };
+  if (!p.variogram.struct1) variogramState.model.covarianceMode = p.variogram.covarianceMode === 'model-range' ? 'model-range' : 'legacy-search';
+  if (p.variogram.struct1) variogramState.model.struct1 = p.variogram.struct1;
   if (p.variogram.struct2) variogramState.model.struct2 = p.variogram.struct2;
+  if (Number.isFinite(p.variogram.azDeg)) variogramState.model.azDeg = p.variogram.azDeg;
+  if (p.variogram.aniso) variogramState.model.aniso = p.variogram.aniso;
   if (p.direction) variogramState.direction = p.direction;
   restored = true;
  }
  if (Array.isArray(p.blockSize) && p.blockSize.length === 3) {
   blockState.size = p.blockSize.slice();
+  blockState.envelopeMode = p.envelopeMode === 'xyz' ? 'xyz' : 'xy';
+  if (Number.isFinite(p.envelopeRadius) && p.envelopeRadius > 0) blockState.envelopeRadius = p.envelopeRadius;
   if (Array.isArray(p.blockDims)) blockState.dims = p.blockDims.slice();
   if (Array.isArray(p.blockOrigin)) blockState.origin = p.blockOrigin.slice();
   if (Number.isFinite(p.density) && p.density > 0) blockState.density = p.density;
@@ -6859,10 +6901,11 @@ function restoreResourceSession() {
   restored = true;
  }
  if (p.search) {
-  for (const k of ['rMaj','rSemi','rMin','azDeg','dipDeg','minNeighbors','maxNeighbors']) {
+  for (const k of ['rMaj','rSemi','rMin','azDeg','dipDeg','minNeighbors','maxNeighbors','maxPerHole','secondPassFactor','secondPassMin']) {
    if (Number.isFinite(p.search[k])) searchState[k] = p.search[k];
   }
   if (typeof p.search.useOctant === 'boolean') searchState.useOctant = p.search.useOctant;
+  if (typeof p.search.secondPass === 'boolean') searchState.secondPass = p.search.secondPass;
   if (typeof p.search.domainBoundary === 'boolean') searchState.domainBoundary = p.search.domainBoundary;
  }
  return restored ? p : null;
@@ -6949,7 +6992,13 @@ function gammaAniso(dx, dy, dz, model, anis) {
  }
  return g;
  }
- // legacy single-structure: anisotropy borrowed from search ellipsoid
+ // Newly fitted/manual scalar models have one physical, isotropic range.
+ // Search changes neighbor selection, never the fitted covariance function.
+ // Historical sessions remain explicitly reproducible until the user refits.
+ if (model.covarianceMode === 'model-range') {
+   return variogramModelEval(Math.hypot(dx,dy,dz),model);
+ }
+ // Legacy single-structure compatibility: anisotropy borrowed from search.
  const r = rotateAniso(dx, dy, dz, anis.azDeg, anis.dipDeg);
  const h = Math.sqrt((r.maj / anis.rMaj) ** 2 + (r.semi / anis.rSemi) ** 2 + (r.min / anis.rMin) ** 2);
  return model.nugget + (model.sill - model.nugget) * gammaUnit(h, model.type);
@@ -7304,6 +7353,14 @@ function setResourceExtentMode(mode, buffer) {
  estimState = { results:null, done:false };
  renderBlockModel();
 }
+function setResourceEnvelope(mode, radius) {
+ blockState.envelopeMode = mode === 'xyz' ? 'xyz' : 'xy';
+ blockState.envelopeRadius = Number(radius);
+ blockState.blocks = null; blockState.dims = null; blockState.blockDensities = null; blockState.densitySource = null;
+ estimState = {results:null,done:false}; classState = {thresholds:null,labels:null};
+ crossvalState = {results:null,metrics:null};
+ renderBlockModel();
+}
 function renderBlockModel() {
  const div = document.getElementById('blockModelContent');
  const samples = getSamples();
@@ -7347,6 +7404,14 @@ function renderBlockModel() {
  <button class="btn btn-ghost" onclick="autoSuggestBlockSize()" title="${t('res.renderBlockSetup.autoSuggestTitle').replace('{n}', ESTIMATE_CONFIRM_BLOCKS.toLocaleString('en-US'))}" data-i18n="res.autoSuggestSize">Auto-suggest size</button>
  <button class="btn" id="bmGenBtn" onclick="generateBlocks()" data-i18n="res.generateGrid"> Generate Grid</button>
  </div>
+ <div class="row-controls" style="margin-top:10px;">
+ <label>${t('res.envelope.label')} <select id="bmEnvelopeMode" onchange="setResourceEnvelope(this.value,document.getElementById('bmEnvelopeRadius').value)">
+ <option value="xy" ${blockState.envelopeMode!=='xyz'?'selected':''}>${t('res.envelope.xy')}</option>
+ <option value="xyz" ${blockState.envelopeMode==='xyz'?'selected':''}>${t('res.envelope.xyz')}</option>
+ </select></label>
+ <label>${t('res.envelope.radius')} <input id="bmEnvelopeRadius" type="number" min="1" value="${blockState.envelopeRadius||25}" style="width:90px;" onchange="setResourceEnvelope(document.getElementById('bmEnvelopeMode').value,this.value)"></label>
+ </div>
+ <p class="hint">${t('res.envelope.hint')}</p>
  <div id="blockPreview" style="margin-top:10px;"></div>
  </div>
  <div class="card">
@@ -7439,6 +7504,11 @@ function updateBlockPreview() {
  const gen = document.getElementById('bmGenBtn');
  if (!s) { div.innerHTML = ''; if (gen) gen.disabled = false; return; }
  let cls = 'good', icon = '✓', msg = `${t('res.bm.gridPreview')} <strong>${s.total.toLocaleString('en-US')}</strong> ${t('res.bm.blocksDims').replace('{d}', `${s.nx}×${s.ny}×${s.nz}`)}.`;
+ if (blockState.envelopeMode === 'xyz') {
+ div.innerHTML = `<div class="hint">${t('res.envelope.preview').replace('{radius}',blockState.envelopeRadius).replace('{total}',s.total.toLocaleString('en-US'))}</div>`;
+ if (gen) gen.disabled = !(Number.isFinite(blockState.envelopeRadius) && blockState.envelopeRadius>0);
+ return;
+ }
  if (s.total > BLOCK_HARD_LIMIT) {
  cls = 'bad'; icon = '✕';
  msg = `<strong>${s.total.toLocaleString('en-US')}</strong> blocks (${s.nx}×${s.ny}×${s.nz}) — too large to generate safely (may crash on a laptop). Increase block size, or filter to one domain. Click <em data-i18n="res.autoSuggestSize">Auto-suggest size</em>.`;
@@ -7520,9 +7590,7 @@ async function generateBlocks() {
  } else if (!(dens > 0)) {
    dens = 1;
  }
- if (bx <= 0 || by <= 0 || bz <= 0) { toast(t('res.autoSuggestBlockSize.blockSizeMust0'), 'warn'); return; }
- blockState.size = [bx, by, bz];
- blockState.density = dens;
+ if (![bx,by,bz].every(v=>Number.isFinite(v)&&v>0)) { toast(t('res.autoSuggestBlockSize.blockSizeMust0'), 'warn'); return; }
  if (_volGrade) { blockState.densityTableActive = false; blockState.densityTable = null; }
 
  const samples = getSamples();
@@ -7534,16 +7602,22 @@ async function generateBlocks() {
  const ny = Math.ceil((y1 - y0) / by) + 1;
  const nz = Math.ceil((z1 - z0) / bz) + 1;
  const total = nx * ny * nz;
- if (total > BLOCK_HARD_LIMIT) {
+ const sparse = blockState.envelopeMode === 'xyz';
+ if (total > BLOCK_HARD_LIMIT && !sparse) {
  toast(t('res.generateBlocks.exceedsLimit').replace('{n}', total.toLocaleString('en-US')).replace('{limit}', BLOCK_HARD_LIMIT / 1e6), 'bad');
  updateBlockPreview();
  return;
  }
- if (total > BLOCK_SOFT_LIMIT) {
+ if (total > BLOCK_SOFT_LIMIT && !sparse) {
  if (!(await orebitConfirm(`This will generate ${total.toLocaleString('en-US')} blocks. Estimation may be slow and memory-heavy. Continue?`))) return;
  }
- const blocks = [];
+ let blocks = [];
  let k = 0;
+ if (sparse) {
+  try { blocks = sparseEnvelopeBlocks(samples,[x0,y0,z0],[bx,by,bz],[nx,ny,nz],blockState.envelopeRadius,BLOCK_HARD_LIMIT); }
+  catch(e) { toast(e.message,'bad'); return; }
+  k = blocks.length;
+ } else {
  // Envelope masking: skip blocks that lie horizontally beyond the buffered
  // data envelope (disjoint drill clusters → empty gaps should NOT be filled
  // with 0-neighbor blocks). Buffer defaults to the horizontal search radius so
@@ -7614,10 +7688,12 @@ async function generateBlocks() {
   pass();
  });
  if (genBtn) genBtn.disabled = false;
+ }
+ if (blocks.length === 0) { toast(t('res.pass.envelopeMaskRemovedAllBlocks'), 'bad'); return; }
+ blockState.size = [bx,by,bz]; blockState.density = dens;
  blockState.origin = [x0, y0, z0];
  blockState.dims = [nx, ny, nz];
  blockState.blocks = blocks;
- if (blocks.length === 0) { toast(t('res.pass.envelopeMaskRemovedAllBlocks'), 'bad'); return; }
  // Sprint C: assign per-block density from density table if available
  assignBlockDensities();
  // Reset downstream
@@ -7997,9 +8073,14 @@ function renderEstimation() {
  <label>${t('res.se.azimuth')} <input type="number" id="sAz" value="${searchState.azDeg}" min="0" max="360" step="5" style="width:90px;"></label>
  <label>Dip (°): <input type="number" id="sDip" value="${searchState.dipDeg}" min="-90" max="90" step="5" style="width:90px;"></label>
  </div>
+ <p class="hint ${variogramState.model && !variogramState.model.struct1 && variogramState.model.covarianceMode !== 'model-range' ? 'warn' : ''}">${t(variogramState.model && !variogramState.model.struct1 && variogramState.model.covarianceMode !== 'model-range' ? 'res.covariance.legacy' : 'res.covariance.model')}</p>
  <div class="row-controls" style="margin-top:8px;">
  <label>${t('res.renderEstimation.minNeighbors')}: <input type="number" id="sMinN" value="${searchState.minNeighbors}" min="2" max="50" style="width:80px;"></label>
  <label>${t('res.renderEstimation.maxNeighbors')}: <input type="number" id="sMaxN" value="${searchState.maxNeighbors}" min="2" max="50" style="width:80px;"></label>
+ <label>${t('res.search.maxPerHole')} <input id="sMaxHole" type="number" min="0" max="50" value="${searchState.maxPerHole||0}" style="width:70px;"></label>
+ <label><input id="sSecondPass" type="checkbox" ${searchState.secondPass?'checked':''}> ${t('res.search.secondPass')}</label>
+ <label>${t('res.search.factor')} <input id="sPassFactor" type="number" min="1" max="5" step="0.5" value="${searchState.secondPassFactor||2}" style="width:70px;"></label>
+ <label>${t('res.search.minSecond')} <input id="sPassMin" type="number" min="2" max="50" value="${searchState.secondPassMin||4}" style="width:70px;"></label>
  <label title="${t('res.renderEstimation.octantSearchDivideSearchEllipsoid')}"><input type="checkbox" id="sOctant" ${searchState.useOctant ? 'checked' : ''}> Octant search</label>
  <label title="${escapeHtml(t('res.est.domainBoundaryTitle'))}"><input type="checkbox" id="sDomainBound" ${searchState.domainBoundary ? 'checked' : ''}> ${t('res.est.domainBoundary')}</label>
  <button class="btn" onclick="runEstimation()" ${!haveModel ||!haveBlocks? 'disabled' : ''}> ${t('res.renderEstimation.runEstimationIdwOkNn')}</button>
@@ -8064,19 +8145,34 @@ async function runEstimation() {
  try { proceed = await confirmEstimationCost(); }
  finally { estimState._confirming = false; }
  if (!proceed) return;
- searchState.rMaj = +document.getElementById('srMaj').value;
- searchState.rSemi = +document.getElementById('srSemi').value;
- searchState.rMin = +document.getElementById('srMin').value;
- searchState.azDeg = +document.getElementById('sAz').value;
- searchState.dipDeg = +document.getElementById('sDip').value;
- searchState.minNeighbors = +document.getElementById('sMinN').value;
- searchState.maxNeighbors = +document.getElementById('sMaxN').value;
- searchState.useOctant = document.getElementById('sOctant').checked;
+ const proposedSearch = Object.assign({},searchState);
+ proposedSearch.rMaj = +document.getElementById('srMaj').value;
+ proposedSearch.rSemi = +document.getElementById('srSemi').value;
+ proposedSearch.rMin = +document.getElementById('srMin').value;
+ proposedSearch.azDeg = +document.getElementById('sAz').value;
+ proposedSearch.dipDeg = +document.getElementById('sDip').value;
+ proposedSearch.minNeighbors = +document.getElementById('sMinN').value;
+ proposedSearch.maxNeighbors = +document.getElementById('sMaxN').value;
+ proposedSearch.useOctant = document.getElementById('sOctant').checked;
+ proposedSearch.maxPerHole = Number(document.getElementById('sMaxHole')?.value ?? 0);
+ proposedSearch.secondPass = !!document.getElementById('sSecondPass')?.checked;
+ proposedSearch.secondPassFactor = Number(document.getElementById('sPassFactor')?.value ?? 2);
+ proposedSearch.secondPassMin = Number(document.getElementById('sPassMin')?.value ?? 4);
+ if (!Number.isInteger(proposedSearch.maxPerHole) || proposedSearch.maxPerHole<0 || proposedSearch.maxPerHole>50 ||
+     ![proposedSearch.azDeg,proposedSearch.dipDeg].every(Number.isFinite) || Math.abs(proposedSearch.dipDeg)>90 ||
+     ![proposedSearch.rMaj,proposedSearch.rSemi,proposedSearch.rMin].every(v=>Number.isFinite(v)&&v>0) ||
+     !Number.isInteger(proposedSearch.minNeighbors) || !Number.isInteger(proposedSearch.maxNeighbors) ||
+     proposedSearch.minNeighbors<2 || proposedSearch.maxNeighbors<proposedSearch.minNeighbors || proposedSearch.maxNeighbors>50 ||
+     (proposedSearch.secondPass && (!(proposedSearch.secondPassFactor>=1 && proposedSearch.secondPassFactor<=5) ||
+       !Number.isInteger(proposedSearch.secondPassMin) || proposedSearch.secondPassMin<2 || proposedSearch.secondPassMin>proposedSearch.maxNeighbors))) {
+   setEstimStatus('<div class="hint bad">'+t('res.search.invalid')+'</div>');return;
+ }
  const dbEl = document.getElementById('sDomainBound');
- if (dbEl) searchState.domainBoundary = dbEl.checked;
+ if (dbEl) proposedSearch.domainBoundary = dbEl.checked;
 
+ Object.assign(searchState,proposedSearch);
  const samples = getSamples();
- if (samples.length < searchState.minNeighbors) {
+ if (samples.length < (searchState.secondPass ? Math.min(searchState.minNeighbors,searchState.secondPassMin) : searchState.minNeighbors)) {
  return setEstimStatus(`<span style="color:var(--bad);"><span style="color:var(--bad);"></span> ${t('res.runEstimation.notEnoughSamples').replace('{n}', samples.length)}</span>`);
  }
  setEstimStatus(`<span style="color:var(--accent);"><span style="color:var(--accent);">⋯</span> ${t('res.runEstimation.estimatingProgress').replace('{n}', blockState.blocks.length.toLocaleString('en-US'))}</span>`);
@@ -8087,11 +8183,15 @@ async function runEstimation() {
 
  const t0 = performance.now();
  // Smaller cell size = fewer cells per neighbor query (was = max radius which gives 27-cell scan).
+ const fallbackSearch = searchState.secondPass ? Object.assign({},searchState,{
+  rMaj:searchState.rMaj*searchState.secondPassFactor,rSemi:searchState.rSemi*searchState.secondPassFactor,rMin:searchState.rMin*searchState.secondPassFactor,
+  minNeighbors:searchState.secondPassMin
+ }) : null;
  const cellSize = Math.max(searchState.rMaj, searchState.rSemi, searchState.rMin) / 2;
  const idx = buildSampleIndex(samples, cellSize);
  const bound = searchState.domainBoundary ? _domainBoundary() : null;
  const boundIdx = bound ? buildSampleIndex(bound.samples, cellSize) : null;
- const boundSearch = bound ? Object.assign({}, searchState, { maxNeighbors: 1, useOctant: false }) : null;
+ const boundSearch = bound ? Object.assign({}, fallbackSearch || searchState, { maxNeighbors: 1, maxPerHole:0, useOctant: false }) : null;
  let outsideDomain = 0;
 
  // Sample-envelope bbox + buffer for early-out.
@@ -8102,7 +8202,8 @@ async function runEstimation() {
  if (s.y < syMin) syMin = s.y; if (s.y > syMax) syMax = s.y;
  if (s.z < szMin) szMin = s.z; if (s.z > szMax) szMax = s.z;
  }
- const buf = Math.max(searchState.rMaj, searchState.rSemi, searchState.rMin) * 1.05;
+ const bboxSearch = fallbackSearch || searchState;
+ const buf = Math.max(bboxSearch.rMaj, bboxSearch.rSemi, bboxSearch.rMin) * 1.05;
  const xMin = sxMin - buf, xMax = sxMax + buf;
  const yMin = syMin - buf, yMax = syMax + buf;
  const zMin = szMin - buf, zMax = szMax + buf;
@@ -8114,6 +8215,8 @@ async function runEstimation() {
  const variance = new Float32Array(N).fill(NaN);
  const nNb = new Int16Array(N);
  const nearestDist = new Float32Array(N).fill(NaN);
+ const passNumber = new Uint8Array(N);
+ const nHoles = new Int16Array(N);
 
  // Reusable matrix buffers (max neighbors + 1 Lagrange row).
  const maxDim = searchState.maxNeighbors + 1;
@@ -8156,11 +8259,19 @@ async function runEstimation() {
    const nb = neighborsAround(boundIdx, b.cx, b.cy, b.cz, bound.samples, boundSearch);
    if (!nb.length || !bound.inDomain[nb[0].idx]) { outsideDomain++; continue; }
  }
- const neigh = neighborsAround(idx, b.cx, b.cy, b.cz, samples, searchState);
+ let activeSearch = searchState;
+ let neigh = neighborsAround(idx, b.cx, b.cy, b.cz, samples, activeSearch);
+ let chosenPass = 1;
+ if (neigh.length < activeSearch.minNeighbors && fallbackSearch) {
+  activeSearch = fallbackSearch; chosenPass = 2;
+  neigh = neighborsAround(idx,b.cx,b.cy,b.cz,samples,activeSearch);
+ }
  nNb[k] = neigh.length;
  if (neigh.length === 0) continue;
  nearestDist[k] = neigh[0].eu;
- if (neigh.length < searchState.minNeighbors) continue;
+ if (neigh.length < activeSearch.minNeighbors) continue;
+ passNumber[k] = chosenPass;
+ nHoles[k] = new Set(neigh.map(n=>samples[n.idx].rid).filter(v=>v!=null&&v!=='')).size;
  idw[k] = inverseDistance(neigh, samples);
  nn[k] = nearestNeighbor(neigh, samples);
  // Resize krigBuffers if user bumped maxNeighbors at runtime (defensive)
@@ -8173,6 +8284,7 @@ async function runEstimation() {
  b: new Float64Array(need)
  };
  }
+ // Fallback changes neighbor selection, not the variogram covariance model.
  const okRes = ordinaryKriging(neigh, b.cx, b.cy, b.cz, samples, model, searchState, bufs);
  if (okRes) {
  ok[k] = okRes.value;
@@ -8201,7 +8313,7 @@ async function runEstimation() {
  // Done
  const dt = ((performance.now() - t0) / 1000).toFixed(1);
  const bps = (N / Math.max(0.001, (performance.now() - t0) / 1000)).toFixed(0);
- estimState.results = { idw, ok, nn, variance, nNb, nearestDist, estimated, skippedBbox, negClamped, outsideDomain, domainBoundary: !!bound };
+ estimState.results = { idw, ok, nn, variance, nNb, nearestDist, passNumber, nHoles, estimated, skippedBbox, negClamped, outsideDomain, domainBoundary: !!bound };
  estimState.done = true;
  estimState._running = false;
  setEstimStatus(`<span style="color:var(--good);"><span style="color:var(--good);"></span> ${t('res.processChunk.finished')
@@ -8951,7 +9063,8 @@ function runCrossVal() {
  // Reuse neighborsAround on the pool, then drop self.
  // CHANGED 2026-07-31: FIX BUG — was passing `0` (integer) instead of `idx` (grid index object).
  // This caused idx.cellSize = undefined → NaN cell coords → 0 neighbors found → 0 valid pairs.
- const neighAll = neighborsAround(idx, target.x, target.y, target.z, pool, searchState);
+ const cvSearch = searchState.maxPerHole > 0 ? Object.assign({},searchState,{excludeIndex:i}) : searchState;
+ const neighAll = neighborsAround(idx, target.x, target.y, target.z, pool, cvSearch);
  const nbTop = [];
  for (let q = 0; q < neighAll.length && nbTop.length < searchState.maxNeighbors; q++) {
  if (neighAll[q].idx!== i) nbTop.push(neighAll[q]);
@@ -9454,6 +9567,17 @@ function computeSwath() {
 /* ============================================================
  TAB 10: GRADE-TONNAGE
  ============================================================ */
+function resourceBlockSummary(indices) {
+ const vol=blockState.size.reduce((a,b)=>a*b,1);
+ const summary=summarizeBlocks(indices,estimState.results.ok,vol,getBlockDensity,isVolumetricGrade(setupState.element));
+ return {...summary,mt:summary.tonnes/1e6,volMm3:summary.volume/1e6,grade:summary.meanGrade == null ? 0 : summary.meanGrade};
+}
+function resourceClassSummary(label) {
+ const indices=[];
+ for(let i=0;i<classState.labels.length;i++) if(classState.labels[i]===label) indices.push(i);
+ return resourceBlockSummary(indices);
+}
+
 function renderGT() {
  const div = document.getElementById('gtContent');
  if (!estimState.done) {
@@ -9502,22 +9626,23 @@ function computeGT() {
  const labels = classState.labels;
  const [bx, by, bz] = blockState.size;
  const volPerBlock = bx * by * bz;
- const cutoffs = [], tons = [], meanG = [];
+ const cutoffs = [], tons = [], meanG = [], blockCounts = [];
  const dC = (cMax - cMin) / (steps - 1);
  for (let s = 0; s < steps; s++) {
    const cut = cMin + s * dC;
-   let n = 0, sum = 0, tTons = 0;
+   let n = 0, sum = 0, tTons = 0; const coIndices=[];
    for (let i = 0; i < r.ok.length; i++) {
      if (!Number.isFinite(r.ok[i])) continue;
      if (useClass && labels[i] < 2) continue; // M+I only
-     if (r.ok[i] >= cut) { n++; sum += r.ok[i]; tTons += volPerBlock * getBlockDensity(i); }
+     if (r.ok[i] >= cut) { n++; coIndices.push(i); sum += r.ok[i]; tTons += volPerBlock * getBlockDensity(i); }
    }
-   cutoffs.push(cut);
+   cutoffs.push(cut); blockCounts.push(n);
    tons.push(tTons / 1e6);
    // No tonnage above this cutoff -> no mean grade. A 0 here drew the grade
    // line diving to zero at the right edge, which reads as a real grade.
-   meanG.push(n > 0? sum / n : null);
+   meanG.push(n > 0? resourceBlockSummary(coIndices).meanGrade : null);
  }
+ window._gtCurveSnapshot={cutoffs,tons,meanG,blockCounts,useClass:!!useClass,min:cMin,max:cMax,steps};
  // T10.6: the tonnage curve falls off fast, then rides flat near-zero for
  // most of the 1st-99th-percentile grade range the cutoff inputs default
  // to -- measured on the sample dataset, that flat tail ran cutoff 2-13
@@ -9590,12 +9715,12 @@ function renderGTSensitivityTable() {
 
  // Compute stats at each cutoff
  const rows = cutoffs.map(cut => {
-  let cnt = 0, sum = 0, sumSq = 0, tTons = 0;
+  let cnt = 0, sum = 0, sumSq = 0, tTons = 0; const coIndices=[];
   for (let j = 0; j < ok.length; j++) {
-   if (ok[j] >= cut) { cnt++; sum += ok[j]; sumSq += ok[j] * ok[j]; tTons += volPerBlock * getBlockDensity(okIdxs[j]); }
+   if (ok[j] >= cut) { cnt++; coIndices.push(okIdxs[j]); sum += ok[j]; sumSq += ok[j] * ok[j]; tTons += volPerBlock * getBlockDensity(okIdxs[j]); }
   }
-  const mean = cnt > 0 ? sum / cnt : 0;
-  const sd = cnt > 1 ? Math.sqrt(Math.max(0, sumSq / cnt - mean * mean)) : 0;
+  const mean = cnt > 0 ? resourceBlockSummary(coIndices).grade : 0;
+  const sd = cnt > 1 ? resourceBlockSummary(coIndices).sd : 0;
   const tons = tTons / 1e6;
   const contained = containedMetalTonnes(tons, mean, setupState.element, (cnt * volPerBlock) / 1e6); // tonnes of metal (volMm3 for kg/m³)
   return { cut, cnt, pct: cnt / n * 100, mean, sd, tons, contained };
@@ -10424,22 +10549,22 @@ function renderClassResults() {
  <td>${counts[3].toLocaleString('en-US')}</td>
  <td>${pctOf(counts[3], totalLabeled)}%</td>
  <td>${tons(classIdxs[3]).toFixed(2)}</td>
- <td>${meanG(grades[3]).toFixed(2)}</td>
- <td>${containedMetalFmt(tons(classIdxs[3]), meanG(grades[3]), setupState.element, volMm3(classIdxs[3]))}</td>
+ <td>${resourceClassSummary(3).grade.toFixed(2)}</td>
+ <td>${containedMetalFmt(tons(classIdxs[3]), resourceClassSummary(3).grade, setupState.element, volMm3(classIdxs[3]))}</td>
  </tr>
  <tr><td><span class="class-badge class-indicated">${window.__t('res.cls.indicated')}</span></td>
  <td>${counts[2].toLocaleString('en-US')}</td>
  <td>${pctOf(counts[2], totalLabeled)}%</td>
  <td>${tons(classIdxs[2]).toFixed(2)}</td>
- <td>${meanG(grades[2]).toFixed(2)}</td>
- <td>${containedMetalFmt(tons(classIdxs[2]), meanG(grades[2]), setupState.element, volMm3(classIdxs[2]))}</td>
+ <td>${resourceClassSummary(2).grade.toFixed(2)}</td>
+ <td>${containedMetalFmt(tons(classIdxs[2]), resourceClassSummary(2).grade, setupState.element, volMm3(classIdxs[2]))}</td>
  </tr>
  <tr><td><span class="class-badge class-inferred">${window.__t('res.cls.inferred')}</span></td>
  <td>${counts[1].toLocaleString('en-US')}</td>
  <td>${pctOf(counts[1], totalLabeled)}%</td>
  <td>${tons(classIdxs[1]).toFixed(2)}</td>
- <td>${meanG(grades[1]).toFixed(2)}</td>
- <td>${containedMetalFmt(tons(classIdxs[1]), meanG(grades[1]), setupState.element, volMm3(classIdxs[1]))}</td>
+ <td>${resourceClassSummary(1).grade.toFixed(2)}</td>
+ <td>${containedMetalFmt(tons(classIdxs[1]), resourceClassSummary(1).grade, setupState.element, volMm3(classIdxs[1]))}</td>
  </tr>
  <tr><td colspan="6" style="font-size:11.5px;color:var(--fg-mute);background:rgba(0,0,0,0.02);">${window.__t('res.cls.totalResource')} <strong>${(tons(classIdxs[3]) + tons(classIdxs[2]) + tons(classIdxs[1])).toFixed(2)} Mt</strong> ${window.__t('res.cls.acrossEstimated').replace('{n}', totalLabeled.toLocaleString('en-US'))} ${window.__t('res.cls.blocksUnestimated').replace('{n}', counts[0].toLocaleString('en-US'))} (${window.__t('res.outsideSearchReach')}).${classState.cutoff != null ? ' ' + window.__t('res.cutoffApplied').replace('{cut}', `<strong>${classState.cutoff} ${escapeHtml(gradeUnitFor(setupState.element))}</strong>`) : ' ' + window.__t('res.noCutoffApplied')}</td></tr>
  </table>
@@ -10537,7 +10662,7 @@ function renderKCMIReport() {
        if (r.ok[i] < co) continue;
        nB++; sumG += r.ok[i]; coIdxs.push(i);
      }
-     cutoffResults.push({ co, blocks: nB, tons: tons(coIdxs), meanG: nB > 0 ? sumG / nB : 0 });
+     cutoffResults.push({ co, blocks: nB, tons: tons(coIdxs), meanG: resourceBlockSummary(coIdxs).grade });
    }
  }
 
@@ -10591,9 +10716,9 @@ ${t('res.renderKCMIReport.classificationSinclairBlackwell2002Jorc')}
 • ${t('res.renderKCMIReport.inferred')}: ${t('res.renderKCMIReport.estimatedBlocksDoNotMeet')}
 
 ${t('res.renderKCMIReport.resourceSummary')}
-• ${t('res.renderKCMIReport.measured')}: ${tons(classIdxs[3]).toFixed(2)} Mt @ ${meanG(grades[3]).toFixed(2)} ${escapeHtml(elLab)}
-• ${t('res.renderKCMIReport.indicated')}: ${tons(classIdxs[2]).toFixed(2)} Mt @ ${meanG(grades[2]).toFixed(2)} ${escapeHtml(elLab)}
-• ${t('res.renderKCMIReport.inferred')}: ${tons(classIdxs[1]).toFixed(2)} Mt @ ${meanG(grades[1]).toFixed(2)} ${escapeHtml(elLab)}
+• ${t('res.renderKCMIReport.measured')}: ${tons(classIdxs[3]).toFixed(2)} Mt @ ${resourceClassSummary(3).grade.toFixed(2)} ${escapeHtml(elLab)}
+• ${t('res.renderKCMIReport.indicated')}: ${tons(classIdxs[2]).toFixed(2)} Mt @ ${resourceClassSummary(2).grade.toFixed(2)} ${escapeHtml(elLab)}
+• ${t('res.renderKCMIReport.inferred')}: ${tons(classIdxs[1]).toFixed(2)} Mt @ ${resourceClassSummary(1).grade.toFixed(2)} ${escapeHtml(elLab)}
 • ${t('res.renderKCMIReport.totalMeasuredIndicated')}: ${tons([...classIdxs[3], ...classIdxs[2]]).toFixed(2)} Mt
 • ${t('res.renderKCMIReport.totalMIInferred')}: ${tons([...classIdxs[3], ...classIdxs[2], ...classIdxs[1]]).toFixed(2)} Mt
 
@@ -10629,19 +10754,19 @@ ${t('res.renderKCMIReport.commercialJorcKcmiReportingCross')}
  <tr><th>${t('res.renderKCMIReport.class')}</th><th>${t('res.renderKCMIReport.tonnageMt')}</th><th>${t('res.renderKCMIReport.mean2')} ${escapeHtml(elLab)}</th><th>${t('res.renderKCMIReport.containedMetal')}</th></tr>
  <tr><td><span class="class-badge class-measured">${t('res.renderKCMIReport.measured')}</span></td>
  <td>${tons(classIdxs[3]).toFixed(2)}</td>
- <td>${meanG(grades[3]).toFixed(2)}</td>
- <td>${containedMetalFmt(tons(classIdxs[3]), meanG(grades[3]), setupState.element, volMm3(classIdxs[3]))}</td></tr>
+ <td>${resourceClassSummary(3).grade.toFixed(2)}</td>
+ <td>${containedMetalFmt(tons(classIdxs[3]), resourceClassSummary(3).grade, setupState.element, volMm3(classIdxs[3]))}</td></tr>
  <tr><td><span class="class-badge class-indicated">${t('res.renderKCMIReport.indicated')}</span></td>
  <td>${tons(classIdxs[2]).toFixed(2)}</td>
- <td>${meanG(grades[2]).toFixed(2)}</td>
- <td>${containedMetalFmt(tons(classIdxs[2]), meanG(grades[2]), setupState.element, volMm3(classIdxs[2]))}</td></tr>
+ <td>${resourceClassSummary(2).grade.toFixed(2)}</td>
+ <td>${containedMetalFmt(tons(classIdxs[2]), resourceClassSummary(2).grade, setupState.element, volMm3(classIdxs[2]))}</td></tr>
  <tr style="font-weight:700;"><td>${t('res.renderKCMIReport.mISubtotal')}</td>
  <td>${tons([...classIdxs[3], ...classIdxs[2]]).toFixed(2)}</td>
  <td>—</td><td>—</td></tr>
  <tr><td><span class="class-badge class-inferred">${t('res.renderKCMIReport.inferred')}</span></td>
  <td>${tons(classIdxs[1]).toFixed(2)}</td>
- <td>${meanG(grades[1]).toFixed(2)}</td>
- <td>${containedMetalFmt(tons(classIdxs[1]), meanG(grades[1]), setupState.element, volMm3(classIdxs[1]))}</td></tr>
+ <td>${resourceClassSummary(1).grade.toFixed(2)}</td>
+ <td>${containedMetalFmt(tons(classIdxs[1]), resourceClassSummary(1).grade, setupState.element, volMm3(classIdxs[1]))}</td></tr>
  </table>
  </div>
 
@@ -10735,6 +10860,7 @@ ${t('res.renderKCMIReport.commercialJorcKcmiReportingCross')}
  </p>
  <div class="industry-export-grid">
  <button class="btn" onclick="exportBlockCSV('generic')" ${exportsBlocked? 'disabled' : ''} ${exportsBlockedTitle}>${t('res.renderKCMIReport.blockModelCsvGeneric')}</button>
+ <button class="btn" onclick="exportBlockCSV('audit')" ${exportsBlocked? 'disabled' : ''} ${exportsBlockedTitle}>${t('res.export.auditCSV')}</button>
  <button class="btn" onclick="exportBlockCSV('gslib')" ${exportsBlocked? 'disabled' : ''} ${exportsBlockedTitle}>${t('res.renderKCMIReport.blockModelGslibTxt')}</button>
  <button class="btn" onclick="exportBlockCSV('ijk')" ${exportsBlocked? 'disabled' : ''} ${exportsBlockedTitle}>${t('res.renderKCMIReport.blockModelIjkCsv')}</button>
  <button class="btn" onclick="exportBlockCSV('minimal')" ${exportsBlocked? 'disabled' : ''} ${exportsBlockedTitle}>${t('res.renderKCMIReport.blockModelMinimalCsv')}</button>
@@ -10894,9 +11020,33 @@ function maybeShowSupportMoment() {
   } catch (e) { console.warn('support moment', e); }
 }
 
+function setReportCutoff(raw) {
+ const value=String(raw).trim();
+ if(value!=='' && (!Number.isFinite(Number(value)) || Number(value)<0)) {
+   toast(t('res.reportInsight.cutoffInvalid'),'bad');return false;
+ }
+ setupState.reportCutoff=value===''?null:Number(value);saveResourceSession();return true;
+}
+function resourceReportSummary(cutoff, useClass) {
+ if(cutoff!=null && (!Number.isFinite(cutoff)||cutoff<0))throw new Error('Invalid report cutoff');
+ const all=[],selected=[];const grades=estimState.results.ok;
+ for(let i=0;i<grades.length;i++){
+   if(!Number.isFinite(grades[i]))continue;all.push(i);
+   if((cutoff==null||grades[i]>=cutoff)&&(!useClass||classState.labels?.[i]>=2))selected.push(i);
+ }
+ let generatedTonnes=0;const vol=blockState.size.reduce((a,b)=>a*b,1);
+ for(let i=0;i<blockState.blocks.length;i++)generatedTonnes+=vol*getBlockDensity(i);
+ const summary=resourceBlockSummary(selected);
+ return {cutoff,useClass:!!useClass,element:setupState.element,unit:gradeUnitFor(setupState.element),
+   generated:{blocks:blockState.blocks.length,mt:generatedTonnes/1e6},estimated:resourceBlockSummary(all),selected:summary,
+   metalTonnes:summary.meanGrade==null?null:containedMetalTonnes(summary.mt,summary.meanGrade,setupState.element,summary.volMm3)};
+}
+
 async function exportPDF() {
 if (!DATA) { toast(t('res.maybeShowSupportMoment.noDataLoaded'), 'warn'); return; }
  if (!window.jspdf) { toast(t('res.maybeShowSupportMoment.jspdfNotLoaded'), 'bad'); return; }
+ setupState.reportCutoffNote=document.getElementById('reportCutoffNote')?.value ?? setupState.reportCutoffNote ?? '';
+ if(!setReportCutoff(document.getElementById('reportCutoff')?.value ?? setupState.reportCutoff ?? ''))return;
 
  const btn = document.getElementById('pdf-export-btn');
  if (btn) { btn.disabled = true; btn.textContent = '<span style="color:var(--accent);">⋯</span> ' + (t('res.maybeShowSupportMoment.generating')); }
@@ -10974,6 +11124,7 @@ if (!DATA) { toast(t('res.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
  // Human-readable report numbers: fixed-point for readable values; scientific
  // notation only when fixed-point would hide a very small/large magnitude.
  const fmtReport = (v) => {
+  if (v == null || v === '') return '-';
   const n = Number(v);
   if (!Number.isFinite(n)) return '—';
   // Large tonnage stays fixed-point and thousands-grouped rather than becoming
@@ -10992,12 +11143,14 @@ if (!DATA) { toast(t('res.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
  const elemLab = ELEMENT_LABEL[elemKey] || elemKey;
  const samples = (typeof getSamples === 'function')? (function(){ try { return getSamples(); } catch(e){ return []; } })() : [];
 
+ const gtControls=['gtMin','gtMax','gtSteps'].map(id=>document.getElementById(id)?.value);
+ const gtFilter=document.getElementById('gtClass')?.checked;
  // Pre-render charts so Plotly.toImage has live divs to capture.
  // Wrap each — user may not have run that part of the pipeline.
- try { if (haveVario) await plotVariogram && plotVariogram(); } catch (e) { console.warn('pre-render varPlot:', e); }
+ try { if (haveVario) { if (!document.getElementById('varPlot')) await renderVariography(); else await plotVariogram(); } } catch (e) { console.warn('pre-render varPlot:', e); }
  try { if (haveEstim) renderEstimResults && renderEstimResults(); } catch (e) { console.warn('pre-render estim:', e); }
  try { if (haveEstim) { renderSwath && renderSwath(); computeSwath && computeSwath(); } } catch (e) { console.warn('pre-render swath:', e); }
- try { if (haveEstim) { renderGT && renderGT(); computeGT && computeGT(); } } catch (e) { console.warn('pre-render gt:', e); }
+ try { if (haveEstim) { renderGT && renderGT(); ['gtMin','gtMax','gtSteps'].forEach((id,i)=>{if(gtControls[i]!==undefined)document.getElementById(id).value=gtControls[i];}); if(gtFilter!==undefined)document.getElementById('gtClass').checked=gtFilter; computeGT && computeGT(); } } catch (e) { console.warn('pre-render gt:', e); }
  try { if (haveClass) renderClassResults && renderClassResults(); } catch (e) { console.warn('pre-render class:', e); }
  // Render the estimated-block plan section so it can be embedded in the PDF.
  try { if (haveEstim) {
@@ -11099,7 +11252,7 @@ if (!DATA) { toast(t('res.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
  const ch = 24;
  const nEst = haveEstim? estimState.results.ok.filter(v => Number.isFinite(v)).length : 0;
  const nBlk = haveBlocks? blockState.blocks.length : 0;
- statCard(15, 58, cw, ch, (t('res.maybeShowSupportMoment.compositeSamples')), samples.length.toLocaleString('en-US'), '1m support · top-cut filtered');
+ statCard(15, 58, cw, ch, (t('res.maybeShowSupportMoment.compositeSamples')), samples.length.toLocaleString('en-US'), 'Loaded composite support; see upstream treatment notes');
  statCard(15 + cw + 8, 58, cw, ch, (t('res.maybeShowSupportMoment.blockModel')), nBlk.toLocaleString('en-US'), haveBlocks? `${blockState.size.join('×')} m ${t('res.maybeShowSupportMoment.blocks')}` : (t('res.maybeShowSupportMoment.notGenerated')), haveBlocks? null : [180, 80, 0]);
  const nSkipped = haveEstim ? (Number(estimState.results.skippedBbox) || 0) : 0;
 const nEnvelope = Math.max(0, nBlk - nSkipped);
@@ -11248,7 +11401,7 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
  [t('res.pdfReport.blockTable.volumePerBlock'), `${volPerBlock.toLocaleString('en-US')} m³`],
  [t('res.pdfReport.blockTable.density'), blockState.blockDensities ? t('res.pdfReport.blockTable.densityVariable').replace('{n}', new Set(blockState.blockDensities).size) + (blockState.densitySource === 'sample' ? ' (per-sample)' : ' (per-domain)') : ((typeof isVolumetricGrade === 'function' && isVolumetricGrade(setupState.element)) ? 'n/a (volumetric grade)' : `${blockState.density} t/m³` + (blockState.densityUserSet ? '' : ' ' + t('res.pdfReport.blockTable.densityAssumed')))],
  ['Total volume', `${(totVol / 1e6).toFixed(2)} M m³`],
- [t('res.pdfReport.blockTable.totalTonnage'), `${(totTons / 1e6).toFixed(2)} Mt (raw extent)`],
+ [t('res.reportInsight.generatedMass'), `${(totTons / 1e6).toFixed(2)} Mt`],
  ['Origin', blockState.origin ? blockState.origin.map(x => x.toFixed(1)).join(', ') : 'n/a'],
  ];
  rows.forEach(([k, v]) => { pdf.text(k, 15, yPos); pdf.text(String(v), 80, yPos); yPos += 6; });
@@ -11493,8 +11646,8 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
  pdf.setTextColor(15, 23, 42);
  pdf.text(counts[idx].toLocaleString('en-US'), 50, yPos);
  pdf.text(idx === 0? '—' : tons(classIdxs[idx]).toFixed(2), 85, yPos);
- pdf.text(idx === 0? '—' : fmtReport(meanG(grades[idx])), 130, yPos);
- pdf.text(idx === 0? '—' : fmtReport(containedMetalTonnes(tons(classIdxs[idx]), meanG(grades[idx]), setupState.element, volMm3(classIdxs[idx]))) + ' t', 170, yPos);
+ pdf.text(idx === 0? '—' : fmtReport(resourceBlockSummary(classIdxs[idx]).grade), 130, yPos);
+ pdf.text(idx === 0? '—' : fmtReport(containedMetalTonnes(tons(classIdxs[idx]), resourceBlockSummary(classIdxs[idx]).grade, setupState.element, volMm3(classIdxs[idx]))) + ' t', 170, yPos);
  yPos += 6;
  });
  yPos += 4;
@@ -11529,16 +11682,10 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
  pdf.addPage();
  addHeader((t('res.maybeShowSupportMoment.08SensitivityAnalysis')), (t('res.maybeShowSupportMoment.cutOffGradeVsTonnage')));
  if (haveEstim) {
- const r = estimState.results;
- const okF = [];
- for (let i = 0; i < r.ok.length; i++) if (Number.isFinite(r.ok[i])) okF.push(r.ok[i]);
- okF.sort((a, b) => a - b);
- const cMin = okF[Math.floor(okF.length * 0.01)] || 0;
- const cMax = okF[Math.floor(okF.length * 0.99)] || 0;
- const steps = 12;
- const [bx, by, bz] = blockState.size;
- const volPerBlock = bx * by * bz;
- const useClass =!!(classState && classState.labels);
+ const curve=window._gtCurveSnapshot;
+ const useClass=curve.useClass;
+ const rows=[...new Set(Array.from({length:Math.min(12,curve.cutoffs.length)},(_,i)=>Math.round(i*(curve.cutoffs.length-1)/Math.max(1,Math.min(12,curve.cutoffs.length)-1))))];
+ const steps=rows.length;
 
  pdf.setFontSize(10);
  let yPos = 35;
@@ -11546,18 +11693,8 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
  pdf.text('Cut-off', 15, yPos); pdf.text((t('res.maybeShowSupportMoment.blocks2')), 60, yPos); pdf.text((t('res.maybeShowSupportMoment.tonnageMt')), 100, yPos); pdf.text(`${t('res.maybeShowSupportMoment.mean')} ${escapeHtml(elemLab)}`, 145, yPos);
  yPos += 4; pdf.line(15, yPos, W - 15, yPos); yPos += 5;
  pdf.setFont('helvetica', 'normal');
- const labels = useClass? classState.labels : null;
- for (let s = 0; s < steps; s++) {
-   const co = cMin + (cMax - cMin) * (s / (steps - 1));
-   let nB = 0, sumG = 0, tTons = 0;
-   for (let i = 0; i < r.ok.length; i++) {
-     if (!Number.isFinite(r.ok[i])) continue;
-     if (labels && labels[i] < 2) continue; // M+I only when classified
-     if (r.ok[i] < co) continue;
-     nB++; sumG += r.ok[i]; tTons += volPerBlock * getBlockDensity(i);
-   }
-   const tons = tTons / 1e6;
- const mG = nB > 0? sumG / nB : 0;
+ for (const index of rows) {
+ const co=curve.cutoffs[index],nB=curve.blockCounts[index],tons=curve.tons[index],mG=curve.meanG[index];
  pdf.text(fmtReport(co), 15, yPos);
  pdf.text(nB.toLocaleString('en-US'), 60, yPos);
  pdf.text(tons.toFixed(2), 100, yPos);
@@ -11566,7 +11703,7 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
  }
 
  pdf.setFontSize(9); pdf.setTextColor(75, 85, 99);
- pdf.text(`Filter: ${useClass? 'high + medium confidence only' : (t('res.maybeShowSupportMoment.allEstimatedBlocks'))} · ${steps} ${t('res.maybeShowSupportMoment.cutOffSteps')} dari P1 ke P99 OK.`, 15, yPos + 6);
+ pdf.text(`Filter: ${useClass? 'high + medium confidence only' : (t('res.maybeShowSupportMoment.allEstimatedBlocks'))} · ${steps} displayed of ${curve.steps} UI curve steps (${curve.min} to ${curve.max}).`, 15, yPos + 6);
  pdf.setTextColor(15, 23, 42);
 
  if (imgGT) {
@@ -11734,13 +11871,47 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
  }
  addFooter();
 
+ const passCounts=haveEstim&&estimState.results.passNumber?Array.from(estimState.results.passNumber).reduce((a,v)=>(a[v]=(a[v]||0)+1,a),{}):null;
+ const report=haveEstim?resourceReportSummary(setupState.reportCutoff,window._gtCurveSnapshot?.useClass):null;
+ window._resourceReportSnapshot=report;
+ const text=(key,values={})=>Object.entries(values).reduce((out,[k,v])=>out.replaceAll('{'+k+'}',String(v)),t(['res.reportInsight',key].join('.')));
+ const num=(v,dec=3)=>v==null?'n/a':Number(v).toLocaleString('en-US',{maximumFractionDigits:dec});
+ const scopeClass=text(report?.useClass?'highMedium':'allClasses');
+ const cutoffForReport=setupState.reportCutoff;
+ const cutLabel=cutoffForReport==null?text('allGrades'):text('cutoff',{cutoff:String(cutoffForReport),unit:gradeUnitFor(setupState.element)});
+ const selected=report?.selected;
+ const reportBasis=setupState.reportCutoffNote?.trim() || text(cutoffForReport==null?'noCutoffBasis':'notJustified');
+ if(report)report.justification=reportBasis;
+ const result=!report?text('noEstimate'):text(selected.blocks?'result':'empty',{cutoff:cutLabel,classes:scopeClass,blocks:num(selected.blocks,0),tonnes:num(selected.mt,6),grade:num(selected.meanGrade,6),unit:report.unit,metal:num(report.metalTonnes,6)});
+ const bridge=report?text('bridge',{generated:num(report.generated.mt,6),cells:num(report.generated.blocks,0),estimated:num(report.estimated.mt,6),estimatedBlocks:num(report.estimated.blocks,0),selected:num(selected.mt,6),selectedBlocks:num(selected.blocks,0)}):text('noEstimate');
+ OrebitScreeningReport.prepend(pdf,'Resource',[
+   [t('res.reportSummary.result'),result+' '+text('basis')+': '+reportBasis],
+   [t('res.reportSummary.meaning'),text('meaning')+' '+bridge],
+   [t('res.reportSummary.checks'),report?text('coverage',{coverage:num(report.estimated.blocks/Math.max(1,report.generated.blocks)*100,1),unestimated:num(report.generated.blocks-report.estimated.blocks,0),fallback:num(passCounts?.[2]||0,0)}):text('noEstimate')],
+   [t('res.reportSummary.scope'),text('scope',{element:elemLab,domain:setupState.domain,size:blockState.size?.join(' x ')||'n/a',density:blockState.blockDensities?'variable '+(blockState.densitySource||'by block'):num(blockState.density)+' t/m3'})],
+   [t('res.reportSummary.next'),text('next')]
+ ]);
+ OrebitScreeningReport.append(pdf,'Resource',[
+   ['Purpose','Initial screening and due-diligence insight. Confidence labels are not certified JORC/KCMI Resource categories.'],
+   ['Input',DATA.name || 'Loaded composite dataset'],
+   ['Selected commodity and domain',`${setupState.element}; ${setupState.domain}`],
+   ['Calculation',_estimationParamsNote().join(' | ')],
+   ['Complete covariance model',haveVario?JSON.stringify(variogramState.model):'Not fitted'],
+   ['Historical model status',haveVario&&!variogramState.model.struct1&&variogramState.model.covarianceMode!=='model-range'?'Legacy search-coupled covariance. Refit or apply a physical-range model and recompute before comparing.':'Model covariance and neighbor search are separate'],
+   ['Estimation coverage',`${nEst} finite OK estimates / ${nBlk} generated cells; missing estimates are excluded, never counted as zero grade`],
+   ['Search pass counts',passCounts?JSON.stringify(passCounts):'Not recorded by this session'],
+   ['Grade and metal aggregation','Mass grades use density/tonnage weights. Volumetric grades use volume weights. Contained metal uses the exact grade units.'],
+   ['Headline result',result],
+   ['Report cutoff and confidence scope',cutLabel+'; '+scopeClass],
+   ['Cutoff justification',reportBasis],
+   ['Applied confidence cutoff',haveClass&&classState.cutoff!=null?`${classState.cutoff} ${gradeUnitFor(setupState.element)} used when assigning confidence labels`:'No classification cutoff applied'],
+   ['Tonnage reconciliation',bridge],
+   ['Grade-tonnage settings',haveEstim?text('curve',{min:num(window._gtCurveSnapshot.min,6),max:num(window._gtCurveSnapshot.max,6),steps:window._gtCurveSnapshot.steps,classes:scopeClass}):'Estimation not run'],
+   ['Geometry limitation',blockState.envelopeMode==='xyz'?'Distance-to-samples 3D screening envelope; not a geological solid, probability shell or topographic mask':'Data-envelope screening grid; geological limits and topography require independent review'],
+   ['Decision evidence needed','Verify geology, top-cut, anisotropy, density, support, cutoff, metallurgy, economics and independent estimate validation before an investment or reporting decision']
+ ]);
  const _pdfName = `Resource-Estimation-Report-${escapeHtml(today)}.pdf`;
-    const _pdfDataUri = pdf.output('datauristring');
-    try { await orebitSaveFile(_pdfName, _pdfDataUri, 'application/pdf'); }
-    catch (e2) { console.warn('PDF bridge failed, jsPDF fallback:', e2); pdf.save(_pdfName); };
-    if (typeof window._recordExport === 'function') {
-      window._recordExport('PDF', 'Orebit Resource — PDF Report', _pdfDataUri.length <= 1900000 ? { filename: _pdfName, mime: 'application/pdf', content: _pdfDataUri } : { filename: _pdfName, mime: 'application/pdf', content: '' });
-    }
+    await OrebitScreeningReport.save(pdf,'Resource',_pdfName);
     maybeShowSupportMoment();
  } catch (err) {
  console.error(err);
@@ -12030,10 +12201,10 @@ function buildQuickInsight(ctx) {
  </div>
  </div>
  <div class="qi-row">
- <div><strong>Tonase:</strong> M=${tons(counts[3]).toFixed(2)} Mt · I=${tons(counts[2]).toFixed(2)} Mt · Inf=${tons(counts[1]).toFixed(2)} Mt @ density ${dens.toFixed(2)} t/m³</div>
+ <div><strong>Tonase:</strong> M=${resourceClassSummary(3).mt.toFixed(2)} Mt · I=${resourceClassSummary(2).mt.toFixed(2)} Mt · Inf=${resourceClassSummary(1).mt.toFixed(2)} Mt @ density ${dens.toFixed(2)} t/m³</div>
  </div>
  <div class="qi-row">
- <div><strong>Mean grade ${escapeHtml(elLab)}:</strong> M=${meanG(grades[3]).toFixed(2)} · I=${meanG(grades[2]).toFixed(2)} · Inf=${meanG(grades[1]).toFixed(2)}</div>
+ <div><strong>Mean grade ${escapeHtml(elLab)}:</strong> M=${resourceClassSummary(3).grade.toFixed(2)} · I=${resourceClassSummary(2).grade.toFixed(2)} · Inf=${resourceClassSummary(1).grade.toFixed(2)}</div>
  </div>
  <div class="qi-row">
  <div><strong>Estimation reach:</strong> ${reachPct.toFixed(1)}% — <span class="${reach.cls}">${reach.label}</span>${reachPct < 15? ' review' : ''}</div>
@@ -12202,6 +12373,8 @@ function _estimationParamsNote() {
     : '# Variogram: none fitted');
   if (searchState) {
     lines.push(`# Search ellipsoid: major=${searchState.rMaj}m semi=${searchState.rSemi}m minor=${searchState.rMin}m az=${searchState.azDeg}° dip=${searchState.dipDeg}° minN=${searchState.minNeighbors} maxN=${searchState.maxNeighbors} octant=${searchState.useOctant}`);
+    lines.push('# Covariance: ' + (m && m.struct1 ? 'explicit nested structure ranges' : m && m.covarianceMode === 'model-range' ? 'scalar isotropic fitted/model range; independent of search' : 'legacy search-coupled; refit to use physical model range'));
+    lines.push(`# Search policy: maxPerHole=${searchState.maxPerHole||0} fallback=${!!searchState.secondPass} factor=${searchState.secondPassFactor||2} minN2=${searchState.secondPassMin||4}`);
   }
   if (blockState) {
     // D11: name the real source. blockDensities is the ground truth (it is what
@@ -12213,6 +12386,8 @@ function _estimationParamsNote() {
       : (typeof isVolumetricGrade === 'function' && isVolumetricGrade(setupState.element)) ? 'not applied (volumetric grade, kg/m³ x volume)'
       : `uniform ${blockState.density} t/m³`;
     lines.push(`# Block size: ${(blockState.size || []).join('x')}m · density: ${dSrc}`);
+    lines.push(`# Sample envelope: ${blockState.envelopeMode||'xy'} radius=${blockState.envelopeRadius||25}m origin=${(blockState.origin||[]).join(',')}`);
+    if (m && m.struct1) lines.push('# Nested variogram: ' + JSON.stringify({nugget:m.nugget,azDeg:m.azDeg,struct1:m.struct1,struct2:m.struct2||null}));
   }
   // Upstream top-cut applied in Assay before this file ever reached Resource.
   // Without this, a block model export recorded how it was estimated but not
@@ -12238,12 +12413,13 @@ function exportBlockCSV(flavor) {
  const classCode = (c) => c === 3? 'H' : c === 2? 'M' : c === 1? 'L' : 'OUT';
  const NA_NUM = -999;
  const fmt = (v, p) => Number.isFinite(v)? (+v).toFixed(p?? 4) : NA_NUM.toFixed(p?? 4);
- if (flavor === 'generic') {
+ if (flavor === 'generic' || flavor === 'audit') {
+ const audit = flavor === 'audit';
  // Generic block-model CSV — full attribute set, easy import to QGIS / Excel / commercial software.
  const lines = [
  ..._provHeader(true),
  ..._estimationParamsNote(),
- 'X,Y,Z,X_INC,Y_INC,Z_INC,IDW,OK,NN,KRIGE_VAR,NEAR_DIST,N_NEIGHBORS,CLASS'
+ 'X,Y,Z,X_INC,Y_INC,Z_INC,IDW,OK,NN,KRIGE_VAR,NEAR_DIST,N_NEIGHBORS,CLASS' + (audit ? ',DENSITY,PASS,N_HOLES' : '')
  ];
  for (let i = 0; i < N; i++) {
  const b = blocks[i];
@@ -12254,10 +12430,10 @@ function exportBlockCSV(flavor) {
  fmt(r.idw[i], 6), fmt(r.ok[i], 6), fmt(r.nn[i], 6),
  fmt(r.variance[i], 6), fmt(r.nearestDist[i], 3),
  r.nNb[i] | 0,
- classLabel(c)
+ classLabel(c), ...(audit ? [getBlockDensity(i), r.passNumber ? r.passNumber[i] : (Number.isFinite(r.ok[i]) ? 1 : 0), r.nHoles ? r.nHoles[i] : ''] : [])
  ].join(','));
  }
- _downloadBlob(lines.join('\n') + '\n', `${escapeHtml(baseName)}_generic.csv`, 'text/csv;charset=utf-8');
+ _downloadBlob(lines.join('\n') + '\n', `${escapeHtml(baseName)}_${audit ? 'audit' : 'generic'}.csv`, 'text/csv;charset=utf-8');
  return;
  }
 
@@ -12295,9 +12471,9 @@ if (flavor === 'ijk') { // IJK-ordinal CSV
  for (let i = 0; i < N; i++) {
  const b = blocks[i];
  // IJK from block index: i = ix + iy*nx + iz*nx*ny
- const iz = Math.floor(i / (nx * ny));
- const iy = Math.floor((i - iz * nx * ny) / nx);
- const ix = i - iz * nx * ny - iy * nx;
+ const ix = Math.round((b.cx-x0)/bx-.5);
+ const iy = Math.round((b.cy-y0)/by-.5);
+ const iz = Math.round((b.cz-z0)/bz-.5);
  const ijk = `${ix + 1}-${iy + 1}-${iz + 1}`;
  const c = labels? labels[i] : 0;
  lines.push([
@@ -13452,7 +13628,7 @@ body header.orebit-header .orebit-phase-pill {
   <p>
     <strong>Orebit GeoSuite</strong> · Orebit Resource · <span id="footerVersion">v3.0.0</span>
     <span class="divider">·</span>
-    © 2026 Orebit · <a href="https://github.com/ghoziankarami/geosuite" target="_blank" rel="noopener">GPL-3.0 Source Code</a>
+    © 2026 Orebit · <a href="https://github.com/ghoziankarami/geosuite" target="_blank" rel="noopener" data-i18n="footer.sourceCode">GPL-3.0 Source Code</a>
     <span class="divider">·</span>
     <a href="https://orebit.id" target="_blank" rel="noopener">orebit.id</a>
     <span class="divider">·</span>

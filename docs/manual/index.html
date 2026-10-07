@@ -375,7 +375,7 @@ var DOCS = [
     id:'overview',
     en:'What GeoSuite is', id_:'Apa itu GeoSuite',
     lede:{
-      en:'Three offline tools that carry a drillhole dataset from raw CSV to a defensible resource estimate — and what each one is actually for.',
+      en:'Three offline tools that carry a drillhole dataset from raw CSV to a defensible resource estimate — and what each one is for.',
       id:'Tiga alat offline yang membawa data lubang bor dari CSV mentah sampai estimasi sumber daya yang dapat dipertanggungjawabkan — dan untuk apa masing-masing sebenarnya.'
     },
     blocks:[
@@ -869,9 +869,9 @@ var DOCS = [
            {en:'Extreme. Often a sign of mixed populations.',id:'Ekstrem. Sering menandakan populasi yang tercampur.'},
            {en:'Check your domaining before capping — you may be estimating two things at once.',id:'Periksa domaining Anda sebelum memotong — mungkin Anda mengestimasi dua hal sekaligus.'}]
         ]},
-      {t:'note', k:'verify',
-        en:'VERIFY — these CV bands are the conventional rules of thumb used in industry practice, not thresholds enforced by the software. Confirm they match your own house standards and commodity before presenting them as guidance to your users.',
-        id:'VERIFIKASI — rentang CV ini adalah aturan praktis konvensional dalam praktik industri, bukan ambang yang ditegakkan perangkat lunak. Pastikan sesuai standar internal dan komoditas Anda sebelum menyajikannya sebagai panduan bagi pengguna.'},
+      {t:'note', k:'info',
+        en:'These CV bands are industry rules of thumb, not limits the software enforces. Adjust them to your commodity and your company standard.',
+        id:'Rentang CV ini adalah aturan praktis industri, bukan batas yang dipaksakan software. Sesuaikan dengan komoditas dan standar perusahaan Anda.'},
 
       {t:'h', en:'Then choose the level', id:'Lalu pilih levelnya'},
       {t:'p',
@@ -948,9 +948,9 @@ var DOCS = [
       {t:'p',
         en:'The ratio of nugget to sill is the single most informative number on the plot. Below about 0.3 the deposit has strong spatial structure and kriging will add real value. Above about 0.6 the data is dominated by noise, kriging weights flatten toward a simple average, and you should be candid about that in any report.',
         id:'Rasio nugget terhadap sill adalah angka paling informatif di plot itu. Di bawah sekitar 0,3 endapan punya struktur spasial kuat dan kriging akan memberi nilai nyata. Di atas sekitar 0,6 data didominasi derau, bobot kriging mendatar menuju rata-rata sederhana, dan Anda sebaiknya jujur soal itu di laporan mana pun.'},
-      {t:'note', k:'verify',
-        en:'VERIFY — the 0.3 and 0.6 nugget-to-sill bands are widely used interpretive guides, not thresholds computed by the software. Confirm the wording matches how you want your users to apply them.',
-        id:'VERIFIKASI — rentang rasio nugget-sill 0,3 dan 0,6 adalah panduan interpretasi yang lazim dipakai, bukan ambang yang dihitung perangkat lunak. Pastikan penyampaiannya sesuai dengan cara Anda ingin pengguna menerapkannya.'},
+      {t:'note', k:'info',
+        en:'The 0.3 and 0.6 nugget-to-sill bands are interpretive guides used across the industry. GeoSuite reports the ratio; the interpretation is yours.',
+        id:'Rentang rasio nugget-sill 0,3 dan 0,6 adalah panduan interpretasi yang lazim di industri. GeoSuite melaporkan rasionya; interpretasinya di tangan Anda.'},
 
       {t:'h', en:'Read the nugget down the holes, then fit between them', id:'Baca nugget sepanjang lubang, lalu cocokkan antar lubang'},
       {t:'p',
@@ -1310,7 +1310,7 @@ var DOCS = [
     id:'estimation',
     en:'Estimation & search parameters', id_:'Parameter estimasi & pencarian',
     lede:{
-      en:'Block model, search ellipsoid and sample limits — with the defaults the tool actually ships with.',
+      en:'Block model, search ellipsoid and sample limits — with the defaults the tool ships with.',
       id:'Model blok, elipsoid pencarian, dan batas sampel — dengan default yang benar-benar dipakai alat ini.'
     },
     blocks:[
@@ -1422,9 +1422,9 @@ var DOCS = [
       {t:'note', k:'info',
         en:'Because the variance thresholds are percentiles of your own model, roughly a third of estimated blocks will fall in each tier by construction on the first run. That is a starting split to adjust from, not a finding. Override the thresholds with values you can justify before you report anything.',
         id:'Karena ambang variance adalah persentil dari model Anda sendiri, kira-kira sepertiga blok terestimasi akan jatuh di tiap tingkat secara konstruksi pada proses pertama. Itu pembagian awal untuk disesuaikan, bukan temuan. Ganti ambangnya dengan nilai yang dapat Anda pertanggungjawabkan sebelum melaporkan apa pun.'},
-      {t:'note', k:'verify',
-        en:'VERIFY — the percentile derivation above is read directly from the current implementation, and the code cites Sinclair & Blackwell (2002) and Rossi & Deutsch (2014) as its basis. Confirm you are comfortable presenting those citations publicly, and that the clamps still match the shipped build before each release.',
-        id:'VERIFIKASI — penurunan persentil di atas dibaca langsung dari implementasi saat ini, dan kodenya mengutip Sinclair & Blackwell (2002) serta Rossi & Deutsch (2014) sebagai dasarnya. Pastikan Anda nyaman menampilkan kutipan itu secara publik, dan bahwa penjepitannya masih sesuai build yang dirilis sebelum tiap rilis.'},
+      {t:'note', k:'info',
+        en:'Method references: Sinclair & Blackwell (2002), Applied Mineral Inventory Estimation; Rossi & Deutsch (2014), Mineral Resource Estimation.',
+        id:'Rujukan metode: Sinclair & Blackwell (2002), Applied Mineral Inventory Estimation; Rossi & Deutsch (2014), Mineral Resource Estimation.'},
       {t:'fig', src:'/docs/screenshots/docs/resource-doc-preliminary-confidence.jpg',
         en:'Preliminary confidence — thresholds are editable, and should be edited.',
         id:'Preliminary confidence — ambangnya dapat disunting, dan memang sebaiknya disunting.'}
@@ -1537,7 +1537,7 @@ var DOCS = [
     id:'params-core',
     en:'Core — every control', id_:'Core — semua kendali',
     lede:{
-      en:'Every input and dropdown in Orebit Core, tab by tab: its default, its valid range, and what actually changes in your output when you touch it. Read live from a real build (2026-09-05), not from documentation drift.',
+      en:'Every input and dropdown in Orebit Core, tab by tab: its default, its valid range, and what changes in your output when you touch it. Read live from a real build (2026-09-05), not from documentation drift.',
       id:'Setiap input dan dropdown di Orebit Core, tab per tab: defaultnya, rentang sahnya, dan apa yang sebenarnya berubah pada keluaran Anda saat mengubahnya. Dibaca langsung dari build sungguhan (2026-09-05), bukan dari dokumentasi yang sudah menyimpang.'
     },
     blocks:[
@@ -1725,7 +1725,7 @@ var DOCS = [
             id:'Hanya sumbu histogram. Distribusi yang tampak sangat miring pada sumbu linear dan kira-kira simetris pada sumbu log berperilaku log-normal, yang kemudian dikuantifikasi plot Q-Q.'}],
           [{en:'Declustering grid (m)',id:'Grid deklastering (m)'},
            {en:'derived from data (range 10 – 2000, step 10)',id:'diturunkan dari data (rentang 10 – 2000, langkah 10)'},
-           {en:'Cell size for cell-declustering weights. Set it near your average drill spacing. Too small and every sample sits alone in its own cell (weights all equal, declustering does nothing); too large and whole prospects collapse into one cell. The declustered mean is the honest one when drilling is clustered on high grade.',
+           {en:'Cell size for cell-declustering weights. Set it near your average drill spacing. Too small and every sample sits alone in its own cell (weights all equal, declustering does nothing); too large and whole prospects collapse into one cell. Use the declustered mean when drilling is clustered on high grade.',
             id:'Ukuran sel untuk bobot cell-declustering. Setel dekat spasi bor rata-rata Anda. Terlalu kecil, tiap sampel sendirian di selnya (bobot sama semua, deklastering tak berefek); terlalu besar, seluruh prospek menyatu jadi satu sel. Rata-rata terdeklaster adalah yang jujur bila pengeboran terklaster pada kadar tinggi.'}]
         ]},
 
@@ -1886,7 +1886,7 @@ var DOCS = [
     },
     blocks:[
       {t:'note', k:'info',
-        en:'53 plots render with the sample dataset loaded. A handful of code paths that only draw under a non-default setting (e.g. a toggle left at its default) are not covered here — this page documents what you actually see, not every line of chart code.',
+        en:'53 plots render with the sample dataset loaded. A handful of code paths that only draw under a non-default setting (e.g. a toggle left at its default) are not covered here — this page documents what you see, not every line of chart code.',
         id:'53 plot tampil dengan dataset sampel dimuat. Sejumlah kecil jalur kode yang hanya menggambar pada setelan non-default (mis. toggle yang tidak diaktifkan) tidak tercakup di sini — halaman ini mendokumentasikan apa yang benar-benar terlihat, bukan setiap baris kode chart.'},
 
       {t:'h', en:'Orebit Core', id:'Orebit Core'},
@@ -1945,7 +1945,7 @@ var DOCS = [
             id:'Titik = sampel, diwarnai menurut litologi; panah merah = vektor loading unsur. Panjang panah proporsional terhadap kontribusi unsur itu pada dua komponen yang ditampilkan — panah pendek berarti unsur itu nyaris tidak memuat pada pasangan sumbu ini, bukan berarti tidak penting secara keseluruhan. Sudut antara dua panah mendekati korelasinya: lancip (mengarah searah) positif, tumpul (mengarah berlawanan) negatif, dan mendekati 90° berarti keduanya nyaris tidak berkorelasi. % di tiap label sumbu adalah seberapa besar varians total yang dijelaskan komponen itu — % gabungan rendah berarti dua sumbu belum menceritakan keseluruhan. Lihat <a href="#/concepts/pca">Kenapa PCA distandardisasi</a> untuk kenapa tiap variabel diubah jadi z-score sebelum ini dijalankan, dan bagaimana tie-break acak untuk varians yang hampir sama diselesaikan secara deterministik alih-alih membalik tanda antar-render.'}],
           ['Multivariate (5) · mvVarChart',
            {en:'Principal component vs % variance', id:'Komponen utama vs % varians'},
-           {en:'A scree plot — how much each successive component explains. Where it flattens out is roughly how many components actually carry signal.',
+           {en:'A scree plot — how much each successive component explains. Where it flattens out is roughly how many components carry signal.',
             id:'Scree plot — seberapa besar tiap komponen berturutan menjelaskan varians. Titik di mana kurva melandai kira-kira menunjukkan jumlah komponen yang benar-benar membawa sinyal.'}],
           ['Multivariate (5) · mvBoxplot',
            {en:'Element vs grade, one box per element', id:'Unsur vs kadar, satu box per unsur'},

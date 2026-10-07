@@ -23,6 +23,13 @@ replaces the public tree and can erase the contribution. Please open PRs here
 as usual; maintainers will track that carry-back as part of merging and release.
 Do not include credentials, customer data, or private infrastructure details.
 
+## First contribution
+
+Clone/build using [INSTALLATION.md](docs/INSTALLATION.md), reproduce a small
+issue, create a feature branch, add a failing test, fix it and open a PR with
+the input, expected behavior and commands/results. Contributions do not require
+a particular editor, assistant or a maintainer infrastructure account.
+
 ## Changing the code
 
 1. `phases/*.html` and `src/` are the source. `dist/` is build output — never edit it.

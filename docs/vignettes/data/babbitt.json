@@ -140,7 +140,7 @@
         "severity": "ok"
       },
       {
-        "name": "Collar without Survey (assumed vertical)",
+        "name": "Collar without measured directional Survey",
         "value": "0 hole",
         "severity": "ok"
       },
@@ -195,7 +195,17 @@
         "severity": "ok"
       },
       {
-        "name": "Linkage verdict — ready for Desurvey",
+        "name": "Coordinate source",
+        "value": "Minimum-curvature directional survey",
+        "severity": "warn"
+      },
+      {
+        "name": "Assay geometry readiness",
+        "value": "READY",
+        "severity": "ok"
+      },
+      {
+        "name": "Linkage and geometry verdict",
         "value": "READY",
         "severity": "ok"
       }
@@ -320,6 +330,7 @@
     },
     "img_setup": "babbitt-08-resource-setup.png",
     "variogram": {
+      "covarianceMode": "model-range",
       "type": "exponential",
       "nugget": 0.02805317755319148,
       "sill": 0.1146628430845843,
@@ -392,9 +403,9 @@
     "estimate_unbounded": {
       "ok": {
         "n": 74940,
-        "mean": 0.47399940252351797,
-        "min": 0.2120598554611206,
-        "max": 2.489047050476074
+        "mean": 0.4747169625305369,
+        "min": 0.2138560265302658,
+        "max": 2.5338056087493896
       },
       "idw": {
         "n": 74940,
@@ -409,7 +420,7 @@
         "max": 3
       },
       "tonnes_Mt": 7868.699999999999,
-      "cu_metal_kt": 37297.59098636805,
+      "cu_metal_kt": 37354.05363064036,
       "outside_domain": 0,
       "domain_boundary": false
     },
@@ -417,9 +428,9 @@
     "estimate": {
       "ok": {
         "n": 26842,
-        "mean": 0.5032682629305891,
-        "min": 0.2129182070493698,
-        "max": 2.489047050476074
+        "mean": 0.5001978069914674,
+        "min": 0.21669058501720428,
+        "max": 2.4474117755889893
       },
       "idw": {
         "n": 26842,
@@ -434,7 +445,7 @@
         "max": 3
       },
       "tonnes_Mt": 2818.41,
-      "cu_metal_kt": 14184.163049262019,
+      "cu_metal_kt": 14097.625012028217,
       "outside_domain": 209506,
       "domain_boundary": true
     },
@@ -457,13 +468,13 @@
         },
         "ok": {
           "n": 194,
-          "mae": 0.1397751556825814,
-          "rmse": 0.19430738598840838,
-          "r2": 0.667458665775872,
-          "slope": 0.6173060923572276,
+          "mae": 0.14297288551679493,
+          "rmse": 0.20244470691074448,
+          "r2": 0.637280664059562,
+          "slope": 0.6399839412324755,
           "meanAct": 0.5272989690721648,
-          "meanPred": 0.5500447107486285,
-          "bias": 0.022745741676463704
+          "meanPred": 0.5559414678874233,
+          "bias": 0.028642498815258488
         },
         "nn": {
           "n": 194,
@@ -483,71 +494,71 @@
       {
         "cutoff_pct": 0.2,
         "tonnes_Mt": 2818.41,
-        "grade_pct": 0.503
+        "grade_pct": 0.5
       },
       {
         "cutoff_pct": 0.25,
-        "tonnes_Mt": 2795.415,
-        "grade_pct": 0.505
+        "tonnes_Mt": 2797.935,
+        "grade_pct": 0.502
       },
       {
         "cutoff_pct": 0.3,
-        "tonnes_Mt": 2670.885,
-        "grade_pct": 0.516
+        "tonnes_Mt": 2679.285,
+        "grade_pct": 0.512
       },
       {
         "cutoff_pct": 0.35,
-        "tonnes_Mt": 2340.975,
-        "grade_pct": 0.542
+        "tonnes_Mt": 2375.31,
+        "grade_pct": 0.535
       },
       {
         "cutoff_pct": 0.4,
-        "tonnes_Mt": 1959.72,
-        "grade_pct": 0.575
+        "tonnes_Mt": 1989.645,
+        "grade_pct": 0.567
       },
       {
         "cutoff_pct": 0.45,
-        "tonnes_Mt": 1564.185,
-        "grade_pct": 0.613
+        "tonnes_Mt": 1577.31,
+        "grade_pct": 0.604
       },
       {
         "cutoff_pct": 0.5,
-        "tonnes_Mt": 1203.09,
-        "grade_pct": 0.655
+        "tonnes_Mt": 1187.445,
+        "grade_pct": 0.646
       },
       {
         "cutoff_pct": 0.55,
-        "tonnes_Mt": 900.585,
-        "grade_pct": 0.698
+        "tonnes_Mt": 868.77,
+        "grade_pct": 0.691
       },
       {
         "cutoff_pct": 0.6,
-        "tonnes_Mt": 656.145,
-        "grade_pct": 0.745
+        "tonnes_Mt": 622.545,
+        "grade_pct": 0.737
       },
       {
         "cutoff_pct": 0.65,
-        "tonnes_Mt": 478.8,
-        "grade_pct": 0.79
+        "tonnes_Mt": 438.06,
+        "grade_pct": 0.785
       },
       {
         "cutoff_pct": 0.7,
-        "tonnes_Mt": 339.045,
-        "grade_pct": 0.837
+        "tonnes_Mt": 307.335,
+        "grade_pct": 0.833
       },
       {
         "cutoff_pct": 0.75,
-        "tonnes_Mt": 234.045,
-        "grade_pct": 0.888
+        "tonnes_Mt": 209.16,
+        "grade_pct": 0.884
       },
       {
         "cutoff_pct": 0.8,
-        "tonnes_Mt": 150.465,
-        "grade_pct": 0.952
+        "tonnes_Mt": 130.41,
+        "grade_pct": 0.951
       }
     ],
     "img_gt": "babbitt-12-resource-grade-tonnage.png",
     "page_errors": []
   },
-  "runtime_s": 137
+  "runtime_s": 138
 }

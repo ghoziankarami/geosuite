@@ -18,6 +18,7 @@ Terms: https://geosuite.orebit.id/terms
 
 
 
+
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
@@ -2561,6 +2562,9 @@ input[type="checkbox"], input[type="radio"] {
       <button class="btn secondary" id="btnReportExportBundle" onclick="exportBundle()"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="btn.exportBundleFile">Export Bundle (.orebit)</span></button>
     </div>
     <p style="font-size:12px;color:var(--fg-mute);margin-top:8px;"><span data-i18n="asy.rp.pdfHint">A multi-page PDF: summary, visualizations, and a standards-referenced working checklist.</span></p>
+    <label for="assayReportNote" data-i18n="asy.reportInsight.noteLabel">Method basis / interpretation notes (optional)</label>
+    <textarea id="assayReportNote" rows="2" maxlength="5000" style="width:100%;"></textarea>
+    <p class="hint" data-i18n="asy.reportInsight.noteHint">Explain your grouping, cap and composite choices. A domain cutoff groups samples; it does not establish an economic Resource cutoff. The PDF records the actual controls separately.</p>
     <hr style="border:none;border-top:1px solid var(--border);margin:14px 0 10px;">
     <h4 style="font-size:13px;margin:0 0 4px;" data-i18n="asy.rp.csvTitle">Data exports (CSV)</h4>
     <p style="font-size:12px;color:var(--fg-mute);margin:0 0 8px;"><span data-i18n="asy.rp.csvHint">The three exports most people want, gathered here because this is where you come to export. Each also sits on the tab that produces it.</span></p>
@@ -2646,7 +2650,7 @@ input[type="checkbox"], input[type="radio"] {
       extra: (extra && typeof extra === 'object') ? (extra.extra || '') : (extra || ''),
       filename: (extra && extra.filename) || '',
       mime: (extra && extra.mime) || '',
-      content: (extra && typeof extra.content === 'string') ? extra.content.slice(0, 2000000) : ''
+      content: (extra && typeof extra.content === 'string' && extra.content.length <= 2000000) ? extra.content : ''
     });
     _save(arr);
     if (typeof _renderExportHistory === 'function') {
@@ -2756,7 +2760,7 @@ input[type="checkbox"], input[type="radio"] {
       // covered), which is why Save All Plots (ZIP) silently produced 0 PNGs.
       // Regenerate this from `grep -oE "Plotly\.newPlot\('[a-zA-Z]+'" Assay.html`
       // if new charts are added, rather than hand-editing from memory.
-      return ["welllog", "bvHeatmap", "bvScatter", "cmpHist", "compositeSensCV", "compositeSensMean", "compositeSensN", "densityMap", "domainPlan", "domainValBox", "domainValSpatial", "domainXZ", "gradeContribChart", "lthBox", "mvBiplot", "mvBoxplot", "mvVarChart", "nnHist", "pairResidPlot", "pairScatterPlot", "tcBox", "tcCurve"];
+      return Array.from(new Set([...Array.from(document.querySelectorAll('.js-plotly-plot[id]')).map(el=>el.id).filter(id=>!id.startsWith('__')), ...["welllog", "bvHeatmap", "bvScatter", "cmpHist", "compositeSensCV", "compositeSensMean", "compositeSensN", "densityMap", "domainPlan", "domainValBox", "domainValSpatial", "domainXZ", "gradeContribChart", "lthBox", "mvBiplot", "mvBoxplot", "mvVarChart", "nnHist", "pairResidPlot", "pairScatterPlot", "tcBox", "tcCurve"]]));
     }
     return [];
   }
@@ -2867,16 +2871,19 @@ input[type="checkbox"], input[type="radio"] {
   (function hookPlotlyForExportButtons() {
     if (typeof Plotly === 'undefined' || Plotly.__orebitExportHooked) return;
     Plotly.__orebitExportHooked = true;
-    const targets = _orebitGetPlotIds(_orebitAppName());
-    const origNewPlot = Plotly.newPlot;
-    Plotly.newPlot = function(gd) {
-      const result = origNewPlot.apply(this, arguments);
-      const id = typeof gd === 'string' ? gd : (gd && gd.id);
-      if (id && targets.includes(id) && result && typeof result.then === 'function') {
-        result.then(function() { _attachChartExportButton(id); }).catch(function() {});
-      }
-      return result;
-    };
+    // Attach export to every real chart, including charts created by queued
+    // Plotly.react calls. A new chart does not need another hard-coded ID.
+    for (const method of ['newPlot','react']) {
+      const original=Plotly[method];
+      Plotly[method]=function(gd) {
+        const result=original.apply(this,arguments);
+        const id=typeof gd==='string'?gd:(gd&&gd.id);
+        if(id&&!id.startsWith('__')&&result&&typeof result.then==='function') {
+          result.then(()=>_attachChartExportButton(id)).catch(()=>{});
+        }
+        return result;
+      };
+    }
   })();
 })();
 </script>
@@ -2905,6 +2912,7 @@ let DATA = EMBEDDED_DATA;
 /* @orebit-inline: shared/ui/index.js */
 /* @orebit-inline: shared/i18n/index.js */
 /* @orebit-inline: shared/io/index.js */
+/* @orebit-inline: shared/io/screening-report.js */
 /* @orebit-inline: shared/io/parse.js */
 /* @orebit-inline: shared/io/grades.js */
 /* @orebit-inline: shared/io/columns.js */
@@ -3689,6 +3697,8 @@ function _resetDatasetState(treatments, projectName) {
   window._domainMethod = null;
   window._primaryElement = null;
   window._domainCutoff = null;
+  window._domainAudit = null;
+  if (document.getElementById('assayReportNote')) document.getElementById('assayReportNote').value = '';
   window._gradeColOverride = null;
   window._gradeUnitOverride = null;
   // _lastSchemaMeta is DELIBERATELY not touched here: parseCSV() sets it from the file
@@ -4098,6 +4108,14 @@ const ELEMENT_REGISTRY = {
     desc: { en: 'Zinc (Zn) — primary metal at Thalanga deposit. Typical VMS economic cutoff is 2-3%. Bimodal distribution: trace background + massive sulphide lenses >5% Zn.',
       id: 'Seng (Zn) — logam utama di deposit Thalanga. Cutoff ekonomis VMS umumnya 2-3%. Distribusi bimodal: background trace + lensa massive sulphide >5% Zn.' }
   },
+  ni_pct: {
+    label: 'Ni', unit: '%', color: '#16a34a',
+    bg: 'rgba(22,163,74,0.15)',
+    typicalCutoff: 0.5,
+    topcutPreset: 99,
+    desc: { en: 'Nickel (Ni) — primary commodity in laterite and sulfide-Ni deposits.',
+      id: 'Nikel (Ni) — komoditas utama pada deposit laterit dan sulfida-Ni.' }
+  },
   fe_pct: {
     label: 'Fe', unit: '%', color: '#92400e',
     bg: 'rgba(146,64,14,0.15)',
@@ -4105,14 +4123,6 @@ const ELEMENT_REGISTRY = {
     topcutPreset: 99.5,
     desc: { en: 'Iron (Fe) — proxy for sulphide content (pyrite/pyrrhotite). Not an economic target but important for metallurgical recovery and acid-generation potential.',
       id: 'Besi (Fe) — proxy untuk kandungan sulfida (pirit/pirotit). Bukan target ekonomis, namun penting untuk recovery metalurgi dan potensi acid-generation.' }
-  },
-  ni_pct: {
-    label: 'Ni', unit: '%', color: '#16a34a',
-    bg: 'rgba(22,163,74,0.15)',
-    typicalCutoff: 0.5,
-    topcutPreset: 99,
-    desc: { en: 'Nickel (Ni) — primary in laterite/sulfide-Ni deposits, not the main element at Thalanga.',
-      id: 'Nikel (Ni) — unsur utama pada deposit laterite/sulfide-Ni, bukan unsur utama di Thalanga.' }
   },
   ag_gpt: {
     label: 'Ag', unit: 'g/t', color: '#94a3b8',
@@ -7713,6 +7723,7 @@ function computeComposites(length = 1.0, minLength = 0.5, breakAtLitho = false) 
           domain_dominant: dominantDomain,
           informed_length: +informedWeight.toFixed(3), coverage: +(informedWeight / cLen).toFixed(3), overlap,
         };
+        comp._elementSupport = {...weights}; // per-element informed support; not all grades cover the same intervals
         elemCols.forEach(e => {
           comp[e + '_comp'] = weights[e] ? +(sums[e]/weights[e]).toFixed(4) : null;
         });
@@ -8194,9 +8205,9 @@ function renderStats() {
   // _scopedRows()'s docstring for why mixing populations here is the error
   // this whole item exists to close.
   const scopedRows = _scopedRows();
-  const vals = scopedRows.map(r => r[i]).filter(v => typeof v === 'number' && v > 0);
+  const vals = scopedRows.map(r => r[i]).filter(v => typeof v === 'number' && Number.isFinite(v) && v >= 0);
   if (!vals.length) {
-    document.getElementById('st').innerHTML = '<div class="hint warn">No positive values for stats.</div>';
+    document.getElementById('st').innerHTML = '<div class="hint warn">No finite nonnegative values for stats.</div>';
     return;
   }
   const s = statsSummary(vals);
@@ -8417,7 +8428,7 @@ function renderStatsOverlay() {
   const traces = elems.map(e => {
     const m = elementMeta(e);
     const i = colIdx(e);
-    const vals = DATA.rows.map(r => r[i]).filter(v => typeof v === 'number' && v > 0);
+    const vals = DATA.rows.map(r => r[i]).filter(v => typeof v === 'number' && Number.isFinite(v) && v >= 0);
     if (!vals.length) return null;
     const s = statsSummary(vals);
     // Normalize x by P99 so distributions are comparable
@@ -8448,9 +8459,9 @@ function renderStatsOverlay() {
   }, { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false });
 }
 
-function renderStatsCharts(elemCol) {
+function renderStatsCharts(elemCol, rows = _scopedRows()) {
   const i = colIdx(elemCol);
-  const vals = DATA.rows.map(r => r[i]).filter(v => typeof v === 'number' && isFinite(v) && v > 0);
+  const vals = rows.map(r => r[i]).filter(v => typeof v === 'number' && isFinite(v) && v >= 0);
   const s = statsSummary(vals);
   if (!s || !vals.length) {
     ['statHist','statBox','statCDF','statQQ'].forEach(id => {
@@ -11724,7 +11735,7 @@ function renderDomain() {
   };
   // Grade shell: the cut-off is the geologist's (from the log-probability break),
   // never a percentile. Until one is set, P80 is shown as a starting point.
-  const cutoff = (window._domainCutoff > 0) ? window._domainCutoff : (isFinite(p80) && p80 > 0 ? Number(p80.toPrecision(2)) : 0);
+  const cutoff = (Number.isFinite(window._domainCutoff) && window._domainCutoff >= 0) ? window._domainCutoff : (isFinite(p80) && p80 > 0 ? Number(p80.toPrecision(2)) : 0);
   const cutLabel = 'M1-Mineralised';
   const assignCutoff = (r) => (typeof r[ei] === 'number' && r[ei] >= cutoff) ? cutLabel : 'M0-Background';
   const assignLitho = (r) => {
@@ -12059,6 +12070,7 @@ function renderDomain() {
   tagged.forEach(t => { t.label = domainLabel(t.domain); });
   // Cache for export
   window._domainTagged = tagged;
+  window._domainAudit={method:domainMethod,element:elemCol,cutoff:domainMethod==='cutoff'?cutoff:null,breakpoints:[p33,p67,p80],scope:'All loaded rows',groups:domains.map(d=>domainLabel(d))};
 
   // Materialize domain column into DATA so save/export pipelines carry it to P3.
   // We stamp the CUSTOM label (falls back to raw) → JORC/KCMI report + master CSV
@@ -12105,7 +12117,7 @@ function setPrimaryElement(col) {
 // Grade-shell cut-off for the 'cutoff' domain method, in the element's own unit.
 function setDomainCutoff(v) {
   const n = parseFloat(v);
-  window._domainCutoff = (isFinite(n) && n > 0) ? n : null;
+  window._domainCutoff = (isFinite(n) && n >= 0) ? n : null;
   if (typeof renderDomain === 'function') renderDomain();
 }
 
@@ -13054,7 +13066,7 @@ function renderReport() {
   const holes = new Set(DATA.rows.map(r => r[colIdx('hole_id')])).size;
   const elemCol = primaryElement();
   const ei = colIdx(elemCol);
-  const vals = ei >= 0 ? DATA.rows.map(r => r[ei]).filter(v => typeof v === 'number' && v > 0) : [];
+  const vals = ei >= 0 ? DATA.rows.map(r => r[ei]).filter(v => typeof v === 'number' && Number.isFinite(v) && v >= 0) : [];
   const s = vals.length ? statsSummary(vals) : null;
 
   // Compute composites for summary -- uses whatever length the Composite tab
@@ -13168,12 +13180,31 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
     const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
     const W = pdf.internal.pageSize.getWidth();
     const H = pdf.internal.pageSize.getHeight();
+    const methodBasis=document.getElementById('assayReportNote')?.value.trim() || t('asy.reportInsight.notJustified');
 
-    const elemCol = primaryElement();
-    if (!elemCol) { toast(t('asy.maybeShowSupportMoment.noElementColumnDetectedLoad'), 'bad'); if (btn) { btn.disabled = false; btn.textContent = t('asy.maybeShowSupportMoment.downloadPdfReport'); } return; }
+    // An explicitly assigned column can still be reported when every assay is missing.
+    const assigned=window._gradeColOverride;
+    const elemCol=primaryElement() || (assigned&&colIdx(assigned)>=0?assigned:'unassigned grade');
     const ei = colIdx(elemCol);
     const holes = [...new Set(DATA.rows.map(r => r[colIdx('hole_id')]))].filter(Boolean);
-    const vals = DATA.rows.map(r => r[ei]).filter(v => typeof v === 'number' && v > 0);
+    const vals = DATA.rows.map(r => r[ei]).filter(v => typeof v === 'number' && Number.isFinite(v) && v >= 0);
+    if(!vals.length){
+      const noGrades=t('asy.reportInsight.noGrades').replace('{element}',elemCol).replace('{rows}',DATA.rows.length);
+      OrebitScreeningReport.prepend(pdf,'Assay',[
+        [t('asy.reportSummary.result'),noGrades],
+        [t('asy.reportSummary.scope'),(DATA.name||'Current loaded dataset')+' '+methodBasis],
+        [t('asy.reportSummary.next'),t('asy.reportInsight.next')]
+      ]);
+      pdf.deletePage(pdf.internal.getNumberOfPages());
+      OrebitScreeningReport.append(pdf,'Assay',[
+        ['Grade statistics population',`Finite nonnegative current values including zeros: n=0; loaded rows ${DATA.rows.length}`],
+        ['Actual treatment record',_treatmentCsvHeader()],
+        ['Method justification',methodBasis],
+        ['Result',noGrades]
+      ]);
+      await OrebitScreeningReport.save(pdf,'Assay',`Pre-Estimation-EDA-Report-${new Date().toISOString().slice(0,10)}.pdf`);
+      return;
+    }
     const s = statsSummary(vals) || { n:0, mean:0, sd:0, cv:0, min:0, max:0, p10:0, p25:0, p50:0, p75:0, p90:0, p95:0, p99:0 };
     const compositeLen = _reportCompositeLength();
     const compRes = computeComposites(compositeLen, 0.5, _compBreakAtLitho());
@@ -13187,7 +13218,7 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
 
     // Pre-render charts so Plotly.toImage has live divs to capture.
     // Each render mutates a global div; we just need them populated before capture.
-    try { renderStatsCharts && renderStatsCharts(elemCol); } catch (e) { console.warn('pre-render stats charts:', e); }
+    try { renderStatsCharts && renderStatsCharts(elemCol, DATA.rows); } catch (e) { console.warn('pre-render stats charts:', e); }
     try { renderCompositing && renderCompositing(); }       catch (e) { console.warn('pre-render composite:', e); }
     try { renderLithoBoxplot && renderLithoBoxplot(); }     catch (e) { console.warn('pre-render litho:', e); }
     // Yield once so Plotly finishes its async layout pass before we snapshot.
@@ -13261,10 +13292,10 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
     const cw = (W - 30 - 8) / 2;
     const ch = 24;
     const cvColor = s.cv > 2 ? [220, 38, 38] : (s.cv > 1.5 ? [217, 119, 6] : [22, 163, 74]);
-    statCard(15,           58,           cw, ch, 'Total samples',  DATA.rows.length.toLocaleString('en-US'),  '1m support · top-cut filtered');
+    statCard(15,           58,           cw, ch, 'Total samples',  DATA.rows.length.toLocaleString('en-US'),  'Current loaded intervals; actual treatment record below');
     statCard(15 + cw + 8,  58,           cw, ch, 'Drillholes',     holes.length.toString(),            'Composite-ready');
     statCard(15,           58 + ch + 4,  cw, ch, `Mean ${elemCol}`,  s.mean.toFixed(3),                `Median ${s.p50.toFixed(3)}`);
-    statCard(15 + cw + 8,  58 + ch + 4,  cw, ch, 'Coefficient of var.', s.cv.toFixed(2),               s.cv > 2 ? 'High variability' : (s.cv > 1.5 ? 'Moderate' : 'Low (clean)'), cvColor);
+    statCard(15 + cw + 8,  58 + ch + 4,  cw, ch, 'Coefficient of var.', s.cv.toFixed(2),               s.cv > 2 ? 'High variability' : (s.cv > 1.5 ? 'Moderate' : 'Lower variability'), cvColor);
 
     // Distribution snapshot — quartile breakdown
     pdf.setFontSize(10); pdf.setFont('helvetica','bold');
@@ -13303,12 +13334,12 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
     pdf.text('Report contents', 15, yDist);
     pdf.setFont('helvetica','normal'); pdf.setFontSize(9);
     [
-      'Page 2 · Dataset overview & validation results',
-      'Page 3 · Univariate statistics + histogram',
-      'Page 4 · EDA pipeline comparison (Raw → Top-cut → Composite)',
-      'Page 5 · Per-lithology before/after table',
-      'Page 6 · Grade-by-lithology (detail + boxplot)',
-      'Page 7 · KCMI Table 1 commentary'
+      'Dataset overview & validation results',
+      'Univariate statistics + histogram',
+      'EDA pipeline comparison (Raw → Top-cut → Composite)',
+      'Per-lithology before/after table',
+      'Grade-by-lithology (detail + boxplot)',
+      'KCMI Table 1 commentary'
     ].forEach((t,i) => pdf.text(t, 15, yDist + 8 + i*5.5));
 
     pdf.setFont('helvetica','italic');
@@ -13491,7 +13522,7 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
 
     // ===== PAGE 4: EDA PIPELINE COMPARISON (3-stage) =====
     pdf.addPage();
-    addHeader('04 · EDA Pipeline Comparison', `Raw → Top-cut (P99) → ${compositeLabel} · ${elemCol}`);
+    addHeader('04 · EDA Pipeline Comparison', `Current data / hypothetical P99 cap / actual ${compositeLabel} · ${elemCol}`);
 
     // Stage 1: Raw (current vals as loaded)
     // Stage 2: Top-cut at P99 (mimics autoClean's cap)
@@ -13503,10 +13534,10 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
     yPos = 38;
     pdf.setFont('helvetica','bold');
     pdf.text('Metric', 15, yPos);
-    pdf.text('Raw', 60, yPos);
-    pdf.text('Top-cut (P99)', 95, yPos);
+    pdf.text('Current data', 60, yPos);
+    pdf.text('P99 scenario', 95, yPos);
     pdf.text(compositeLabel, 140, yPos);
-    pdf.text('Δ Raw→Comp', 175, yPos);
+    pdf.text('Change to comp', 175, yPos);
     yPos += 4; pdf.line(15, yPos, W-15, yPos); yPos += 4;
     pdf.setFont('helvetica','normal');
 
@@ -13562,7 +13593,7 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
     const interp = [];
     const cvDelta = ((sComp.cv - s.cv) / s.cv * 100);
     if (sCapped.cv < s.cv) {
-      interp.push(`• Top-cut P99 turunkan CV ${s.cv.toFixed(2)} → ${sCapped.cv.toFixed(2)} (drop ${(s.max - sCapped.max).toFixed(3)} dari max).`);
+      interp.push(`• Hypothetical P99 cap (NOT applied by report) reduces CV ${s.cv.toFixed(2)} → ${sCapped.cv.toFixed(2)} (drop ${(s.max - sCapped.max).toFixed(3)} dari max).`);
     }
     if (sComp.cv < s.cv) {
       interp.push(`• Compositing reduces CV ${cvDelta.toFixed(1)}% → distribution more homogeneouseous, ready for variography.`);
@@ -13576,7 +13607,7 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
     } else {
       interp.push(`• Mean stable (Δ ${pct(s.mean, sComp.mean)}) — dataset is well-supported.`);
     }
-    interp.push(`• Method: top-cut P99 = capping outlier; composite 1m = length-weighted average sesuai SMU porphyry/disseminated.`);
+    interp.push(`• P99 is a hypothetical sensitivity, not a treatment record. Actual composite ${compositeLen}m uses informed-length weighting; review SMU separately.`);
 
     interp.forEach(line => {
       const wrapped = pdf.splitTextToSize(line, W - 30);
@@ -13602,7 +13633,7 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
 
     // ===== PAGE 5: PER-LITHOLOGY BEFORE/AFTER =====
     pdf.addPage();
-    addHeader('05 · Per-Lithology Before/After', `Top-cut impact per litho · ${elemCol}`);
+    addHeader('05 · Hypothetical Cap Sensitivity', `P99 scenario, not applied treatment, per litho · ${elemCol}`);
     const liA = colIdx('lithology');
     if (liA >= 0) {
       const lithosA = [...new Set(DATA.rows.map(r => r[liA]).filter(Boolean))];
@@ -13764,8 +13795,8 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
       `• Drilling: ${holes.length} hole, ${DATA.rows.length.toLocaleString('en-US')} sample interval.`,
       `• Primary commodity: ${elemCol}`,
       `• ${elemCol} statistics: mean ${fmtNum(s.mean)}, median ${fmtNum(s.p50)}, CV ${s.cv.toFixed(2)}.`,
-      `• Top-cut threshold: P99 = ${s.p99.toFixed(3)}.`,
-      `• Compositing: 1m weighted-average by length. Composite n = ${sComp.n.toLocaleString('en-US')}.`,
+      `• Hypothetical P99 threshold (not applied by this report): ${s.p99.toFixed(3)}.`,
+      `• Compositing: ${compositeLen}m informed-length weighted average. Composite n = ${sComp.n.toLocaleString('en-US')}.`,
       `• Lithology: ${colIdx('lithology') >= 0 ? 'logged for all samples' : 'not available'}.`,
       `• Spatial extent: ${colIdx('midx') >= 0 ? 'midx/midy/midz available' : 'unavailable'}.`,
     ];
@@ -13854,13 +13885,37 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
     pdf.setTextColor(153, 153, 153);
     pdf.text(footerText, pdf.internal.pageSize.getWidth() - 10, pdf.internal.pageSize.getHeight() - 8, {align: 'right'});
 
+    const fi=colIdx('from_m'),ti=colIdx('to_m');let inputLength=0,inputGradeLength=0,compLength=0,compGradeLength=0;
+    for(const row of DATA.rows){const grade=row[ei],len=row[ti]-row[fi];if(Number.isFinite(grade)&&grade>=0&&Number.isFinite(len)&&len>0){inputLength+=len;inputGradeLength+=grade*len;}}
+    for(const c of compRes.composites){const grade=c[elemCol+'_comp'],len=c._elementSupport ? c._elementSupport[elemCol] : c.informed_length;if(Number.isFinite(grade)&&grade>=0&&Number.isFinite(len)&&len>0){compLength+=len;compGradeLength+=grade*len;}}
+    const insightText=(key,values={})=>Object.entries(values).reduce((out,[k,v])=>out.replaceAll('{'+k+'}',String(v)),t(['asy.reportInsight',key].join('.')));
+    const actualTreatmentDisplay=_treatmentCsvHeader().split('\n').map(line=>line.replace(/^#\s*/, '').trim()).filter(Boolean).join('; ');
+    const domainAudit=window._domainAudit;
+    const domainDescription=insightText('domain',{method:domainAudit?.method||(colIdx('domain')>=0?t('asy.reportInsight.domainUnknown'):t('asy.reportInsight.noDomain')),element:domainAudit?.element||elemCol,controls:domainAudit?.method==='cutoff'?`cutoff >= ${domainAudit.cutoff} ${OrebitScreeningReport.unitLabel(elementMeta(domainAudit.element).unit)}`:domainAudit?.method==='grade'||domainAudit?.method==='auto'?`P33=${domainAudit.breakpoints[0]}, P67=${domainAudit.breakpoints[1]}, P80=${domainAudit.breakpoints[2]}`:'no grade cutoff recorded'});
+    OrebitScreeningReport.prepend(pdf,'Assay',[
+      [t('asy.reportSummary.result'),insightText('result',{rows:DATA.rows.length,valid:vals.length,element:elementMeta(elemCol).label+' ('+OrebitScreeningReport.unitLabel(elementMeta(elemCol).unit)+')',missing:DATA.rows.length-vals.length,mean:s.mean.toFixed(3),median:s.p50.toFixed(3),cv:s.cv.toFixed(2),composites:compRes.composites.length,length:compositeLen})],
+      [t('asy.reportSummary.meaning'),insightText('meaning')],
+      [t('asy.reportSummary.checks'),insightText('support',{before:inputLength.toFixed(3),after:compLength.toFixed(3),change:inputGradeLength?((compGradeLength/inputGradeLength-1)*100).toFixed(4):'n/a',tails:compRes.droppedTailLength,gaps:compRes.gapLength})],
+      [t('asy.reportSummary.scope'),domainDescription+' '+insightText('scope',{treatment:actualTreatmentDisplay})+' '+methodBasis],
+      [t('asy.reportSummary.next'),insightText('next')]
+    ]);
+    OrebitScreeningReport.append(pdf,'Assay',[
+      ['Purpose','Initial grade-treatment and compositing audit, before spatial Resource screening'],
+      ['Report scope',`All ${DATA.rows.length} currently loaded rows. Current UI domain view: ${window._domainScope || 'All'}. Report plots and statistics use all rows.`],
+      ['Commodity',elemCol],
+      ['Grade statistics population',`Finite nonnegative current values including zeros: n=${vals.length}. This is not an archived pre-treatment raw population.`],
+      ['Actual treatment record',_treatmentCsvHeader()],
+      ['Hypothetical sensitivity','P99 capping in comparison tables is illustrative only. It is not applied to the reported composite population.'],
+      ['Domain definition',domainDescription],
+      ['Method justification',methodBasis],
+      ['Composite settings',`${compositeLen}m; minimum tail 0.5m; break at lithology ${_compBreakAtLitho()}; domain boundaries preserved`],
+      ['Informed support',`Selected-element support: input ${inputLength.toFixed(4)}m; composite ${compLength.toFixed(4)}m; dropped tails ${compRes.droppedTailLength}m; gap length ${compRes.gapLength}m`],
+      ['Grade x informed length',`Input ${inputGradeLength.toFixed(6)}; composite ${compGradeLength.toFixed(6)}; change ${inputGradeLength?((compGradeLength/inputGradeLength-1)*100).toFixed(6):'undefined'}%. This is a conservation check, not contained Resource metal.`],
+      ['Missing external evidence','Lab accreditation, standards/blanks/duplicates, recovery and geological domain validity must be verified independently'],
+      ['Next step','Export the actual composited master and preserve treatment, units and geometry notes for Resource']
+    ]);
     const _pdfName = `Pre-Estimation-EDA-Report-${today}.pdf`;
-    const _pdfDataUri = pdf.output('datauristring');
-    try { await orebitSaveFile(_pdfName, _pdfDataUri, 'application/pdf'); }
-    catch (e2) { console.warn('PDF bridge failed, jsPDF fallback:', e2); pdf.save(_pdfName); };
-    if (typeof window._recordExport === 'function') {
-      window._recordExport('PDF', 'Orebit Assay — PDF Report', _pdfDataUri.length <= 1900000 ? { filename: _pdfName, mime: 'application/pdf', content: _pdfDataUri } : { filename: _pdfName, mime: 'application/pdf', content: '' });
-    }
+    await OrebitScreeningReport.save(pdf,'Assay',_pdfName);
     maybeShowSupportMoment();
   } catch (err) {
     console.error(err);
@@ -14212,7 +14267,7 @@ window.addEventListener("load", function() {
   <p>
     <strong>Orebit GeoSuite</strong> · Orebit Assay · <span id="footerVersion">v3.0.0</span>
     <span class="divider">·</span>
-    © 2026 Orebit · <a href="https://github.com/ghoziankarami/geosuite" target="_blank" rel="noopener">GPL-3.0 Source Code</a>
+    © 2026 Orebit · <a href="https://github.com/ghoziankarami/geosuite" target="_blank" rel="noopener" data-i18n="footer.sourceCode">GPL-3.0 Source Code</a>
     <span class="divider">·</span>
     <a href="https://orebit.id" target="_blank" rel="noopener">orebit.id</a>
     <span class="divider">·</span>

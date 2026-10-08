@@ -3698,7 +3698,7 @@ function buildBundle(projectName) {
       name: DATA.name || ''
     };
     // Carry forward user-assigned units so P3 projects preserve unit choices
-    bundle.units = (DATA && DATA.units) ? DATA.units : {};
+    bundle.units = {...(DATA.units||{}),[setupState.element]:gradeUnitFor(setupState.element)};
   }
 
   return bundle;
@@ -3776,10 +3776,8 @@ function loadBundle(bundle) {
     }
     // Carry forward user-assigned units from P2 so ingest/element detection respects
     // the unit choice. ingestDataset → finalizeUploadLoad reads _lastSchemaMeta.units.
-    if (bundle.units && Object.keys(bundle.units).length) {
-      _lastSchemaMeta = { units: bundle.units };
-      if (typeof window !== 'undefined') window._lastSchemaMeta = _lastSchemaMeta;
-    }
+    _lastSchemaMeta = bundle.units && Object.keys(bundle.units).length ? {units:bundle.units} : null;
+    window._lastSchemaMeta = _lastSchemaMeta;
     const parsed = {
       cols: bundle.data.cols.slice(),
       rows: bundle.data.rows.map(r => Array.isArray(r) ? r.slice() : r)
@@ -3975,6 +3973,7 @@ let DATA = EMBEDDED_DATA;
 function setActiveDataset(input, opts) {
   DATA = createDataset(input, opts);
   window._blockViewSettings = null;
+  window._blockViewAppliedSettings = null;
 
   // ----- Dataset-scoped reset -----
   // Resource has nine `*State` objects (setupState, variogramState,
@@ -3984,14 +3983,13 @@ function setActiveDataset(input, opts) {
 
   // Setup: domain + decluster result (NOT cell SIZE, see note below) follow the dataset.
   setupState.domain = 'all';
+  setupState.gradeUnit = null;
   setupState.reportCutoff = null;setupState.reportCutoffNote="";
   if(document.getElementById("reportCutoffNote"))document.getElementById("reportCutoffNote").value="";
   if(document.getElementById('reportCutoff')) document.getElementById('reportCutoff').value='';
   setupState.decluster = null;
-  // setupState.element and setupState.gradeUnit stay PER-CALL -- resetToSample()
-  // picks the detected element or 'au_gpt', and finalizeUploadLoad() picks from
-  // the parsed cols and honors an existing CSV-declared unit override. Each
-  // caller sets its own after this function returns.
+  // Element and declared units are assigned by the loader. A previous project's
+  // manual unit must never reinterpret new raw values.
   // setupState.declusterCell (a cell SIZE in metres, distinct from setupState.decluster
   // above) is also left per-caller: finalizeUploadLoad() nulls it so its auto-compute
   // reruns on next use, and resetToSample() never touched it historically.
@@ -4002,11 +4000,11 @@ function setActiveDataset(input, opts) {
 
   // Block model belongs to the dataset's own drill spacing.
   blockState.size = null; blockState.origin = null; blockState.dims = null; blockState.blocks = null;
-  blockState.envelopeMode = 'xy'; blockState.envelopeRadius = 25; window._gtCurveSnapshot=null;
-  // blockState.densityTable / .densityTableActive / .blockDensities are intentionally
-  // NOT reset here -- finalizeUploadLoad() nulls them on its own after applying the
-  // newly-parsed CSV's density meta, and resetToSample() historically never touched
-  // them. Behaviour preserved.
+  blockState.envelopeMode = 'xyz'; blockState.envelopeRadius = 25; blockState.envelopeRadiusUserSet=false; window._gtCurveSnapshot=null;
+  blockState.blockDensities=null;blockState.densityAssigned=null;blockState.densitySource=null;
+  blockState.densityTable=null;blockState.densityTableActive=false;window._resourceDensityDraftSet=false;
+  if(blockState.massDensityBeforeVolumetric!=null){blockState.density=blockState.massDensityBeforeVolumetric;delete blockState.massDensityBeforeVolumetric;}
+  // Density assignment/table belongs to this dataset, never to the next upload or sample reset.
 
   // Estimation + classification are downstream of the block model.
   estimState = { results: null, done: false };
@@ -4149,10 +4147,14 @@ const ELEMENT_LABEL = {
  * Prior code did tonnage_Mt × grade × 1e6 which yielded grams for g/t (mislabeled "kg")
  * and 100× the true metal tonnes for %. This fixes both.
  */
+function resourceDeclaredUnit(token) {
+ return {pct:'%', '%':'%',gpt:'g/t','g/t':'g/t',ppm:'ppm',kgm3:'kg/m³','kg/m³':'kg/m³','kg/m3':'kg/m³'}[String(token||'').toLowerCase()]||null;
+}
 function gradeUnitFor(elKey) {
  // User override from Setup tab wins (handles columns whose NAME lies about the unit,
  // e.g. a placer-tin column called "sn_pct" that actually carries kg/m³).
- if (typeof setupState !== 'undefined' && setupState && setupState.gradeUnit) return setupState.gradeUnit;
+ if (typeof setupState !== 'undefined' && setupState && setupState.gradeUnit && elKey===setupState.element) return setupState.gradeUnit;
+ const declared=resourceDeclaredUnit(DATA?.units?.[String(elKey).toLowerCase()]);if(declared)return declared;
  const lc = String(elKey || '').toLowerCase();
  if (lc.includes('kg/m') || lc.includes('kgm3') || lc.endsWith('_kg') || lc.includes('kg_m')) return 'kg/m³';
  if (lc.endsWith('_gpt')) return 'g/t';
@@ -4670,22 +4672,15 @@ function _resImportTr(key, vars) {
 }
 
 // Shared loader — runs after columns/element are resolved (auto OR via manual mapping).
-function finalizeUploadLoad(parsed, fileName, elFound, report) {
- setActiveDataset({ rows: parsed.rows, cols: parsed.cols, name: fileName }, { source: DATASET_SOURCE.UPLOAD });
+function finalizeUploadLoad(parsed, fileName, elFound, report, manualUnit=null) {
  const meta = _lastSchemaMeta;
+ setActiveDataset({ rows: parsed.rows, cols: parsed.cols, name: fileName, units:meta?.units||{} }, { source: DATASET_SOURCE.UPLOAD });
  _importedTopcutLines = _extractTopcutLines(meta);
  // Apply DECLARED unit from CSV header (# units: <col>=<unit>) for the active element.
- // This is how a unit chosen in P1/P2 flows through to P3 automatically. Only set when
- // the user hasn't already overridden via the Setup dropdown in this session.
+ // A manual import-panel assignment wins; otherwise use this file's declaration.
+ // A previous dataset's unit must never be reused.
  const _activeEl = parsed.cols.includes(setupState.element) ? setupState.element : (elFound[0] || setupState.element);
- if (meta && meta.units && _activeEl) {
-   const uTok = meta.units[String(_activeEl).toLowerCase()];
-   if (uTok) {
-     const map = { pct: '%', gpt: 'g/t', ppm: 'ppm', kgm3: 'kg/m³', 'kg/m³': 'kg/m³', 'kg/m3': 'kg/m³' };
-     const resolved = map[uTok] || null;
-     if (resolved) setupState.gradeUnit = resolved;
-   }
- }
+ setupState.gradeUnit=resourceDeclaredUnit(manualUnit)||resourceDeclaredUnit(meta?.units?.[String(_activeEl).toLowerCase()]);
  let banner = '';
  if (meta) {
  banner = `<div class="hint" style="background:#fef3c7;border-left:3px solid #d97706;margin-top:6px;padding:8px;font-size:12px;">
@@ -4704,12 +4699,8 @@ function finalizeUploadLoad(parsed, fileName, elFound, report) {
  // resetToSample() never nulled it and the auto-compute ("if declusterCell == null")
  // only reruns against the active dataset's own drill spacing (D20).
  setupState.declusterCell = null;
- // Density table belongs to the uploaded CSV's own density meta and is reset on
- // every upload; setActiveDataset intentionally doesn't reset it because
- // resetToSample() historically never did. Behaviour preserved. densitySource
- // (D11) resets alongside blockDensities for the same reason -- a stale label
- // from the previous dataset must not survive until the next generateBlocks().
- blockState.densityTable = null; blockState.densityTableActive = false; blockState.blockDensities = null; blockState.densitySource = null;
+ // Density provenance and tables are scoped to the newly uploaded data.
+ blockState.densityTable = null; blockState.densityTableActive = false; blockState.blockDensities = null; blockState.densityAssigned = null; blockState.densitySource = null;
  // STATE.usingSample is set per-call. setActiveDataset doesn't touch it; this is
  // the only place it flips to false, and there is no symmetric resetToSample()
  // site that flips it back, so the per-call rule stays simple: each loader sets
@@ -4916,7 +4907,7 @@ function applyColumnMapping() {
  window._lastImportReport = mappedReport;
  _pendingUpload = null;
  const elFound = [gradeKey];
- finalizeUploadLoad(parsed, loadName, elFound, mappedReport);
+ finalizeUploadLoad(parsed, loadName, elFound, mappedReport, unitSel);
  // finalizeUploadLoad resets setupState.element only if not present — re-assert.
  setupState.element = gradeKey;
  renderDataPreview();
@@ -5196,7 +5187,12 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
  `;
 
  document.getElementById('setupElement').addEventListener('change', e => {
+ const wasVolumetric=isVolumetricGrade(setupState.element);
  setupState.element = e.target.value;
+ setupState.gradeUnit=resourceDeclaredUnit(DATA.units?.[String(setupState.element).toLowerCase()]);
+ if(wasVolumetric&&!isVolumetricGrade(setupState.element))blockState.density=blockState.massDensityBeforeVolumetric??2.8;
+ blockState.blocks=null;blockState.blockDensities=null;blockState.densityAssigned=null;blockState.densitySource=null;
+ window._gtCurveSnapshot=null;window._blockViewSettings=null;window._blockViewAppliedSettings=null;
  setupState.reportCutoff=null;setupState.reportCutoffNote='';if(document.getElementById('reportCutoffNote'))document.getElementById('reportCutoffNote').value='';if(document.getElementById('reportCutoff'))document.getElementById('reportCutoff').value='';
  // Element changed → invalidate ALL downstream state (variogram, blocks-results, classification, cross-val).
  variogramState.experimental = null;
@@ -5209,7 +5205,13 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
  });
  document.getElementById('setupGradeUnit').addEventListener('change', e => {
  // Empty value = auto-detect. Otherwise force the unit (overrides column-name guess).
+ const wasVolumetric=isVolumetricGrade(setupState.element);
  setupState.gradeUnit = e.target.value || null;
+ if(!wasVolumetric&&isVolumetricGrade(setupState.element))blockState.massDensityBeforeVolumetric=blockState.density;
+ if(wasVolumetric&&!isVolumetricGrade(setupState.element))blockState.density=blockState.massDensityBeforeVolumetric??2.8;
+ blockState.blocks=null;blockState.blockDensities=null;blockState.densityAssigned=null;blockState.densitySource=null;
+ estimState={results:null,done:false};classState={thresholds:null,labels:null};crossvalState={results:null,metrics:null};
+ window._gtCurveSnapshot=null;window._blockViewSettings=null;window._blockViewAppliedSettings=null;saveResourceSession();
  setupState.reportCutoff=null;setupState.reportCutoffNote='';if(document.getElementById('reportCutoffNote'))document.getElementById('reportCutoffNote').value='';if(document.getElementById('reportCutoff'))document.getElementById('reportCutoff').value='';
  // Unit changes downstream tonnage/contained-metal math + density relevance → re-render Setup
  // (refreshes the "Unit aktif" hint) and invalidate block/estimation results that assumed old unit.
@@ -6795,7 +6797,7 @@ let blockState = {
  // laterite (~1.6-1.8 t/m³) run on it overstates tonnage by ~60%, and the
  // KCMI/PDF reports used to call it just "Uniform". Reports now say "assumed".
  densityUserSet: false,
- envelopeMode: 'xy', envelopeRadius: 25
+ envelopeMode: 'xyz', envelopeRadius: 25, envelopeRadiusUserSet:false
 };
 // Economic / RPE assumption register. These are explicit user inputs and are
 // carried into the KCMI/PDF narrative; they do not create a reserve or replace
@@ -6894,10 +6896,12 @@ function saveResourceSession() {
    direction: variogramState.direction,
    blockSize: blockState.size,
    envelopeMode: blockState.envelopeMode, envelopeRadius: blockState.envelopeRadius,
+   envelopeRadiusUserSet:!!blockState.envelopeRadiusUserSet,
    blockDims: blockState.dims,
    blockOrigin: blockState.origin,
    density: blockState.density,
    densityUserSet: !!blockState.densityUserSet,
+   massDensityBeforeVolumetric:blockState.massDensityBeforeVolumetric,
    search: {
     rMaj: searchState.rMaj, rSemi: searchState.rSemi, rMin: searchState.rMin,
     azDeg: searchState.azDeg, dipDeg: searchState.dipDeg,
@@ -6937,6 +6941,8 @@ function restoreResourceSession() {
   return null;
  }
  let restored = false;
+ if([null,'%','g/t','ppm','kg/m³'].includes(p.gradeUnit))setupState.gradeUnit=p.gradeUnit;
+ if(Number.isFinite(p.massDensityBeforeVolumetric)&&p.massDensityBeforeVolumetric>0)blockState.massDensityBeforeVolumetric=p.massDensityBeforeVolumetric;
  setupState.reportCutoffNote=typeof p.reportCutoffNote==="string"?p.reportCutoffNote:"";if(document.getElementById("reportCutoffNote"))document.getElementById("reportCutoffNote").value=setupState.reportCutoffNote;
  if(p.reportCutoff==null || (Number.isFinite(p.reportCutoff)&&p.reportCutoff>=0)){setupState.reportCutoff=p.reportCutoff??null;if(document.getElementById("reportCutoff"))document.getElementById("reportCutoff").value=setupState.reportCutoff??"";}
  if (p.variogram && Number.isFinite(p.variogram.range) && p.variogram.range > 0) {
@@ -6955,6 +6961,7 @@ function restoreResourceSession() {
  if (Array.isArray(p.blockSize) && p.blockSize.length === 3) {
   blockState.size = p.blockSize.slice();
   blockState.envelopeMode = p.envelopeMode === 'xyz' ? 'xyz' : 'xy';
+  blockState.envelopeRadiusUserSet=p.envelopeRadiusUserSet!==false;
   if (Number.isFinite(p.envelopeRadius) && p.envelopeRadius > 0) blockState.envelopeRadius = p.envelopeRadius;
   if (Array.isArray(p.blockDims)) blockState.dims = p.blockDims.slice();
   if (Array.isArray(p.blockOrigin)) blockState.origin = p.blockOrigin.slice();
@@ -7418,12 +7425,14 @@ function setResourceExtentMode(mode, buffer) {
 function setResourceEnvelope(mode, radius) {
  blockState.envelopeMode = mode === 'xyz' ? 'xyz' : 'xy';
  blockState.envelopeRadius = Number(radius);
- blockState.blocks = null; blockState.dims = null; blockState.blockDensities = null; blockState.densitySource = null;
+ blockState.envelopeRadiusUserSet=true;
+ blockState.blocks = null; blockState.dims = null; blockState.blockDensities = null; blockState.densityAssigned = null; blockState.densitySource = null;
  estimState = {results:null,done:false}; classState = {thresholds:null,labels:null};
  crossvalState = {results:null,metrics:null};
  renderBlockModel();
 }
 function renderBlockModel() {
+ window._resourceDensityDraftSet=false;
  const div = document.getElementById('blockModelContent');
  const samples = getSamples();
  if (samples.length === 0) {
@@ -7432,7 +7441,10 @@ function renderBlockModel() {
  }
  // Volumetric grade (kg/m³): contained metal = volume × grade, density irrelevant.
  const _isVolGrade = (typeof isVolumetricGrade === 'function') && isVolumetricGrade(setupState.element);
- if (_isVolGrade) blockState.density = 1; // lock density to 1 so tonnage math stays volume-based
+ if (_isVolGrade) {
+  if(blockState.density!==1)blockState.massDensityBeforeVolumetric=blockState.density;
+  blockState.density=1; // Internal volume weight; it must never be presented as rock tonnage.
+ }
  const xs = samples.map(s => s.x), ys = samples.map(s => s.y), zs = samples.map(s => s.z);
  const [xExt, yExt, zExt] = _resourceExtents(samples);
  // Auto block size from data density (first-time only)
@@ -7445,6 +7457,7 @@ function renderBlockModel() {
    const bsZ = Math.max(4, Math.round((zExt[1] - zExt[0]) / 8));
    blockState.size = [bsXY, bsXY, bsZ];
  }
+ if(!blockState.blocks&&!blockState.envelopeRadiusUserSet&&blockState.envelopeMode==='xyz')blockState.envelopeRadius=Math.max(25,Math.ceil(Math.hypot(...blockState.size)/2));
  if (!blockState.origin) {
  blockState.origin = [xExt[0], yExt[0], zExt[0]];
  }
@@ -7459,7 +7472,7 @@ function renderBlockModel() {
  <label>X (m): <input type="number" id="bmX" value="${bx}" min="2" step="5" style="width:90px;" oninput="updateBlockPreview()"></label>
  <label>Y (m): <input type="number" id="bmY" value="${by}" min="2" step="5" style="width:90px;" oninput="updateBlockPreview()"></label>
  <label>Z (m): <input type="number" id="bmZ" value="${bz}" min="1" step="1" style="width:90px;" oninput="updateBlockPreview()"></label>
- <label>SG (t/m³): <input type="number" id="bmDens" onchange="blockState.densityUserSet = true" value="${_isVolGrade ? 1 : blockState.density}" min="0.1" max="20" step="0.05" style="width:90px;" ${_isVolGrade ? 'disabled title="Grade is volumetric (kg/m³) — contained metal comes from volume, density is not used."' : ''}></label>
+ <label>SG (t/m³): <input type="number" id="bmDens" onchange="window._resourceDensityDraftSet = true" value="${_isVolGrade ? 1 : blockState.density}" min="0.1" max="20" step="0.05" style="width:90px;" ${_isVolGrade ? 'disabled title="Grade is volumetric (kg/m³) — contained metal comes from volume, density is not used."' : ''}></label>
  </div>
  ${_isVolGrade ? `<p style="margin-top:8px;font-size:12px;color:var(--accent);">${t('res.renderBlockSetup.volumetricNote')}</p>` : ''}
  <div class="row-controls" style="margin-top:10px;">
@@ -7473,7 +7486,7 @@ function renderBlockModel() {
  </select></label>
  <label>${t('res.envelope.radius')} <input id="bmEnvelopeRadius" type="number" min="1" value="${blockState.envelopeRadius||25}" style="width:90px;" onchange="setResourceEnvelope(document.getElementById('bmEnvelopeMode').value,this.value)"></label>
  </div>
- <p class="hint">${t('res.envelope.hint')}</p>
+ <p class="hint">${t('res.envelope.hint')} ${t('res.envelope.radiusHelp')}</p>
  <div id="blockPreview" style="margin-top:10px;"></div>
  </div>
  <details class="card resource-disclosure" id="blockAdvanced">
@@ -7649,12 +7662,10 @@ async function generateBlocks() {
  // Volumetric (kg/m³) grade → density forced to 1 (contained metal is volume-based).
  // Also avoids NaN from the disabled bmDens input.
  let dens = _volGrade ? 1 : +document.getElementById('bmDens').value;
- if (!_volGrade && !(dens > 0)) {
+ if (!_volGrade && !(Number.isFinite(dens) && dens > 0)) {
    // Do NOT silently default a bad density to 1 — that produces a wrong tonnage.
    toast(t('res.autoSuggestBlockSize.bulkDensityMustPositiveNumber'), 'warn');
-   dens = 1;
- } else if (!(dens > 0)) {
-   dens = 1;
+   return;
  }
  if (![bx,by,bz].every(v=>Number.isFinite(v)&&v>0)) { toast(t('res.autoSuggestBlockSize.blockSizeMust0'), 'warn'); return; }
  if (_volGrade) { blockState.densityTableActive = false; blockState.densityTable = null; }
@@ -7669,6 +7680,7 @@ async function generateBlocks() {
  const nz = Math.ceil((z1 - z0) / bz) + 1;
  const total = nx * ny * nz;
  const sparse = blockState.envelopeMode === 'xyz';
+ const envelopeRadius=sparse&&!blockState.envelopeRadiusUserSet?Math.max(25,Math.ceil(Math.hypot(bx,by,bz)/2)):blockState.envelopeRadius;
  if (total > BLOCK_HARD_LIMIT && !sparse) {
  toast(t('res.generateBlocks.exceedsLimit').replace('{n}', total.toLocaleString('en-US')).replace('{limit}', BLOCK_HARD_LIMIT / 1e6), 'bad');
  updateBlockPreview();
@@ -7680,7 +7692,7 @@ async function generateBlocks() {
  let blocks = [];
  let k = 0;
  if (sparse) {
-  try { blocks = sparseEnvelopeBlocks(samples,[x0,y0,z0],[bx,by,bz],[nx,ny,nz],blockState.envelopeRadius,BLOCK_HARD_LIMIT); }
+  try { blocks = sparseEnvelopeBlocks(samples,[x0,y0,z0],[bx,by,bz],[nx,ny,nz],envelopeRadius,BLOCK_HARD_LIMIT); }
   catch(e) { toast(e.message,'bad'); return; }
   k = blocks.length;
  } else {
@@ -7756,10 +7768,13 @@ async function generateBlocks() {
  if (genBtn) genBtn.disabled = false;
  }
  if (blocks.length === 0) { toast(t('res.pass.envelopeMaskRemovedAllBlocks'), 'bad'); return; }
+ blockState.densityUserSet=!!blockState.densityUserSet||(!_volGrade&&(!!window._resourceDensityDraftSet||dens!==blockState.density));
+ window._resourceDensityDraftSet=false;
  blockState.size = [bx,by,bz]; blockState.density = dens;
  blockState.origin = [x0, y0, z0];
  blockState.dims = [nx, ny, nz];
  blockState.blocks = blocks;
+ if(sparse){blockState.envelopeRadius=envelopeRadius;const input=document.getElementById('bmEnvelopeRadius');if(input)input.value=envelopeRadius;}
  // Sprint C: assign per-block density from density table if available
  assignBlockDensities();
  // Reset downstream
@@ -7846,7 +7861,7 @@ function applyDensityTable() {
 function resetDensityTable() {
   blockState.densityTable = null;
   blockState.densityTableActive = false;
-  blockState.blockDensities = null;
+  blockState.blockDensities = null; blockState.densityAssigned = null;
   blockState.densitySource = null;
   if (blockState.blocks) renderBlockGridSummary();
   renderDensityTableEditor();
@@ -7867,24 +7882,25 @@ function resetDensityTable() {
 // reports can name the real source instead of just "variable".
 // Uses a spatial index on composites to find the nearest sample to each block center.
 function assignBlockDensities() {
-  if (!blockState.blocks) { blockState.blockDensities = null; blockState.densitySource = null; return; }
+  blockState.densityAssigned = null;
+  if (!blockState.blocks) { blockState.blockDensities = null; blockState.densityAssigned = null; blockState.densitySource = null; return; }
   // Volumetric (kg/m³) grade: density is forced to 1 and per-domain/per-sample
   // density is deliberately not applied (see generateBlocks() and _isVolGrade
   // above) -- contained metal is volume-based, not density-based, for this
   // commodity. Do not let tier 1 silently reintroduce a density source here.
   const _volGrade = (typeof isVolumetricGrade === 'function') && isVolumetricGrade(setupState.element);
-  if (_volGrade) { blockState.blockDensities = null; blockState.densitySource = null; return; }
+  if (_volGrade) { blockState.blockDensities = null; blockState.densityAssigned = null; blockState.densitySource = null; return; }
 
   const densIdx = colIdx('density');
   const useSampleDensity = !blockState.densityTableActive && densIdx >= 0;
   const useLithoTable = blockState.densityTableActive && !!blockState.densityTable;
   if (!useSampleDensity && !useLithoTable) {
-    blockState.blockDensities = null;
+    blockState.blockDensities = null; blockState.densityAssigned = null;
     blockState.densitySource = null;
     return;
   }
   const lithoIdx = useLithoTable ? colIdx('lithology') : -1;
-  if (useLithoTable && lithoIdx < 0) { blockState.blockDensities = null; blockState.densitySource = null; return; }
+  if (useLithoTable && lithoIdx < 0) { blockState.blockDensities = null; blockState.densityAssigned = null; blockState.densitySource = null; return; }
 
   // Build sample list: a real measured density value per composite (tier 1),
   // or its lithology for the per-domain table lookup (tier 2) -- same
@@ -7903,7 +7919,7 @@ function assignBlockDensities() {
       if (litho) samples.push({ x, y, z, litho });
     }
   }
-  if (samples.length === 0) { blockState.blockDensities = null; blockState.densitySource = null; return; }
+  if (samples.length === 0) { blockState.blockDensities = null; blockState.densityAssigned = null; blockState.densitySource = null; return; }
 
   // Build spatial index for nearest-sample lookup
   const cellSize = Math.max(...blockState.size) * 2;
@@ -7919,6 +7935,7 @@ function assignBlockDensities() {
 
   const N = blockState.blocks.length;
   const densities = new Float64Array(N);
+  const assigned = new Uint8Array(N);
   const dt = blockState.densityTable;
   const defaultDens = blockState.density;
 
@@ -7941,11 +7958,12 @@ function assignBlockDensities() {
         }
       }
     }
-    densities[bi] = useSampleDensity
-      ? (best ? best.v : defaultDens)
-      : ((best && dt[best.litho] !== undefined) ? dt[best.litho] : defaultDens);
+    const value = useSampleDensity ? best?.v : best ? dt[best.litho] : null;
+    assigned[bi] = Number.isFinite(value) && value > 0 ? 1 : 0;
+    densities[bi] = assigned[bi] ? value : defaultDens;
   }
   blockState.blockDensities = densities;
+  blockState.densityAssigned = assigned;
   blockState.densitySource = useSampleDensity ? 'sample' : 'domain';
 }
 
@@ -7986,8 +8004,10 @@ function renderBlockGridSummary() {
  <div class="metric-tile"><div class="label">Block size</div><div class="value">${bx}×${by}×${bz}</div><div class="sub">m</div></div>
  <div class="metric-tile"><div class="label">Volume / block</div><div class="value">${volPerBlock.toLocaleString('en-US')}</div><div class="sub">m³</div></div>
  <div class="metric-tile"><div class="label">Total volume</div><div class="value">${(totVol / 1e6).toFixed(2)}</div><div class="sub">M m³ (raw extent)</div></div>
- <div class="metric-tile"><div class="label">Total in-situ</div><div class="value">${(totTons / 1e6).toFixed(2)}</div><div class="sub">Mt @ ${densLabel}</div></div>
+ <div class="metric-tile"><div class="label">${t(isVolumetricGrade(setupState.element)?'res.mass.generatedVolume':'res.mass.model')}</div><div class="value">${((isVolumetricGrade(setupState.element)?totVol:totTons) / 1e6).toFixed(2)}</div><div class="sub">${isVolumetricGrade(setupState.element)?'Mm³':'Mt @ '+densLabel}</div></div>
  </div>
+ <div class="hint warn" id="gridSupportBasis">${escapeHtml(resourceSupportDescription())} ${escapeHtml(t('res.mass.domain'))}</div>
+ <p class="hint" id="gridMassBasis">${escapeHtml(resourceMassBasis({blocks:total,volume:totVol,tonnes:totTons},resourceDensityAudit(blockState.blocks.map((_,i)=>i))))}</p>
  ${ratioHTML}
  <p style="margin-top:14px;font-size:13px;color:var(--fg-mute);"> Origin: (${_orgStr}). Blocks outside the ${abbr('search ellipsoid', 'searchEllipsoid')} are set to NaN during estimation.</p>
  <p style="margin-top:6px;font-size:13px;">→ Continue to <strong>Tab 6 (Estimation)</strong> to run IDW + OK + NN.</p>
@@ -9638,6 +9658,30 @@ function resourceBlockSummary(indices) {
  const summary=summarizeBlocks(indices,estimState.results.ok,vol,getBlockDensity,isVolumetricGrade(setupState.element));
  return {...summary,mt:summary.tonnes/1e6,volMm3:summary.volume/1e6,grade:summary.meanGrade == null ? 0 : summary.meanGrade};
 }
+function resourceDensityAudit(indices) {
+ if(isVolumetricGrade(setupState.element))return {source:'not-applied',assigned:0,fallback:0,unknown:0};
+ if(!blockState.blockDensities)return {source:blockState.densityUserSet?'entered-uniform':'assumed-uniform',assigned:0,fallback:indices.length,unknown:0};
+ const mask=blockState.densityAssigned;
+ if(!mask||mask.length!==blockState.blocks.length)return {source:blockState.densitySource||'variable',assigned:null,fallback:null,unknown:indices.length};
+ const assigned=indices.reduce((n,i)=>n+(mask[i]===1?1:0),0);
+ return {source:blockState.densitySource,assigned,fallback:indices.length-assigned,unknown:0};
+}
+function resourceSupportDescription() {
+ return t(blockState.envelopeMode==='xyz'?'res.mass.xyz':'res.mass.xy').replace('{radius}',String(blockState.envelopeRadius));
+}
+function resourceQuantityUnit() {return isVolumetricGrade(setupState.element)?'Mm³':'Mt';}
+function resourceQuantityLabel() {return t(isVolumetricGrade(setupState.element)?'res.mass.volumeLabel':'res.mass.tonnageLabel');}
+function resourceMassBasis(summary, audit) {
+ if(!summary)return t('res.reportInsight.noEstimate');
+ const num=v=>OrebitScreeningReport.quantity(v,3)??'n/a';
+ if(isVolumetricGrade(setupState.element))return t('res.mass.volumeBasis').replace('{volume}',num(summary.volume));
+ const equation=t('res.mass.equation').replace('{blocks}',num(summary.blocks))
+   .replace('{cell}',num(blockState.size.reduce((a,b)=>a*b,1))).replace('{volume}',num(summary.volume))
+   .replace('{density}',num(summary.volume>0?summary.tonnes/summary.volume:blockState.density)).replace('{tonnes}',num(summary.tonnes));
+ const density=t(audit.unknown?'res.mass.unknown':'res.mass.density').replace('{assigned}',num(audit.assigned))
+   .replace('{fallback}',num(audit.fallback)).replace('{default}',num(blockState.density));
+ return equation+' '+density;
+}
 function resourceClassSummary(label) {
  const indices=[];
  for(let i=0;i<classState.labels.length;i++) if(classState.labels[i]===label) indices.push(i);
@@ -9708,7 +9752,7 @@ function computeGT() {
    // line diving to zero at the right edge, which reads as a real grade.
    meanG.push(n > 0? resourceBlockSummary(coIndices).meanGrade : null);
  }
- window._gtCurveSnapshot={cutoffs,tons,meanG,blockCounts,useClass:!!useClass,min:cMin,max:cMax,steps};
+ window._gtCurveSnapshot={cutoffs,tons,meanG,blockCounts,useClass:!!useClass,min:cMin,max:cMax,steps,quantityUnit:resourceQuantityUnit()};
  // T10.6: the tonnage curve falls off fast, then rides flat near-zero for
  // most of the 1st-99th-percentile grade range the cutoff inputs default
  // to -- measured on the sample dataset, that flat tail ran cutoff 2-13
@@ -9734,13 +9778,13 @@ function computeGT() {
  </div>
  `;
  const traces = [
- { x: cutoffs, y: tons, mode: 'lines', name: 'Tonnage (Mt)', line: { color: '#008080', width: 2.5 }, yaxis: 'y' },
+ { x: cutoffs, y: tons, mode: 'lines', name: resourceQuantityLabel(), line: { color: '#008080', width: 2.5 }, yaxis: 'y' },
  { x: cutoffs, y: meanG, mode: 'lines', name: `Mean ${elementLabelFor(setupState.element)}`, line: { color: '#dc2626', width: 2.5, dash: 'dash' }, yaxis: 'y2' }
  ];
  const layout = {
 ...plotTheme(),
  xaxis: {...plotTheme().xaxis, title: `Cutoff (${elementLabelFor(setupState.element)})`, range: showingEconomic ? [cMin, econXMax] : undefined },
- yaxis: {...plotTheme().yaxis, title: 'Tonnage (Mt)', side: 'left' },
+ yaxis: {...plotTheme().yaxis, title: resourceQuantityLabel(), side: 'left' },
  yaxis2: {...plotTheme().yaxis, title: { text: 'Mean grade', standoff: 14 }, automargin: true, side: 'right', overlaying: 'y' },
  legend: { orientation: 'h', y: -0.18 }
  };
@@ -9803,7 +9847,7 @@ function renderGTSensitivityTable() {
  <div style="overflow-x:auto;">
  <table class="thin" style="font-size:12px;">
  <thead>
- <tr><th>Cutoff</th><th>≥ Cutoff (%)</th><th>Blocks</th><th>Tonnage (Mt)</th><th>Mean grade</th><th>SD</th><th>CV</th><th>Contained metal (t)</th></tr>
+ <tr><th>Cutoff</th><th>≥ Cutoff (%)</th><th>Blocks</th><th>${resourceQuantityLabel()}</th><th>Mean grade</th><th>SD</th><th>CV</th><th>Contained metal (t)</th></tr>
  </thead>
  <tbody>`;
 
@@ -9823,7 +9867,7 @@ function renderGTSensitivityTable() {
 
  html += `</tbody></table></div>
  <p style="margin-top:8px;font-size:12px;color:var(--fg-mute);">
- Contained metal = tonnage × mean grade, converted to tonnes of metal (g/t → t, % → t ×10⁴). Estimation-stage figures; require Competent Person review before any public resource statement.
+ ${t(isVolumetricGrade(setupState.element)?'res.containedVolumetric':'res.cls.containedGrav')} ${t('res.cls.estimationOnly')}
  </p>
  </div>`;
 
@@ -9860,8 +9904,17 @@ function render3D() {
  <option value="points">Points (fast)</option>
  </select>
  </label>
- </div><details class="workflow-notes"><summary>${t("res.viewer.filters")}</summary><div class="row-controls">
- <label>Cutoff min: <input type="number" id="d3Cut" placeholder="(none)" style="width:120px;"></label>
+ </div><div class="row-controls" style="margin-top:12px;">
+ <label>${t('res.viewer.gradeMin')} (${escapeHtml(_resGradeUnit(setupState.element))}): <input type="number" id="d3Cut" step="any" placeholder="${t('res.viewer.unbounded')}" style="width:120px;"></label>
+ <label>${t('res.viewer.gradeMax')} (${escapeHtml(_resGradeUnit(setupState.element))}): <input type="number" id="d3Max" step="any" placeholder="${t('res.viewer.unbounded')}" style="width:120px;"></label>
+ </div><p class="hint">${t('res.viewer.rangeHelp')}</p>
+ <p id="d3Validation" class="hint warn" role="alert" hidden></p>
+ <details class="workflow-notes"><summary>${t("res.viewer.filters")}</summary><div class="row-controls">
+ <label>${t('res.viewer.scale')}:
+ <select id="d3Scale"><option value="quantile">${t('res.viewer.quantile')}</option><option value="linear">${t('res.viewer.linear')}</option><option value="custom">${t('res.viewer.custom')}</option></select></label>
+ <label>${t('res.viewer.palette')}:
+ <select id="d3Palette"><option value="warm">${t('res.viewer.warm')}</option><option value="viridis">Viridis</option><option value="cividis">Cividis</option></select></label>
+ <label id="d3BreaksLabel" hidden>${t('res.viewer.breaks')}: <input id="d3Breaks" placeholder="0.5, 1, 1.5, 2" style="width:200px;max-width:100%;"></label>
  <label>Class filter:
  <select id="d3Class" ${!classState.labels? 'disabled' : ''}>
  <option value="all">All</option>
@@ -9876,7 +9929,7 @@ function render3D() {
         style="vertical-align:middle;width:110px;">
  <span id="d3ExagVal" style="font-variant-numeric:tabular-nums;">1×</span>
  </label>
- </div></details>
+ </div><p class="hint">${t('res.viewer.scaleHelp')}</p></details>
  <p class="hint">${t("res.viewer.hint")}</p>
  <button class="btn" onclick="render3DPlot();renderBlockSection()">${t("res.viewer.render")}</button>
  </div>
@@ -9891,7 +9944,7 @@ function render3D() {
  <div id="blockSectionNote" style="font-size:11px;color:var(--fg-mute);margin-top:6px;"></div>
  </div>
  `;
- const viewControls=['d3Mode','d3Rep','d3Cut','d3Class','d3Sub','d3Exag'];
+ const viewControls=['d3Mode','d3Rep','d3Cut','d3Max','d3Scale','d3Palette','d3Breaks','d3Class','d3Sub','d3Exag'];
  for(const id of viewControls){const el=document.getElementById(id),saved=window._blockViewSettings?.[id];
    if(saved!==undefined && (el.tagName!=='SELECT'||Array.from(el.options).some(o=>o.value===saved)))el.value=saved;
    el.addEventListener('change',()=>{window._blockViewSettings=Object.fromEntries(viewControls.map(key=>[key,document.getElementById(key).value]));render3DPlot();renderBlockSection();});
@@ -9972,31 +10025,22 @@ function renderBlockSection() {
  const host = document.getElementById('blockSectionPlot');
  if (!host || !estimState.results || !blockState.blocks) return;
  const r = estimState.results;
- const cutEl = document.getElementById('d3Cut');
- const cut = cutEl && cutEl.value !== '' ? +cutEl.value : null;
+ const context = _blockViewContext();
+ if (!context) return;
  const mode = document.getElementById('d3Mode')?.value || 'grade';
  const cf = document.getElementById('d3Class')?.value || 'all';
  const maxPts = 5000;
- const pts = [];
- for (let i = 0; i < blockState.blocks.length; i++) {
-  if (!Number.isFinite(r.ok[i])) continue;
-  if (cut !== null && r.ok[i] < cut) continue;
-  if (classState.labels && cf !== 'all') {
-   const cl = classState.labels[i];
-   if (cf === 'MI' && cl < 2) continue;
-   if (cf === 'M' && cl < 3) continue;
-  }
-  pts.push(i);
- }
+ const pts = context.indices;
  const step = Math.max(1, Math.ceil(pts.length / maxPts));
  const pick = pts.filter((_, j) => j % step === 0);
  const xs = [], ys = [], cs = [], tx = [];
  for (const i of pick) {
   const b = blockState.blocks[i];
-  xs.push(b.cx); ys.push(b.cy); cs.push(mode === 'variance' ? r.variance[i] : r.ok[i]);
+  xs.push(b.cx); ys.push(b.cy); cs.push(_blockViewValue(i, mode));
   tx.push(`X: ${b.cx.toFixed(1)}<br>Y: ${b.cy.toFixed(1)}<br>Grade: ${r.ok[i].toFixed(2)}<br>n: ${r.nNb[i]}`);
  }
- Plotly.newPlot('blockSectionPlot', [{x:xs,y:ys,type:'scatter',mode:'markers',marker:{size:7,color:cs,colorscale:mode==='variance'?'Viridis':'Hot',showscale:true},text:tx,hoverinfo:'text'}], {...plotTheme(),height:420,margin:{l:62,r:18,t:24,b:58},xaxis:{...plotTheme().xaxis,title:'Easting (m)'},yaxis:{...plotTheme().yaxis,title:'Northing (m)',scaleanchor:'x'},title:'Plan section'},{responsive:true,displayModeBar:true,scrollZoom:true,doubleClick:'reset'}).then(() => { const el=document.getElementById('blockSectionPlot'); if (el && Plotly.Plots) Plotly.Plots.resize(el); });
+ const colours = _blockViewColours(cs, context);
+ Plotly.newPlot('blockSectionPlot', [{x:xs,y:ys,type:'scatter',mode:'markers',marker:{size:7,color:colours.values,...colours.options,showscale:true},text:tx,hoverinfo:'text'}], {...plotTheme(),height:420,margin:{l:62,r:18,t:24,b:58},xaxis:{...plotTheme().xaxis,title:'Easting (m)'},yaxis:{...plotTheme().yaxis,title:'Northing (m)',scaleanchor:'x'},title:'Plan section'},{responsive:true,displayModeBar:true,scrollZoom:true,doubleClick:'reset'}).then(() => { const el=document.getElementById('blockSectionPlot'); if (el && Plotly.Plots) Plotly.Plots.resize(el); });
  // This is a full-model top-down projection (every estimated block collapsed
  // onto the XY plane), not a single elevation slice -- said explicitly so it
  // isn't mistaken for a bench plan. See T10.3.
@@ -10008,54 +10052,49 @@ function renderBlockSection() {
 // colour treatment (quantile-discrete for grade, continuous Viridis for
 // variance); this function only builds the box geometry. See T10.1.
 /* @orebit-inline: shared/geo/block-mesh.js */
-// Same quantile-class helpers Core's 3D Drillhole View uses (Core.html,
-// gradeClassBreaks/gradeDiscreteColorscale/GRADE_PALETTE_5) -- copied
-// verbatim rather than sharing a module, since Resource's build does not
-// currently inline anything from Core and introducing that coupling is out
-// of scope for a plot-quality fix. See docs/PLAN-audit-geologi-3fase.md T10.1.
-function gradeClassBreaks(values, method, n, unit) {
-  n = n || 5;
-  const v = values.filter(x => x != null && isFinite(x)).slice().sort((a, b) => a - b);
-  if (!v.length) return { classOf: () => null, breaks: [], n: 0, labels: [], min: null, max: null };
-  const min = v[0], max = v[v.length - 1];
-  const fmt = x => (Math.abs(x) < 0.01 && x !== 0) ? x.toExponential(1) : x.toFixed(x < 10 ? 3 : 1);
-  let breaks;
-  if (method === 'equal') {
-    breaks = Array.from({ length: n - 1 }, (_, i) => min + (max - min) * (i + 1) / n);
-  } else if (method === 'log') {
-    const lo = Math.log(Math.max(min, 1e-9)), hi = Math.log(Math.max(max, 1e-9));
-    breaks = Array.from({ length: n - 1 }, (_, i) => Math.exp(lo + (hi - lo) * (i + 1) / n));
-  } else {
-    // Quantile (default): break at the i/n-th order statistic, interpolated
-    // between the two nearest ranked values.
-    breaks = Array.from({ length: n - 1 }, (_, i) => {
-      const idx = ((i + 1) / n) * (v.length - 1);
-      const lo = Math.floor(idx), hi = Math.ceil(idx);
-      return v[lo] + (v[hi] - v[lo]) * (idx - lo);
-    });
+/* @orebit-inline: shared/geo/block-view.js */
+
+function _blockViewContext() {
+ const mode=document.getElementById('d3Mode')?.value||'grade';
+ const custom=document.getElementById('d3Scale')?.value==='custom';
+ const label=document.getElementById('d3BreaksLabel');if(label){label.hidden=!custom||mode!=='grade';label.style.display=label.hidden?'none':'';}
+ for(const id of ['d3Scale','d3Palette','d3Breaks']){const el=document.getElementById(id);if(el)el.disabled=mode!=='grade';}
+ const warning=document.getElementById('d3Validation');
+ try {
+  const range=blockGradeRange(document.getElementById('d3Cut')?.value,document.getElementById('d3Max')?.value);
+  const cf=document.getElementById('d3Class')?.value||'all', indices=[];
+  for(let i=0;i<blockState.blocks.length;i++) {
+   if(!blockGradeIncluded(estimState.results.ok[i],range))continue;
+   if(classState.labels&&((cf==='MI'&&classState.labels[i]<2)||(cf==='M'&&classState.labels[i]<3)))continue;
+   indices.push(i);
   }
-  // Collapse duplicate breaks -- common at the low end where many blocks
-  // share one value. A repeated break would otherwise create an empty
-  // class with no blocks and no visible colour.
-  breaks = [...new Set(breaks.map(b => +b.toPrecision(9)))].sort((a, b) => a - b);
-  const edges = [min, ...breaks, max];
-  const labels = edges.slice(0, -1).map((lo, i) => `${fmt(lo)}–${fmt(edges[i + 1])}${unit ? ' ' + unit : ''}`);
-  const classOf = x => {
-    if (x == null || !isFinite(x)) return null;
-    let c = 0;
-    while (c < breaks.length && x > breaks[c]) c++;
-    return c;
-  };
-  return { classOf, breaks, n: labels.length, labels, min, max };
+  const scale=mode==='grade'?blockGradeScale(indices.map(i=>estimState.results.ok[i]),{
+    method:document.getElementById('d3Scale')?.value||'quantile',palette:document.getElementById('d3Palette')?.value||'warm',
+    breaks:document.getElementById('d3Breaks')?.value},_resGradeUnit(setupState.element)):null;
+  if(warning){warning.hidden=indices.length>0;warning.textContent=t('res.viewer.empty');}
+  window._blockViewAppliedSettings={range,mode,scale:document.getElementById('d3Scale')?.value||'quantile',
+   palette:document.getElementById('d3Palette')?.value||'warm',boundaries:scale?.breaks||[],unit:_resGradeUnit(setupState.element),
+   confidence:cf,blocks:indices.length,purpose:'Display only; report selection is independent'};
+  return {indices,range,scale,mode};
+ } catch(error) {
+  if(warning){warning.hidden=false;warning.textContent=t(error.message==='breaks'?'res.viewer.breaksInvalid':'res.viewer.rangeInvalid');}
+  return null;
+ }
 }
-// A hard-edged (non-gradient) Plotly colourscale: each class holds its
-// colour across its whole slice instead of blending into the next.
-function gradeDiscreteColorscale(colors) {
-  const n = colors.length, scale = [];
-  colors.forEach((c, i) => { scale.push([i / n, c]); scale.push([(i + 1) / n, c]); });
-  return scale;
+function _blockViewValue(i, mode) {
+ return mode==='class'&&classState.labels?classState.labels[i]:mode==='variance'?estimState.results.variance[i]:estimState.results.ok[i];
 }
-const GRADE_PALETTE_5 = ['#fef3c7', '#fbbf24', '#f97316', '#dc2626', '#7f1d1d'];
+function _blockViewColours(values, context) {
+ if(context.mode==='class'&&classState.labels)return {values,options:{colorscale:[[0,'#94a3b8'],[.333,'#94a3b8'],[.333,'#f59e0b'],[.666,'#f59e0b'],[.666,'#16a34a'],[1,'#16a34a']],cmin:1,cmax:3,colorbar:{tickvals:[1,2,3],ticktext:['Low','Medium','High'],title:{text:t('res.viewer.confidence')}}}};
+ if(context.mode==='variance') {
+  let lo=Infinity,hi=-Infinity;for(const i of context.indices){const v=estimState.results.variance[i];if(Number.isFinite(v)){lo=Math.min(lo,v);hi=Math.max(hi,v);}}
+  return {values,options:{colorscale:'Viridis',cmin:Number.isFinite(lo)?lo:0,cmax:Number.isFinite(hi)?Math.max(hi,lo+1e-9):1,colorbar:{title:{text:'σ²'}}}};
+ }
+ const scale=context.scale;
+ return {values:values.map(scale.map),options:{colorscale:scale.colorscale,cmin:scale.cmin,cmax:scale.cmax,
+  colorbar:{title:{text:elementLabelFor(setupState.element),font:{size:11}},thickness:18,len:.65,x:1.02,
+   ...(scale.ticks?{tickvals:scale.ticks,ticktext:scale.labels}:{})}}};
+}
 // Resource already has elementLabelFor(col) returning a full "Au (g/t)"
 // style label (unlike Core, which has no equivalent) -- pull the unit back
 // out of it rather than duplicating unit-detection logic a second time.
@@ -10085,34 +10124,19 @@ function webglAvailable() {
 
 // Collect indexes of blocks passing current filters (cutoff + class filter).
 function _filteredBlockIndexes() {
-  const r = estimState.results;
-  const blocks = blockState.blocks;
-  const cutEl = document.getElementById('d3Cut');
-  const cut = cutEl && cutEl.value !== '' ? +cutEl.value : null;
-  const cf = document.getElementById('d3Class')?.value || 'all';
-  const out = [];
-  for (let i = 0; i < blocks.length; i++) {
-    if (!Number.isFinite(r.ok[i])) continue;
-    if (cut !== null && r.ok[i] < cut) continue;
-    if (classState.labels && cf !== 'all') {
-      const cl = classState.labels[i];
-      if (cf === 'MI' && cl < 2) continue;
-      if (cf === 'M' && cl < 3) continue;
-    }
-    out.push(i);
-  }
-  return out;
+  return _blockViewContext()?.indices || [];
 }
 
 // Render one 2D section slice (SVG scatter — works without WebGL).
 // kind: 'plan' (XY top-down) | 'cross' (XZ @ fixed Northing) | 'long' (YZ @ fixed Easting)
-function _render2DSection(hostId, kind, sliceLo, sliceHi, title) {
+function _render2DSection(hostId, kind, sliceLo, sliceHi, title, context=_blockViewContext()) {
   const el = document.getElementById(hostId);
   if (!el) return;
   const r = estimState.results;
   const blocks = blockState.blocks;
   const mode = document.getElementById('d3Mode')?.value || 'grade';
-  const idx = _filteredBlockIndexes();
+  if(!context)return;
+  const idx = context.indices;
   const xs = [], ys = [], cs = [], tx = [];
   for (const i of idx) {
     const b = blocks[i];
@@ -10125,7 +10149,7 @@ function _render2DSection(hostId, kind, sliceLo, sliceHi, title) {
     } else {
       xs.push(b.cx); ys.push(b.cy);
     }
-    cs.push(mode === 'variance' ? r.variance[i] : r.ok[i]);
+    cs.push(_blockViewValue(i, mode));
     tx.push(`E: ${b.cx.toFixed(0)}<br>N: ${b.cy.toFixed(0)}<br>Z: ${b.cz.toFixed(1)}<br>Grade: ${r.ok[i].toFixed(2)}<br>n: ${r.nNb[i]}`);
   }
   const maxPts = 4000;
@@ -10134,10 +10158,10 @@ function _render2DSection(hostId, kind, sliceLo, sliceHi, title) {
   for (let j = 0; j < xs.length; j += step) { px.push(xs[j]); py.push(ys[j]); pc.push(cs[j]); pt.push(tx[j]); }
   const xTitle = kind === 'long' ? 'Northing (m)' : 'Easting (m)';
   const yTitle = kind === 'plan' ? 'Northing (m)' : 'Elevation (m)';
+  const colours=_blockViewColours(pc,context);
   Plotly.newPlot(hostId, [{
     x: px, y: py, type: 'scatter', mode: 'markers',
-    marker: { size: 6, color: pc, colorscale: mode === 'variance' ? 'Viridis' : 'Hot', showscale: true,
-              colorbar: { title: { text: mode === 'variance' ? 'σ²' : elementLabelFor(setupState.element), font: { size: 11 } }, thickness: 16, len: 0.6 } },
+    marker: { size: 6, color: colours.values, ...colours.options, showscale: true },
     text: pt, hoverinfo: 'text'
   }], {
     ...plotTheme(), height: 340, margin: { l: 58, r: 16, t: 32, b: 46 },
@@ -10148,7 +10172,8 @@ function _render2DSection(hostId, kind, sliceLo, sliceHi, title) {
 }
 
 // Fallback when WebGL gl3d is unavailable: professional notice + 2D plan & sections.
-function renderBlockModelFallback() {
+function renderBlockModelFallback(context=_blockViewContext()) {
+  if(!context)return;
   const d3 = document.getElementById('d3Plot');
   if (!d3) return;
   const blocks = blockState.blocks;
@@ -10162,7 +10187,7 @@ function renderBlockModelFallback() {
   const slabCross = Math.max(1, yr / 5);
   const slabLong = Math.max(1, xr / 5);
   const pct = (lo, hi, p) => lo + (hi - lo) * p;
-  const nBlocks = _filteredBlockIndexes().length;
+  const nBlocks = context.indices.length;
 
   d3.innerHTML = `
     <div class="card" style="border:1px solid var(--accent);background:linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);margin-bottom:14px;padding:14px;">
@@ -10180,45 +10205,45 @@ function renderBlockModelFallback() {
     </div>
     <div id="fbPlan" style="min-height:380px;"></div>
     <div style="font-size:13px;font-weight:600;color:var(--fg-mute);margin:16px 0 6px 0;">Cross-sections (N·S) — looking west</div>
-    <div class="fb-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;">
+    <div class="fb-grid" style="display:grid;grid-template-columns:minmax(0,1fr);gap:14px;">
       <div id="fbCross1"></div><div id="fbCross2"></div><div id="fbCross3"></div>
     </div>
     <div style="font-size:13px;font-weight:600;color:var(--fg-mute);margin:16px 0 6px 0;">Long-sections (E·W) — looking north</div>
-    <div class="fb-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;">
+    <div class="fb-grid" style="display:grid;grid-template-columns:minmax(0,1fr);gap:14px;">
       <div id="fbLong1"></div><div id="fbLong2"></div><div id="fbLong3"></div>
     </div>`;
 
-  _render2DSection('fbPlan', 'plan', 0, 0, `Plan view (top-down) · ${nBlocks.toLocaleString('en-US')} blocks`);
+  _render2DSection('fbPlan', 'plan', 0, 0, `Plan view (top-down) · ${nBlocks.toLocaleString('en-US')} blocks`,context);
   const ns = [pct(y0, y1, 0.25), pct(y0, y1, 0.50), pct(y0, y1, 0.75)];
-  _render2DSection('fbCross1', 'cross', ns[0] - slabCross, ns[0] + slabCross, `Cross-section @ N ${ns[0].toFixed(0)} m`);
-  _render2DSection('fbCross2', 'cross', ns[1] - slabCross, ns[1] + slabCross, `Cross-section @ N ${ns[1].toFixed(0)} m`);
-  _render2DSection('fbCross3', 'cross', ns[2] - slabCross, ns[2] + slabCross, `Cross-section @ N ${ns[2].toFixed(0)} m`);
+  _render2DSection('fbCross1', 'cross', ns[0] - slabCross, ns[0] + slabCross, `Cross-section @ N ${ns[0].toFixed(0)} m`,context);
+  _render2DSection('fbCross2', 'cross', ns[1] - slabCross, ns[1] + slabCross, `Cross-section @ N ${ns[1].toFixed(0)} m`,context);
+  _render2DSection('fbCross3', 'cross', ns[2] - slabCross, ns[2] + slabCross, `Cross-section @ N ${ns[2].toFixed(0)} m`,context);
   const es = [pct(x0, x1, 0.25), pct(x0, x1, 0.50), pct(x0, x1, 0.75)];
-  _render2DSection('fbLong1', 'long', es[0] - slabLong, es[0] + slabLong, `Long-section @ E ${es[0].toFixed(0)} m`);
-  _render2DSection('fbLong2', 'long', es[1] - slabLong, es[1] + slabLong, `Long-section @ E ${es[1].toFixed(0)} m`);
-  _render2DSection('fbLong3', 'long', es[2] - slabLong, es[2] + slabLong, `Long-section @ E ${es[2].toFixed(0)} m`);
+  _render2DSection('fbLong1', 'long', es[0] - slabLong, es[0] + slabLong, `Long-section @ E ${es[0].toFixed(0)} m`,context);
+  _render2DSection('fbLong2', 'long', es[1] - slabLong, es[1] + slabLong, `Long-section @ E ${es[1].toFixed(0)} m`,context);
+  _render2DSection('fbLong3', 'long', es[2] - slabLong, es[2] + slabLong, `Long-section @ E ${es[2].toFixed(0)} m`,context);
 }
 
 function render3DPlot() {
  const r = estimState.results;
  const blocks = blockState.blocks;
  const mode = document.getElementById('d3Mode').value;
- const cutVal = +document.getElementById('d3Cut').value;
- const useCut =!isNaN(cutVal) && document.getElementById('d3Cut').value!== '';
+ const context=_blockViewContext();if(!context)return;
+ if(!context.indices.length){Plotly.newPlot('d3Plot',[],{...plotTheme(),height:420,title:t('res.viewer.empty')},{responsive:true});_print3DExagNote(0,0,r.estimated,1);return;}
  const classFilter = document.getElementById('d3Class').value;
  const subN = Math.max(1, Math.min(50000, Math.floor(+document.getElementById('d3Sub').value)||2000));
  const userExag = parseFloat(document.getElementById('d3Exag')?.value || '1') || 1;
 
  // WebGL guard (2026-08-05): if hardware WebGL is unavailable, don't let Plotly
  // render a broken "WebGL is not supported" message — show the 2D fallback instead.
- if (!webglAvailable()) { renderBlockModelFallback(); return; }
+ if (!webglAvailable()) { renderBlockModelFallback(context); return; }
 
  // Categorical legend mode: split into 3 traces (high/medium/low confidence + Outside hidden).
  if (mode === 'class' && classState.labels && document.getElementById('d3Rep').value === 'points') {
  const buckets = { 3: [], 2: [], 1: [] }; // M, I, Inf
  for (let i = 0; i < blocks.length; i++) {
  if (!Number.isFinite(r.ok[i])) continue;
- if (useCut && r.ok[i] < cutVal) continue;
+ if (!blockGradeIncluded(r.ok[i],context.range)) continue;
  const cl = classState.labels[i];
  if (classFilter === 'MI' && cl < 2) continue;
  if (classFilter === 'M' && cl < 3) continue;
@@ -10273,7 +10298,7 @@ function render3DPlot() {
  const xs = [], ys = [], zs = [], cs = [], texts = [];
  for (let i = 0; i < blocks.length; i++) {
  if (!Number.isFinite(r.ok[i])) continue;
- if (useCut && r.ok[i] < cutVal) continue;
+ if (!blockGradeIncluded(r.ok[i],context.range)) continue;
  if (classFilter!== 'all' && classState.labels) {
  const cl = classState.labels[i];
  if (classFilter === 'MI' && cl < 2) continue;
@@ -10303,26 +10328,8 @@ function render3DPlot() {
  let colorCs = plotCs, colorOpts;
  const surfaceView=document.getElementById('d3Rep')?.value==='surface';
  if(surfaceView){plotXs=xs;plotYs=ys;plotZs=zs;plotCs=cs;plotTx=texts;subStep=1;colorCs=plotCs;}
- if (mode === 'class' && classState.labels) {
-   colorOpts={colorscale:[[0,'#94a3b8'],[0.333,'#94a3b8'],[0.333,'#f59e0b'],[0.666,'#f59e0b'],[0.666,'#16a34a'],[1,'#16a34a']],cmin:1,cmax:3,colorbar:{tickvals:[1,2,3],ticktext:['Low','Medium','High'],title:{text:t('res.viewer.confidence')}}};
- } else if (mode === 'variance') {
-   colorOpts = { colorscale: 'Viridis', cmin: undefined, cmax: undefined,
-     colorbar: { title: { text: 'σ²', font: { size: 11 } }, thickness: 18, len: 0.65, x: 1.02 } };
- } else {
-   const unit = _resGradeUnit(setupState.element);
-   const cls = gradeClassBreaks(cs, 'quantile', GRADE_PALETTE_5.length, unit);
-   const nClasses = Math.max(cls.n, 1);
-   colorCs = plotCs.map(v => { const c = cls.classOf(v); return c == null ? 0 : c; });
-   colorOpts = {
-     colorscale: gradeDiscreteColorscale(GRADE_PALETTE_5.slice(0, nClasses)),
-     cmin: 0, cmax: Math.max(nClasses - 1, 1e-6),
-     colorbar: {
-       title: { text: elementLabelFor(setupState.element), font: { size: 11 } },
-       thickness: 18, len: 0.65, x: 1.02,
-       tickvals: cls.labels.map((_, i) => i), ticktext: cls.labels,
-     },
-   };
- }
+ const colours=_blockViewColours(plotCs,context);
+ colorCs=colours.values; colorOpts=colours.options;
 
  const rep = document.getElementById('d3Rep')?.value || 'surface';
  if (rep === 'solid' || rep === 'surface') {
@@ -10409,7 +10416,8 @@ function _blockFilterDesc() {
   const cutEl = document.getElementById('d3Cut');
   const cut = cutEl && cutEl.value !== '' ? +cutEl.value : null;
   const classFilter = document.getElementById('d3Class')?.value || 'all';
-  const cutoffDesc = cut !== null ? cut.toFixed(2) : 'none';
+  const upper=document.getElementById('d3Max')?.value;
+  const cutoffDesc = (cut !== null ? '≥ '+blockGradeNumber(cut) : 'none') + (upper ? ' · ≤ '+blockGradeNumber(Number(upper)) : '');
   const classDesc = classFilter === 'MI' ? 'high+medium confidence' : (classFilter === 'M' ? 'high confidence' : 'all');
   return { cutoffDesc, classDesc };
 }
@@ -10621,7 +10629,7 @@ function renderClassResults() {
  <p style="font-size:13px;background:rgba(0,128,128,0.06);padding:8px 12px;border-radius:6px;margin-bottom:8px;">${verdictLine}</p>
  <p style="font-size:12.5px;color:var(--fg-mute);margin-bottom:12px;">${reachLine}${lowReachWarn? '<br>' + lowReachWarn : ''}</p>
  <table class="thin">
- <tr><th>${window.__t('res.cls.thClass')}</th><th>${window.__t('res.cls.thBlocks')}</th><th>${window.__t('res.cls.thPctEst')}</th><th>${window.__t('res.cls.thTonnage')}</th><th>${window.__t('res.cls.thMean')} ${escapeHtml(elLab)}</th><th>${window.__t('res.cls.thContained')}</th></tr>
+ <tr><th>${window.__t('res.cls.thClass')}</th><th>${window.__t('res.cls.thBlocks')}</th><th>${window.__t('res.cls.thPctEst')}</th><th>${resourceQuantityLabel()}</th><th>${window.__t('res.cls.thMean')} ${escapeHtml(elLab)}</th><th>${window.__t('res.cls.thContained')}</th></tr>
  <tr><td><span class="class-badge class-measured">${window.__t('res.cls.measured')}</span></td>
  <td>${counts[3].toLocaleString('en-US')}</td>
  <td>${pctOf(counts[3], totalLabeled)}%</td>
@@ -10643,7 +10651,7 @@ function renderClassResults() {
  <td>${resourceClassSummary(1).grade.toFixed(2)}</td>
  <td>${containedMetalFmt(tons(classIdxs[1]), resourceClassSummary(1).grade, setupState.element, volMm3(classIdxs[1]))}</td>
  </tr>
- <tr><td colspan="6" style="font-size:11.5px;color:var(--fg-mute);background:rgba(0,0,0,0.02);">${window.__t('res.cls.totalResource')} <strong>${(tons(classIdxs[3]) + tons(classIdxs[2]) + tons(classIdxs[1])).toFixed(2)} Mt</strong> ${window.__t('res.cls.acrossEstimated').replace('{n}', totalLabeled.toLocaleString('en-US'))} ${window.__t('res.cls.blocksUnestimated').replace('{n}', counts[0].toLocaleString('en-US'))} (${window.__t('res.outsideSearchReach')}).${classState.cutoff != null ? ' ' + window.__t('res.cutoffApplied').replace('{cut}', `<strong>${classState.cutoff} ${escapeHtml(gradeUnitFor(setupState.element))}</strong>`) : ' ' + window.__t('res.noCutoffApplied')}</td></tr>
+ <tr><td colspan="6" style="font-size:11.5px;color:var(--fg-mute);background:rgba(0,0,0,0.02);">${window.__t('res.cls.totalResource')} <strong>${(tons(classIdxs[3]) + tons(classIdxs[2]) + tons(classIdxs[1])).toFixed(2)} ${resourceQuantityUnit()}</strong> ${window.__t('res.cls.acrossEstimated').replace('{n}', totalLabeled.toLocaleString('en-US'))} ${window.__t('res.cls.blocksUnestimated').replace('{n}', counts[0].toLocaleString('en-US'))} (${window.__t('res.outsideSearchReach')}).${classState.cutoff != null ? ' ' + window.__t('res.cutoffApplied').replace('{cut}', `<strong>${classState.cutoff} ${escapeHtml(gradeUnitFor(setupState.element))}</strong>`) : ' ' + window.__t('res.noCutoffApplied')}</td></tr>
  </table>
  <p style="margin-top:10px;font-size:12.5px;color:var(--fg-mute);">${_isVol ? window.__t('res.containedVolumetric') : window.__t('res.cls.containedGrav')} ${window.__t('res.cls.estimationOnly')}</p>
  </div>
@@ -10793,14 +10801,14 @@ ${t('res.renderKCMIReport.classificationSinclairBlackwell2002Jorc')}
 • ${t('res.renderKCMIReport.inferred')}: ${t('res.renderKCMIReport.estimatedBlocksDoNotMeet')}
 
 ${t('res.renderKCMIReport.resourceSummary')}
-• ${t('res.renderKCMIReport.measured')}: ${tons(classIdxs[3]).toFixed(2)} Mt @ ${resourceClassSummary(3).grade.toFixed(2)} ${escapeHtml(elLab)}
-• ${t('res.renderKCMIReport.indicated')}: ${tons(classIdxs[2]).toFixed(2)} Mt @ ${resourceClassSummary(2).grade.toFixed(2)} ${escapeHtml(elLab)}
-• ${t('res.renderKCMIReport.inferred')}: ${tons(classIdxs[1]).toFixed(2)} Mt @ ${resourceClassSummary(1).grade.toFixed(2)} ${escapeHtml(elLab)}
-• ${t('res.renderKCMIReport.totalMeasuredIndicated')}: ${tons([...classIdxs[3], ...classIdxs[2]]).toFixed(2)} Mt
-• ${t('res.renderKCMIReport.totalMIInferred')}: ${tons([...classIdxs[3], ...classIdxs[2], ...classIdxs[1]]).toFixed(2)} Mt
+• ${t('res.renderKCMIReport.measured')}: ${tons(classIdxs[3]).toFixed(2)} ${resourceQuantityUnit()} @ ${resourceClassSummary(3).grade.toFixed(2)} ${escapeHtml(elLab)}
+• ${t('res.renderKCMIReport.indicated')}: ${tons(classIdxs[2]).toFixed(2)} ${resourceQuantityUnit()} @ ${resourceClassSummary(2).grade.toFixed(2)} ${escapeHtml(elLab)}
+• ${t('res.renderKCMIReport.inferred')}: ${tons(classIdxs[1]).toFixed(2)} ${resourceQuantityUnit()} @ ${resourceClassSummary(1).grade.toFixed(2)} ${escapeHtml(elLab)}
+• ${t('res.renderKCMIReport.totalMeasuredIndicated')}: ${tons([...classIdxs[3], ...classIdxs[2]]).toFixed(2)} ${resourceQuantityUnit()}
+• ${t('res.renderKCMIReport.totalMIInferred')}: ${tons([...classIdxs[3], ...classIdxs[2], ...classIdxs[1]]).toFixed(2)} ${resourceQuantityUnit()}
 
 ${t('res.renderKCMIReport.cutOffSensitivityOkEstimated')}
-${cutoffResults.map(c => `• Cut-off ${fmtNum(c.co)}: ${c.blocks.toLocaleString('en-US')} ${t('res.renderKCMIReport.blocks')}, ${c.tons.toFixed(2)} Mt, ${t('res.renderKCMIReport.mean')} ${c.meanG.toFixed(2)}`).join('\n')}
+${cutoffResults.map(c => `• Cut-off ${fmtNum(c.co)}: ${c.blocks.toLocaleString('en-US')} ${t('res.renderKCMIReport.blocks')}, ${c.tons.toFixed(2)} ${resourceQuantityUnit()}, ${t('res.renderKCMIReport.mean')} ${c.meanG.toFixed(2)}`).join('\n')}
 
 ${t('res.renderKCMIReport.bulkDensity')}
 • ${densSummary}
@@ -10828,7 +10836,7 @@ ${t('res.renderKCMIReport.commercialJorcKcmiReportingCross')}
  <div class="card">
  <h3>${t('res.renderKCMIReport.resourceStatement2')}</h3>
  <table class="thin">
- <tr><th>${t('res.renderKCMIReport.class')}</th><th>${t('res.renderKCMIReport.tonnageMt')}</th><th>${t('res.renderKCMIReport.mean2')} ${escapeHtml(elLab)}</th><th>${t('res.renderKCMIReport.containedMetal')}</th></tr>
+ <tr><th>${t('res.renderKCMIReport.class')}</th><th>${resourceQuantityLabel()}</th><th>${t('res.renderKCMIReport.mean2')} ${escapeHtml(elLab)}</th><th>${t('res.renderKCMIReport.containedMetal')}</th></tr>
  <tr><td><span class="class-badge class-measured">${t('res.renderKCMIReport.measured')}</span></td>
  <td>${tons(classIdxs[3]).toFixed(2)}</td>
  <td>${resourceClassSummary(3).grade.toFixed(2)}</td>
@@ -10872,7 +10880,7 @@ ${t('res.renderKCMIReport.commercialJorcKcmiReportingCross')}
  <h3>${t('res.cutoffSensitivity.title').replace('{elem}', escapeHtml(elLab))}</h3>
  <p style="font-size:12px;color:var(--fg-mute);margin-bottom:8px;">${t('res.renderKCMIReport.tonnageVsCutOffGrade')}</p>
  <table class="thin">
- <tr><th>Cut-off</th><th>${t('res.renderKCMIReport.blocksCutOff')}</th><th>${t('res.renderKCMIReport.tonnageMt')}</th><th>${t('res.renderKCMIReport.mean2')} ${escapeHtml(elLab)}</th></tr>
+ <tr><th>Cut-off</th><th>${t('res.renderKCMIReport.blocksCutOff')}</th><th>${resourceQuantityLabel()}</th><th>${t('res.renderKCMIReport.mean2')} ${escapeHtml(elLab)}</th></tr>
  ${cutoffResults.map(c => `<tr>
  <td>${c.co.toFixed(2)}</td>
  <td>${c.blocks.toLocaleString('en-US')}</td>
@@ -11115,7 +11123,8 @@ function resourceReportSummary(cutoff, useClass) {
  for(let i=0;i<blockState.blocks.length;i++)generatedTonnes+=vol*getBlockDensity(i);
  const summary=resourceBlockSummary(selected);
  return {cutoff,useClass:!!useClass,element:setupState.element,unit:gradeUnitFor(setupState.element),
-   generated:{blocks:blockState.blocks.length,mt:generatedTonnes/1e6},estimated:resourceBlockSummary(all),selected:summary,
+   generated:{blocks:blockState.blocks.length,mt:generatedTonnes/1e6,volume:blockState.blocks.length*vol},estimated:resourceBlockSummary(all),selected:summary,
+   densityAudit:resourceDensityAudit(selected),support:resourceSupportDescription(),volumetric:isVolumetricGrade(setupState.element),
    metalTonnes:summary.meanGrade==null?null:containedMetalTonnes(summary.mt,summary.meanGrade,setupState.element,summary.volMm3)};
 }
 
@@ -11218,7 +11227,7 @@ if (!DATA) { toast(t('res.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
  const haveEstim =!!(estimState && estimState.done && estimState.results);
  const haveClass =!!(classState && classState.labels);
  const elemKey = (setupState && setupState.element) || (typeof detectActiveElements === 'function'? detectActiveElements()[0] : null) || 'au_gpt';
- const elemLab = ELEMENT_LABEL[elemKey] || elemKey;
+ const elemLab = elementLabelFor(elemKey);
  const samples = (typeof getSamples === 'function')? (function(){ try { return getSamples(); } catch(e){ return []; } })() : [];
 
  const gtControls=['gtMin','gtMax','gtSteps'].map(id=>document.getElementById(id)?.value);
@@ -11229,7 +11238,7 @@ if (!DATA) { toast(t('res.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
  try { if (haveEstim) renderEstimResults && renderEstimResults(); } catch (e) { console.warn('pre-render estim:', e); }
  try { if (haveEstim) { renderSwath && renderSwath(); computeSwath && computeSwath(); } } catch (e) { console.warn('pre-render swath:', e); }
  try { if (haveEstim) { renderGT && renderGT(); ['gtMin','gtMax','gtSteps'].forEach((id,i)=>{if(gtControls[i]!==undefined)document.getElementById(id).value=gtControls[i];}); if(gtFilter!==undefined)document.getElementById('gtClass').checked=gtFilter; computeGT && computeGT(); } } catch (e) { console.warn('pre-render gt:', e); }
- try { if (haveClass) renderClassResults && renderClassResults(); } catch (e) { console.warn('pre-render class:', e); }
+ try { if (haveClass) {if(!document.getElementById('classResults'))renderClassification();else renderClassResults();} } catch (e) { console.warn('pre-render class:', e); }
  // Render the estimated-block plan section so it can be embedded in the PDF.
  try { if (haveEstim) {
   // Render lightweight 2D plan section for PDF without initializing heavy WebGL 3D.
@@ -11475,7 +11484,7 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
  [t('res.pdfReport.blockTable.volumePerBlock'), `${volPerBlock.toLocaleString('en-US')} m³`],
  [t('res.pdfReport.blockTable.density'), blockState.blockDensities ? t('res.pdfReport.blockTable.densityVariable').replace('{n}', new Set(blockState.blockDensities).size) + (blockState.densitySource === 'sample' ? ' (per-sample)' : ' (per-domain)') : ((typeof isVolumetricGrade === 'function' && isVolumetricGrade(setupState.element)) ? 'n/a (volumetric grade)' : `${blockState.density} t/m³` + (blockState.densityUserSet ? '' : ' ' + t('res.pdfReport.blockTable.densityAssumed')))],
  ['Total volume', `${(totVol / 1e6).toFixed(2)} M m³`],
- [t('res.reportInsight.generatedMass'), `${(totTons / 1e6).toFixed(2)} Mt`],
+ [t(isVolumetricGrade(setupState.element)?'res.mass.generatedVolume':'res.reportInsight.generatedMass'), `${(totTons / 1e6).toFixed(2)} ${resourceQuantityUnit()}`],
  ['Origin', blockState.origin ? blockState.origin.map(x => x.toFixed(1)).join(', ') : 'n/a'],
  ];
  rows.forEach(([k, v]) => { pdf.text(k, 15, yPos); pdf.text(String(v), 80, yPos); yPos += 6; });
@@ -11705,7 +11714,7 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
  pdf.setFontSize(10);
  let yPos = 35;
  pdf.setFont('helvetica', 'bold');
- pdf.text((window.__t('res.maybeShowSupportMoment.class')), 15, yPos); pdf.text((window.__t('res.maybeShowSupportMoment.blocks2')), 50, yPos); pdf.text((window.__t('res.maybeShowSupportMoment.tonnageMt')), 85, yPos); pdf.text(`${window.__t('res.maybeShowSupportMoment.mean')} ${escapeHtml(elemLab)}`, 130, yPos); pdf.text((window.__t('res.maybeShowSupportMoment.contained')), 170, yPos);
+ pdf.text((window.__t('res.maybeShowSupportMoment.class')), 15, yPos); pdf.text((window.__t('res.maybeShowSupportMoment.blocks2')), 50, yPos); pdf.text((resourceQuantityLabel()), 85, yPos); pdf.text(`${window.__t('res.maybeShowSupportMoment.mean')} ${escapeHtml(elemLab)}`, 130, yPos); pdf.text((window.__t('res.maybeShowSupportMoment.contained')), 170, yPos);
  yPos += 4; pdf.line(15, yPos, W - 15, yPos); yPos += 5;
  pdf.setFont('helvetica', 'normal');
  const classRows = [
@@ -11764,7 +11773,7 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
  pdf.setFontSize(10);
  let yPos = 35;
  pdf.setFont('helvetica', 'bold');
- pdf.text('Cut-off', 15, yPos); pdf.text((t('res.maybeShowSupportMoment.blocks2')), 60, yPos); pdf.text((t('res.maybeShowSupportMoment.tonnageMt')), 100, yPos); pdf.text(`${t('res.maybeShowSupportMoment.mean')} ${escapeHtml(elemLab)}`, 145, yPos);
+ pdf.text('Cut-off', 15, yPos); pdf.text((t('res.maybeShowSupportMoment.blocks2')), 60, yPos); pdf.text((resourceQuantityLabel()), 100, yPos); pdf.text(`${t('res.maybeShowSupportMoment.mean')} ${escapeHtml(elemLab)}`, 145, yPos);
  yPos += 4; pdf.line(15, yPos, W - 15, yPos); yPos += 5;
  pdf.setFont('helvetica', 'normal');
  for (const index of rows) {
@@ -11841,7 +11850,7 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
    const [bx, by, bz] = blockState.size;
    const vol = bx * by * bz;
    const tons = (arr) => { let t = 0; for (const i of arr) t += vol * getBlockDensity(i); return t / 1e6; };
-   lines.push(`• ${t('res.maybeShowSupportMoment.classification')}: high ${tons(classIdxs[3]).toFixed(2)} Mt · medium ${tons(classIdxs[2]).toFixed(2)} Mt · low ${tons(classIdxs[1]).toFixed(2)} Mt (computational confidence, not Mineral Resource categories).`);
+   lines.push(`• ${t('res.maybeShowSupportMoment.classification')}: high ${tons(classIdxs[3]).toFixed(2)} ${resourceQuantityUnit()} · medium ${tons(classIdxs[2]).toFixed(2)} ${resourceQuantityUnit()} · low ${tons(classIdxs[1]).toFixed(2)} ${resourceQuantityUnit()} (computational confidence, not Mineral Resource categories).`);
  }
  lines.push(t('res.maybeShowSupportMoment.rpeEconomicScreeningNotCertified'));
  lines.push(t('res.maybeShowSupportMoment.handoffStatusQuickInsightOnly'));
@@ -11955,27 +11964,30 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
  const cutoffForReport=setupState.reportCutoff;
  const cutLabel=cutoffForReport==null?text('allGrades'):text('cutoff',{cutoff:String(cutoffForReport),unit:gradeUnitFor(setupState.element)});
  const selected=report?.selected;
+ const volumeGrade=isVolumetricGrade(setupState.element);
+ const massBasis=resourceMassBasis(selected,report?.densityAudit);
+ const support=resourceSupportDescription()+' '+t('res.mass.domain');
  const reportBasis=setupState.reportCutoffNote?.trim() || text(cutoffForReport==null?'noCutoffBasis':'notJustified');
  if(report)report.justification=reportBasis;
- const result=!report?text('noEstimate'):text(selected.blocks?'result':'empty',{cutoff:cutLabel,classes:scopeClass,blocks:num(selected.blocks,0),tonnes:num(selected.mt,6),grade:num(selected.meanGrade,6),unit:report.unit,metal:num(report.metalTonnes,6)});
- const bridge=report?text('bridge',{generated:num(report.generated.mt,6),cells:num(report.generated.blocks,0),estimated:num(report.estimated.mt,6),estimatedBlocks:num(report.estimated.blocks,0),selected:num(selected.mt,6),selectedBlocks:num(selected.blocks,0)}):text('noEstimate');
+ const result=!report?text('noEstimate'):text(selected.blocks?(volumeGrade?'resultVolume':'result'):'empty',{cutoff:cutLabel,classes:scopeClass,blocks:num(selected.blocks,0),tonnes:num(selected.mt,6),volume:num(selected.volMm3,6),grade:num(selected.meanGrade,6),unit:report.unit,metal:num(report.metalTonnes,6)});
+ const bridge=report?text(volumeGrade?'bridgeVolume':'bridge',{generated:num((volumeGrade?report.generated.volume/1e6:report.generated.mt),6),cells:num(report.generated.blocks,0),estimated:num(report.estimated.mt,6),estimatedBlocks:num(report.estimated.blocks,0),selected:num(selected.mt,6),selectedBlocks:num(selected.blocks,0)}):text('noEstimate');
  OrebitScreeningReport.prepend(pdf,'Resource',[
    [t('res.reportSummary.result'),result+' '+text('basis')+': '+reportBasis],
-   [t('res.reportSummary.meaning'),text('meaning')+' '+bridge],
+   [t('res.reportSummary.meaning'),massBasis+' '+bridge],
    [t('res.reportSummary.checks'),report?text('coverage',{coverage:num(report.estimated.blocks/Math.max(1,report.generated.blocks)*100,1),unestimated:num(report.generated.blocks-report.estimated.blocks,0),fallback:num(passCounts?.[2]||0,0)}):text('noEstimate')],
-   [t('res.reportSummary.scope'),text('scope',{element:elemLab,domain:setupState.domain,size:blockState.size?.join(' x ')||'n/a',density:blockState.blockDensities?'variable '+(blockState.densitySource||'by block'):num(blockState.density)+' t/m3'})],
+   [t('res.reportSummary.scope'),text('scope',{element:elemLab,domain:setupState.domain,size:blockState.size?.join(' x ')||'n/a',density:volumeGrade?t('res.mass.densityNotApplied'):blockState.blockDensities?'variable '+(blockState.densitySource||'by block'):num(blockState.density)+' t/m3'})],
    [t('res.reportSummary.next'),text('next')]
  ],{
    scope:elemLab+' | '+setupState.domain+' | '+cutLabel+' | '+scopeClass,
    metrics:[
-     {label:briefText('tonnes'),value:report?OrebitScreeningReport.quantity(selected.mt*1e6)+' t':null,detail:report?briefText('blocks',{n:selected.blocks}):''},
-     {label:briefText('grade'),value:selected?.meanGrade==null?null:OrebitScreeningReport.quantity(selected.meanGrade)+' '+report.unit,detail:briefText('weighted')},
+     {label:volumeGrade?t('res.mass.volume'):briefText('tonnes'),value:report?OrebitScreeningReport.quantity(volumeGrade?selected.volume:selected.mt*1e6)+(volumeGrade?' m³':' t'):null,detail:report?briefText('blocks',{n:selected.blocks}):''},
+     {label:briefText('grade'),value:selected?.meanGrade==null?null:OrebitScreeningReport.quantity(selected.meanGrade)+' '+report.unit,detail:volumeGrade?t('res.mass.volumeWeighted'):briefText('weighted')},
      {label:briefText('metal'),value:report?.metalTonnes==null?null:OrebitScreeningReport.quantity(report.metalTonnes)+' t',detail:briefText('inSitu')},
      {label:briefText('coverage'),value:report?OrebitScreeningReport.quantity(report.estimated.blocks/Math.max(1,report.generated.blocks)*100,1)+' %':null,detail:briefText('finite')}
    ],
-   attentionRequired:!report||!selected.blocks||report.estimated.blocks<report.generated.blocks,
-   interpretation:briefText(!report?'noEstimate':selected.blocks?'meaning':'empty'),
-   attention:haveVario&&!variogramState.model.struct1&&variogramState.model.covarianceMode!=='model-range'?briefText('legacy'):report?briefText('attention',{missing:report.generated.blocks-report.estimated.blocks,fallback:passCounts?.[2]||0}):briefText('noEstimate'),
+   attentionRequired:true,
+   interpretation:briefText(!report?'noEstimate':selected.blocks?'meaning':'empty')+' '+support,
+   attention:haveVario&&!variogramState.model.struct1&&variogramState.model.covarianceMode!=='model-range'?briefText('legacy'):report?massBasis+' '+briefText('attention',{missing:report.generated.blocks-report.estimated.blocks,fallback:passCounts?.[2]||0}):briefText('noEstimate'),
    next:briefText(report?'next':'fixNext')
  });
  OrebitScreeningReport.append(pdf,'Resource',[
@@ -11993,6 +12005,10 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
    ['Cutoff justification',reportBasis],
    ['Applied confidence cutoff',haveClass&&classState.cutoff!=null?`${classState.cutoff} ${gradeUnitFor(setupState.element)} used when assigning confidence labels`:'No classification cutoff applied'],
    ['Tonnage reconciliation',bridge],
+   ['Block volume and mass basis',massBasis],
+   ['Block viewer display',JSON.stringify(window._blockViewAppliedSettings||{purpose:'No block view rendered; report selection is independent'})],
+   ['Density assignment audit',report?JSON.stringify(report.densityAudit):'Not estimated'],
+   ['Effective unit conversion',volumeGrade?'metal_t = volume_m3 x grade_kg_m3 / 1000; rock tonnage is not determined':gradeUnitFor(setupState.element)==='%'?'metal_t = rock_t x grade_percent / 100': 'metal_t = rock_t x grade_gpt_or_ppm / 1000000'],
    ['Grade-tonnage settings',haveEstim?text('curve',{min:num(window._gtCurveSnapshot.min,6),max:num(window._gtCurveSnapshot.max,6),steps:window._gtCurveSnapshot.steps,classes:scopeClass}):'Estimation not run'],
    ['Geometry limitation',blockState.envelopeMode==='xyz'?'Distance-to-samples 3D screening envelope; not a geological solid, probability shell or topographic mask':'Data-envelope screening grid; geological limits and topography require independent review'],
    ['Decision evidence needed','Verify geology, top-cut, anisotropy, density, support, cutoff, metallurgy, economics and independent estimate validation before an investment or reporting decision']
@@ -12288,7 +12304,7 @@ function buildQuickInsight(ctx) {
  </div>
  </div>
  <div class="qi-row">
- <div><strong>Tonase:</strong> M=${resourceClassSummary(3).mt.toFixed(2)} Mt · I=${resourceClassSummary(2).mt.toFixed(2)} Mt · Inf=${resourceClassSummary(1).mt.toFixed(2)} Mt @ density ${dens.toFixed(2)} t/m³</div>
+ <div><strong>Tonase:</strong> M=${resourceClassSummary(3).mt.toFixed(2)} ${resourceQuantityUnit()} · I=${resourceClassSummary(2).mt.toFixed(2)} ${resourceQuantityUnit()} · Inf=${resourceClassSummary(1).mt.toFixed(2)} ${resourceQuantityUnit()} @ density ${dens.toFixed(2)} t/m³</div>
  </div>
  <div class="qi-row">
  <div><strong>Mean grade ${escapeHtml(elLab)}:</strong> M=${resourceClassSummary(3).grade.toFixed(2)} · I=${resourceClassSummary(2).grade.toFixed(2)} · Inf=${resourceClassSummary(1).grade.toFixed(2)}</div>

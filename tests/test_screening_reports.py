@@ -12,9 +12,13 @@ def check(value,msg):
  assert value,msg;passed+=1;print('PASS:',msg,flush=True)
 def tab(p,n):p.evaluate(f'showTab({n})')
 def openpage(b,phase):
- p=b.new_page(accept_downloads=True,viewport={'width':1400,'height':1000});p.errors=[];p.on('pageerror',lambda e:p.errors.append(str(e)));p.goto(f'http://127.0.0.1:{server.server_port}/{phase}.html');p.wait_for_function('() => typeof safeRender==="function"');check(not p.errors,phase+' loads without script errors');p.evaluate('''() => {document.querySelectorAll('.lang-picker-overlay,#tourOverlay').forEach(e=>e.remove());window.__reportRenderFailures=[];const old=window.safeRender;window.safeRender=function(label,fn){return old(label,()=>{try{return fn()}catch(e){window.__reportRenderFailures.push(String(label)+':'+e.message);throw e}})};safeRender('report-canary',()=>{throw Error('canary')});}''');check(p.evaluate("window.__reportRenderFailures.some(v=>v.includes('canary'))"),phase+' swallowed-render detector canary');p.evaluate('window.__reportRenderFailures=[]');return p
+ p=b.new_page(accept_downloads=True,viewport={'width':1400,'height':1000});p.console_errors=[];p.on('console',lambda message:p.console_errors.append(message.text) if message.type=='error' else None);p.errors=[];p.on('pageerror',lambda e:p.errors.append(str(e)));p.goto(f'http://127.0.0.1:{server.server_port}/{phase}.html');p.wait_for_function('() => typeof safeRender==="function"');check(not p.errors,phase+' loads without script errors');p.evaluate('''() => {document.querySelectorAll('.lang-picker-overlay,#tourOverlay').forEach(e=>e.remove());window.__reportRenderFailures=[];const old=window.safeRender;window.safeRender=function(label,fn){return old(label,()=>{try{return fn()}catch(e){window.__reportRenderFailures.push(String(label)+':'+e.message);throw e}})};safeRender('report-canary',()=>{throw Error('canary')});}''');check(p.evaluate("window.__reportRenderFailures.some(v=>v.includes('canary'))"),phase+' swallowed-render detector canary');p.evaluate('window.__reportRenderFailures=[]');return p
 def dl(p,sel,path):
- with p.expect_download(timeout=90000) as d:p.locator(sel).click()
+ try:
+  with p.expect_download(timeout=90000) as d:p.locator(sel).click()
+ except Exception:
+  print('DOWNLOAD FAILURE:', p.console_errors, p.locator('body').inner_text()[-3000:], flush=True)
+  raise
  d.value.save_as(str(path));return path.read_bytes()
 def pdf_layout(data,module):
  with fitz.open(stream=data,filetype='pdf') as doc:
@@ -45,7 +49,7 @@ def pdf(p,sel,path,module):
  with fitz.open(stream=data,filetype='pdf') as doc:
   cover=doc[0].get_text()
   check(brief['detailStartPage']==2 and len(brief['metrics'])==4 and all(metric['label'] in cover for metric in brief['metrics']),module+' native PDF uses the exact current executive model')
-  check(all(metric['value'] is None or str(metric['value']) in cover for metric in brief['metrics']),module+' all four current values reach the native PDF without rounding them into another result')
+  check(all(metric['value'] is None or str(metric['value']).replace('³','3').replace('²','2') in cover for metric in brief['metrics']),module+' all four current values reach the native PDF without rounding them into another result')
   if os.environ.get('OREBIT_REPORT_PROOF_DIR') and path.name in ('core.pdf','assay.pdf','resource-cutoff.pdf'):
    proof=Path(os.environ['OREBIT_REPORT_PROOF_DIR']);proof.mkdir(parents=True,exist_ok=True);(proof/path.name).write_bytes(data);doc[0].get_pixmap(matrix=fitz.Matrix(1.5,1.5)).save(str(proof/(path.stem+'-cover.png')))
  return dict(p.evaluate('() => window._reportAuditSnapshot.rows'))
@@ -70,6 +74,26 @@ try:
   tab(r,10);r.evaluate('classState.labels[0]=1');r.locator('#gtClass').check();r.locator('button[onclick="computeGT()"]').click();tab(r,12);r.locator('#reportCutoff').fill('');filtered=pdf(r,'#pdf-export-btn',tmp/'confidence-only.pdf','Resource confidence filter');filtered_state=r.evaluate('window._resourceReportSnapshot');check(filtered_state['cutoff'] is None and filtered_state['useClass'] and filtered_state['selected']['mt']==3e-6 and 'High + medium confidence only' in filtered['Headline result'],'PDF records the current confidence filter with an explicit no-cutoff selection');r.evaluate("applyLanguage('id')");indonesian=dl(r,'#pdf-export-btn',tmp/'resource-id.pdf');check(b'Ringkasan hasil dan langkah berikutnya' in indonesian and r.evaluate('window._resourceReportSnapshot.selected.mt')==3e-6,'Indonesian readable summary retains the same selected tonnes');pdf_layout(indonesian,'Resource Indonesian');r.evaluate("applyLanguage('en')");
   tab(r,10);png=dl(r,'#gtPlotExportPngBtn',tmp/'resource.png');check(png.startswith(b'\x89PNG\r\n\x1a\n'),'Resource native PNG download works')
   r.evaluate("_recordExport('PNG','oversize-canary',{filename:'large.png',mime:'image/png',content:'data:image/png;base64,'+'A'.repeat(2000001)})");check(r.evaluate("JSON.parse(localStorage.getItem('orebitExportHistory'))[0].content===''"),'Oversized PNG is never stored as a corrupt partial download')
+  # A real Assay unit assignment must survive its native master export and Resource import.
+  unitpage=openpage(b,'Resource')
+  for unit,expected in [('g/t',.00001),('ppm',.00001),('%',.1),('kg/m³',.004)]:
+   tab(a,2);a.evaluate('renderColumnMapping(DATA.detectedMap||{})')
+   a.locator('#p2GradeCol').select_option('au_gpt');a.locator('#p2GradeUnit').select_option(unit);a.locator('#p2ApplyMapping').click()
+   with a.expect_download(timeout=60000) as download:a.evaluate('exportMasterForEstimation()')
+   master=tmp/('unit-'+str(unit).replace('/','-')+'.csv');download.value.save_as(str(master))
+   tab(unitpage,2);unitpage.locator('#fileInput').set_input_files(str(master));unitpage.wait_for_function('(unit)=>setupState.gradeUnit===unit',arg=unit)
+   check(unitpage.evaluate('gradeUnitFor(setupState.element)')==unit,'Actual Assay assigned '+unit+' survives native CSV export and Resource import')
+   unitpage.evaluate("""() => {blockState.size=[1,1,1];blockState.blocks=[{cx:0,cy:0,cz:0},{cx:1,cy:0,cz:0}];blockState.dims=[2,1,1];blockState.origin=[0,0,0];blockState.density=isVolumetricGrade(setupState.element)?1:3;blockState.blockDensities=isVolumetricGrade(setupState.element)?null:new Float64Array([1,3]);blockState.densityAssigned=new Uint8Array([1,0]);blockState.densitySource='sample';variogramState.model={type:'spherical',nugget:.1,sill:1,range:40,covarianceMode:'model-range'};variogramState.experimental={lags:[5,10],gammas:[.2,.4],pairs:[5,5]};estimState={done:true,results:{ok:[1,3],idw:[1,3],nn:[1,3],variance:[.1,.1],nNb:[6,6],nearestDist:[1,1],passNumber:[1,1],estimated:2}};classState.labels=null;}""")
+   actual=unitpage.evaluate('resourceReportSummary(null,false)')
+   check(abs(actual['metalTonnes']-expected)<1e-14,'Independent two-cell metal conversion is correct for '+unit+' including density/volume weighting')
+   if unit=='kg/m³':
+    tab(unitpage,10);unitpage.locator('#gtClass').uncheck();unitpage.locator('button[onclick="computeGT()"]').click()
+    check(unitpage.evaluate("gtPlot.layout.yaxis.title.text==='Volume (Mm³)'"),'Volumetric cutoff curve is labelled as volume, not nominal rock mass')
+    tab(unitpage,12);vol_report=pdf(unitpage,'#pdf-export-btn',tmp/'resource-volumetric.pdf','Resource volumetric')
+    check(unitpage.evaluate('window._reportBriefSnapshot.metrics[0].value')=='2 m³','Volumetric PDF executive card reports actual selected volume rather than fake tonnes')
+    check('Rock tonnage is not determined' in vol_report['Headline result'],'Volumetric PDF explicitly distinguishes volume and contained metal from rock tonnage')
+    check('not determined' in vol_report['Effective unit conversion'],'PDF records the actual volumetric formula')
+  unitpage.close();tab(a,13)
   tab(r,12);r.evaluate('estimState.done=false');pdf(r,'#pdf-export-btn',tmp/'not-estimated.pdf','Resource not estimated')
   check(r.evaluate('window._reportBriefSnapshot.metrics.every(m=>m.value===null)'),"Unrun Resource estimate shows unavailable metrics, never invented zero tonnes/grade/metal/coverage")
   for pg,name,selector in [(c,'Core','#pdf-export-btn'),(a,'Assay','#btnReportPdf')]:

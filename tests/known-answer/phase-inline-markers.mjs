@@ -86,6 +86,7 @@ const BASELINE = {
   Resource: [
     'shared/data/dataset.js',
     'shared/geostat/resource-estimation.js',
+    'shared/geo/block-view.js',
     'shared/i18n/index.js',
     'shared/io/columns.js',
     'shared/io/import.js',

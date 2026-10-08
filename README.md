@@ -123,7 +123,12 @@ see the [privacy policy](https://geosuite.orebit.id/privacy/).
 PDFs open with four result cards, scope, inspection priorities and a next step.
 Detailed results, effective parameters, plots and review records follow from
 page 2. Resource headline tonnage uses the selected cutoff and confidence
-filter; generated grid tonnage is reported separately.
+filter; generated grid mass and density fallback are reported separately. Grades
+in kg/m³ report volume and contained metal, without inventing rock tonnage.
+New projects use an editable 3D sample-proximity envelope; a domain label selects
+samples but does not create a geological solid or topographic boundary.
+The block viewer accepts inclusive minimum/maximum grades and quantile, linear
+or custom colour classes. Its filters never change estimates or report cutoff.
 They do not certify a Mineral Resource or reserve. Geology, density, QA/QC,
 metallurgy, economics and Competent Person review remain necessary for reporting
 under KCMI/JORC. Read [methodology and limitations](docs/METHODOLOGY.md).

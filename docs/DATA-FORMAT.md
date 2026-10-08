@@ -47,3 +47,21 @@ Core exports a master CSV whose `# orebit-schema=` header lines carry each colum
 role and unit, so Assay and Resource read it without re-mapping. Assay exports
 composites for Resource the same way. You can also load your own composite file
 straight into Resource: it needs hole ID, X, Y, Z (mid-point) and at least one grade.
+
+## Check the assigned unit before estimation
+
+Assay's Column & Unit Assignment writes the selected unit into its master CSV.
+Resource reads that declaration and lets you inspect/change it in Setup.
+Declaring a unit interprets the existing values; it does not convert raw values.
+Changing units invalidates incompatible results and requires recomputation.
+
+| Grade unit | Contained metal in tonnes |
+| --- | --- |
+| % | rock tonnes × grade / 100 |
+| g/t or ppm | rock tonnes × grade / 1,000,000 |
+| kg/m³ | volume in m³ × grade / 1,000 |
+
+Rock tonnes = sum(cell volume × assigned density in t/m³). Mean mass grade is
+weighted by those tonnes; mean kg/m³ grade is weighted by volume. For kg/m³,
+density is not used for metal and the report shows volume rather than assuming
+rock mass. Check density fallback and geological support before reporting.

@@ -5304,12 +5304,12 @@ document.addEventListener('keydown', (e) => {
 
 /* ---------- First-run guided tour (Sprint H) ---------- */
 const TOUR_STEPS_P2 = [
-  { titleKey: 'tour.p2.s1.title', bodyKey: 'tour.p2.s1.body', target: null },
-  { titleKey: 'tour.p2.s2.title', bodyKey: 'tour.p2.s2.body', target: 'nav.tabs .tab[onclick="showTab(2)"]' },
-  { titleKey: 'tour.p2.s3.title', bodyKey: 'tour.p2.s3.body', target: 'nav.tabs .tab[onclick="showTab(8)"]' },
-  { titleKey: 'tour.p2.s4.title', bodyKey: 'tour.p2.s4.body', target: 'nav.tabs .tab[onclick="showTab(9)"]' },
-  { titleKey: 'tour.p2.s5.title', bodyKey: 'tour.p2.s5.body', target: 'nav.tabs .tab[onclick="showTab(11)"]' },
-  { titleKey: 'tour.p2.s6.title', bodyKey: 'tour.p2.s6.body', target: '.orebit-help-bubble' }
+  {"titleKey": "tour.p2.s1.title", "bodyKey": "tour.p2.s1.body", "tab": 1, "target": "#tab1 .workflow-actions"},
+  {"titleKey": "tour.p2.s2.title", "bodyKey": "tour.p2.s2.body", "tab": 2, "target": "#tab2 .workflow-actions"},
+  {"titleKey": "tour.p2.s3.title", "bodyKey": "tour.p2.s3.body", "tab": 3, "target": "#tab3 .workflow-insight"},
+  {"titleKey": "tour.p2.s4.title", "bodyKey": "tour.p2.s4.body", "tab": 8, "target": "#tab8 .workflow-related"},
+  {"titleKey": "tour.p2.s5.title", "bodyKey": "tour.p2.s5.body", "tab": 11, "target": "#tab11 .workflow-insight"},
+  {"titleKey": "tour.p2.s6.title", "bodyKey": "tour.p2.s6.body", "tab": 13, "target": "#tab13 .workflow-actions"}
 ];
 window.TOUR_STEPS = TOUR_STEPS_P2;
 window.__tourPhaseId = 'p2';

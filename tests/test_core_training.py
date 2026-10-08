@@ -1,4 +1,4 @@
-"""Download teaching ZIPs, upload all CSVs, inspect failures, restore real source.
+"""Validate the imperfect default, download source CSVs and repair by real import.
 
 This tests the UI/import boundary, not just a synthetic object written into STATE.
 """
@@ -40,135 +40,64 @@ try:
         page.evaluate(
             "document.querySelectorAll('.lang-picker-overlay,#tourOverlay').forEach(e=>e.remove());applyLanguage('en');window.orebitConfirm=async()=>true;"
         )
-        page.evaluate("showTab(2)")
-        page.locator("#coreTrainingExercises>summary").click()
-        original = page.evaluate(
-            "JSON.stringify({collar:STATE.collar,survey:STATE.survey,assay:STATE.assay,geology:STATE.geology})"
-        )
         pristine = page.evaluate("JSON.stringify(SAMPLE_DATA)")
-        data = __import__("json").loads(pristine)
-        paths = []
-        for name in ("collar", "survey", "assay", "geology"):
-            path = Path(tmp) / (name + ".csv")
-            rows = data[name]
-            with path.open("w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=list(rows[0]))
-                writer.writeheader()
-                writer.writerows(rows)
-            paths.append(str(path))
-        for kind in ("missing-survey", "overlapping-assay", "missing-collar-and-geology"):
-            page.evaluate("showTab(2)")
-            page.locator("#coreTrainingExercises").evaluate("(e)=>e.open=true")
-            with page.expect_download() as download:
-                page.locator(
-                    f'#coreTrainingExercises button[onclick*="{kind}"]'
-                ).click()
-            dest = Path(tmp) / (kind + ".zip")
-            download.value.save_as(dest)
-            current = page.evaluate(
-                "JSON.stringify({collar:STATE.collar,survey:STATE.survey,assay:STATE.assay,geology:STATE.geology})"
-            )
-            check(
-                current == original,
-                "Downloading " + kind + " leaves project data unchanged",
-            )
-            exercise = Path(tmp) / kind
-            exercise.mkdir()
-            with zipfile.ZipFile(dest) as z:
-                check(
-                    set(z.namelist())
-                    == {
-                        "collar.csv",
-                        "survey.csv",
-                        "assay.csv",
-                        "geology.csv",
-                        "README.txt",
-                    },
-                    kind + " ZIP has four importable tables and instructions",
-                )
-                z.extractall(exercise)
-            page.locator("#fileInput").set_input_files(
-                [
-                    str(exercise / (n + ".csv"))
-                    for n in ("collar", "survey", "assay", "geology")
-                ]
-            )
-            expected_survey = len(data["survey"]) - (
-                2 if kind == "missing-survey" else 0
-            )
-            expected_collar = len(data["collar"]) - (1 if kind == "missing-collar-and-geology" else 0)
-            expected_assay = len(data["assay"]) + (
-                1 if kind == "overlapping-assay" else 0
-            )
-            page.wait_for_function(
-                f"() => STATE.survey.length==={expected_survey} && STATE.assay.length==={expected_assay} && STATE.collar.length==={expected_collar}"
-            )
-            page.evaluate("showTab(7)")
-            page.wait_for_timeout(300)
-            checks = page.evaluate("_p1RunValidationChecks()")
-            if kind == "missing-survey":
-                check(
-                    not page.evaluate("coreGeometryReady()"),
-                    "Missing measured survey blocks geometry readiness",
-                )
-                check(
-                    any(
-                        c["value"] == "1 hole" and "without measured" in c["name"]
-                        for c in checks
-                    ),
-                    "Validation identifies the missing survey hole",
-                )
-            elif kind == "missing-collar-and-geology":
-                check(any(c["severity"] == "fail" and "not in Collar" in c["name"] for c in checks), "Missing collar and mismatched identifiers expose orphan records")
-                check(any("without Geology" in c["name"] and c["value"] == "1 hole" for c in checks), "Missing geology log is reported separately")
-            else:
-                check(
-                    any(
-                        c["name"] == "Assay interval overlaps"
-                        and c["severity"] == "fail"
-                        and c["value"] == "1 overlap"
-                        for c in checks
-                    ),
-                    "Validation flags the deliberately overlapping interval as a failure",
-                )
-            check(
-                page.evaluate(
-                    "STATE.assay.every(r=>Number.isFinite(Number(r.density)) && r.density!==null)"
-                ),
-                "CSV import retains measured density alongside grades",
-            )
-            check(
-                page.evaluate("STATE.assay.some(r=>r.ni_pct===null)"),
-                "Missing grades stay missing after exercise upload",
-            )
-            page.evaluate("showTab(2)")
-            page.locator("#fileInput").set_input_files(paths)
-            page.wait_for_function(
-                f'() => STATE.assay.length==={len(data["assay"])} && STATE.survey.length==={len(data["survey"])} && STATE.collar.length==={len(data["collar"])}'
-            )
-            check(
-                page.evaluate("coreGeometryReady()"),
-                "Restoring original measured source makes geometry ready",
-            )
-            check(
-                not any(
-                    c["severity"] == "fail"
-                    for c in page.evaluate("_p1RunValidationChecks()")
-                ),
-                "Corrected re-upload clears validation failures",
-            )
-            original = page.evaluate(
-                "JSON.stringify({collar:STATE.collar,survey:STATE.survey,assay:STATE.assay,geology:STATE.geology})"
-            )
-        page.evaluate("showTab(2)")
-        page.evaluate("STATE.desurvey={canary:true};STATE.merged=[{canary:true}]")
-        page.locator('#coreTryValidation').click()
-        page.wait_for_function("() => STATE.collar.length===349 && document.querySelector('#tab7').classList.contains('active')")
-        check(page.evaluate("STATE.desurvey===null && STATE.merged===null"), 'One-click exercise uses CSV import and clears prior derived calculations')
-        check(any(c['severity']=='fail' and 'not in Collar' in c['name'] for c in page.evaluate('_p1RunValidationChecks()')), 'One-click exercise exposes actual linkage failures')
-        page.evaluate('showTab(2)')
+        original = page.evaluate("JSON.stringify({collar:STATE.collar,survey:STATE.survey,assay:STATE.assay,geology:STATE.geology})")
+        page.locator('#tab1 [data-action-role="next"]').click()
+        check(page.locator('#tab7').evaluate('e=>e.classList.contains("active")'), 'Default review goes directly to Validation')
+        checks = page.evaluate('_p1RunValidationChecks()')
+        check(sum(c['severity']=='fail' for c in checks)>=4, 'Default sample exposes real linkage failures without a mode or button')
+        check(any('without Geology' in c['name'] and c['value']=='1 hole' for c in checks), 'Default validation distinguishes a missing geology log')
+        check(page.locator('#tab7 [data-workflow-next]').is_disabled(), 'Unresolved default failures block Desurvey')
+        check(page.locator('#coreTryValidation,#coreTrainingExercises,.workflow-training').count()==0, 'No separate imperfect-data mode remains')
+        with page.expect_download() as download:
+            page.locator('#tab7 .workflow-actions').get_by_role('button',name='Download source CSVs',exact=True).click()
+        dest=Path(tmp)/'source.zip';download.value.save_as(dest)
+        with zipfile.ZipFile(dest) as z:
+            check(set(z.namelist())=={'collar.csv','survey.csv','assay.csv','geology.csv','README.txt'},'Source ZIP contains four importable originals with provenance')
+            z.extractall(tmp)
+        check(original==page.evaluate("JSON.stringify({collar:STATE.collar,survey:STATE.survey,assay:STATE.assay,geology:STATE.geology})"), 'Downloading sources never repairs or changes project data')
+        data=page.evaluate('SAMPLE_SOURCE_DATA')
+        paths=[str(Path(tmp)/(name+'.csv')) for name in ('collar','survey','assay','geology')]
+        page.evaluate('STATE.desurvey={canary:true};STATE.merged=[{canary:true}];showTab(2)')
         page.locator('#fileInput').set_input_files(paths)
-        page.wait_for_function("() => STATE.collar.length===350")
+        page.wait_for_function('() => STATE.collar.length===350 && STATE.assay.length===8896')
+        check(page.evaluate('STATE.desurvey===null && STATE.merged===null'), 'Source CSV corrections invalidate all prior derived geometry')
+        page.evaluate('showTab(7)')
+        check(not any(c['severity']=='fail' for c in page.evaluate('_p1RunValidationChecks()')), 'Original source CSV upload resolves every blocking linkage fault')
+        check(page.locator('#tab7 [data-workflow-next]').is_enabled(), 'Corrected default can continue to Desurvey')
+        # Additional malformed input fixtures use the ordinary file upload. There
+        # is no special runtime exercise owner and no silent synthetic repair.
+        for kind in ('missing-survey','overlapping-assay','missing-collar-and-geology'):
+            import copy
+            tables=copy.deepcopy({n:data[n] for n in ('collar','survey','assay','geology')})
+            hole,missing_log,mismatch=[r['hole_id'] for r in tables['collar'][:3]]
+            if kind=='missing-survey':tables['survey']=[r for r in tables['survey'] if r['hole_id']!=hole]
+            elif kind=='overlapping-assay':
+                first=next(r for r in tables['assay'] if r['hole_id']==hole)
+                tables['assay'].append({**first,'from_m':(first['from_m']+first['to_m'])/2})
+            else:
+                tables['collar']=[r for r in tables['collar'] if r['hole_id']!=hole]
+                tables['geology']=[r for r in tables['geology'] if r['hole_id']!=missing_log]
+                next(r for r in tables['geology'] if r['hole_id']==mismatch)['hole_id']+='-MISMATCH'
+            bad=Path(tmp)/kind;bad.mkdir()
+            for name,rows in tables.items():
+                with (bad/(name+'.csv')).open('w',newline='') as f:
+                    writer=csv.DictWriter(f,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
+            page.evaluate('showTab(2)')
+            page.locator('#fileInput').set_input_files([str(bad/(n+'.csv')) for n in tables])
+            page.wait_for_function('(counts)=>Object.entries(counts).every(([n,k])=>STATE[n].length===k)',arg={n:len(rows) for n,rows in tables.items()})
+            page.evaluate('showTab(7)');checks=page.evaluate('_p1RunValidationChecks()')
+            if kind=='missing-survey':
+                check(not page.evaluate('coreGeometryReady()'),'Missing measured survey blocks geometry readiness')
+                check(any(c['value']=='1 hole' and 'without measured' in c['name'] for c in checks),'Validation identifies missing measured survey')
+            elif kind=='overlapping-assay':
+                check(any(c['name']=='Assay interval overlaps' and c['severity']=='fail' and c['value']=='1 overlap' for c in checks),'Validation rejects double-counted interval support')
+            else:check(sum(c['severity']=='fail' for c in checks)>=4,'CSV linkage faults reproduce the default sample failures')
+            check(page.evaluate('STATE.assay.some(r=>r.ni_pct===null)'), 'Missing grades stay missing through real CSV upload')
+            check(page.evaluate('STATE.assay.every(r=>r.density!==null&&Number.isFinite(r.density))'), 'Measured density survives CSV upload')
+            page.evaluate('showTab(2)');page.locator('#fileInput').set_input_files(paths)
+            page.wait_for_function('() => STATE.collar.length===350 && STATE.survey.length===700 && STATE.assay.length===8896')
+            check(page.evaluate('coreGeometryReady()') and not any(c['severity']=='fail' for c in page.evaluate('_p1RunValidationChecks()')), 'Reimporting originals clears '+kind+' through normal import')
         # An arbitrary header uses the existing manual mapping UI, not a new alias.
         density_csv = (
             Path(paths[2]).read_text().replace("density,", "Measured rock value,", 1)
@@ -225,7 +154,7 @@ try:
         )
         check(
             page.evaluate("JSON.stringify(SAMPLE_DATA)") == pristine,
-            "Exercise downloads and uploads never mutate the embedded source",
+            "Source downloads and CSV corrections never mutate the default reference",
         )
         browser.close()
 finally:

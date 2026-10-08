@@ -12167,36 +12167,12 @@ document.addEventListener('keydown', (e) => {
 
 /* ---------- First-run guided tour (Sprint H) ---------- */
 const TOUR_STEPS_P3 = [
- {
- title: ' Welcome to Orebit Resource!',
- body: 'Working workflow — variography, block model, kriging (IDW/OK/NN), preliminary confidence screening, grade-tonnage, then generate a KCMI-style handoff report. Not a certified public report.',
- target: null
- },
- {
- title: ' Upload master CSV from P2',
- body: 'Upload the master-estimation-1m.csv from Assay. Schema header is auto-detected; column aliases (comp_from, *_comp) auto-normalized.',
-  target: 'nav.tabs .tab[onclick="showTab(2)"]'
- },
- {
-  title: 'Tab Setup',
- body: 'Select the target element (Au/Cu/Pb/Zn/etc.). Density, cutoff, and base parameters are configured here. Defaults follow industry standard — adjust if needed.',
-  target: 'nav.tabs .tab[onclick="showTab(3)"]'
- },
- {
-  title: 'Variography tab',
- body: 'Auto-fit weighted grid-search (~100ms, 40K trials) — spherical/exponential/gaussian model + nugget + sill + range. Pre-flight density check warns if data is too sparse.',
-  target: 'nav.tabs .tab[onclick="showTab(4)"]'
- },
- {
-  title: ' Estimation tab',
- body: 'Run IDW + OK + NN simultaneouslyeously (300× perf, 358k blocks in 2 seconds). Quick Insight in Classification gives a summary of M/I/Inf tonnage + reach %.',
-  target: 'nav.tabs .tab[onclick="showTab(6)"]'
- },
- {
-  title: ' Tab Laporan + Industry Export',
- body: 'Generate PDF report (8 pages) + export to commercial-software-compatible CSV / GSLIB. Hand off to senior reviewers without manual conversion.',
-  target: 'nav.tabs .tab[onclick="showTab(12)"]'
- }
+  {"titleKey": "tour.p3.s1.title", "bodyKey": "tour.p3.s1.body", "tab": 1, "target": "#tab1 .workflow-actions"},
+  {"titleKey": "tour.p3.s2.title", "bodyKey": "tour.p3.s2.body", "tab": 2, "target": "#tab2 .workflow-actions"},
+  {"titleKey": "tour.p3.s3.title", "bodyKey": "tour.p3.s3.body", "tab": 3, "target": "#tab3 .workflow-insight"},
+  {"titleKey": "tour.p3.s4.title", "bodyKey": "tour.p3.s4.body", "tab": 4, "target": "#tab4 .workflow-actions"},
+  {"titleKey": "tour.p3.s5.title", "bodyKey": "tour.p3.s5.body", "tab": 5, "target": "#tab5 .workflow-actions"},
+  {"titleKey": "tour.p3.s6.title", "bodyKey": "tour.p3.s6.body", "tab": 12, "target": "#tab12 .workflow-actions"}
 ];
 window.TOUR_STEPS = TOUR_STEPS_P3;
 /* ---------- Demo banner (sticky, dismissable) ---------- */

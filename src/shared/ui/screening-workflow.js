@@ -87,12 +87,6 @@
     row.hidden=!tools.length&&!origin;
     return row;
   }
-  function training(panel,n) {
-    if(resource()||![1,7].includes(n)||(!STATE.usingSample&&!isCoreTrainingExample()))return;
-    const box=node('aside',null,'workflow-training');box.append(node('strong',tr('trainingTitle')),node('p',tr(isCoreTrainingExample()?'trainingFixHint':'trainingHint')));
-    box.append(button(tr(isCoreTrainingExample()?'trainingRestore':'trainingTry'),'inspect',()=>isCoreTrainingExample()?restoreTrainingExample():loadTrainingExercise('missing-collar-and-geology')));
-    panel.querySelector('.assay-workflow-card').after(box);
-  }
   function dashboard(panel, insight, purpose, first) {
     panel.querySelector('.assay-workflow-card')?.remove();
     const card=node('section',null,'assay-workflow-card workflow-dashboard');card.setAttribute('aria-label',tr('guide'));
@@ -168,8 +162,8 @@
   function refresh(n=current) {
     if(!initialized)return;restoreActions();current=n;navigation(n);const panel=document.getElementById('tab'+n);if(!panel)return;
     if(!resource()&&n===7)validation=_p1RunValidationChecks();
-    panel.querySelector('.assay-workflow-card')?.remove();panel.querySelector('.workflow-training')?.remove();
-    if(n===1){const loaded=resource()?!!DATA?.rows?.length:!!STATE.collar.length&&!!STATE.assay.length;dashboard(panel,facts(n),tr('purpose1'),loaded?(resource()?3:7):2);training(panel,n);return;}
+    panel.querySelector('.assay-workflow-card')?.remove();
+    if(n===1){const loaded=resource()?!!DATA?.rows?.length:!!STATE.collar.length&&!!STATE.assay.length;dashboard(panel,facts(n),tr('purpose1'),loaded?(resource()?3:7):2);return;}
     const card=node('section',null,'assay-workflow-card');card.setAttribute('aria-label',tr('guide'));
     const stages=main(),i=stages.indexOf(n);card.append(node('p',i<0?tr('optional'):tr('step',{n:i+1,total:stages.length}),'workflow-eyebrow'),node('h2',label(n)));
     const purpose=window.__t('flow.purpose'+n);if(purpose!=='flow.purpose'+n)card.append(node('p',purpose,'workflow-purpose'));
@@ -192,11 +186,12 @@
       const handoff=button(window.__t('handoff.toAssay'),'next',()=>OrebitHandoff.send('Assay',exportMasterCSV));
       handoff.disabled=!STATE.merged?.length||!coreGeometryReady()||_p1RunValidationChecks().some(row=>row.severity==='fail');actions.append(handoff);
     }
+    if(!resource()&&[2,7].includes(n)&&STATE.usingSample)actions.append(button(window.__t('core.source.download'),'inspect',downloadSampleSources));
     actions.append(button(tr('custom'),'custom',()=>customize(panel)));card.append(actions);
     const key=node('div',null,'action-key');for(const role of ['next','inspect','custom','advanced'])key.append(node('span',window.__t('ux.action.'+role),'action-key-'+role));card.append(key);
     if(target){const gate=node('p',null,'workflow-gate');gate.setAttribute('role','status');card.append(gate);}
     card.append(related(resource()?'resource':'core',n,navigate));
-    panel.prepend(card);training(panel,n);sync();
+    panel.prepend(card);sync();
   }
   function boot() {
     if(assay()||typeof showTab!=='function'||initialized)return;initialized=true;

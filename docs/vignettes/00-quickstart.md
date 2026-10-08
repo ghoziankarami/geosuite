@@ -1,15 +1,16 @@
 # Mulai cepat: GeoSuite dalam 10 menit
 
-**Periksa build terlebih dahulu.** Panduan ini ditujukan untuk build dengan sampel **laterit nikel sintetis, 350 lubang bor**. Source publik, rilis Windows, dan modul web dapat berasal dari revisi berbeda. Build lama memakai sampel Thalanga; instalasi saja tidak mengganti sampelnya. Periksa nama sampel dan jumlah lubang sebelum mengikuti angka di bawah. Jika build Anda menampilkan Thalanga, gunakan [tutorial Thalanga](01-thalanga-vms.md) yang mengimpor data publiknya sendiri, atau tunggu publikasi build produk yang sesuai.
+**Periksa build terlebih dahulu.** Panduan ini ditujukan untuk build dengan sampel **laterit nikel sintetis**. Source publik, rilis Windows, dan modul web dapat berasal dari revisi berbeda. Build lama memakai sampel Thalanga; instalasi saja tidak mengganti sampelnya. Periksa nama sampel dan jumlah lubang sebelum mengikuti angka di bawah. Jika build Anda menampilkan Thalanga, gunakan [tutorial Thalanga](01-thalanga-vms.md) yang mengimpor data publiknya sendiri, atau tunggu publikasi build produk yang sesuai.
 
-Setiap modul terbuka dengan dataset contoh yang sudah dimuat: 350 lubang bor pada endapan laterit nikel (sintetis, CC BY 4.0, kredit Orebit.id). Anda tidak perlu akun atau file sendiri. Ikuti empat langkah di bawah dan Anda sudah melihat seluruh alur kerja, dari data bor mentah sampai kurva grade-tonnage.
+Setiap modul memuat data laterit nikel sintetis (CC BY 4.0, kredit Orebit.id). Core dimulai dengan 349 collar dan contoh masalah linkage; Assay/Resource memuat interval LIM/SAP yang siap dari sumber lengkap 350 lubang. Tidak ada mode latihan terpisah. Contoh Assay/Resource bisa ditinjau mandiri; perbaiki sumber Core dahulu untuk mengikuti alur ketiga modul.
 
 ## 1. Core: periksa data bor (3 menit)
 
 [Buka Orebit Core](https://geosuite.orebit.id/try/Core.html). Gunakan **Mulai review** untuk alur utama. **Advanced tools** di sidebar membuka tabel dan penampang secara langsung.
 
-- **Dashboard** menampilkan 350 lubang bor, 8.896 interval assay, dan 8,8 km pengeboran, dengan overburden, limonit, saprolit, dan batuan dasar tercatat; 10 lubang berhenti sebelum batuan dasar.
+- **Dashboard** menampilkan 349 collar (satu collar sumber hilang), 8.896 interval assay, dan 8,8 km pengeboran, dengan overburden, limonit, saprolit, dan batuan dasar tercatat; 10 lubang berhenti sebelum batuan dasar.
 - **Validasi** memeriksa setiap lubang: survey yang hilang, interval tumpang tindih atau berlubang, lubang tanpa log geologi, dan mendaftar setiap temuan beserta alasannya.
+- **Perbaiki contoh:** pada Validasi, periksa rekaman tanpa collar, log geologi hilang dan ID tidak cocok. Klik **Unduh CSV sumber**, ekstrak, impor keempat tabel asli dan validasi ulang. Ini memperbaiki sumber sintetis; jangan gunakan sumber contoh untuk memperbaiki data lapangan. Desurvey tetap terkunci sampai kesalahan penghambat selesai.
 - **Section** menggambar lubang bor pada penampang dengan kadar dan litologi.
 - **Desurvey** mengubah collar dan survey menjadi lintasan lubang 3D.
 
@@ -19,7 +20,7 @@ Setiap modul terbuka dengan dataset contoh yang sudah dimuat: 350 lubang bor pad
 
 - **Stats** memberi rata-rata, CV, dan persentil per unsur dan per domain.
 - **Top-Cut** menunjukkan di mana ekor atas distribusi mulai pecah dan menyarankan batas atasnya.
-- **Domain** membandingkan domain saprolit dan limonit serta membangun domain grade shell dari cut-off.
+- **Domain** membandingkan domain saprolit dan limonit serta mengelompokkan sampel berdasarkan cutoff; belum membentuk solid geologi.
 
 ## 3. Resource: estimasi dan laporan (4 menit)
 
@@ -50,3 +51,5 @@ Pengguna Windows juga bisa mengunduh tiga executable terpisah melalui [GitHub Re
 Ekspor proyek sebagai cadangan. Penyimpanan browser mengikuti profil browser dan origin situs; menghapusnya dapat menghilangkan pekerjaan tersimpan. Simpan file ekspor di luar browser. Untuk build dari source, ikuti [panduan instalasi repo](https://github.com/ghoziankarami/geosuite#build-from-source).
 
 Pola bor mengikuti prospek berarah jurus dengan batas tidak beraturan dan infill terpilih. Core menyimpan semua horizon mentah; contoh awal Assay/Resource memilih LIM/SAP. Density terukur tetap dibawa saat handoff. Untuk latihan validasi, gunakan [kasus survey hilang dan assay overlap](https://github.com/ghoziankarami/orebit-datasets/tree/main/exercises); periksa dan perbaiki sebelum export.
+
+Di ponsel/tablet, **Alur** membuka tahap utama dan **Lanjutan** membuka tools opsional. Tour mengikuti kontrol tahap yang sama di setiap modul.

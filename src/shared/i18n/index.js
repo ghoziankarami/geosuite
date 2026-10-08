@@ -130,10 +130,6 @@ function applyLanguage(lang) {
   try {
     if (typeof _collapseTabHelpOnTouch === 'function') _collapseTabHelpOnTouch();
   } catch (e) {}
-  // Re-render dynamic tour text if a tour is currently visible
-  if (window._tourActive && typeof _tourRender === 'function') {
-    try { _tourRender(); } catch (e) {}
-  }
   // Phase-specific post-switch work (e.g. Assay's glossary/data-provenance
   // refresh) that this shared function has no business knowing the names of.
   if (Array.isArray(window.__i18nPostApplyHooks)) {
@@ -171,4 +167,10 @@ function applyLanguage(lang) {
       console.warn('[i18n re-render]', e && e.message);
     }
   }
+  window.__updateMobileNavigation?.();
+  // Re-render dynamic tour text if a tour is currently visible
+  if (window._tourActive && typeof _tourRender === 'function') {
+    try { _tourRender(); } catch (e) {}
+  }
+
 }

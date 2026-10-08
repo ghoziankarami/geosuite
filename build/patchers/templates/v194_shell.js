@@ -38,7 +38,7 @@
   const STRINGS = {{
     en: {{
       'nav.tour': 'Tour', 'nav.glossary': 'Glossary', 'nav.help': 'Help',
-      'nav.theme': 'Theme', 'nav.lang': 'Language', 'nav.visit': 'orebit.id ↗', 'nav.analysis': 'Analysis', 'nav.results': 'Results',
+      'nav.theme': 'Theme', 'nav.lang': 'Language', 'nav.visit': 'orebit.id ↗', 'nav.analysis': 'Analysis', 'nav.results': 'Results', 'nav.workflow': 'Steps', 'nav.advanced': 'Advanced', 'nav.close': 'Close navigation',
       'phase.label': LABEL_EN,
       'help.tour': 'Take the tour', 'help.glossary': 'Browse glossary',
       'help.help': 'Help & FAQ', 'help.theme': 'Toggle theme',
@@ -146,7 +146,7 @@
     }},
     id: {{
       'nav.tour': 'Tour', 'nav.glossary': 'Glosarium', 'nav.help': 'Bantuan',
-      'nav.theme': 'Tema', 'nav.lang': 'Bahasa', 'nav.visit': 'orebit.id ↗', 'nav.analysis': 'Analisis', 'nav.results': 'Hasil',
+      'nav.theme': 'Tema', 'nav.lang': 'Bahasa', 'nav.visit': 'orebit.id ↗', 'nav.analysis': 'Analisis', 'nav.results': 'Hasil', 'nav.workflow': 'Alur', 'nav.advanced': 'Lanjutan', 'nav.close': 'Tutup navigasi',
       'phase.label': LABEL_ID,
       'help.tour': 'Ikuti tour', 'help.glossary': 'Buka glosarium',
       'help.help': 'Bantuan & FAQ', 'help.theme': 'Ganti tema',
@@ -266,7 +266,8 @@
   let currentLang = detectDefault();
 
   function t(key) {{
-    return (STRINGS[currentLang] && STRINGS[currentLang][key]) || STRINGS.en[key] || key;
+    const lang = typeof window.__lang === 'function' ? window.__lang() : currentLang;
+    return (STRINGS[lang] && STRINGS[lang][key]) || STRINGS.en[key] || key;
   }}
 
   function applyI18n() {{
@@ -934,164 +935,95 @@
 
   /* ─── Mobile Bottom Nav ─── */
   function injectMobileNav() {{
-    // Only show on mobile
-    if (window.innerWidth > 768) return;
-    // Dynamic: read tabs from DOM — works for all 3 phases
-    var domTabs = document.querySelectorAll('nav.tabs .tab');
-    if (domTabs.length < 2) return;
-
-    // Extract tab info from DOM
-    var tabs = [];
-    domTabs.forEach(function(btn, i) {{
-      var label = btn.querySelector('span[data-i18n]');
-      var text = label ? label.textContent.trim() : btn.textContent.trim();
-      var svgEl = btn.querySelector('svg');
-      var svgPaths = '';
-      if (svgEl) {{
-        var clone = svgEl.cloneNode(true);
-        svgPaths = clone.innerHTML;
-      }}
-      tabs.push({{ idx: i + 1, label: text, icon: svgPaths || '<circle cx="12" cy="12" r="3"/>' }});
-    }});
-
-    // Group tabs: [0]=Home, [1:mid]=Analysis, [mid:penultimate]=Results, [last]=Export
-    var last = tabs.length - 1;
-    var mid = Math.ceil(tabs.length / 2);
-    var groups = [
-      {{ key:'home', label: tabs[0].label, tabs:[tabs[0]], icon: tabs[0].icon }},
-      {{ key:'analysis', label: t('nav.analysis') || 'Analysis', tabs: tabs.slice(1, mid) }},
-      {{ key:'results', label: t('nav.results') || 'Results', tabs: tabs.slice(mid, last) }},
-      {{ key:'export', label: tabs[last].label, tabs:[tabs[last]], icon: tabs[last].icon }}
-    ];
-    function svg(d) {{ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>'; }}
-
-    // Published for the guided tour. On mobile `nav.tabs` is hidden and the
-    // tabs live behind these bottom-nav groups, so a tour step that names a
-    // tab has to be able to find the group button standing in for it.
-    window.__orebitNavGroups = groups;
-
-    // Build nav HTML
-    var nav = document.createElement('div');
-    nav.className = 'mobile-bottom-nav';
-    nav.id = 'mobileBottomNav';
-    var items = '<div class="nav-items">';
-    groups.forEach(function(g, i) {{
-      var icon = g.icon || g.tabs[0].icon;
-      items += '<button class="nav-item'+(i===0?' active':'')+'" data-group="'+g.key+'">'+svg(icon)+'<span>'+g.label+'</span></button>';
-    }});
-    // Tour entry — always reachable on mobile (welcome card may be dismissed)
-    items += '<button class="nav-item" id="mobileTourBtn" type="button">'+svg('<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>')+'<span data-i18n="nav.tour">Tour</span></button>';
-    items += '</div>';
-    nav.innerHTML = items;
-    document.body.appendChild(nav);
-
-    var tourBtn = nav.querySelector('#mobileTourBtn');
-    if (tourBtn) {{
-      tourBtn.addEventListener('click', function() {{
-        if (typeof startTour === 'function') startTour();
-        else if (typeof window.startTour === 'function') window.startTour();
-      }});
-    }}
-
-    // ── Nav drawer (replaces the old bottom-stacked .mobile-sub-tabs bar --
-    // see PLAN-uiux-desktop-mobile.md §2's mobile-nav follow-up, 2026-09-02.
-    // Opens via a hamburger button next to the logo, slides in from the left,
-    // auto-closes on selection or backdrop tap. Costs 0px until opened, and a
-    // vertical list has no "cut off mid-item" failure mode the way the old
-    // horizontal strip did. ──
+    if (document.getElementById('mobileBottomNav')) return;
+    var nav = document.createElement('nav');
+    nav.className = 'mobile-bottom-nav'; nav.id = 'mobileBottomNav';
+    nav.setAttribute('aria-label', t('nav.workflow'));
+    var drawer = document.createElement('div');
+    drawer.className = 'mobile-nav-drawer'; drawer.id = 'mobileNavDrawer';
+    drawer.setAttribute('role','dialog'); drawer.setAttribute('aria-modal','true');
+    drawer.setAttribute('aria-labelledby','mobileDrawerTitle'); drawer.inert = true;
     var backdrop = document.createElement('div');
     backdrop.className = 'mobile-nav-drawer-backdrop';
     backdrop.id = 'mobileNavDrawerBackdrop';
-    document.body.appendChild(backdrop);
-
-    var drawer = document.createElement('div');
-    drawer.className = 'mobile-nav-drawer';
-    drawer.id = 'mobileNavDrawer';
-    document.body.appendChild(drawer);
-
+    var opener = null, drawerKey = 'analysis';
+    function svg(d) {{ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">'+d+'</svg>'; }}
+    function inventory() {{
+      var tabs = Array.from(document.querySelectorAll('nav.tabs .tab')).map(function(btn,i) {{
+        return {{idx:i+1,label:btn.textContent.trim(),advanced:btn.dataset.workflowAdvanced==='true',order:Number(btn.style.order)||0,
+          icon:btn.querySelector('svg')?.innerHTML || '<circle cx="12" cy="12" r="3"/>'}};
+      }});
+      if(tabs.length<2) return [];
+      var end=tabs[tabs.length-1];
+      return [
+        {{key:'home',label:tabs[0].label,tabs:[tabs[0]]}},
+        {{key:'analysis',label:t('nav.workflow'),tabs:tabs.filter(tb=>tb.idx!==1&&tb!==end&&!tb.advanced).sort((a,b)=>a.order-b.order)}},
+        {{key:'results',label:t('nav.advanced'),tabs:tabs.filter(tb=>tb.advanced)}},
+        {{key:'export',label:end.label,tabs:[end]}}
+      ];
+    }}
     function closeDrawer() {{
-      drawer.classList.remove('show');
-      backdrop.classList.remove('show');
+      if(!drawer.classList.contains('show')) return;
+      drawer.classList.remove('show'); backdrop.classList.remove('show'); drawer.inert=true;
+      if(typeof releaseFocus==='function') releaseFocus();
+      opener?.setAttribute('aria-expanded','false');
+      if(opener?.isConnected) opener.focus({{preventScroll:true}});
     }}
-    function openDrawer() {{
-      drawer.classList.add('show');
-      backdrop.classList.add('show');
-    }}
-    backdrop.addEventListener('click', closeDrawer);
-    document.addEventListener('keydown', function(e) {{
-      if (e.key === 'Escape') closeDrawer();
-    }});
-
-    var hamburger = document.querySelector('.mobile-nav-hamburger');
-    if (!hamburger) {{
-      var brand = document.querySelector('header.orebit-header .brand');
-      if (brand) {{
-        hamburger = document.createElement('button');
-        hamburger.type = 'button';
-        hamburger.className = 'mobile-nav-hamburger';
-        hamburger.setAttribute('aria-label', 'Open navigation');
-        hamburger.innerHTML = svg('<line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>');
-        brand.appendChild(hamburger);
-      }}
-    }}
-    if (hamburger) hamburger.addEventListener('click', openDrawer);
-
-    function renderDrawer(g) {{
-      drawer.innerHTML = '<div class="drawer-title"></div>' + g.tabs.map(function(tb) {{
-        return '<button class="sub-tab" data-tab="'+tb.idx+'">'+svg(tb.icon)+'<span>'+tb.label+'</span></button>';
-      }}).join('');
-      drawer.querySelector('.drawer-title').textContent = g.label;
-      drawer.querySelectorAll('.sub-tab').forEach(function(st) {{
-        st.addEventListener('click', function() {{
-          drawer.querySelectorAll('.sub-tab').forEach(function(s) {{ s.classList.remove('active'); }});
-          st.classList.add('active');
-          var tabIdx = parseInt(st.getAttribute('data-tab'));
-          if (typeof showTab === 'function') showTab(tabIdx);
-          closeDrawer();
-        }});
+    function renderDrawer(key) {{
+      var group=inventory().find(g=>g.key===key); if(!group) return;
+      drawerKey=key; drawer.replaceChildren();
+      var heading=document.createElement('div'); heading.className='drawer-heading';
+      var title=document.createElement('strong');title.id='mobileDrawerTitle';title.textContent=group.label;
+      var close=document.createElement('button');close.type='button';close.className='drawer-close';close.textContent='×';close.setAttribute('aria-label',t('nav.close'));close.onclick=closeDrawer;
+      heading.append(title,close);drawer.append(heading);
+      var active=Array.from(document.querySelectorAll('nav.tabs .tab')).findIndex(tb=>tb.classList.contains('active'))+1;
+      group.tabs.forEach(function(tb) {{
+        var button=document.createElement('button');button.type='button';button.className='sub-tab';button.dataset.tab=String(tb.idx);
+        button.innerHTML=svg(tb.icon);var text=document.createElement('span');text.textContent=tb.label;button.append(text);
+        button.classList.toggle('active',tb.idx===active);if(tb.idx===active)button.setAttribute('aria-current','page');
+        button.onclick=function(){{closeDrawer();if(typeof showTab==='function')showTab(tb.idx);window.scrollTo(0,0);}};
+        drawer.append(button);
       }});
-      if (drawer.firstElementChild && drawer.children[1]) drawer.children[1].classList.add('active');
     }}
-
-    // Re-render group labels on language toggle (labels are captured at init
-    // from the then-current language; without this they go stale on toggle).
-    window.__updateMobileNavLabels = function() {{
-      var domTabs = document.querySelectorAll('nav.tabs .tab');
-      nav.querySelectorAll('.nav-item[data-group]').forEach(function(btn) {{
-        var g = btn.getAttribute('data-group');
-        var span = btn.querySelector('span');
-        if (!span) return;
-        if (g === 'analysis') span.textContent = t('nav.analysis') || 'Analysis';
-        else if (g === 'results') span.textContent = t('nav.results') || 'Results';
-        else if (g === 'home') span.textContent = t('tab.dashboard') || 'Dashboard';
-        else {{
-          var idx = domTabs.length - 1;
-          var lbl = domTabs[idx] && (domTabs[idx].querySelector('span[data-i18n]')
-                   || (domTabs[idx].hasAttribute('data-i18n') ? domTabs[idx] : null));
-          if (lbl) span.textContent = lbl.textContent.trim();
-        }}
+    function openDrawer(key,button) {{
+      renderDrawer(key); opener=button; opener?.setAttribute('aria-expanded','true');
+      drawer.inert=false; drawer.classList.add('show');backdrop.classList.add('show');
+      if(typeof trapFocus==='function')trapFocus(drawer);
+    }}
+    window.__updateMobileNavigation=function() {{
+      var groups=inventory();window.__orebitNavGroups=groups;
+      var active=Array.from(document.querySelectorAll('nav.tabs .tab')).findIndex(tb=>tb.classList.contains('active'))+1;
+      groups.forEach(function(g){{var button=nav.querySelector('[data-group="'+g.key+'"]');if(!button)return;
+        button.querySelector('span').textContent=g.label;
+        var current=g.tabs.some(tb=>tb.idx===active);button.classList.toggle('active',current);
+        if(current)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
       }});
+      nav.setAttribute('aria-label',t('nav.workflow'));
+      if(drawer.classList.contains('show')){{renderDrawer(drawerKey);if(typeof trapFocus==='function')trapFocus(drawer);}}
     }};
-
-    var navBtns = nav.querySelectorAll('.nav-item');
-    navBtns.forEach(function(btn, idx) {{
-      // Tour button has its own handler above — skip it here (no group entry)
-      if (btn.id === 'mobileTourBtn') return;
-      btn.addEventListener('click', function() {{
-        var g = groups[idx];
-        if (!g) return;
-        navBtns.forEach(function(b, i) {{ b.classList.toggle('active', i === idx); }});
-        if (g.tabs.length > 1) {{
-          if (hamburger) hamburger.classList.add('show');
-          renderDrawer(g);
-          if (typeof showTab === 'function') showTab(g.tabs[0].idx);
-        }} else {{
-          if (hamburger) hamburger.classList.remove('show');
-          closeDrawer();
-          if (typeof showTab === 'function') showTab(g.tabs[0].idx);
-        }}
-      }});
+    window.__updateMobileNavLabels=window.__updateMobileNavigation;
+    var items=document.createElement('div');items.className='nav-items';
+    inventory().forEach(function(g) {{
+      var button=document.createElement('button');button.type='button';button.className='nav-item';button.dataset.group=g.key;
+      var icon=g.tabs[0]?.icon || '<path d="M4 7h16M4 12h16M4 17h16"/>';
+      button.innerHTML=svg(icon)+'<span></span>';
+      if(g.key==='analysis'||g.key==='results'){{button.setAttribute('aria-controls',drawer.id);button.setAttribute('aria-expanded','false');}}
+      button.onclick=function(){{
+        if(g.key==='analysis'||g.key==='results')openDrawer(g.key,button);
+        else {{closeDrawer();var target=inventory().find(group=>group.key===g.key)?.tabs[0];if(target&&typeof showTab==='function')showTab(target.idx);window.scrollTo(0,0);}}
+      }};
+      items.append(button);
     }});
+    var tour=document.createElement('button');tour.type='button';tour.className='nav-item';tour.id='mobileTourBtn';
+    tour.innerHTML=svg('<path d="M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5"/>')+'<span data-i18n="nav.tour">'+t('nav.tour')+'</span>';
+    tour.onclick=function(){{closeDrawer();if(typeof startTour==='function')startTour();}};items.append(tour);nav.append(items);
+    document.body.append(nav,backdrop,drawer);
+    var brand=document.querySelector('header.orebit-header .brand');
+    if(brand){{var hamburger=document.createElement('button');hamburger.type='button';hamburger.className='mobile-nav-hamburger show';hamburger.setAttribute('aria-label',t('nav.workflow'));hamburger.setAttribute('aria-controls',drawer.id);hamburger.setAttribute('aria-expanded','false');hamburger.innerHTML=svg('<path d="M4 7h16M4 12h16M4 17h16"/>');hamburger.onclick=function(){{openDrawer('analysis',hamburger);}};brand.append(hamburger);}}
+    backdrop.onclick=closeDrawer;
+    document.addEventListener('keydown',function(e){{if(e.key==='Escape')closeDrawer();}});
+    window.addEventListener('resize',function(){{if(innerWidth>1079)closeDrawer();}});
+    window.__updateMobileNavigation();
   }}
 
   /* ─── Init ─── */

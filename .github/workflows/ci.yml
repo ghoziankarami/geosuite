@@ -54,6 +54,7 @@ jobs:
           python tests/test_screening_navigation.py
           python tests/test_action_hierarchy.py
           python tests/test_core_training.py
+          python tests/test_mobile_tour.py
 
       - name: CSV import matches committed parser snapshots
         run: python tests/known-answer/csv-parser-characterization.py

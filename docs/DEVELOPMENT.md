@@ -94,6 +94,7 @@ The action/disclosure and Core exercise suites own isolated local servers:
 ```bash
 python tests/test_action_hierarchy.py
 python tests/test_core_training.py
+python tests/test_mobile_tour.py
 ```
 
 They exercise real Chromium pages, editable settings, keyboard disclosure, mobile overflow, plot layout, missing vs zero grades, and ZIP → CSV upload → validation → corrected re-upload. Run `python tests/test_module_handoff.py` with all modules on port 8767 to verify rows and density between phases. These tests supplement the independent numerical and report suites; a build alone does not certify a screening result.
@@ -108,8 +109,7 @@ controls, stale reviews, long-note pagination and a mobile viewport.
 Run `python tests/test_screening_navigation.py` for the common dashboard,
 Advanced sidebar, top stage controls, custom variogram calculation, optional
 diagnostics, report-button revisits and EN/ID mobile layouts. This opens a real
-browser. `test_core_training.py` also imports the one-click imperfect example
-and verifies restoration through the regular file-upload boundary.
+browser. `test_core_training.py` validates the imperfect default, downloads original source CSVs and verifies corrected reimport. `test_mobile_tour.py` starts fresh and checks phone/tablet navigation, all EN/ID tour steps, dialog bounds/focus, resize/landscape and raw-data preservation. It retains the actual tour overlay.
 
 Run `python tests/test_screening_reports.py` for native PDF/PNG downloads,
 four-card executive hierarchy, EN/ID text, page bounds/bookmarks, readable

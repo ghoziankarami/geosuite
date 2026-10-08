@@ -102,74 +102,61 @@ function closeGlossary() {
 
 function filterGlossary(q) { renderGlossaryList(q || ''); }
 
+let _tourOpener = null;
+let _tourReturnTab = 1;
 function startTour() {
+  if (window._tourActive) return;
+  _tourOpener = document.activeElement;
+  _tourReturnTab = Array.from(document.querySelectorAll('nav.tabs .tab')).findIndex(b=>b.classList.contains('active')) + 1;
   _tourIdx = 0;
   window._tourActive = true;
-  if (typeof showTab === 'function') showTab(1);
-  setTimeout(() => _tourRender(), 200);
+  _tourRender();
+  const card = document.getElementById('tourCard');
+  card.setAttribute('aria-modal','true');
+  trapFocus(card);
   localStorage.setItem('orebit-tour-seen-' + (window.__tourPhaseId || 'x'), '1');
 }
 
+function _tourPosition() {
+  if (!window._tourActive) return;
+  const step = window.TOUR_STEPS[_tourIdx], card=document.getElementById('tourCard'), spot=document.getElementById('tourSpotlight');
+  const target=step.target ? document.querySelector(step.target) : null;
+  let rect=target?.getBoundingClientRect();
+  if(rect && (!rect.width || !rect.height || rect.top<0 || rect.bottom>innerHeight || rect.left<0 || rect.right>innerWidth)) rect=null;
+  const width=card.getBoundingClientRect().width, height=card.getBoundingClientRect().height, gap=12;
+  let left=(innerWidth-width)/2, top=(innerHeight-height)/2;
+  if(rect){
+    left=rect.left;
+    if(rect.bottom+gap+height<=innerHeight-gap)top=rect.bottom+gap;
+    else if(rect.top-gap-height>=gap)top=rect.top-gap-height;
+    spot.style.cssText=`display:block;top:${Math.max(0,rect.top-4)}px;left:${Math.max(0,rect.left-4)}px;width:${Math.min(innerWidth,rect.width+8)}px;height:${rect.height+8}px`;
+  } else spot.style.display='none';
+  card.style.left=Math.max(gap,Math.min(innerWidth-width-gap,left))+'px';
+  card.style.top=Math.max(gap,Math.min(innerHeight-height-gap,top))+'px';
+}
 function _tourRender() {
+  if (!window._tourActive) return;
   const step = window.TOUR_STEPS[_tourIdx];
   if (!step) return;
-  const total = window.TOUR_STEPS.length;
-  const overlay = document.getElementById('tourOverlay');
-  const card = document.getElementById('tourCard');
-  const spot = document.getElementById('tourSpotlight');
-  overlay.classList.add('open');
-  const stepLabel = (window.__t ? window.__t('tour.stepInfo') : 'Step {n} of {total}')
-    .replace('{n}', _tourIdx + 1).replace('{total}', total);
-  document.getElementById('tourStepInfo').textContent = stepLabel;
-  const titleText = step.titleKey && window.__t ? window.__t(step.titleKey) : (step.title || '');
-  const bodyText  = step.bodyKey  && window.__t ? window.__t(step.bodyKey)  : (step.body  || '');
-  document.getElementById('tourTitle').innerHTML = titleText;
-  document.getElementById('tourBody').innerHTML  = bodyText;
-  document.getElementById('tourPrev').textContent = (window.__t ? window.__t('tour.prev') : '\u2190 Prev');
-  document.getElementById('tourPrev').style.display = _tourIdx > 0 ? '' : 'none';
-  document.getElementById('tourNext').textContent = (_tourIdx === total - 1)
-    ? (window.__t ? window.__t('tour.done') : 'Done \u2713')
-    : (window.__t ? window.__t('tour.next') : 'Next \u2192');
-  card.style.display = '';
-
-  // Position card + spotlight
-  let target = null;
-  if (step.target) {
-    // Prefer the shell's visibility-aware resolver (v194_shell.js). The plain
-    // lookup below returns hidden elements too, and a hidden element's rect is
-    // 0x0 at the origin -- so on mobile, where nav.tabs is display:none and the
-    // tabs sit behind the bottom-nav groups, every tab step drew its spotlight
-    // as an invisible dot in the top-left corner. Measured 2026-09-04: all
-    // targeted steps in all three phases resolved yet none were visible at
-    // 375px. The resolver returns the element only if it is really visible,
-    // substitutes the bottom-nav group button for a tab hidden behind it, and
-    // otherwise returns null -- which the `else` branch below already handles
-    // by centring the card with no spotlight.
-    target = (typeof window.__orebitTourTarget === 'function')
-      ? window.__orebitTourTarget(step.target)
-      : ((step.target.startsWith('.') || step.target.includes(' '))
-          ? document.querySelector(step.target)
-          : document.getElementById(step.target));
-  }
-  if (target) {
-    const r = target.getBoundingClientRect();
-    spot.style.display = 'block';
-    spot.style.top = (r.top - 4) + 'px';
-    spot.style.left = (r.left - 4) + 'px';
-    spot.style.width = (r.width + 8) + 'px';
-    spot.style.height = (r.height + 8) + 'px';
-    const cardW = 380, cardH = 220;
-    let top = r.bottom + 14;
-    let left = Math.max(20, Math.min(window.innerWidth - cardW - 20, r.left));
-    if (top + cardH > window.innerHeight - 20) top = Math.max(20, r.top - cardH - 14);
-    card.style.top = top + 'px';
-    card.style.left = left + 'px';
-  } else {
-    spot.style.display = 'none';
-    card.style.top = (window.innerHeight / 2 - 120) + 'px';
-    card.style.left = (window.innerWidth / 2 - 190) + 'px';
-  }
+  const active=Array.from(document.querySelectorAll('nav.tabs .tab')).findIndex(b=>b.classList.contains('active'))+1;
+  // Tour visits visible controls only. It never clicks Apply, Compute or Review.
+  if(step.tab && active!==step.tab && typeof showTab==='function')showTab(step.tab);
+  const card=document.getElementById('tourCard');
+  document.getElementById('tourOverlay').classList.add('open');
+  document.getElementById('tourStepInfo').textContent=window.__t('tour.stepInfo').replace('{n}',_tourIdx+1).replace('{total}',window.TOUR_STEPS.length);
+  document.getElementById('tourTitle').textContent=step.titleKey?window.__t(step.titleKey):step.title;
+  document.getElementById('tourBody').textContent=step.bodyKey?window.__t(step.bodyKey):step.body;
+  document.getElementById('tourPrev').textContent=window.__t('tour.prev');
+  document.getElementById('tourPrev').style.display=_tourIdx>0?'':'none';
+  document.getElementById('tourNext').textContent=window.__t(_tourIdx===window.TOUR_STEPS.length-1?'tour.done':'tour.next');
+  card.style.display='';
+  document.querySelector(step.target)?.scrollIntoView({block:'center',behavior:'instant'});
+  _tourPosition();
+  requestAnimationFrame(_tourPosition);
+  document.getElementById('tourNext').focus({preventScroll:true});
 }
+window.addEventListener('resize',_tourPosition);
+window.addEventListener('scroll',_tourPosition,{passive:true});
 
 function tourNext() {
   if (_tourIdx < window.TOUR_STEPS.length - 1) { _tourIdx++; _tourRender(); }
@@ -180,6 +167,9 @@ function tourPrev() { if (_tourIdx > 0) { _tourIdx--; _tourRender(); } }
 
 function tourSkip() {
   window._tourActive = false;
+  releaseFocus();
+  if (_tourReturnTab && typeof showTab==='function') showTab(_tourReturnTab);
+  if (_tourOpener?.isConnected) _tourOpener.focus({preventScroll:true});
   document.getElementById('tourOverlay').classList.remove('open');
   document.getElementById('tourCard').style.display = 'none';
   document.getElementById('tourSpotlight').style.display = 'none';
@@ -202,6 +192,7 @@ function _activateTab(n) {
   document.querySelectorAll('.panel').forEach((p, i) => {
     p.classList.toggle('active', i === n - 1);
   });
+  window.__updateMobileNavigation?.();
   try { _injectTabHelp(n); } catch (e) { /* non-fatal */ }
   try { _collapseTabHelpOnTouch(); } catch (e) { /* non-fatal */ }
 }

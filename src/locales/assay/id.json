@@ -1234,6 +1234,6 @@
   "flow.computeNext": "Hitung & lanjut: {stage}",
   "flow.calculating": "Menghitung dengan parameter saat ini… Lanjut menunggu hasilnya.",
   "flow.notAdvanced": "Perhitungan belum selesai. Periksa status di bawah, perbaiki parameter atau coba lagi; tahap belum dilanjutkan.",
-  "asy.perf.plotBudget": "Plot: {shown} dari {n} titik. Analisis memakai seluruh sampel terpilih.",
+  "asy.perf.plotBudget": "Plot: {shown} / {n} titik<br>Analisis: seluruh sampel terpilih",
   "asy.dm.checkingCurrent": "Memeriksa definisi domain saat ini…"
 }

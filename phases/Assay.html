@@ -8079,7 +8079,7 @@ function _queuePlot(id, data, layout, config) {
   data.forEach((trace,i)=>{if(trace.type==='scatter'&&Array.isArray(trace.x)){full+=trace.x.length;shown+=drawn[i].x.length;limited=limited||drawn[i]!==trace;}});
   if(limited){
     const notice=t('asy.perf.plotBudget').replace('{n}',full.toLocaleString('en-US')).replace('{shown}',shown.toLocaleString('en-US'));
-    layout={...layout,title:{...layout.title,text:(layout.title?.text?layout.title.text+'<br>':'')+notice,font:{size:10}},margin:{...layout.margin,t:Math.max(layout.margin?.t||0,65)}};
+    layout={...layout,title:{...layout.title,text:(layout.title?.text?layout.title.text+'<br>':'')+notice,font:{size:11}},margin:{...layout.margin,t:Math.max(layout.margin?.t||0,80)}};
   }
   data=drawn;
   const job={id,data,layout,config,node,source:DATA,tab:currentTab};

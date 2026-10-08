@@ -11,6 +11,8 @@
   const moved=new Map();
   const dirty=new Map();
   let pending=null;
+  let failedAttempt=null;
+  const failureSignature = n => JSON.stringify({calculation:resourceCalculationSignature(),inputs:Array.from(document.querySelectorAll('#tab'+n+' input,#tab'+n+' select')).map(el=>[el.id,el.value,el.checked])});
   const calculation = n => resource()&&[4,5,6,7].includes(n);
   const result = n => ({4:variogramState.model,5:blockState.blocks,6:estimState.results,7:crossvalState.metrics})[n];
   function canContinue(n) {
@@ -27,6 +29,7 @@
     const needsRun=!ready(n)||dirty.has(n);
     if(!needsRun){navigate(target);return;}
     const controls=Array.from(document.querySelectorAll('#tab'+n+' input,#tab'+n+' select')).map(el=>[el,el.disabled]);
+    failedAttempt=null;
     pending={stage:n};controls.forEach(([el])=>el.disabled=true);sync();
     try {
       // Existing owners read the current visible/custom parameters and retain
@@ -37,12 +40,14 @@
       if(DATA.rows===rows && current===n){
         if(result(n)!==before && ready(n)){dirty.delete(n);navigate(target);}
         else {
+          failedAttempt={stage:n,rows,signature:failureSignature(n)};
           const status=document.querySelector('#tab'+n+' .workflow-gate');
           if(status){status.hidden=false;status.textContent=tr('notAdvanced');}
         }
       }
     } catch(error) {
       console.error('Guided calculation failed',error);
+      failedAttempt={stage:n,rows,signature:failureSignature(n)};
       if(current===n){const status=document.querySelector('#tab'+n+' .workflow-gate');if(status){status.hidden=false;status.textContent=tr('notAdvanced');}}
     } finally {controls.forEach(([el,disabled])=>el.disabled=disabled);pending=null;sync();}
   }
@@ -142,7 +147,8 @@
     if(calculation(current)&&dirty.has(current)&&result(current)!==dirty.get(current))dirty.delete(current);
     const gate=card.querySelector('.workflow-gate');if(gate){
       if(pending?.stage===current){gate.hidden=false;gate.textContent=tr('calculating');}
-      else if(gate.textContent!==tr('notAdvanced')){gate.hidden=canContinue(current);gate.textContent=tr(!resource()&&[7,10].includes(current)?'blockedGeometry':'blocked');}
+      else if(resource()&&failedAttempt?.stage===current&&failedAttempt.rows===DATA.rows&&failedAttempt.signature===failureSignature(current)){gate.hidden=false;gate.textContent=tr('notAdvanced');}
+      else {gate.hidden=canContinue(current);gate.textContent=tr(!resource()&&[7,10].includes(current)?'blockedGeometry':'blocked');}
     }
     const onward=card.querySelector('[data-workflow-next]');if(onward){onward.disabled=!canContinue(current);if(calculation(current))onward.textContent=tr(!ready(current)||dirty.has(current)?'computeNext':'next',{stage:label(next(current))});}
     const inspect=card.querySelector('[data-workflow-inspect]');if(inspect&&resource()&&[4,6,7].includes(current))inspect.disabled=!ready(current);
@@ -195,12 +201,25 @@
   function boot() {
     if(assay()||typeof showTab!=='function'||initialized)return;initialized=true;
     const original=window.showTab;window.showTab=function(n){restoreActions();const result=original.apply(this,arguments);refresh(n);return result;};
+    window.__i18nBeforeRenderHooks=window.__i18nBeforeRenderHooks||[];
+    window.__i18nBeforeRenderHooks.push(()=>{
+      if(!resource()||!calculation(current))return;
+      const stage=current,rows=DATA.rows;
+      const drafts=Array.from(document.querySelectorAll('#tab'+stage+' input[id],#tab'+stage+' select[id]')).filter(el=>!['file','hidden','button','submit'].includes(el.type)).map(el=>({id:el.id,type:el.type,value:el.value,checked:el.checked}));
+      return ()=>{
+        if(current!==stage||DATA.rows!==rows)return;
+        drafts.forEach(draft=>{const el=document.getElementById(draft.id);if(!el||el.type!==draft.type)return;if(el.tagName==='SELECT'&&!Array.from(el.options).some(option=>option.value===draft.value))return;el.value=draft.value;el.checked=draft.checked;});
+        if(stage===5&&typeof updateBlockPreview==='function')updateBlockPreview();
+        sync();
+      };
+    });
     window.__i18nPostApplyHooks=window.__i18nPostApplyHooks||[];window.__i18nPostApplyHooks.push(()=>refresh(current));
     document.addEventListener('click',ev=>{
       if(pending&&ev.target.closest('#varComputeBtn,#bmGenBtn,#resourceRunEstimate,#resourceRunCrossval')){ev.preventDefault();ev.stopImmediatePropagation();}
     },true);
     document.addEventListener('input',ev=>{
       if(!resource()||!calculation(current))return;
+      failedAttempt=null;
       const id=ev.target.id;
       const inputs={4:/^var(Dir|Lag|N|Tol|MaxH)$/,5:/^bm/,6:/^(sr|s)(Maj|Semi|Min|Az|Dip|MinN|MaxN|Octant|MaxHole|SecondPass|PassFactor|PassMin|DomainBound)$/,7:/^cvLimit$/};
       if(inputs[current].test(id)&&!dirty.has(current))dirty.set(current,result(current));
@@ -211,6 +230,6 @@
     // Only update view state: no calculations, parameter changes or approval marks.
     setInterval(sync,1000);refresh(typeof currentTab==='number'?currentTab:1);
   }
-  window.OrebitScreeningWorkflow={dashboard,links,related,refresh};
+  window.OrebitScreeningWorkflow={dashboard,links,related,refresh,reset:()=>{failedAttempt=null;}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else setTimeout(boot,0);
 })();

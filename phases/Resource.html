@@ -3972,6 +3972,7 @@ let DATA = EMBEDDED_DATA;
 // than one list per entry point (they drifted: docs/PLAN-integritas-data-assay.md §10).
 function setActiveDataset(input, opts) {
   DATA = createDataset(input, opts);
+  if (window.OrebitScreeningWorkflow?.reset) window.OrebitScreeningWorkflow.reset();
   window._blockViewSettings = null;
   window._blockViewAppliedSettings = null;
 
@@ -4491,7 +4492,8 @@ function renderUploadTab() {
  // hook file input
  const inp = document.getElementById('fileInput');
  if (inp &&!inp.dataset.bound) {
- inp.addEventListener('change', handleUploadEvent);
+ // Replace the inline handler rather than adding a second FileReader/import.
+ inp.onchange = handleUploadEvent;
  inp.dataset.bound = '1';
  }
  // init drag-and-drop

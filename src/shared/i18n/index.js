@@ -45,6 +45,15 @@ function applyLanguage(lang) {
   // actual switch, never on the call that runs during boot.
   const _langBefore = _i18nLang;
   if (!window.TR || !window.TR[lang]) lang = 'en';
+  // Owners may retain unsaved controls through the language-only redraw.
+  // The returned closures restore display drafts, never apply calculations.
+  const restoreDrafts = [];
+  if (_langBefore !== lang && window.__i18nBooted) {
+    (window.__i18nBeforeRenderHooks || []).forEach(fn => {
+      try { const restore=fn(); if(typeof restore==='function')restoreDrafts.push(restore); }
+      catch(e) { console.warn('Language draft capture failed',e); }
+    });
+  }
   _i18nLang = lang;
   try { document.documentElement.setAttribute('lang', lang); } catch (e) {}
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -147,6 +156,7 @@ function applyLanguage(lang) {
       if (_idx >= 0) {
         const _y = window.scrollY;
         showTab(_idx + 1);
+        restoreDrafts.forEach(fn=>{try{fn();}catch(e){console.warn('Language draft restore failed',e);}});
         // The V194 header breadcrumb mirrors the active tab's label, but it is
         // only re-synced inside the shell's own setLang(). Anything that calls
         // applyLanguage() directly — the in-app language picker included — left

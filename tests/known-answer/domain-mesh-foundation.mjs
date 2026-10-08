@@ -55,3 +55,35 @@ assert.equal(unknownDisplay.x[1],null);assert.equal(unknownDisplay.x[3],null);
 const curved=ctx.drillholeDisplay([{x:1,y:0,z:0,rid:'H',md:10},{x:2,y:0,z:1,rid:'H',md:20},{x:3,y:0,z:-1,rid:'H',md:0}],10);
 assert.deepEqual(Array.from(curved.x),[3,1,2,null]);
 console.log('Drillhole display: bounded batching, measured-depth ordering, no cross-hole connection and raw preservation passed.');
+
+// S1 uses the actual shared desurvey owner, not a copied geostat snapshot.
+vm.runInContext(fs.readFileSync(path.join(root,'src/shared/geostat/desurvey.js'),'utf8'),ctx);
+const curvature=ctx.OrebitMinimumCurvature, inc=d=>(90+d)*Math.PI/180;
+const stations=[{depth:0,dip:-90,azimuth:90},{depth:100,dip:0,azimuth:90}];
+const collar={x:500000,y:9000000,z:300,depth:100}, rawSurvey=JSON.stringify(stations);
+const curvedTrace=ctx.traceFromSurveys(collar,stations,inc), arc=curvature.prepare(curvedTrace,stations,inc),radius=100/(Math.PI/2);
+for(let md=0;md<=100;md++){
+ const p=arc.atMD(md),angle=md/100*Math.PI/2;
+ assert.ok(Math.hypot(p.x-(500000+radius*(1-Math.cos(angle))),p.y-9000000,p.z-(300-radius*Math.sin(angle)))<1e-8,'actual curved MD '+md);
+}
+const positiveStations=stations.map(row=>({...row,dip:-row.dip})),positiveInc=d=>(90-d)*Math.PI/180;
+const positiveArc=curvature.prepare(ctx.traceFromSurveys(collar,positiveStations,positiveInc),positiveStations,positiveInc);
+assert.ok(Math.hypot(...['x','y','z'].map(k=>positiveArc.atMD(50)[k]-arc.atMD(50)[k]))<1e-9,'positive-down survey convention preserves the same physical trajectory');
+assert.equal(JSON.stringify(stations),rawSurvey,'raw measurements stay untouched');
+assert.throws(()=>curvature.displacement([2,0,0],[0,1,0],100,.5),/SEGMENT_INVALID/);
+assert.equal(arc.atMD(-1),null);assert.equal(arc.atMD(null),null);assert.equal(arc.atMD(NaN),null);
+assert.ok(Math.abs(arc.atMD(120).x-(500000+radius+20))<1e-8);
+assert.equal(ctx.traceFromSurveys({x:null,y:1,z:2},stations,inc).length,0,'missing collar is not origin');
+assert.equal(ctx.traceFromSurveys(collar,[],inc).length,0);
+assert.equal(curvature.issues(stations.map(x=>({...x,hole_id:'H'})),inc).length,0);
+assert.equal(curvature.issues([{hole_id:'H',depth:0,dip:-90,azimuth:0},{hole_id:'H',depth:10,dip:90,azimuth:0}],inc)[0].code,'OPPOSITE_DIRECTIONS');
+assert.equal(curvature.issues([{hole_id:'H',depth:0,dip:-90,azimuth:0},{hole_id:'H',depth:0,dip:0,azimuth:0}],inc)[0].code,'CONFLICTING_STATION');
+assert.equal(curvature.issues([{hole_id:'H',depth:0,dip:null,azimuth:0}],inc)[0].code,'INVALID_MEASUREMENT');
+let worstIntegration=0;
+for(let j=1;j<=50;j++){
+ const a=curvature.direction({depth:0,dip:-89+j*.7,azimuth:j*3},inc),b=curvature.direction({depth:100,dip:-60+j*.3,azimuth:30+j*2},inc),beta=Math.acos(a.reduce((n,x,i)=>n+x*b[i],0)),fraction=j/51,N=1000;
+ const sum=[0,0,0];for(let k=0;k<=N;k++){const t=fraction*k/N,w=k===0||k===N?1:k%2?4:2;for(let i=0;i<3;i++)sum[i]+=w*(Math.sin((1-t)*beta)*a[i]+Math.sin(t*beta)*b[i])/Math.sin(beta);}
+ const expected=sum.map(x=>x*fraction/N*100/3),got=curvature.displacement(a,b,100,fraction);worstIntegration=Math.max(worstIntegration,Math.hypot(...got.map((x,i)=>x-expected[i])));
+}
+assert.ok(worstIntegration<1e-7);
+console.log('S1 actual desurvey owner: 101 analytical arc points, 50 independent integrations, invalid/ambiguous survey rejection and raw preservation passed; worst integration error m:',worstIntegration);

@@ -24,6 +24,15 @@ function envelopeAnswer(ctx) {
   return Array.from(ctx.sparseEnvelopeBlocks([{x:1.5,y:1.5,z:1.5}], [0,0,0],[1,1,1],[3,3,3],1,100),b=>[b.cx,b.cy,b.cz]);
 }
 const ctx=engine();
+const tiedGrades=[{v:2},{v:8},{v:12}];
+const tiedNeighbors=[{idx:1,ndist:.1},{idx:0,ndist:.1+2e-14},{idx:2,ndist:.2}];
+assert.equal(ctx.nearestNeighbor(tiedNeighbors,tiedGrades),2,'equal-distance NN uses source index despite roundoff');
+assert.equal(ctx.nearestNeighbor(tiedNeighbors.slice().reverse().sort((a,b)=>a.ndist-b.ndist),tiedGrades),2);
+assert.equal(ctx.nearestNeighbor([{idx:1,ndist:.1},{idx:0,ndist:.100001}],tiedGrades),8,'a genuinely nearer sample retains priority');
+assert.equal(ctx.nearestNeighbor([{idx:1,eu:1},{idx:0,eu:1}],tiedGrades),8,'legacy neighbours without normalized distance retain their order');
+assert.equal(ctx.nearestNeighbor([],tiedGrades),null);
+const unstableNN=engine(code.replace('return samples[selected.idx].v;', 'return samples[neighbors[0].idx].v;'));
+assert.notEqual(unstableNN.nearestNeighbor(tiedNeighbors,tiedGrades),2,'removed stable NN tie fix is detected');
 assert.deepEqual(Array.from(ctx.neighborsAround(index(ctx,samples),0,0,0,samples,search),n=>n.idx),[0,1,2,3]);
 assert.deepEqual(Array.from(ctx.neighborsAround(index(ctx,samples),0,0,0,samples,{...search,maxPerHole:0}),n=>n.idx),[0,1,2,3]);
 assert.deepEqual(capAnswer(ctx),[0,1,4,5], 'cap is applied before top-k, retaining other holes');

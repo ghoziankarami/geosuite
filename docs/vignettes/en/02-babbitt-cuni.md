@@ -163,109 +163,81 @@ The second bug this stage exposed was in **composite coordinates**. Each composi
 
 ---
 
-## 5. Variogram and block model
+Equally spaced composites can have equally distant neighbours. NN chooses the lowest source index when normalized distances differ by at most 1e-10; coordinate roundoff must not choose the grade. IDW and kriging retain their own distances and weights.
 
-![Cu variogram](../img/babbitt-09-resource-variogram.png)
+## 5. Variogram and grid
 
-**Nugget from the holes.** Compute the **Variogram Downhole** first (Variography tab, 2 m lags): 183,031 pairs of samples within the same hole. Most samples are 10 ft (3.05 m) long, so adjacent samples pair up at 3 m, where γ is **0.035** (%²). The 1 m bin, from a few shorter samples, gives 0.028; the app takes the lowest of the first three lags. Either way the nugget is a quarter to a third of the sill.
+Compute Downhole, then Compute/Auto-fit. A range at the fitting limit is a warning, not proven continuity.
 
-**Then between holes.** Auto-fit holds the nugget at the down-hole value: exponential, nugget **0.028**, sill **0.115** (%²), about 24 % nugget. Range **72.5 m**, and the app flags it as **the shortest range the fit tries**. In the first lag (0–50 m, down-hole and between-hole pairs pooled), γ is already 0.093, 98 % of the data variance.
+| Parameter | Result |
+|---|---:|
+| Downhole pairs | 183,031 |
+| Nugget (%²) | 0.028 |
+| First between-hole lag γ (%²) | 0.093 |
+| Sill (%²) | 0.115 |
+| Range (m; rangeMin flag) | 72.5 |
+| Median hole spacing (m) | 106 |
+| Block size | 50 ×50 ×15 m |
+| Generated screening cells | 237,475 |
 
-> Earlier revisions of this vignette reported "nugget 0.063 = 60 %". Like on Thalanga (vignette 01 §7), that was the ceiling of the fitting grid, not the deposit. See the down-hole variogram for the real short-range structure.
+![Variogram](img/babbitt-09-resource-variogram.png)
 
-Nearest between-hole spacing: **median 107 m, P90 150 m**. **The variogram range is shorter than the hole spacing.** The measured spatial structure comes almost entirely from *down-hole* pairs. At hole spacing, kriging has almost no correlation to work with and will return something close to a local mean. In a layered deposit like this one, the honest variogram is a **directional variogram parallel to the layering**. We record that as a limitation.
+## 6. Estimate with recorded scope
 
-Block size: the app suggests 55 × 55 × 28 m. Used: **50 × 50 × 15 m** (about ½ the hole spacing; 15 m ≈ 50 ft, an open-pit bench height), giving **237,475 blocks**.
-
----
-
-## 6. Estimate
-
-Search 200 × 200 × 30 m (horizontal, about twice the hole spacing; vertically tight because the mineralisation is layered), 4 to 16 composites. Two runs: **without** and **with** the domain boundary (*Keep blocks inside the domain*, see vignette 01 §8: a block joins the domain only if its nearest composite, of any domain, is in it).
-
-![Estimate without the domain boundary](../img/babbitt-10a-resource-estimate-unbounded.png)
-
-| | No domain boundary | With domain boundary |
+| | No categorical boundary | With categorical boundary |
 |---|---:|---:|
-| Blocks estimated | 74,940 | **26,842** |
-| Blocks within reach removed by the boundary | — | 209,506 |
-| Mean Cu grade (OK) | 0.475 % | **0.500 %** |
-| Tonnes (2.8 t/m³) | 7,869 Mt | **2,818 Mt** |
-| Cu metal | 37.3 Mt | **14.1 Mt** |
+| OK cells | 74,961 | 26,825 |
+| Mean Cu (%) | 0.475 | 0.500 |
+| Model mass (Mt, assumed SG2.8) | 7,871 | 2,817 |
+| Cu metal (Mt) | 37.4 | 14.1 |
 
-![Estimate with the domain boundary](../img/babbitt-10-resource-estimate.png)
+209,515 in-range cells are rejected by domain assignment. This categorical boundary is not a geological solid. Review unassayed composites before treating them as overburden; raw missing grades are not zero grades.
 
-On dense data the boundary removes almost two-thirds of the tonnage: blocks within 200 m of a ≥ 0.2 % Cu composite whose nearest composite is < 0.2 % Cu rock or unassayed core. The mean grade rises because those "diluted" edge blocks leave.
+NN mean: 0.509 %; OK mean: 0.500 %. 26,825 × 37,500 m³ ×2.8 t/m³ = 2,817 Mt.
 
-Note a hidden decision: Assay labels **unassayed** composites M0, so 33,236 composites of unassayed core act as boundary too. For cover rock above the intrusion that is right. For intervals *inside* the zone that were skipped by the assay budget, it can cut out ore. That is a geologist's decision and must be written down (§3).
+![Estimate](img/babbitt-10-resource-estimate.png)
 
-Global mean check (with the boundary): OK **0.500 %** and NN **0.509 %**, 1.8 % apart. Tonnage recheck: 26,842 blocks × 37,500 m³ × 2.8 t/m³ = 2,818 Mt. It matches.
+## 7. Cross-validation
 
----
+Neighbours come from the full population; test selection uses a fixed seed. Leave-one-out yields 194/200 pairs.
 
-## 7. Cross-validation: where the third bug was found
+| Method | Slope | r² | Bias | RMSE |
+|---|---:|---:|---:|---:|
+| OK | 0.64 | 0.64 | 0.03 | 0.202 |
+| IDW | 0.68 | 0.61 | 0.03 | 0.211 |
+| NN | 0.71 | 0.49 | 0.03 | 0.260 |
 
-The earlier leave-one-out searched for neighbours **only among the 200 random samples** being tested, not among the 13,464 composites. On dense data each test sample "saw" a few random points kilometres away, so **only 10 of 200** could be computed. The random sample was also unseeded, so the numbers changed on every run. Neighbours now come from all samples, and the subsample uses a fixed seed.
+![Cross-validation](img/babbitt-11-resource-crossval.png)
 
-![Cross-validation](../img/babbitt-11-resource-crossval.png)
+Slope below1 indicates smoothing; small mean bias does not validate individual blocks. Drill spacing, support and geology still limit resolution.
 
-| n = 194 of 200 | OK | IDW | NN |
-|---|---:|---:|---:|
-| Slope (estimate on actual) | **0.64** | 0.68 | 0.68 |
-| r² | 0.64 | 0.64 | 0.47 |
-| Mean bias | +0.03 | +0.03 | +0.02 |
+## 8. Grade-tonnage
 
-The estimate is globally unbiased, but **a slope of 0.64 means substantial smoothing**: high grades are strongly under-estimated and low grades over-estimated. That is what a range shorter than the hole spacing produces (§5). With the old grid-ceiling nugget of 60 % the slope was 0.50; reading the nugget from the holes improved it, but no variogram can make up for drill spacing. On the grade-tonnage curve this means **too many tonnes at low cut-offs and too low a grade at high cut-offs**. The curve must not be used to choose a mining cut-off without a change-of-support correction.
-
----
-
-## 8. Grade-tonnage and a plausibility check
-
-![Grade-tonnage](../img/babbitt-12-resource-grade-tonnage.png)
-
-| Cu cut-off | Tonnes (Mt) | Cu grade |
+| Cu cutoff (%) | Model mass (Mt) | Mean Cu (%) |
 |---|---:|---:|
-| 0.2 % | 2,818 | 0.500 % |
-| 0.2 % | 2,798 | 0.502 % |
-| 0.3 % | 2,679 | 0.512 % |
-| 0.3 % | 2,375 | 0.535 % |
-| 0.4 % | 1,990 | 0.567 % |
-| 0.5 % | 1,577 | 0.604 % |
-| 0.5 % | 1,187 | 0.646 % |
-| 0.6 % | 869 | 0.691 % |
-| 0.6 % | 623 | 0.737 % |
-| 0.8 % | 209 | 0.884 % |
-| 0.8 % | 130 | 0.951 % |
+| 0.20 | 2,817 | 0.500 |
+| 0.25 | 2,796 | 0.502 |
+| 0.30 | 2,678 | 0.512 |
+| 0.35 | 2,374 | 0.536 |
+| 0.40 | 1,990 | 0.567 |
+| 0.45 | 1,577 | 0.604 |
+| 0.50 | 1,189 | 0.646 |
+| 0.55 | 870 | 0.690 |
+| 0.60 | 623 | 0.737 |
+| 0.65 | 437 | 0.785 |
+| 0.70 | 307 | 0.832 |
+| 0.75 | 209 | 0.883 |
+| 0.80 | 130 | 0.951 |
 
-Against the public description (**> 1 billion tonnes @ ~0.43 % Cu**), the grade is comparable. Without the domain boundary our tonnage was about 8 times larger; with it, still **about 2.8 times**. The remaining gap is not units (feet were converted) and no longer extrapolation into wall rock. It is the reporting principle most often forgotten:
+![Grade-tonnage](img/babbitt-12-resource-grade-tonnage.png)
 
-**A Mineral Resource must have *reasonable prospects for eventual economic extraction* (RPEEE).** Our estimate is a **geological inventory**: every block inside the 0.2 % Cu domain, down to 869 m below surface. A reported resource is bounded by:
+Cutoffs are recorded exactly:0.25% differs from0.20%. Mass equals cell volume ×density; feet were converted to metres. This remains a screening inventory with assumed SG, not a resource bounded by RPEEE, pit shell or NSR.
 
-- an **economic cut-off** (for Cu-Ni-PGE usually an NSR value, not Cu alone). A 0.4 % Cu cut-off alone already brings the tonnage down to 1,990 Mt;
-- an **optimised pit shell**, so deep blocks below the pit floor are not counted;
-- sensible confidence classification, so blocks far from data are left out.
+## 9. Next steps
 
-Density adds to this: 2.8 t/m³ is an assumption. Duluth troctolite/gabbro typically runs about 2.9–3.0 t/m³, and measured density would *add* tonnes.
+Review basal-zone lithology/solid, missing assays, measured density, QA/QC, high-grade domains, directional variograms, NSR/pit shell, change of support and CP classification. Applied Assay top-cut is recorded; Resource does not apply it again.
 
----
-
-## 9. This is not a Mineral Resource. What it would take:
-
-- [ ] Lithology logging and a **geological model** of the basal zone, cover rocks and semi-massive sulphide;
-- [ ] A **directional variogram** parallel to the layering, and a search ellipsoid that follows its dip;
-- [ ] A **high-grade domain** for semi-massive sulphide instead of a top-cut;
-- [ ] A geologist's decision on **unassayed intervals** inside the zone;
-- [ ] **Measured density**; **QA/QC** for the historical and modern drilling campaigns;
-- [ ] Cu-Ni-Co-PGE **NSR**, a **pit shell** and an economic cut-off (RPEEE);
-- [ ] A **change-of-support** correction before reading the grade-tonnage curve;
-- [ ] Classification and reporting by a **Competent / Qualified Person** (KCMI 2017 / JORC 2012 / NI 43-101 / S-K 1300).
-
-## Try it yourself
-
-1. Re-import **without** switching on Feet and compare the tonnes with §6. The ratio should be about 35.
-2. Run without the top-cut. How many blocks above 1 % appear, and where?
-3. Raise the domain cut-off to 0.3 %. How do the nugget and the cross-validation slope change?
-4. Limit the horizontal radius to 110 m (about the hole spacing). How many tonnes disappear, and which blocks?
+Sources are unchanged, but interval positions now follow minimum-curvature arcs. Changed positions can alter neighbours and support-boundary cells. Composite coordinates from midpoint-only CSV still use interpolation; full trace/endpoint transport follows Domain S8.
 
 ## Attribution
 

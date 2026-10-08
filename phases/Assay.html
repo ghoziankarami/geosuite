@@ -4539,6 +4539,8 @@ function tryNumber(v) {
 // ============= UPLOAD HANDLING =============
 function handleUpload(event) {
   const files = Array.from(event.target.files);
+  // Retain the File objects, then allow the same corrected filenames to be selected again.
+  event.target.value='';
   if (!files.length) return;
   const status = document.getElementById('uploadStatus');
   status.innerHTML = `<div class="hint">${ICONS.clock} ${assayMsg('assay.upload.reading', {n: files.length})}</div>`;
@@ -4920,6 +4922,7 @@ function mergeMultiFile(files) {
       const hi = merged.columns.indexOf('hole_id');
       const fromI = merged.columns.indexOf('from_m'), toI = merged.columns.indexOf('to_m');
       const surveyByHole = {};
+      const invalidSurveyHoles=new Set();
       if (grouped.survey && grouped.survey.length) {
         const sv = grouped.survey[0];
         const sh = detectColumn(sv.headers, 'hole_id'), sd = detectColumn(sv.headers, 'depth');
@@ -4927,7 +4930,7 @@ function mergeMultiFile(files) {
         if (sh >= 0 && sd >= 0 && sdip >= 0 && saz >= 0) {
           sv.rows.forEach(sr => {
             const d = tryNumber(sr[sd]), dip = tryNumber(sr[sdip]), az = tryNumber(sr[saz]);
-            if (![d, dip, az].every(v => typeof v === 'number' && isFinite(v)) || d < 0) return;
+            if (![d,dip,az].every(v=>typeof v==='number'&&isFinite(v)) || d<0 || Math.abs(dip)>90 || az<0 || az>360) {invalidSurveyHoles.add(String(sr[sh]).trim());return;}
             (surveyByHole[String(sr[sh]).trim()] = surveyByHole[String(sr[sh]).trim()] || []).push({ depth: d, dip, azimuth: az });
           });
         }
@@ -4935,31 +4938,31 @@ function mergeMultiFile(files) {
       const allDips = [].concat(...Object.values(surveyByHole)).map(s => s.dip).filter(d => Math.abs(d) > 1).sort((a, b) => a - b);
       const positiveDown = allDips.length > 0 && allDips[Math.floor(allDips.length / 2)] > 0;
       const incFromVert = positiveDown ? (dip => Math.PI / 180 * (90 - dip)) : (dip => Math.PI / 180 * (90 + dip));
+      Object.entries(surveyByHole).forEach(([hole,rows])=>{
+        if(OrebitMinimumCurvature.issues(rows.map(row=>({...row,hole_id:hole})),incFromVert).length)invalidSurveyHoles.add(hole);
+      });
       const maxTo = {};
       merged.rows.forEach(r => {
         const h = String(r[hi]).trim(), t = Number(r[toI]);
         if (isFinite(t) && !(maxTo[h] >= t)) maxTo[h] = t;
       });
       const traces = {};
+      const curves = {};
       const traceOf = (h, lookup) => {
         if (traces[h] !== undefined) return traces[h];
         const sv = (surveyByHole[h] || []).slice().sort((a, b) => a.depth - b.depth);
         const uniq = sv.filter((s, i) => i === 0 || s.depth !== sv[i - 1].depth);
-        if (!uniq.length || uniq[0].depth > 0.01) uniq.unshift({ depth: 0, dip: positiveDown ? 90 : -90, azimuth: 0 });
-        traces[h] = traceFromSurveys({ x: lookup.midx, y: lookup.midy, z: lookup.midz, depth: maxTo[h] }, uniq, incFromVert);
+        if (!uniq.length || uniq[0].depth > 0) uniq.unshift({ depth: 0, dip: positiveDown ? 90 : -90, azimuth: 0 });
+        traces[h]=[];curves[h]=null;
+        if (!invalidSurveyHoles.has(h)) {
+          try {
+            traces[h]=traceFromSurveys({x:lookup.midx,y:lookup.midy,z:lookup.midz,depth:maxTo[h]},uniq,incFromVert);
+            curves[h]=OrebitMinimumCurvature.prepare(traces[h],uniq,incFromVert);
+          } catch (error) { traces[h]=[];invalidSurveyHoles.add(h); }
+        }
         return traces[h];
       };
-      const xyzAt = (trace, depth) => {
-        for (let i = 0; i < trace.length - 1; i++) {
-          const p1 = trace[i], p2 = trace[i + 1];
-          if (depth >= p1.depth && depth <= p2.depth) {
-            const f = p2.depth === p1.depth ? 0 : (depth - p1.depth) / (p2.depth - p1.depth);
-            return { x: p1.x + (p2.x - p1.x) * f, y: p1.y + (p2.y - p1.y) * f, z: p1.z + (p2.z - p1.z) * f };
-          }
-        }
-        const last = trace[trace.length - 1];
-        return { x: last.x, y: last.y, z: last.z };
-      };
+      const xyzAt = (hole, depth) => curves[hole]?.atMD(depth) ?? null;
       merged.rows.forEach(r => {
         const h = String(r[hi]).trim();
         const lookup = collarLookup[h];
@@ -4969,11 +4972,11 @@ function mergeMultiFile(files) {
           const f = Number(r[fromI]), t = Number(r[toI]);
           if (isFinite(f) && isFinite(t) && [pos.x, pos.y, pos.z].every(v => typeof v === 'number' && isFinite(v))) {
             const trace = traceOf(h, lookup);
-            if (trace.length) pos = xyzAt(trace, (f + t) / 2);
+            pos=trace.length?xyzAt(h,(f+t)/2):null;
           }
-          if (xi >= 0 && pos.x != null) r[xi] = pos.x;
-          if (yi >= 0 && pos.y != null) r[yi] = pos.y;
-          if (zi >= 0 && pos.z != null) r[zi] = pos.z;
+          if(xi>=0)r[xi]=pos?.x??null;
+          if(yi>=0)r[yi]=pos?.y??null;
+          if(zi>=0)r[zi]=pos?.z??null;
         }
       });
     }

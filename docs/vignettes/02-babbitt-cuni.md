@@ -163,109 +163,81 @@ Bug kedua yang ditemukan di tahap ini: **koordinat komposit**. Setiap komposit d
 
 ---
 
-## 5. Variogram dan model blok
+Komposit dengan spasi sama dapat memberi tetangga berjarak identik. NN memakai indeks sumber terendah bila jarak ternormalisasi berbeda paling banyak 1e-10; pembulatan koordinat tidak boleh menentukan kadar. IDW dan kriging tetap memakai jarak serta bobotnya sendiri.
 
-![Variogram Cu](img/babbitt-09-resource-variogram.png)
+## 5. Variogram dan grid
 
-**Nugget dari lubang bor.** Hitung **Variogram Downhole** lebih dulu (tab Variography, lag 2 m): 183.031 pasangan sampel dalam lubang yang sama. Sebagian besar sampel panjangnya 10 ft (3,05 m), sehingga sampel yang bersebelahan berpasangan pada 3 m, tempat γ bernilai **0,035** (%²). Bin 1 m, dari beberapa sampel yang lebih pendek, memberi 0,028; aplikasi mengambil nilai terendah dari tiga lag pertama. Bagaimanapun, nugget sekitar seperempat sampai sepertiga sill.
+Hitung Downhole lalu Compute/Auto-fit. Range di batas fitting adalah peringatan, bukan kontinuitas yang telah terbukti.
 
-**Lalu antar lubang.** Auto-fit menahan nugget pada nilai downhole: eksponensial, nugget **0,028**, sill **0,115** (%²), nugget sekitar 24 %. Range **72,5 m**, dan aplikasi menandainya sebagai **range terpendek yang dicoba fitting**. Pada lag pertama (0–50 m, pasangan sepanjang lubang dan antar lubang digabung), γ sudah 0,093, yaitu 98 % dari varians data.
+| Parameter | Result |
+|---|---:|
+| Downhole pairs | 183.031 |
+| Nugget (%²) | 0,028 |
+| First between-hole lag γ (%²) | 0,093 |
+| Sill (%²) | 0,115 |
+| Range (m; rangeMin flag) | 72,5 |
+| Median hole spacing (m) | 106 |
+| Block size | 50 ×50 ×15 m |
+| Generated screening cells | 237.475 |
 
-> Revisi sebelumnya melaporkan "nugget 0,063 = 60 %". Seperti di Thalanga (vignette 01 §7), itu batas atas grid fitting, bukan sifat endapan. Lihat variogram downhole untuk struktur jarak pendek yang sebenarnya.
+![Variogram](img/babbitt-09-resource-variogram.png)
 
-Jarak antar lubang terdekat: **median 107 m, P90 150 m**. **Range variogram lebih pendek dari jarak antar lubang.** Artinya struktur spasial yang terukur hampir seluruhnya berasal dari pasangan *sepanjang lubang*. Pada jarak antar lubang, kriging hampir tidak punya informasi korelasi dan akan menghasilkan sesuatu yang dekat dengan rata-rata lokal. Pada endapan berlapis seperti ini, variogram yang lebih jujur adalah **variogram berarah sejajar pelapisan**. Kita catat sebagai keterbatasan.
+## 6. Estimasi dengan scope tercatat
 
-Ukuran blok: aplikasi menyarankan 55 × 55 × 28 m. Dipakai **50 × 50 × 15 m** (sekitar ½ jarak lubang; 15 m ≈ 50 ft, tinggi bench tambang terbuka), sehingga **237.475 blok**.
-
----
-
-## 6. Estimasi
-
-Radius pencarian 200 × 200 × 30 m (horizontal, sekitar dua kali jarak lubang; vertikal sempit karena mineralisasi berlapis), minimal 4 / maksimal 16 komposit. Dua percobaan: **tanpa** dan **dengan** batas domain (opsi *Keep blocks inside the domain*, lihat vignette 01 §8: blok masuk domain hanya bila komposit terdekatnya, dari domain mana pun, ada di domain itu).
-
-![Estimasi tanpa batas domain](img/babbitt-10a-resource-estimate-unbounded.png)
-
-| | Tanpa batas domain | Dengan batas domain |
+| | No categorical boundary | With categorical boundary |
 |---|---:|---:|
-| Blok terestimasi | 74.940 | **26.842** |
-| Blok dalam jangkauan yang dikeluarkan batas | — | 209.506 |
-| Kadar rata-rata Cu (OK) | 0,475 % | **0,500 %** |
-| Tonase (2,8 t/m³) | 7.869 Mt | **2.818 Mt** |
-| Logam Cu | 37,3 Mt | **14,1 Mt** |
+| OK cells | 74.961 | 26.825 |
+| Mean Cu (%) | 0,475 | 0,500 |
+| Model mass (Mt, assumed SG2.8) | 7.871 | 2.817 |
+| Cu metal (Mt) | 37,4 | 14,1 |
 
-![Estimasi dengan batas domain](img/babbitt-10-resource-estimate.png)
+209.515 sel dalam jangkauan ditolak oleh penugasan domain. Batas kategorikal ini bukan solid geologi. Komposit tak dianalisis perlu review sebelum dianggap batuan penutup; raw missing grade bukan kadar nol.
 
-Pada data rapat, batas domain membuang hampir dua pertiga tonase: blok-blok yang dijangkau radius 200 m dari komposit ≥ 0,2 % Cu tetapi komposit terdekatnya adalah batuan < 0,2 % Cu atau core yang tidak dianalisis. Kadar rata-rata naik karena blok-blok pinggiran yang "diencerkan" itu keluar.
+NN mean: 0,509 %; OK mean: 0,500 %. 26.825 × 37.500 m³ ×2.8 t/m³ = 2.817 Mt.
 
-Perhatikan satu keputusan tersembunyi: Assay memberi label M0 pada komposit yang **tidak dianalisis**, jadi 33.236 komposit core tak dianalisis ikut menjadi batas. Untuk batuan penutup di atas intrusi itu tepat. Untuk interval *di dalam* zona yang terlewat analisis, itu bisa memangkas bijih. Ini keputusan geologis yang harus ditulis (§3).
+![Estimate](img/babbitt-10-resource-estimate.png)
 
-Cek rata-rata global (dengan batas domain): OK **0,500 %** dan NN **0,509 %**, selisih 1,8 %. Cek ulang tonase: 26.842 blok × 37.500 m³ × 2,8 t/m³ = 2.818 Mt. Cocok.
+## 7. Cross-validation
 
----
+Tetangga berasal dari seluruh populasi; sampel uji memakai seed tetap. Leave-one-out memperoleh 194/200 pairs.
 
-## 7. Validasi silang: di sini bug ketiga ditemukan
+| Method | Slope | r² | Bias | RMSE |
+|---|---:|---:|---:|---:|
+| OK | 0,64 | 0,64 | 0,03 | 0,202 |
+| IDW | 0,68 | 0,61 | 0,03 | 0,211 |
+| NN | 0,71 | 0,49 | 0,03 | 0,260 |
 
-Validasi silang *leave-one-out* versi sebelumnya mencari tetangga **hanya di antara 200 sampel acak** yang sedang diuji, bukan di antara 13.464 komposit. Pada data rapat, setiap sampel uji hanya "melihat" beberapa titik acak yang jaraknya kilometer, sehingga **hanya 10 dari 200** yang bisa dihitung. Sampel acaknya juga tidak ber-*seed*, jadi angkanya berubah setiap kali dijalankan. Kini tetangga diambil dari semua sampel dan subsampel memakai seed tetap.
+![Cross-validation](img/babbitt-11-resource-crossval.png)
 
-![Validasi silang](img/babbitt-11-resource-crossval.png)
+Slope di bawah1 menunjukkan smoothing; bias rata-rata kecil tidak membuktikan blok individual. Jarak bor, support dan geologi tetap membatasi resolusi.
 
-| n = 194 dari 200 | OK | IDW | NN |
-|---|---:|---:|---:|
-| Slope (estimasi terhadap aktual) | **0,64** | 0,68 | 0,68 |
-| r² | 0,64 | 0,64 | 0,47 |
-| Bias rata-rata | +0,03 | +0,03 | +0,02 |
+## 8. Grade-tonnage
 
-Tidak bias secara global, tetapi **slope 0,64 berarti perataan yang cukup besar**: kadar tinggi sangat diremehkan dan kadar rendah dilebih-lebihkan. Itulah akibat range yang lebih pendek dari jarak lubang (§5). Dengan nugget 60 % dari batas grid yang lama, slope-nya 0,50; membaca nugget dari lubang bor memperbaikinya, tetapi tidak ada variogram yang bisa menggantikan jarak bor. Akibatnya pada kurva grade-tonnage, **tonase di cut-off rendah terlalu besar dan kadar di cut-off tinggi terlalu rendah**. Kurva ini tidak boleh dipakai untuk memilih cut-off penambangan tanpa koreksi *change of support*.
-
----
-
-## 8. Grade-tonnage dan uji kewajaran
+| Cu cutoff (%) | Model mass (Mt) | Mean Cu (%) |
+|---|---:|---:|
+| 0,20 | 2.817 | 0,500 |
+| 0,25 | 2.796 | 0,502 |
+| 0,30 | 2.678 | 0,512 |
+| 0,35 | 2.374 | 0,536 |
+| 0,40 | 1.990 | 0,567 |
+| 0,45 | 1.577 | 0,604 |
+| 0,50 | 1.189 | 0,646 |
+| 0,55 | 870 | 0,690 |
+| 0,60 | 623 | 0,737 |
+| 0,65 | 437 | 0,785 |
+| 0,70 | 307 | 0,832 |
+| 0,75 | 209 | 0,883 |
+| 0,80 | 130 | 0,951 |
 
 ![Grade-tonnage](img/babbitt-12-resource-grade-tonnage.png)
 
-| Cut-off Cu | Tonase (Mt) | Kadar Cu |
-|---|---:|---:|
-| 0,2 % | 2.818 | 0,500 % |
-| 0,2 % | 2.798 | 0,502 % |
-| 0,3 % | 2.679 | 0,512 % |
-| 0,3 % | 2.375 | 0,535 % |
-| 0,4 % | 1.990 | 0,567 % |
-| 0,5 % | 1.577 | 0,604 % |
-| 0,5 % | 1.187 | 0,646 % |
-| 0,6 % | 869 | 0,691 % |
-| 0,6 % | 623 | 0,737 % |
-| 0,8 % | 209 | 0,884 % |
-| 0,8 % | 130 | 0,951 % |
+Nilai cutoff ditulis persis:0,25% berbeda dari0,20%. Mass dihitung dari volume sel ×densitas; feet sudah dikonversi ke meter. Ini masih inventaris screening dengan asumsi SG, belum resource yang dibatasi RPEEE, pit shell atau NSR.
 
-Dibanding deskripsi publik (**> 1 miliar ton @ ~0,43 % Cu**): kadarnya sebanding. Tanpa batas domain tonase kita sekitar 8 kali lebih besar; dengan batas domain masih **sekitar 2,8 kali**. Selisih yang tersisa bukan soal satuan (feet sudah dikonversi) dan bukan lagi soal ekstrapolasi ke batuan samping. Penyebabnya prinsip pelaporan yang paling sering dilupakan:
+## 9. Langkah berikutnya
 
-**Sumber Daya Mineral harus punya *reasonable prospects for eventual economic extraction* (RPEEE).** Estimasi kita adalah **inventaris geologi**: semua blok di dalam domain 0,2 % Cu, sampai kedalaman 869 m di bawah permukaan. Sumber daya yang dilaporkan dibatasi oleh:
+Tinjau litologi/solid zona basal, missing assays, densitas terukur, QA/QC, domain kadar tinggi, variogram berarah, NSR/pit shell, change of support dan klasifikasi CP. Top-cut yang diterapkan di Assay dicatat; Resource tidak menerapkannya lagi.
 
-- **cut-off ekonomi** (untuk Cu-Ni-PGE biasanya berbasis NSR, bukan Cu saja). Pada cut-off 0,4 % Cu saja tonase sudah turun ke 1.990 Mt;
-- **cangkang tambang terbuka yang dioptimasi** (*pit shell*), sehingga blok dalam di bawah dasar pit tidak dihitung;
-- klasifikasi keyakinan yang wajar, sehingga blok jauh dari data tidak masuk.
-
-Ditambah densitas: 2,8 t/m³ adalah asumsi. Troktolit/gabro Duluth umumnya sekitar 2,9–3,0 t/m³, dan densitas terukur justru *menambah* tonase.
-
----
-
-## 9. Ini bukan Sumber Daya Mineral. Yang dibutuhkan:
-
-- [ ] Logging litologi dan **model geologi** zona basal / batuan penutup / sulfida semi-masif;
-- [ ] **Variogram berarah** sejajar pelapisan, dan elipsoid pencarian yang mengikuti kemiringannya;
-- [ ] **Domain kadar tinggi** untuk sulfida semi-masif sebagai pengganti top-cut;
-- [ ] Keputusan geologis atas **interval tak dianalisis** di dalam zona;
-- [ ] **Densitas terukur**; **QAQC** kampanye bor historis dan modern;
-- [ ] **NSR** Cu-Ni-Co-PGE, **pit shell**, dan cut-off ekonomi (RPEEE);
-- [ ] Koreksi **change of support** sebelum membaca kurva grade-tonnage;
-- [ ] Klasifikasi dan laporan oleh **Competent Person** (KCMI 2017 / JORC 2012 / NI 43-101 / S-K 1300).
-
-## Coba sendiri
-
-1. Impor ulang **tanpa** mengaktifkan Feet, lalu bandingkan tonase dengan §6. Rasionya seharusnya sekitar 35.
-2. Jalankan tanpa top-cut. Berapa banyak blok berkadar > 1 % yang muncul, dan di mana letaknya?
-3. Naikkan cut-off domain ke 0,3 %. Bagaimana nugget dan slope validasi silang berubah?
-4. Batasi radius horizontal ke 110 m (sekitar jarak lubang). Berapa tonase yang hilang, dan blok mana saja?
+Source tetap, tetapi posisi interval sekarang mengikuti minimum-curvature arcs. Perubahan posisi dapat mengubah tetangga dan blok di batas support. Koordinat komposit dari midpoint-only CSV masih berupa interpolasi; transport trace/endpoints penuh mengikuti gate Domain S8.
 
 ## Atribusi
 

@@ -928,5 +928,12 @@
   "core.domain.invalidState": "Interpretasi Domain tidak dapat dipulihkan untuk sumber saat ini. Tabel bor mentah tetap tersedia.",
   "core.repair.exportBlocked": "Perbaiki temuan validasi yang menghalangi proses sebelum mengekspor handoff bersih. Tabel sumber mentah tetap tersedia untuk perbaikan.",
   "core.repair.count": "{n} temuan",
-  "core.repair.needsReview": "Perlu ditinjau"
+  "core.repair.needsReview": "Perlu ditinjau",
+  "core.renderDesurvey.assumptionTitle": "Asumsi lintasan yang perlu diperiksa",
+  "core.renderDesurvey.assumptionBody": "{n} lubang memakai asumsi awal atau perpanjangan lintasan. Pengukuran sumber tetap utuh. Tinjau Survei sebelum memakai posisi ini untuk membangun solid geologi.",
+  "core.renderDesurvey.assumedStart": "Arah vertikal diasumsikan sebelum stasiun survei pertama",
+  "core.renderDesurvey.noSurvey": "Tanpa survei terukur: asumsi vertikal untuk screening",
+  "core.renderDesurvey.lastExtension": "Perpanjangan lurus dari arah terukur terakhir",
+  "core.renderDesurvey.reviewSurvey": "Tinjau Survei",
+  "core.renderDesurvey.invalidTrajectory": "Catatan survei ini belum membentuk lintasan yang dapat digunakan. Perbaiki pengukuran yang kosong, di luar rentang atau bertentangan di Survei."
 }

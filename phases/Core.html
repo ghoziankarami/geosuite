@@ -5984,6 +5984,7 @@ function applyCoreGateMapping(pfIdx) {
 
 function handleUpload(evt) {
   const files = [...evt.target.files];
+  evt.target.value=''; // Permit reimport of corrected files with the same filenames.
   if (!files.length) return;
   // Keep the raw File handles so a later number-format override can re-parse
   // from source (readCSV's tryNumber output is lossy once parsed).
@@ -9470,6 +9471,11 @@ function computeDesurvey() {
     });
   });
 
+  OrebitMinimumCurvature.issues(STATE.survey,incFromVert).filter(row=>row.code!=='INVALID_MEASUREMENT').forEach(row=>{
+    if(!holes[row.hole_id])return;
+    invalidHoleIds.add(row.hole_id);badSurvey.push({...row,field:'curvature'});
+  });
+
   // Flag collars with non-numeric coordinates (would otherwise desurvey from origin 0,0,0).
   Object.values(holes).forEach(h => {
     const c = h.collar;
@@ -9502,44 +9508,43 @@ function computeDesurvey() {
       seen.add(s.depth);
       return true;
     });
-    if (!h.surveys.length || h.surveys[0].depth > 0.01) {
+    h.measuredStations=h.surveys.length;
+    h.assumptions=[];
+    if (!h.surveys.length) h.assumptions.push('NO_MEASURED_SURVEY');
+    else if (h.surveys[0].depth>0) h.assumptions.push('ASSUMED_VERTICAL_START');
+    if (!h.surveys.length || h.surveys[0].depth > 0) {
       const verticalDip = dipConv === 'positive_down' ? 90 : -90;
       h.surveys.unshift({ depth: 0, dip: verticalDip, azimuth: 0 });
     }
     const cd = strictNum(h.collar.depth);
     const reach = Math.max(isFinite(cd) ? cd : 0, maxTo[h.collar.hole_id] || 0);
-    h.trace = invalidHoleIds.has(h.collar.hole_id) ? [] : traceFromSurveys(Object.assign({}, h.collar, { depth: reach }), h.surveys, incFromVert);
+    if (reach>h.surveys[h.surveys.length-1].depth+0.01) h.assumptions.push('LAST_DIRECTION_EXTENSION');
+    h.trace=[];h.curve=null;
+    if (!invalidHoleIds.has(h.collar.hole_id)) {
+      try {
+        h.trace=traceFromSurveys(Object.assign({},h.collar,{depth:reach}),h.surveys,incFromVert);
+        h.curve=OrebitMinimumCurvature.prepare(h.trace,h.surveys,incFromVert);
+      } catch (error) {
+        h.trace=[];invalidHoleIds.add(h.collar.hole_id);
+        badSurvey.push({hole_id:h.collar.hole_id,depth:null,field:'curvature'});
+      }
+    }
   });
 
-  STATE.desurvey = { holes, dipConvention: dipConv, badSurvey, badCollar, invalidHoleIds: [...invalidHoleIds] };
+  STATE.desurvey = { holes, algorithm:OrebitMinimumCurvature.version, dipConvention: dipConv, badSurvey, badCollar, invalidHoleIds: [...invalidHoleIds] };
   return STATE.desurvey;
 }
 
-/* @orebit-inline: shared/geostat/desurvey.js */function getXYZAtDepth(holeId, depth) {
-  if (!STATE.desurvey || !STATE.desurvey.holes[holeId]) return null;
-  const trace = STATE.desurvey.holes[holeId].trace;
-  if (!trace || !trace.length) return null;
-  if (depth <= trace[0].depth) return { x: trace[0].x, y: trace[0].y, z: trace[0].z };
-  for (let i = 0; i < trace.length - 1; i++) {
-    const p1 = trace[i], p2 = trace[i+1];
-    if (depth >= p1.depth && depth <= p2.depth) {
-      const f = (depth - p1.depth) / (p2.depth - p1.depth);
-      return { x: p1.x + (p2.x - p1.x) * f, y: p1.y + (p2.y - p1.y) * f, z: p1.z + (p2.z - p1.z) * f };
-    }
-  }
-  // Beyond the trace (a depth past both the logging and collar.depth): continue
-  // straight along the last survey station's direction, as the comment always
-  // promised -- it used to return the end point itself, stacking such samples.
-  const last = trace[trace.length - 1];
-  const h = STATE.desurvey.holes[holeId];
-  const sv = h.surveys && h.surveys[h.surveys.length - 1];
-  const extra = depth - last.depth;
-  if (!sv || !(extra > 0)) return { x: last.x, y: last.y, z: last.z };
-  const inc = Math.PI / 180 * (STATE.desurvey.dipConvention === 'positive_down' ? 90 - sv.dip : 90 + sv.dip);
-  const az = Math.PI / 180 * sv.azimuth;
-  return { x: last.x + extra * Math.sin(inc) * Math.sin(az), y: last.y + extra * Math.sin(inc) * Math.cos(az), z: last.z - extra * Math.cos(inc) };
+/* @orebit-inline: shared/geostat/desurvey.js */
+function getXYZAtDepth(holeId, depth) {
+  const hole=STATE.desurvey?.holes[holeId];
+  if(depth===null||depth===undefined||String(depth).trim()==='')return null;
+  return hole?.curve?.atMD(Number(depth)) ?? null;
 }
 
+function _coreTraceAssumptionLabel(code) {
+  return ({NO_MEASURED_SURVEY:t('core.renderDesurvey.noSurvey'),ASSUMED_VERTICAL_START:t('core.renderDesurvey.assumedStart'),LAST_DIRECTION_EXTENSION:t('core.renderDesurvey.lastExtension')})[code]||code;
+}
 function renderDesurvey() {
   const container = document.getElementById('desurveyPanel');
   if (!container) return;
@@ -9555,9 +9560,7 @@ function renderDesurvey() {
     ? (dip) => Math.PI / 180 * (90 - dip)
     : (dip) => Math.PI / 180 * (90 + dip);
   const inclined = holes.filter(([_, h]) => h.surveys.some(s => Math.abs(incFromVert(s.dip)) > (Math.PI / 180))).length;
-  // Audit fix: count holes with only 1 survey point (straight-line approximation)
-  const singleSurveyHoles = holes.filter(([_, h]) => (h.surveys?.length || 0) <= 1).map(([hid, _]) => hid);
-  const nSingle = singleSurveyHoles.length;
+  const assumedHoles=holes.filter(([,h])=>h.assumptions?.length);
 
   container.innerHTML = `
     <div class="card">
@@ -9567,23 +9570,18 @@ function renderDesurvey() {
         <div class="stat-box"><div class="label">${t('core.renderDesurvey.holes')} ${abbr(t('core.renderDesurvey.desurveyed'), 'desurvey')}</div><div class="value">${holes.length}</div></div>
         <div class="stat-box"><div class="label">${abbr(t('core.renderDesurvey.tracePoints'), 'trace')}</div><div class="value">${totalPoints.toLocaleString('en-US')}</div></div>
         <div class="stat-box"><div class="label">${t('core.renderDesurvey.inclinedHoles')}</div><div class="value">${inclined}</div></div>
-        <div class="stat-box"><div class="label">${t('core.renderDesurvey.verticalAssumed')}</div><div class="value">${holes.length - inclined}</div></div>
+        <div class="stat-box"><div class="label">${t('core.renderDesurvey.verticalAssumed')}</div><div class="value">${holes.filter(([,h])=>h.assumptions?.includes("NO_MEASURED_SURVEY")).length}</div></div>
       </div>
       <div class="row-controls">
         <button data-action-role="apply" class="btn small" onclick="computeDesurvey(); renderDesurvey(); toast(t('core.renderDesurvey.recomputed'), 'good');">↻ ${t('core.renderDesurvey.recompute')}</button>
         <button class="btn small secondary" onclick="exportDesurveyCSV()">${ICONS.download} ${t('core.renderDesurvey.exportTraceCsv')}</button>
       </div>
     </div>
-    ${nSingle > 0 ? `
-    <div class="card" style="border-left:4px solid var(--warn);">
-      <div class="hint warn" style="margin:0;">
-        <strong>${ICONS.warn} ${nSingle} ${t(nSingle === 1 ? 'core.renderDesurvey.holeHasOne' : 'core.renderDesurvey.holeHasMany')} ${t('core.renderDesurvey.only1SurveyPoint')}</strong>
-        ${t('core.renderDesurvey.straightLineFallback')}
-        ${singleSurveyHoles.length <= 8
-          ? `<div style="margin-top:6px;font-size:12px;">${t('core.renderDesurvey.holes')}: ${singleSurveyHoles.map(h=>`<code>${escapeHtml(h)}</code>`).join(', ')}</div>`
-          : `<div style="margin-top:6px;font-size:12px;">${t('core.renderDesurvey.first8')}: ${singleSurveyHoles.slice(0,8).map(h=>`<code>${escapeHtml(h)}</code>`).join(', ')} … +${singleSurveyHoles.length - 8} ${t('core.renderDesurvey.more')}</div>`}
-      </div>
-    </div>` : ''}
+    ${assumedHoles.length?`<div class="card" style="border-left:4px solid var(--warn);">
+      <h3>${t('core.renderDesurvey.assumptionTitle')}</h3><p>${t('core.renderDesurvey.assumptionBody').replace('{n}',assumedHoles.length)}</p>
+      <button class="btn secondary" onclick="showTab(4)">${t('core.renderDesurvey.reviewSurvey')}</button>
+      <details><summary>${t('core.renderDesurvey.holes')}</summary>${assumedHoles.slice(0,30).map(([id,h])=>`<p><strong>${escapeHtml(id)}</strong>: ${h.assumptions.map(_coreTraceAssumptionLabel).map(escapeHtml).join('; ')}</p>`).join('')}</details>
+    </div>`:''}
     ${(() => {
       const bs = STATE.desurvey.badSurvey || [];
       const bc = STATE.desurvey.badCollar || [];
@@ -9592,8 +9590,7 @@ function renderDesurvey() {
       let html = '<div class="card" style="border-left:4px solid var(--bad);">';
       html += '<div class="hint bad" style="margin:0;">';
       if (bs.length) {
-        html += `<strong>${ICONS.error} ${bs.length} ${t('core.renderDesurvey.surveyRowSMissingNon')}</strong>
-          ${t('core.renderDesurvey.theseRowsWere')} <em>${t('core.renderDesurvey.not')}</em> ${t('core.renderDesurvey.assumed0WouldProduceWrong')}
+        html += `<strong>${ICONS.error} ${t('core.renderDesurvey.invalidTrajectory')}</strong>
           <div style="margin-top:6px;font-size:12px;">${t('core.renderDesurvey.affectedHoles')}: ${holesAffected.slice(0,8).map(h=>`<code>${escapeHtml(String(h))}</code>`).join(', ')}${holesAffected.length>8?` … +${holesAffected.length-8} ${t('core.renderDesurvey.more')}`:''}</div>`;
       }
       if (bc.length) {
@@ -10102,6 +10099,10 @@ function buildMasterExportCols(rows) {
   return { baseCols, gradeCols, densityCols, tailCols, outCols: [...baseCols, ...gradeCols, ...densityCols, ...tailCols] };
 }
 
+function _coreDirectionIssues(source) {
+  const positive=detectDipConvention(source.survey)==='positive_down';
+  return OrebitMinimumCurvature.issues(source.survey,dip=>Math.PI/180*(positive?90-dip:90+dip));
+}
 function coreGeometryReady(source = STATE) {
   const surveyIds=new Set(source.survey.map(r=>r.hole_id));
   const finiteInput = v => v !== null && v !== undefined && String(v).trim() !== '' && Number.isFinite(Number(v));
@@ -10110,7 +10111,8 @@ function coreGeometryReady(source = STATE) {
     : source.collar.length > 0 && source.survey.length > 0 &&
       source.collar.every(c=>['x','y','z'].every(k=>finiteInput(c[k]))) &&
       source.survey.every(s=>['depth','dip','azimuth'].every(k=>finiteInput(s[k])) && Number(s.depth)>=0 && Number(s.dip)>=-90 && Number(s.dip)<=90 && Number(s.azimuth)>=0 && Number(s.azimuth)<=360) &&
-      [...new Set(source.assay.map(r=>r.hole_id))].every(h=>surveyIds.has(h));
+      [...new Set(source.assay.map(r=>r.hole_id))].every(h=>surveyIds.has(h)) &&
+      _coreDirectionIssues(source).length===0;
 }
 function setCoreProvidedXYZ(enabled) {
   window.OrebitCoreDomain?.invalidate('Coordinate source mode changed');
@@ -11699,6 +11701,9 @@ function _p1RunValidationChecks(source = STATE) {
     checks.push({name:table+' invalid structural measurements', value:invalid+' row', severity:invalid?'fail':'ok'});
   });
 
+  const directionIssues=_coreDirectionIssues(source).filter(row=>row.code!=='INVALID_MEASUREMENT');
+  if(directionIssues.length)checks.push({name:'Survey conflicting or opposite directions',value:directionIssues.length+' station',severity:'fail'});
+
   // Assay gap/overlap
   const assayByHole = {};
   source.assay.forEach(r => {
@@ -12445,6 +12450,8 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
       ['Geometry readiness',coreGeometryReady()?'READY for the selected coordinate workflow':'FIX REQUIRED: missing or invalid geometry'],
       ['CRS',STATE.crs || 'Not declared; verify projected CRS before spatial estimation'],
       ['Length units',_lengthTag()],
+      ['Geometry algorithm',STATE.desurvey?.algorithm||'Not computed'],
+      ['Geometry assumptions',STATE.desurvey?['NO_MEASURED_SURVEY','ASSUMED_VERTICAL_START','LAST_DIRECTION_EXTENSION'].map(code=>({label:_coreTraceAssumptionLabel(code),count:Object.values(STATE.desurvey.holes).filter(h=>h.assumptions?.includes(code)).length})).filter(row=>row.count).map(row=>row.label+': '+row.count+' holes').join('; ')||'None':'Not computed'],
       ['Data coverage',`Collar ${STATE.collar.length}; survey ${STATE.survey.length}; assay ${STATE.assay.length}; geology ${STATE.geology.length}; merged ${STATE.merged?STATE.merged.length:'not run'}`],
       ['Missing merged coordinates',STATE.mergeAudit?STATE.mergeAudit.intervalsWithoutXYZ:'Merge not run'],
       ['Grade statistics population','Finite nonnegative grades including valid zero values; missing and negative BDL placeholders excluded'],
@@ -12594,6 +12601,7 @@ document.addEventListener('keydown', (e) => {
       },
       geologicalDomain: window.OrebitCoreDomain?.exportState(),
       metadata: {
+        geometry:STATE.desurvey?{algorithm:STATE.desurvey.algorithm,assumptions:Object.entries(STATE.desurvey.holes).filter(([,h])=>h.assumptions?.length).map(([hole_id,h])=>({hole_id,codes:h.assumptions.slice()}))}:null,
         collar_count:  STATE.collar.length,
         survey_count:  STATE.survey.length,
         assay_count:   STATE.assay.length,

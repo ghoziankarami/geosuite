@@ -1,5 +1,7 @@
 # Vignette 02 — Babbitt (Cu-Ni, Duluth Complex): feet, unassayed core, and estimating on dense data
 
+This reproducible reference explicitly uses **XY screening support** in Block Model → Advanced. New projects default to 3D sample proximity; choose XY to reproduce the figures below. Neither envelope is a closed geological solid.
+
 > **Bahasa Indonesia:** [../02-babbitt-cuni.md](../02-babbitt-cuni.md) · Previous vignette: [01 — Thalanga](01-thalanga-vms.md)
 
 | | |

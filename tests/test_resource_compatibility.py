@@ -7,11 +7,13 @@ import http.server
 import io
 import json
 import math
+import os
 from pathlib import Path
 import tempfile
 import threading
 from playwright.sync_api import sync_playwright
 ROOT = next(p for p in Path(__file__).resolve().parents if (p/'build/build.mjs').exists())
+DIST = Path(os.environ.get('OREBIT_TEST_DIST',ROOT/'dist'))
 passed = 0
 
 def check(condition, message):
@@ -25,7 +27,7 @@ def close(a,b): return abs(a-b)<1e-7
 class Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self,*args): pass
 
-server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(Quiet,directory=str(ROOT/'dist')))
+server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(Quiet,directory=str(DIST)))
 threading.Thread(target=server.serve_forever,daemon=True).start()
 
 def page(browser,phase):
@@ -128,14 +130,67 @@ with tempfile.TemporaryDirectory() as temp:
             check(r.evaluate('variogramState.model')==nested,'session roundtrip preserves full nested model and anisotropy')
             r.evaluate("() => {const p=JSON.parse(localStorage.getItem(RESOURCE_SESSION_KEY));delete p.envelopeMode;delete p.envelopeRadius;delete p.search.maxPerHole;delete p.search.secondPass;localStorage.setItem(RESOURCE_SESSION_KEY,JSON.stringify(p));blockState.envelopeMode='xy';searchState.maxPerHole=0;searchState.secondPass=false;restoreResourceSession();}")
             check(r.evaluate("blockState.envelopeMode==='xy'&&!searchState.secondPass&&searchState.maxPerHole===0"),'legacy session without new fields still loads with original defaults')
-            r.evaluate('blockState.envelopeMode="xyz";blockState.envelopeRadius=.01');tab(r,5)
+            r.evaluate('blockState.envelopeMode="xyz";blockState.envelopeRadius=.01;blockState.envelopeRadiusUserSet=true');tab(r,5)
             old=r.evaluate('JSON.stringify({size:blockState.size,blocks:blockState.blocks})')
             r.locator('#bmX').fill('10');r.locator('#bmY').fill('10');r.locator('#bmZ').fill('10');r.evaluate('generateBlocks()');r.wait_for_timeout(200)
             check(r.evaluate('JSON.stringify({size:blockState.size,blocks:blockState.blocks})')==old,'empty sparse grid cannot replace geometry underneath existing results')
             r.evaluate('blockState.envelopeRadius=25;searchState.maxPerHole=4;searchState.secondPass=true');tab(r,2)
             resource2=file('resource2.csv','hole_id,from_m,to_m,midx,midy,midz,ni_pct\nC,0,1,50,0,0,1.2\nD,0,1,60,0,0,1.4\n')
             r.locator('#fileInput').set_input_files(resource2);r.wait_for_function("() => DATA.columns.includes('ni_pct')");r.wait_for_timeout(500)
-            check(r.evaluate("blockState.envelopeMode==='xy'&&searchState.maxPerHole===0&&!searchState.secondPass&&estimState.results===null"),'new commodity upload resets all added estimation options and results')
+            check(r.evaluate("blockState.envelopeMode==='xyz'&&searchState.maxPerHole===0&&!searchState.secondPass&&estimState.results===null"),'new commodity upload resets all added estimation options and results')
+            tab(r,5);r.locator('#bmDens').fill('0');old=r.evaluate('JSON.stringify([blockState.blocks,blockState.size,blockState.density,blockState.densityUserSet])')
+            r.locator('#bmGenBtn').click();r.wait_for_timeout(200)
+            check(r.evaluate('JSON.stringify([blockState.blocks,blockState.size,blockState.density,blockState.densityUserSet])')==old, 'Invalid density stops grid generation without silently substituting 1 t/m3')
+            r.locator('#bmDens').fill('2');r.locator('#bmGenBtn').click();r.wait_for_function('() => blockState.blocks?.length>0')
+            check(r.evaluate('resourceDensityAudit(blockState.blocks.map((_,i)=>i)).fallback===blockState.blocks.length'), 'Uniform density provenance explicitly records every cell using the entered fallback')
+            check(r.evaluate("resourceDensityAudit(blockState.blocks.map((_,i)=>i)).source==='entered-uniform'"), 'Only successfully generated, valid density is recorded as explicitly entered')
+            tab(r,3);r.locator('#setupGradeUnit').select_option('kg/m³')
+            check(r.evaluate('!blockState.blocks && !estimState.done && !_gtCurveSnapshot'), 'Changing mass grade to volumetric invalidates incompatible existing model results')
+            tab(r,5);r.locator('#bmGenBtn').click();r.wait_for_function('() => blockState.blocks?.length>0')
+            check(r.evaluate('blockState.density===1 && !blockState.blockDensities'), 'Volumetric grid uses volume weights without a measured-density assumption')
+            check('Rock tonnage is not determined' in r.locator('#gridMassBasis').inner_text(), 'Volumetric grid insight explains the quantity as volume, not rock mass')
+            tab(r,3);r.locator('#setupGradeUnit').select_option('%')
+            check(r.evaluate('blockState.density===2 && !blockState.blocks'), 'Returning to mass grades restores the prior explicit density, with recomputation required')
+            r.evaluate("setupState.gradeUnit='ppm';saveResourceSession();setupState.gradeUnit=null;restoreResourceSession()")
+            check(r.evaluate("setupState.gradeUnit==='ppm'"), 'Session roundtrip preserves the explicitly assigned grade unit')
+            r.evaluate("window._unitBundle=buildBundle('unit-roundtrip');setupState.gradeUnit=null;loadBundle(window._unitBundle)")
+            check(r.evaluate("setupState.gradeUnit==='ppm' && window._unitBundle.units.ni_pct==='ppm'"), 'Native project bundle carries the explicit unit despite a conflicting percentage header')
+            tab(r,2);r.locator('#fileInput').set_input_files([]);r.locator('#fileInput').set_input_files(resource2);r.wait_for_function('() => setupState.gradeUnit===null')
+            check(r.evaluate("gradeUnitFor('ni_pct')==='%'"), 'A new dataset clears stale ppm overrides before interpreting nickel percentage')
+            density_file=file('density-support.csv','hole_id,from_m,to_m,midx,midy,midz,au_gpt,density\nA,0,1,0,0,0,1,2\nB,0,1,10,0,0,3,3\n')
+            r.locator('#fileInput').set_input_files(density_file);r.wait_for_function('() => DATA.columns.includes("density")')
+            r.evaluate("() => {blockState.size=[1,1,1];blockState.blocks=[{cx:1,cy:1,cz:1},{cx:1000,cy:1,cz:1}];blockState.density=2.8;assignBlockDensities();}")
+            check(r.evaluate('JSON.stringify(Array.from(blockState.blockDensities))')=='[2,2.8]', 'Measured-density assignment and distant-cell fallback retain independently known values')
+            audit=r.evaluate('resourceDensityAudit([0,1])')
+            check(audit['assigned']==1 and audit['fallback']==1 and audit['unknown']==0, 'Density audit distinguishes a real measured value from the fallback, without comparing numeric equality')
+            # The real confirmation can outlive a new file import. The old
+            # owner must not read its form into the replacement dataset.
+            r.evaluate("() => {variogramState.model={type:'spherical',nugget:.1,sill:1,range:30};blockState.blocks=[{cx:1,cy:0,cz:0}];blockState.size=[1,1,1];window._originalCost=confirmEstimationCost;window.confirmEstimationCost=()=>new Promise(resolve=>window._releaseCost=resolve);}")
+            tab(r,6);r.locator('#srMaj').fill('999')
+            r.evaluate('() => {window._pendingEstimate=runEstimation();}')
+            r.wait_for_function('() => !!window._releaseCost')
+            tab(r,2);r.locator('#fileInput').set_input_files(resource2)
+            r.wait_for_function('() => DATA.columns.includes("ni_pct") && setupState.element==="ni_pct"')
+            r.evaluate('async()=>{_releaseCost(true);await _pendingEstimate;window.confirmEstimationCost=_originalCost;}')
+            check(r.evaluate('!estimState.done && estimState.results===null && searchState.rMaj===200'), 'Pending estimation confirmation cannot overwrite a newly uploaded dataset or its search defaults')
+            # Defer the actual CV callback, import through the normal file input,
+            # then dispatch it. This isolates scheduling, not numerical results.
+            cvfile=file('cv-race.csv','hole_id,from_m,to_m,midx,midy,midz,au_gpt\n'+''.join(f'H{i},0,1,{i*2},0,0,{1+i/10}\n' for i in range(40)))
+            r.locator('#fileInput').set_input_files(cvfile);r.wait_for_function('() => DATA.rows.length===40')
+            r.evaluate("variogramState.model={type:'spherical',nugget:.1,sill:1,range:50}");tab(r,7)
+            r.evaluate("() => {const original=window.setTimeout;window.setTimeout=(fn,ms,...args)=>ms===30?(window._pendingCV=fn,0):original(fn,ms,...args);runCrossVal();window.setTimeout=original;}")
+            tab(r,2);r.locator('#fileInput').set_input_files(resource2);r.wait_for_function('() => DATA.columns.includes("ni_pct")')
+            r.evaluate('window._pendingCV()')
+            check(r.evaluate('!crossvalState.metrics && !crossvalState.results && !crossvalState._running'), 'Delayed cross-validation cannot attach old sample predictions to the replacement dataset')
+            large=file('grid-race.csv','hole_id,from_m,to_m,midx,midy,midz,ni_pct\nA,0,1,0,0,0,1\nB,0,1,400,400,100,2\n')
+            r.locator('#fileInput').set_input_files(large);r.wait_for_function('() => getSamples().some(p=>p.x===400)')
+            tab(r,5);r.evaluate("setResourceEnvelope('xy',25)")
+            for key,value in (('bmX','2'),('bmY','2'),('bmZ','1')):r.locator('#'+key).fill(value)
+            r.evaluate('() => {window._originalConfirm=orebitConfirm;window.orebitConfirm=()=>new Promise(resolve=>window._releaseGrid=resolve);window._pendingGrid=generateBlocks();}')
+            r.wait_for_function('() => !!window._releaseGrid')
+            tab(r,2);r.locator('#fileInput').set_input_files(resource2);r.wait_for_function('() => getSamples().some(p=>p.x===50)')
+            r.evaluate('async()=>{_releaseGrid(true);await _pendingGrid;window.orebitConfirm=_originalConfirm;}')
+            check(r.evaluate('!blockState.blocks && !blockState.size && !estimState.done'), 'Pending large-grid confirmation cannot install geometry from a previous dataset')
             check(not r.evaluate('window._renderFailures||[]'),'compatibility scenarios contain no swallowed rendering errors')
             r.close();browser.close()
     finally:server.shutdown();server.server_close()

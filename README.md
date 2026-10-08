@@ -33,6 +33,11 @@ Windows: jangan mencari `.exe` di **Code → Download ZIP**.
    variography, set block geometry/density/search, estimate, validate and review
    grade–tonnage. Export results, plots and the PDF insight report.
 
+Use **Continue in Assay/Resource** for direct data transfer when available.
+All three modules share a guided route, editable parameters and an Advanced
+tools sidebar. The [workflow guide](docs/WORKFLOW.md) explains review records,
+report scope and what travels between modules.
+
 Read the [input format and units](docs/DATA-FORMAT.md) before importing your own
 files. Nonstandard headers use manual column assignment; a missing value is not
 zero. Keep backups of CSVs and project exports between modules.
@@ -60,20 +65,18 @@ containing `package.json`.
 git clone https://github.com/ghoziankarami/geosuite.git
 cd geosuite
 npm run build
-python3 -m http.server 8767 --bind 127.0.0.1 -d dist
+npm run dev -- --no-build
 ```
 
-On Windows PowerShell, replace the last command with:
-
-```powershell
-py -3 -m http.server 8767 --bind 127.0.0.1 -d dist
-```
+These commands also work in Windows PowerShell. For a single build-and-preview command use `npm run dev`; run `npm run doctor` to check prerequisites. Source ZIPs, checkout paths containing spaces and a working directory outside the checkout are supported when invoking the script by its path.
 
 Open **http://127.0.0.1:8767/Core.html**. You should see the Core dashboard and
 sample data; choose **Import** to use your own files. Assay and Resource are at
 `/Assay.html` and `/Resource.html` on the same address. Keep the terminal open;
 **Ctrl+C** stops the server. The web build uses bundled dependencies, so it has
 **no `npm install` step**.
+
+Restart the preview after editing to rebuild. Use `npm run dev -- --port 8768` if the default port is occupied. A cloud machine's loopback address is local to that machine; use supported port forwarding or browser tests there. VPS/SSH access is a separate deployment requirement.
 
 Serve generated **`dist/`**. Source **`phases/`** files contain build markers and
 are not directly runnable. Keep `vendor/` and offline assets with the built modules.
@@ -111,11 +114,21 @@ Contributors can clone, build, test and submit a PR entirely in this public repo
 
 For an installed web app, open all three modules online before going offline.
 Chrome/Edge/Chromium provide **Install app**; Safari on macOS 14+ provides
-**File → Add to Dock**. Export project backups before clearing browser storage.
+**File → Add to Dock** from an open **Core app**, rather than the product landing page.
+Online launch checks for updates; a failed update retains a valid offline copy.
+If app files have not been cached, reconnect and use Retry. Export project backups before clearing browser storage.
 Optional Drive access, basemaps and update checks contact external services;
 see the [privacy policy](https://geosuite.orebit.id/privacy/).
 
-PDFs provide initial screening insight, effective parameters and review questions.
+PDFs open with four result cards, scope, inspection priorities and a next step.
+Detailed results, effective parameters, plots and review records follow from
+page 2. Resource headline tonnage uses the selected cutoff and confidence
+filter; generated grid mass and density fallback are reported separately. Grades
+in kg/m³ report volume and contained metal, without inventing rock tonnage.
+New projects use an editable 3D sample-proximity envelope; a domain label selects
+samples but does not create a geological solid or topographic boundary.
+The block viewer accepts inclusive minimum/maximum grades and quantile, linear
+or custom colour classes. Its filters never change estimates or report cutoff.
 They do not certify a Mineral Resource or reserve. Geology, density, QA/QC,
 metallurgy, economics and Competent Person review remain necessary for reporting
 under KCMI/JORC. Read [methodology and limitations](docs/METHODOLOGY.md).

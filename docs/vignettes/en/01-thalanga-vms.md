@@ -1,5 +1,7 @@
 # Vignette 01 — Thalanga (VMS Zn-Pb-Cu-Ag-Au): from raw public data to a resource screen you can defend
 
+This reproducible reference explicitly uses **XY screening support** in Block Model → Advanced. New projects default to 3D sample proximity; choose XY to reproduce the figures below. Neither envelope is a closed geological solid.
+
 > **Bahasa Indonesia:** [../01-thalanga-vms.md](../01-thalanga-vms.md)
 
 | | |

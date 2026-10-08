@@ -40,7 +40,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_VERSION).then(cache => Promise.all(
       APP_SHELL.map(rel => { const url = shellURL(rel); return fetch(url, { cache: 'reload' })
-        .then(res => (res.ok ? cache.put(url, res) : null))
+        .then(async res => (await cacheable(url,res) ? cache.put(url, res) : null))
         .catch(() => null); })
     )).then(() => self.skipWaiting())
   );
@@ -64,26 +64,46 @@ function isStaticAsset(url) {
          rel === 'manifest.webmanifest';
 }
 
+// Never replace a working offline app with a login redirect, error page or wrong asset.
+async function cacheable(request, res) {
+  if (!res || !res.ok || res.type==='opaque' || res.redirected) return false;
+  const url=new URL(typeof request==='string'?request:request.url);
+  if(res.url && new URL(res.url).origin!==url.origin)return false;
+  const type=res.headers.get('content-type')||'';
+  if(isModulePage(url))return type.includes('text/html') && /window\.OREBIT_BUILD_ID=/.test((await res.clone().text()).slice(0,6000));
+  if(url.pathname.endsWith('.js'))return /javascript/.test(type);
+  if(url.pathname.endsWith('.png'))return type.includes('image/png');
+  return !type.includes('text/html');
+}
+function unavailablePage(request) {
+  // No user data is cleared. Static recovery still works if no app JS can load.
+  const url=new URL(request.url);const phase=url.pathname.match(/(Core|Assay|Resource)\.html$/)?.[1]||'Core';
+  return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GeoSuite · reconnect</title><body style="font:16px system-ui;max-width:42rem;margin:10vh auto;padding:24px;line-height:1.6"><h1>GeoSuite is not available offline yet</h1><p>Connect to the internet and reopen ${phase} so its app files can be saved. Your project storage has not been cleared.</p><p lang="id">Sambungkan internet lalu buka kembali aplikasi agar file offline tersimpan. Penyimpanan proyek Anda tidak dihapus.</p><button onclick="location.reload()" style="padding:12px 24px;font:inherit">Retry / Coba lagi</button></body></html>`,{status:503,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});
+}
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_VERSION);
+  let hit=await cache.match(request,{ignoreSearch:true});
+  if(hit&&!await cacheable(request,hit))hit=null;
+  const controller=new AbortController();
+  const timer=hit?setTimeout(()=>controller.abort(),8000):null;
   try {
-    const res = await fetch(request);
-    if (res && res.ok) cache.put(request, res.clone());
+    const res = await fetch(request,{signal:controller.signal});
+    if (await cacheable(request,res)) await cache.put(request, res.clone());
+    // Keep authentication/authorization responses visible. Only transient server failure uses cache.
+    if((res.status>=500||res.status===408)&&hit)return hit;
     return res;
   } catch (e) {
-    // ?source=app and other query strings must still find the cached module.
-    const hit = await cache.match(request, { ignoreSearch: true });
-    if (hit) return hit;
-    throw e;
-  }
+    return hit || unavailablePage(request);
+  } finally {if(timer)clearTimeout(timer);}
 }
-
-async function staleWhileRevalidate(request) {
+async function staleWhileRevalidate(request, event) {
   const cache = await caches.open(CACHE_VERSION);
   const hit = await cache.match(request, { ignoreSearch: true });
   const refresh = fetch(request)
-    .then(res => { if (res && res.ok) cache.put(request, res.clone()); return res; })
+    .then(async res => { if (await cacheable(request,res)) await cache.put(request, res.clone()); return res; })
     .catch(() => null);
+  // Keep background revalidation alive even after the cached response is returned.
+  event.waitUntil(refresh.then(()=>undefined));
   return hit || (await refresh) || Response.error();
 }
 
@@ -97,7 +117,7 @@ self.addEventListener('fetch', event => {
   if (isModulePage(url)) {
     event.respondWith(networkFirst(request));
   } else if (isStaticAsset(url)) {
-    event.respondWith(staleWhileRevalidate(request));
+    event.respondWith(staleWhileRevalidate(request,event));
   }
   // Everything else (landing page, docs, images) goes to the network as usual.
 });

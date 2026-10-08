@@ -70,6 +70,29 @@ spherical, exponential and Gaussian models, single or nested (two structures) wi
 nugget. Exponential and Gaussian models use the *practical* range (95 % of sill).
 Anisotropy by azimuth/dip rotation of the search ellipsoid.
 
+## Model support, quantities and display
+
+A new project uses a 3D sample-proximity screening envelope; its editable automatic
+radius is at least 25 m and half the cell diagonal. An explicit radius and older
+saved XY/3D settings are retained. The XY method fills vertical columns across the
+model elevation range and can include air or unmineralised rock. Neither method
+creates a closed geological solid, topographic clip or partial-cell fill fraction.
+A domain label restricts the samples; it does not itself define an ore volume.
+
+Model mass is the sum of full-cell volume × assigned density. The density source
+and counts using uniform fallback are recorded. %, g/t and ppm grades are
+mass-weighted for aggregation; kg/m³ grades are volume-weighted. The latter report
+volume and metal directly, without assigning rock tonnage. Unit declarations
+from Assay's master CSV take precedence over names and remain editable in Setup.
+Invalid density is rejected, and changed units require recomputation.
+
+The block viewer accepts inclusive minimum/maximum grades (blank = unbounded).
+Quantile classes use the full filtered grade distribution, linear uses absolute
+grade values, and custom uses increasing user boundaries. Meshes, point views and
+2D fallback share these definitions before display sampling. These view filters
+never change estimates, confidence labels or report cutoff. Ties can reduce the
+number of quantile classes; colours indicate grade distribution, not confidence.
+
 ## 7. Estimation (Resource)
 
 | Method | Detail |

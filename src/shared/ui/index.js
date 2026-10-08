@@ -191,6 +191,14 @@ function _activateTab(n) {
     b.classList.toggle('active', i === n - 1);
     b.setAttribute('aria-selected', i === n - 1 ? 'true' : 'false');
   });
+  // Main-stage and related-tool actions call showTab directly, without a
+  // sidebar click. Keep the header's current location in the same router.
+  const crumb = document.getElementById('orebitCrumb');
+  if (crumb) {
+    const name = (document.querySelector('nav.tabs .tab.active')?.textContent || '').trim();
+    crumb.textContent = name;
+    crumb.style.display = name ? 'inline-flex' : 'none';
+  }
   document.querySelectorAll('.panel').forEach((p, i) => {
     p.classList.toggle('active', i === n - 1);
   });

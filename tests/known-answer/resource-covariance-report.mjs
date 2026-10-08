@@ -22,3 +22,27 @@ assert.equal(c.summarizeBlocks([0,1],[NaN,0],1,[1,3]).meanGrade,0);assert.equal(
 const noRange=engine(code.replace("if (model.covarianceMode === 'model-range')",'if (false)'));assert.notEqual(noRange.gammaAniso(20,0,0,m,search),.1+.9*.6875);
 const noMassWeight=engine(code.replace('volumetric ? volumePerBlock : mass','volumePerBlock'));assert.notEqual(noMassWeight.summarizeBlocks([0,1],[1,3],1,[1,3]).meanGrade,2.5);
 console.log('PASS: physical covariance range, independent kriging known answer, search invariance, density/volume weighting and both mutation controls');
+
+// Display bounds and legend classes exercise the shipped pure module.
+const viewCode=fs.readFileSync(path.join(root,'src/shared/geo/block-view.js'),'utf8');
+const view={};vm.createContext(view);vm.runInContext(viewCode,view);
+const array=x=>Array.from(x);
+assert.deepEqual(JSON.parse(JSON.stringify(view.blockGradeRange('',0))),{min:null,max:0});
+assert.equal(view.blockGradeIncluded(0,view.blockGradeRange(0,0)),true);
+assert.equal(view.blockGradeIncluded(NaN,view.blockGradeRange('','')),false);
+assert.equal(view.blockGradeIncluded(3,view.blockGradeRange(1,2)),false);
+for(const bounds of [[2,1],['NaN',2],[1,'Infinity']])assert.throws(()=>view.blockGradeRange(...bounds),/range/);
+const grades=[0,0,0,1,2,3,9,100];
+const quantile=view.blockGradeScale(grades,{method:'quantile'},'%');
+assert.equal(quantile.breaks.length,3);[.8,2.2,6.6].forEach((v,i)=>assert.ok(Math.abs(quantile.breaks[i]-v)<1e-12));
+assert.equal(quantile.map(0),0);assert.equal(quantile.map(100),3);
+const equal=view.blockGradeScale([2,2,2],{},'g/t');assert.equal(equal.colors.length,1);assert.equal(equal.map(2),0);
+const custom=view.blockGradeScale(grades,{method:'custom',breaks:'0, 1, 10',palette:'cividis'},'ppm');
+assert.deepEqual(grades.map(custom.map),[0,0,0,1,2,2,2,3]);assert.ok(custom.labels.every(l=>l.includes('ppm')));
+for(const breaks of ['', '1,1', '2,1','NaN','1,Infinity',Array.from({length:13},(_,i)=>i).join(',')])assert.throws(()=>view.blockGradeScale(grades,{method:'custom',breaks}),/breaks/);
+const linear=view.blockGradeScale(grades,{method:'linear'},'kg/m³');assert.equal(linear.cmin,0);assert.equal(linear.cmax,100);assert.equal(linear.map(9),9);
+assert.equal(view.blockGradeNumber(.0000001),'1e-7');
+assert.deepEqual(grades,[0,0,0,1,2,3,9,100],'Rendering never rewrites the numerical grade array');
+const noUpper={};vm.createContext(noUpper);vm.runInContext(viewCode.replace('value <= range.max','true'),noUpper);
+assert.notEqual(noUpper.blockGradeIncluded(3,noUpper.blockGradeRange(1,2)),false,'Mutation: removing upper bound is detected');
+console.log('PASS: inclusive ranges, finite input gates, tied/skewed quantiles, custom/linear/unit legends and upper-bound mutation');

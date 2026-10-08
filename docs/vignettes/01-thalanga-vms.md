@@ -1,5 +1,7 @@
 # Vignette 01 — Thalanga (VMS Zn-Pb-Cu-Ag-Au): dari data publik mentah ke skrining sumber daya yang bisa dipertanggungjawabkan
 
+Contoh pembanding yang dapat direproduksi ini memakai **envelope screening XY** secara eksplisit di Block Model → Advanced. Proyek baru memakai kedekatan sampel 3D; pilih XY untuk mengulang angka di bawah. Kedua envelope bukan solid geologi tertutup.
+
 > **English:** [en/01-thalanga-vms.md](en/01-thalanga-vms.md)
 
 | | |

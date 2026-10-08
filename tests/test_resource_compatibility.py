@@ -7,11 +7,13 @@ import http.server
 import io
 import json
 import math
+import os
 from pathlib import Path
 import tempfile
 import threading
 from playwright.sync_api import sync_playwright
 ROOT = next(p for p in Path(__file__).resolve().parents if (p/'build/build.mjs').exists())
+DIST = Path(os.environ.get('OREBIT_TEST_DIST',ROOT/'dist'))
 passed = 0
 
 def check(condition, message):
@@ -25,7 +27,7 @@ def close(a,b): return abs(a-b)<1e-7
 class Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self,*args): pass
 
-server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(Quiet,directory=str(ROOT/'dist')))
+server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(Quiet,directory=str(DIST)))
 threading.Thread(target=server.serve_forever,daemon=True).start()
 
 def page(browser,phase):
@@ -161,6 +163,34 @@ with tempfile.TemporaryDirectory() as temp:
             check(r.evaluate('JSON.stringify(Array.from(blockState.blockDensities))')=='[2,2.8]', 'Measured-density assignment and distant-cell fallback retain independently known values')
             audit=r.evaluate('resourceDensityAudit([0,1])')
             check(audit['assigned']==1 and audit['fallback']==1 and audit['unknown']==0, 'Density audit distinguishes a real measured value from the fallback, without comparing numeric equality')
+            # The real confirmation can outlive a new file import. The old
+            # owner must not read its form into the replacement dataset.
+            r.evaluate("() => {variogramState.model={type:'spherical',nugget:.1,sill:1,range:30};blockState.blocks=[{cx:1,cy:0,cz:0}];blockState.size=[1,1,1];window._originalCost=confirmEstimationCost;window.confirmEstimationCost=()=>new Promise(resolve=>window._releaseCost=resolve);}")
+            tab(r,6);r.locator('#srMaj').fill('999')
+            r.evaluate('() => {window._pendingEstimate=runEstimation();}')
+            r.wait_for_function('() => !!window._releaseCost')
+            tab(r,2);r.locator('#fileInput').set_input_files(resource2)
+            r.wait_for_function('() => DATA.columns.includes("ni_pct") && setupState.element==="ni_pct"')
+            r.evaluate('async()=>{_releaseCost(true);await _pendingEstimate;window.confirmEstimationCost=_originalCost;}')
+            check(r.evaluate('!estimState.done && estimState.results===null && searchState.rMaj===200'), 'Pending estimation confirmation cannot overwrite a newly uploaded dataset or its search defaults')
+            # Defer the actual CV callback, import through the normal file input,
+            # then dispatch it. This isolates scheduling, not numerical results.
+            cvfile=file('cv-race.csv','hole_id,from_m,to_m,midx,midy,midz,au_gpt\n'+''.join(f'H{i},0,1,{i*2},0,0,{1+i/10}\n' for i in range(40)))
+            r.locator('#fileInput').set_input_files(cvfile);r.wait_for_function('() => DATA.rows.length===40')
+            r.evaluate("variogramState.model={type:'spherical',nugget:.1,sill:1,range:50}");tab(r,7)
+            r.evaluate("() => {const original=window.setTimeout;window.setTimeout=(fn,ms,...args)=>ms===30?(window._pendingCV=fn,0):original(fn,ms,...args);runCrossVal();window.setTimeout=original;}")
+            tab(r,2);r.locator('#fileInput').set_input_files(resource2);r.wait_for_function('() => DATA.columns.includes("ni_pct")')
+            r.evaluate('window._pendingCV()')
+            check(r.evaluate('!crossvalState.metrics && !crossvalState.results && !crossvalState._running'), 'Delayed cross-validation cannot attach old sample predictions to the replacement dataset')
+            large=file('grid-race.csv','hole_id,from_m,to_m,midx,midy,midz,ni_pct\nA,0,1,0,0,0,1\nB,0,1,400,400,100,2\n')
+            r.locator('#fileInput').set_input_files(large);r.wait_for_function('() => getSamples().some(p=>p.x===400)')
+            tab(r,5);r.evaluate("setResourceEnvelope('xy',25)")
+            for key,value in (('bmX','2'),('bmY','2'),('bmZ','1')):r.locator('#'+key).fill(value)
+            r.evaluate('() => {window._originalConfirm=orebitConfirm;window.orebitConfirm=()=>new Promise(resolve=>window._releaseGrid=resolve);window._pendingGrid=generateBlocks();}')
+            r.wait_for_function('() => !!window._releaseGrid')
+            tab(r,2);r.locator('#fileInput').set_input_files(resource2);r.wait_for_function('() => getSamples().some(p=>p.x===50)')
+            r.evaluate('async()=>{_releaseGrid(true);await _pendingGrid;window.orebitConfirm=_originalConfirm;}')
+            check(r.evaluate('!blockState.blocks && !blockState.size && !estimState.done'), 'Pending large-grid confirmation cannot install geometry from a previous dataset')
             check(not r.evaluate('window._renderFailures||[]'),'compatibility scenarios contain no swallowed rendering errors')
             r.close();browser.close()
     finally:server.shutdown();server.server_close()

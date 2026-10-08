@@ -20,6 +20,7 @@
       (n<6 || !!variogramState.model) && (n!==6 || !!blockState.blocks?.length);
   }
   async function continueStage(n,target) {
+    if(resource())validateResourceCalculationContext();
     if(pending || !canContinue(n))return;
     if(!calculation(n)){navigate(target);return;}
     const rows=DATA.rows,before=result(n);
@@ -135,6 +136,7 @@
     const open=document.body.classList.contains('screening-advanced-open');toggle.textContent=tr(open?'hideAdvanced':'advanced');toggle.setAttribute('aria-expanded',String(open));
   }
   function sync() {
+    if(resource())validateResourceCalculationContext();
     const panel=document.getElementById('tab'+current),card=panel?.querySelector('.assay-workflow-card');if(!card)return;
     card.querySelector('.workflow-insight p').textContent=facts(current);
     if(calculation(current)&&dirty.has(current)&&result(current)!==dirty.get(current))dirty.delete(current);

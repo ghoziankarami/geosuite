@@ -4211,7 +4211,19 @@ window.__onThemeChange = function() {
 
 // Phase-specific tab router for P3 (12 tabs: Tutorial→KCMI Report).
 // Uses shared _activateTab(n) for common DOM toggling, then phase-specific renders.
+// A completed estimate belongs to its actual model/search, not later form edits.
+function resourceCalculationSignature() {
+ return JSON.stringify({model:variogramState.model,search:searchState,element:setupState.element,domain:setupState.domain,unit:gradeUnitFor(setupState.element)});
+}
+function validateResourceCalculationContext() {
+ const signature=resourceCalculationSignature();
+ if(!estimState._running&&!estimState._confirming&&estimState.appliedSignature && estimState.appliedSignature!==signature){
+  estimState={results:null,done:false};classState={thresholds:null,labels:null};window._gtCurveSnapshot=null;
+ }
+ if(!crossvalState._running&&crossvalState.appliedSignature && crossvalState.appliedSignature!==signature)crossvalState={results:null,metrics:null};
+}
 function showTab(n) {
+ validateResourceCalculationContext();
  if (n > 1) window.__p3Visited.add(n);
  currentTab = n;
  _activateTab(n);
@@ -5660,7 +5672,9 @@ function _seededSubsample(arr, k, seed) {
 }
 
 async function computeVariogram() {
+ const calculationDataset=DATA;
  await ensurePlotly();
+ if(DATA!==calculationDataset)return;
  const rows = rowsFiltered();
  const eli = colIdx(setupState.element);
  const xi = colIdx('midx'), yi = colIdx('midy'), zi = colIdx('midz');
@@ -7655,6 +7669,8 @@ function autoSuggestBlockSize() {
 }
 
 async function generateBlocks() {
+ const generationDataset=DATA,generationContext=resourceCalculationSignature();
+ const generationCurrent=()=>DATA===generationDataset&&resourceCalculationSignature()===generationContext;
  const bx = +document.getElementById('bmX').value;
  const by = +document.getElementById('bmY').value;
  const bz = +document.getElementById('bmZ').value;
@@ -7689,6 +7705,7 @@ async function generateBlocks() {
  if (total > BLOCK_SOFT_LIMIT && !sparse) {
  if (!(await orebitConfirm(`This will generate ${total.toLocaleString('en-US')} blocks. Estimation may be slow and memory-heavy. Continue?`))) return;
  }
+ if(!generationCurrent())return;
  let blocks = [];
  let k = 0;
  if (sparse) {
@@ -7724,6 +7741,7 @@ async function generateBlocks() {
  await new Promise(function(resolveGen) {
   let i = 0;
   function pass() {
+   if(!generationCurrent()){resolveGen();return;}
    const sliceStart = performance.now();
    while (i < total) {
     const iz = (i / nxy) | 0;
@@ -7767,6 +7785,7 @@ async function generateBlocks() {
  });
  if (genBtn) genBtn.disabled = false;
  }
+ if(!generationCurrent())return;
  if (blocks.length === 0) { toast(t('res.pass.envelopeMaskRemovedAllBlocks'), 'bad'); return; }
  blockState.densityUserSet=!!blockState.densityUserSet||(!_volGrade&&(!!window._resourceDensityDraftSet||dens!==blockState.density));
  window._resourceDensityDraftSet=false;
@@ -8223,14 +8242,16 @@ async function confirmEstimationCost() {
 async function runEstimation() {
  const ID = document.documentElement.lang === 'id';
  if (!variogramState.model ||!blockState.blocks) return;
+ const estimationDataset=DATA,estimationOwner=estimState,estimationBlocks=blockState.blocks,estimationModel=variogramState.model;
+ const estimationCurrent=()=>DATA===estimationDataset&&estimState===estimationOwner&&blockState.blocks===estimationBlocks&&variogramState.model===estimationModel;
  if (estimState._running || estimState._confirming) return; // in-flight guard
  // The confirmation is awaited, so hold the guard across it too — otherwise a
  // second click while the dialog is open starts a parallel run.
  estimState._confirming = true;
  let proceed = false;
  try { proceed = await confirmEstimationCost(); }
- finally { estimState._confirming = false; }
- if (!proceed) return;
+ finally { estimationOwner._confirming = false; }
+ if (!proceed || !estimationCurrent()) return;
  const proposedSearch = Object.assign({},searchState);
  proposedSearch.rMaj = +document.getElementById('srMaj').value;
  proposedSearch.rSemi = +document.getElementById('srSemi').value;
@@ -8257,6 +8278,7 @@ async function runEstimation() {
  if (dbEl) proposedSearch.domainBoundary = dbEl.checked;
 
  Object.assign(searchState,proposedSearch);
+ const estimationSignature=resourceCalculationSignature();
  const samples = getSamples();
  if (samples.length < (searchState.secondPass ? Math.min(searchState.minNeighbors,searchState.secondPassMin) : searchState.minNeighbors)) {
  return setEstimStatus(`<span style="color:var(--bad);"><span style="color:var(--bad);"></span> ${t('res.runEstimation.notEnoughSamples').replace('{n}', samples.length)}</span>`);
@@ -8326,6 +8348,7 @@ async function runEstimation() {
  estimState._cancelled = false;
 
  function processChunk() {
+ if(!estimationCurrent()||resourceCalculationSignature()!==estimationSignature){estimationOwner._running=false;if(runBtn)runBtn.disabled=false;return;}
  if (estimState._cancelled) {
   estimState._running = false;
   if (runBtn) runBtn.disabled = false;
@@ -8401,6 +8424,7 @@ async function runEstimation() {
  const bps = (N / Math.max(0.001, (performance.now() - t0) / 1000)).toFixed(0);
  estimState.results = { idw, ok, nn, variance, nNb, nearestDist, passNumber, nHoles, estimated, skippedBbox, negClamped, outsideDomain, domainBoundary: !!bound };
  estimState.done = true;
+ estimState.appliedSignature=estimationSignature;
  estimState._running = false;
  setEstimStatus(`<span style="color:var(--good);"><span style="color:var(--good);"></span> ${t('res.processChunk.finished')
    .replace('{dt}', dt).replace('{estimated}', estimated.toLocaleString('en-US')).replace('{n}', N.toLocaleString('en-US'))
@@ -9107,6 +9131,7 @@ function renderCrossVal() {
 
 function runCrossVal() {
  if (!variogramState.model) return;
+ const validationDataset=DATA,validationOwner=crossvalState,validationSignature=resourceCalculationSignature();
  if (crossvalState._running) return;
  const limit = +document.getElementById('cvLimit').value;
  const all = getSamples();
@@ -9129,6 +9154,7 @@ function runCrossVal() {
  if (cvBtn) cvBtn.disabled = true;
 
  setTimeout(() => {
+ if(DATA!==validationDataset||crossvalState!==validationOwner||resourceCalculationSignature()!==validationSignature){validationOwner._running=false;if(cvBtn)cvBtn.disabled=false;return;}
  try {
  const t0 = performance.now();
  const cellSize = Math.max(searchState.rMaj, searchState.rSemi, searchState.rMin) / 2;
@@ -9169,6 +9195,7 @@ function runCrossVal() {
  ok: regressionMetrics(actual, predOK),
  nn: regressionMetrics(actual, predNN)
  };
+ crossvalState.appliedSignature=validationSignature;
  const skipNote = skipped > 0? ` · <strong>${skipped}</strong> skipped (insufficient neighbors)` : '';
  // CHANGED 2026-07-28: auto-fix suggestion when 0 valid pairs (senior geologist audit #14)
  if (actual.length === 0 && skipped > 0) {
@@ -11129,6 +11156,7 @@ function resourceReportSummary(cutoff, useClass) {
 }
 
 async function exportPDF() {
+ validateResourceCalculationContext();
 if (!DATA) { toast(t('res.maybeShowSupportMoment.noDataLoaded'), 'warn'); return; }
  if (!window.jspdf) { toast(t('res.maybeShowSupportMoment.jspdfNotLoaded'), 'bad'); return; }
  setupState.reportCutoffNote=document.getElementById('reportCutoffNote')?.value ?? setupState.reportCutoffNote ?? '';

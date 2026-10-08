@@ -665,7 +665,7 @@ button, .tab, .glossary-trigger {{ touch-action: manipulation; }}
    pure text notifications with nothing clickable inside, so disabling
    pointer events costs nothing; the inner rule keeps any future
    button/link inside a toast usable. */
-#toast, .toast, .toast-container, [role="status"]:not(.btn) {{
+#toast, .toast, .toast-container {{
   pointer-events: none;
 }}
 #toast a, #toast button, .toast a, .toast button,
@@ -875,7 +875,7 @@ body.dark .orebit-quickstart p {{ color: #cbd5e1; }}
         problem -- it can no longer be wider than the screen. A stylesheet
         `!important` outranks a non-important inline style, so no JS change
         is needed. Desktop (>=1080px) keeps the original centred 320-560px box. ─── */
-  #toast, .toast, [role="status"]:not(.btn) {{
+  #toast, .toast {{
     bottom: calc(16px + 72px + env(safe-area-inset-bottom, 0px)) !important;
   }}
   #computeOverlay {{

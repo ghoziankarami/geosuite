@@ -116,6 +116,15 @@ def tour(page, name, language):
             ),
             f"{name} tour {i+1} keeps keyboard focus inside the dialog",
         )
+        for gate in page.locator(".panel.active .workflow-gate:visible").all():
+            check(
+                gate.evaluate("e=>getComputedStyle(e).position==='static' && getComputedStyle(e).pointerEvents!=='none'"),
+                f"{name} tour {i+1} validation feedback stays in the stage flow",
+            )
+            check(
+                gate.evaluate("e=>{const r=e.getBoundingClientRect(),c=e.closest('.assay-workflow-card').getBoundingClientRect(),next=e.nextElementSibling?.getBoundingClientRect();return r.left>=c.left&&r.right<=c.right&&r.top>=c.top&&r.bottom<=c.bottom&&(!next||next.top>=r.bottom-1)}"),
+                f"{name} tour {i+1} feedback does not cover contextual checks",
+            )
         if i == 2:
             page.locator("#tourPrev").click()
             check(
@@ -193,6 +202,10 @@ try:
                         page.locator(".toast").count() == 0,
                         "Core initial load does not cover the start action with a reset toast",
                     )
+                check(
+                    page.evaluate("()=>{const e=document.createElement('p');e.setAttribute('role','status');e.textContent='Live status regression';document.querySelector('.panel.active').append(e);const s=getComputedStyle(e),ok=s.position==='static'&&s.pointerEvents!=='none';e.remove();return ok}"),
+                    name + " an inline live status is not styled as a floating toast",
+                )
                 if width == 1440:
                     rail = page.locator("nav.tabs .tab:visible").all()
                     positions = sorted([b.bounding_box()["y"] for b in rail])

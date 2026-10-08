@@ -268,6 +268,45 @@ def main():
             carry=ready(context,base,'Assay')
             upload(carry,[manual_core],'()=>DATA.rows.length===40&&DATA.rows[0][colIdx("hole_id")]==="UNIT1"')
             check('Core bundle preserves manual unit even when its header says percent',carry.evaluate('()=>elementMeta("au_pct").unit==="ppb"&&DATA.rows[0][colIdx("au_pct")]===.0001'))
+            # Actual optional Core compositing/export also preserves assigned units.
+            nav(core,13)
+            core.locator('#tab13 [data-related-stage="12"]').click()
+            core.locator('#compLen').fill('10')
+            for cb in core.locator('.comp-grade-cb').all():
+                if not cb.is_checked():
+                    cb.check()
+            core.locator('#btnComputeComp').click()
+            core.wait_for_function('()=>STATE.composite?.length===20')
+            composite_csv=download(core,'#btnExportComp',folder/'core-composites.csv')
+            check('Native Core composite CSV records manual and physical units',
+                  'au_pct=ppb' in composite_csv.read_text() and 'sn_gm3=gm3' in composite_csv.read_text())
+            composite_bundle=folder/'core-composites.orebit'
+            composite_bundle.write_text(json.dumps(core.evaluate('async()=>await OrebitProject.save("composite-units")')))
+            for name,inputs in [('CSV',[composite_csv]),('bundle',[composite_bundle])]:
+                comp_assay=ready(context,base,'Assay')
+                upload(comp_assay,inputs,'()=>DATA.rows.length===20&&DATA.rows[0][colIdx("hole_id")]==="UNIT1"')
+                check('Assay Core composite '+name+' uses actual assigned units and independent weighted grades',
+                      comp_assay.evaluate('()=>elementMeta("au_pct").unit==="ppb"&&Math.abs(DATA.rows[0][colIdx("au_pct")]-.000105)<1e-14&&Math.abs(DATA.rows[0][colIdx("cu_pct")]-.525)<1e-12&&elementMeta("sn_gm3").unit==="g/m³"'))
+                check('Assay Core composite '+name+' renderer remains clear',not comp_assay.evaluate('()=>window.__gradeErrors'))
+                if name=='CSV':
+                    nav(comp_assay,11)
+                    selector='#tab11 button[onclick="exportCompositeCSV()"]'
+                    reveal(comp_assay,selector)
+                    industry=download(comp_assay,selector,folder/'industry-composites.csv')
+                    check('Native Assay uppercase composite export records actual manual units',
+                          'AU_PCT=ppb' in industry.read_text() and 'SN_GM3=gm3' in industry.read_text())
+                    industry_resource=ready(context,base,'Resource')
+                    upload(industry_resource,[industry],'()=>DATA.source==="upload"&&DATA.rows.length===20')
+                    nav(industry_resource,3)
+                    # Resource preserves existing canonical spelling/case; declarations are case-insensitive.
+                    industry_col=industry_resource.evaluate('()=>DATA.cols.find(c=>c.toLowerCase()==="au_pct")')
+                    check('Resource retains the actual industry grade header',bool(industry_col))
+                    industry_resource.locator('#setupElement').select_option(industry_col)
+                    check('Resource uppercase composite import preserves manual unit and raw weighted value',
+                          industry_resource.evaluate('(col)=>gradeUnitFor(col)==="ppb"&&Math.abs(DATA.rows[0][DATA.cols.indexOf(col)]-.000105)<1e-14',industry_col))
+                    check('Resource uppercase composite renderer remains clear',not industry_resource.evaluate('()=>window.__gradeErrors'))
+                    industry_resource.close()
+                comp_assay.close()
             lines=list(csv.reader(assay_file.read_text().splitlines()[1:]))
             for row in lines[1:]:
                 row[lines[0].index('au_ppb')]='0'

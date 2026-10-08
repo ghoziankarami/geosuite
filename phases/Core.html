@@ -10482,7 +10482,7 @@ function renderComposite() {
     const cols = STATE._compCols || gradeCols;
     const baseCols = ['hole_id', 'from_m', 'to_m', 'midx', 'midy', 'midz', 'lithology'];
     const outCols = [...baseCols, ...cols];
-    const lines = [outCols.join(',')];
+    const lines = ['# units: ' + cols.map(c => `${c}=${_exportUnit(c)}`).join(', '), outCols.join(',')];
     STATE.composite.forEach(r => {
       lines.push(outCols.map(c => csvEscape(r[c] === undefined ? '' : r[c])).join(','));
     });

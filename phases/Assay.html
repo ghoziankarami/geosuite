@@ -12297,6 +12297,9 @@ function exportCompositeStr() {
 
 // Composite CSV for 3D package import (HOLEID, FROM, TO, X, Y, Z + grades + domain).
 // Desurvey format: HOLEID, FROM, TO, X, Y, Z — standard drillhole import layout.
+function _gradeUnitsCsvHeader(columns, uppercase=false) {
+  return '# units: ' + columns.map(col => `${uppercase ? col.toUpperCase() : col}=${OrebitGradeUnits.schemaToken(elementMeta(col).unit) || 'unitless'}`).join(', ');
+}
 function exportCompositeCSV() {
   if (!DATA) { toast(t('asy.exportCompositeCSV.noDataLoaded'), 'warn'); return; }
   const fi = colIdx('from_m'), ti = colIdx('to_m');
@@ -12309,7 +12312,7 @@ function exportCompositeCSV() {
   const strHeader = ['HOLEID','FROM','TO','X','Y','Z', ...elemCols.map(c => c.toUpperCase())];
   if (di >= 0) strHeader.push('DOMAIN');
 
-  const lines = [strHeader.join(',')];
+  const lines = [_gradeUnitsCsvHeader(elemCols, true), strHeader.join(',')];
   DATA.rows.forEach(r => {
     const row = [
       r[hi] || '',
@@ -12578,13 +12581,8 @@ function exportMasterForEstimation(opts) {
     if (colIdx(c) >= 0 && !outCols.includes(c)) outCols.push(c);
   });
 
-  // Build units header. If the user DECLARED a grade unit in the Column & Unit
-  // Assignment panel, write it for the chosen grade column so P3 auto-detects it
-  // (critical for volumetric kg/m³ commodities like placer tin).
-  const unitsLine = '# units: ' + elemCols.map(col => {
-    const unit=elementMeta(col).unit;
-    return `${col}=${OrebitGradeUnits.schemaToken(unit) || 'unitless'}`;
-  }).join(', ');
+  // Every actual output grade retains its assigned unit, including manual overrides.
+  const unitsLine = _gradeUnitsCsvHeader(elemCols);
   // Cap provenance. A resource estimate built on capped grades has to be
   // justifiable against the raw assays, and until now that fact lived only
   // in the browser's _capLog -- gone the moment the tab closed, and never in

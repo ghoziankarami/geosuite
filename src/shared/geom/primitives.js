@@ -14,8 +14,8 @@
     return mul(a,1/n);
   }
   function sectionPlane(origin,azimuth,dip=90) {
-    if (!finitePoint(origin,3) || !Number.isFinite(azimuth) || !Number.isFinite(dip) || dip<=0 || dip>90) throw Error('DOMAIN_PLANE_INVALID');
-    const az=azimuth*Math.PI/180,d=dip*Math.PI/180;
+    if (!finitePoint(origin,3) || !Number.isFinite(azimuth) || !Number.isFinite(dip) || dip<0 || dip>90) throw Error('DOMAIN_PLANE_INVALID');
+    const az=((azimuth%360)+360)%360*Math.PI/180,d=dip*Math.PI/180;
     const u=[Math.sin(az),Math.cos(az),0],v=[Math.cos(az)*Math.cos(d),-Math.sin(az)*Math.cos(d),-Math.sin(d)];
     return Object.freeze({origin:Object.freeze(origin.slice()),u:Object.freeze(u),v:Object.freeze(v),normal:Object.freeze(unit(cross(u,v)))});
   }

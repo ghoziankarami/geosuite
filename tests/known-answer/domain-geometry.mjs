@@ -22,7 +22,11 @@ for(let i=0;i<200;i++) {
 assert.throws(()=>g.unproject(g.sectionPlane([0,0,0],0),[1,2,NaN]),/COORDINATE_INVALID/);
 assert.throws(()=>g.project({origin:[0,0,0],u:[2,0,0],v:[0,1,0],normal:[0,0,1]},[1,1,1]),/PLANE_INVALID/);
 for(const invalid of [null,[NaN,0,0],[0,0,0,1]]) assert.throws(()=>g.sectionPlane(invalid,0),/PLANE_INVALID/);
-assert.throws(()=>g.sectionPlane([0,0,0],0,0),/PLANE_INVALID/);
+assert.throws(()=>g.sectionPlane([0,0,0],0,-1),/PLANE_INVALID/);
+const horizontal=g.sectionPlane([392000,9558000,250],0,0);
+assert.equal(g.project(horizontal,[392025,9558050,250])[2],0,'horizontal section is supported');
+assert.equal(JSON.stringify(g.sectionPlane([0,0,0],-10)),JSON.stringify(g.sectionPlane([0,0,0],350)),'azimuth wraps consistently');
+assert.ok(g.sectionPlane([0,0,0],1e308).u.every(Number.isFinite),'large finite azimuth does not overflow radians');
 assert.throws(()=>g.unit([0,0,0]),/VECTOR_INVALID/);
 assert.throws(()=>g.dot([1,2],[1,2,3]),/VECTOR_INVALID/);
 assert.throws(()=>g.mul([1,2,3],NaN),/VECTOR_INVALID/);

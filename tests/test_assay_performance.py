@@ -63,6 +63,30 @@ with tempfile.TemporaryDirectory() as temp:
             assert page.evaluate("new Set(DATA.rows.map(r=>r[colIdx('domain')])).size") == 2
             assert page.evaluate('_contactProbes') < 1000000
             assert page.evaluate('window._renderFailures.length') == 0
+            # Controls must invalidate the actual diagnosis, not leave a stale A/B plot.
+            page.locator('#domainValElementSelect').select_option('cu_pct')
+            page.locator('#contactBinWidth').fill('23')
+            page.locator('#contactBinWidth').press('Tab')
+            page.wait_for_function('()=>!_plotQueueRunning&&!_plotQueue.length')
+            page.locator('#domainMethodSelect').select_option('lithology')
+            assert page.locator('#contactProfile').count() == 0
+            page.wait_for_function("()=>!window._domainValidationTimer&&!_plotQueueRunning&&!_plotQueue.length")
+            assert page.evaluate("_domainTagged.every(t=>t.domain==='L-HOST')")
+            assert page.locator('#domainValidation').inner_text().strip() == ''
+            page.locator('#domainMethodSelect').select_option('existing')
+            page.wait_for_function("()=>!!document.getElementById('contactProfile')?.data&&!_plotQueueRunning&&!_plotQueue.length")
+            assert page.locator('#domainValElementSelect').input_value() == 'cu_pct'
+            assert page.locator('#contactBinWidth').input_value() == '23'
+            assert page.evaluate("new Set(_domainTagged.map(t=>t.domain)).size") == 2
+            # A replacement through the real CSV owner cancels scheduled old diagnostics
+            # and clears manual diagnosis settings; the uploaded source is unchanged.
+            page.evaluate('renderDomain()')
+            replacement_csv = Path(temp) / 'synthetic-contact-replacement.csv'
+            replacement_csv.write_text(csv.read_text())
+            page.locator('#fileInput').set_input_files(str(replacement_csv))
+            page.wait_for_function("()=>document.getElementById('tab3').classList.contains('active')")
+            assert page.evaluate('window._domainValidationControls===null&&window._domainValidationTimer===null')
+            assert page.locator('#domainValidation').inner_text().strip() == ''
             # A replaced plot node and dataset may not be overwritten by its delayed job.
             result = page.evaluate("""async () => {
               const node=document.createElement('div');node.id='perf-stale';document.body.append(node);
@@ -72,6 +96,6 @@ with tempfile.TemporaryDirectory() as temp:
             }""")
             assert result
             browser.close()
-            print('PASS Assay: 18,000 uploaded rows; full numerical population, lazy optional tools, bounded plots, exact contact workload and stale-node safety.')
+            print('PASS Assay: 18,000 uploaded rows; full numerical population, lazy optional tools, bounded plots, exact contact workload, current domain diagnosis, editable parameters and dataset/job reset.')
     finally:
         server.shutdown()

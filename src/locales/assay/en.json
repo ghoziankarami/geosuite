@@ -1234,5 +1234,6 @@
   "flow.computeNext": "Calculate & next: {stage}",
   "flow.calculating": "Calculating with the current parameters… Next waits for the result.",
   "flow.notAdvanced": "Calculation was not completed. Inspect the status below, correct the parameters or retry; this stage has not advanced.",
-  "asy.perf.plotBudget": "Plot: {shown} of {n} points. Analysis uses every selected sample."
+  "asy.perf.plotBudget": "Plot: {shown} of {n} points. Analysis uses every selected sample.",
+  "asy.dm.checkingCurrent": "Checking the current domain definition…"
 }

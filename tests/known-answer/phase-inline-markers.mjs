@@ -60,6 +60,7 @@ const PHASES_DIR = [path.join(REPO_ROOT, 'phases'), path.join(REPO_ROOT, 'exe-wr
 // shared/io/grades.js and shared/ui/pwa.js added the same day.
 const BASELINE = {
   Core: [
+    'shared/geostat/grade-units.js',
     'shared/geostat/desurvey.js',
     'shared/i18n/index.js',
     'shared/io/columns.js',
@@ -72,6 +73,7 @@ const BASELINE = {
     'shared/ui/index.js',
   ],
   Assay: [
+    'shared/geostat/grade-units.js',
     'shared/data/dataset.js',
     'shared/i18n/index.js',
     'shared/io/columns.js',
@@ -84,6 +86,7 @@ const BASELINE = {
     'shared/ui/index.js',
   ],
   Resource: [
+    'shared/geostat/grade-units.js',
     'shared/data/dataset.js',
     'shared/geostat/resource-estimation.js',
     'shared/geo/block-view.js',

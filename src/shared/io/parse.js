@@ -71,8 +71,8 @@ function _parseSchemaComments(text) {
         // [\w/%]+ is load-bearing: a bare \w+ here is the exact bug fixed in
         // Resource (Temuan 2) -- it truncates "g/t" to "g" because \w does
         // not match "/". Do not narrow this back.
-        const m = pair.trim().match(/^(\w+)\s*=\s*([\w/%]+)/);
-        if (m) meta.units[m[1].toLowerCase()] = m[2].toLowerCase();
+        const m = pair.trim().match(/^(\w+)\s*=\s*([\w/%³]+)/);
+        if (m) meta.units[m[1].toLowerCase()] = m[2].toLowerCase().replace(/³/g,'3');
       });
     }
     if (/^notes:/i.test(line)) meta.notes = line.replace(/^notes:\s*/i, '');

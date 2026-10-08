@@ -2929,6 +2929,7 @@ let DATA = EMBEDDED_DATA;
 /* @orebit-inline: shared/ui/assay-workflow.js */
 /* @orebit-inline: shared/io/parse.js */
 /* @orebit-inline: shared/io/grades.js */
+/* @orebit-inline: shared/geostat/grade-units.js */
 /* @orebit-inline: shared/geo/spatial-index.js */
 /* @orebit-inline: shared/geo/plot-sampling.js */
 /* @orebit-inline: shared/io/columns.js */
@@ -3625,7 +3626,7 @@ function buildBundle(projectName) {
       name: DATA ? DATA.name : ''
     },
     // Carry forward user-assigned units so P3 respects the unit choice
-    units: (DATA && DATA.units) ? DATA.units : {},
+    units: Object.assign({},DATA?.units||{},Object.fromEntries(availableElements().map(col=>[col,elementMeta(col).unit||'unitless']))),
     // The treatment record travels with the project. Without it a saved project
     // reopened with capped or excluded grades — the modified values live in
     // DATA.rows and are saved either way — while the audit trail read "nothing has
@@ -3784,10 +3785,16 @@ function _coreBundleToAssay(bundle) {
     // parseCSV strips leading # schema comments and sets _lastSchemaMeta (units).
     const parsed = parseCSV(csv);
     if (!parsed || parsed.length < 2) return null;
+    // Legacy Core projects may store declarations only in metadata.
+    // CSV declarations describe any conversion already performed and win.
+    if (bundle.metadata?.units) {
+      _lastSchemaMeta = Object.assign({},_lastSchemaMeta,{units:{...bundle.metadata.units,...(_lastSchemaMeta?.units||{})}});
+      window._lastSchemaMeta = _lastSchemaMeta;
+    }
     const file = { name: bundle.name || 'Core import', headers: parsed[0], rows: parsed.slice(1) };
     const merged = mergeSingle(file);
     if (!merged || merged.unmapped || !merged.rows || !merged.rows.length) return null;   // unmapped = no hole id: a bundle has no mapper, keep the old null-fallback
-    return { rows: merged.rows, cols: merged.columns, name: bundle.name || 'Core import' };
+    return { rows: merged.rows, cols: merged.columns, name: bundle.name || 'Core import', units:merged.units || {} };
   } catch (e) { console.warn('[applyBundle] core transform failed', e); return null; }
 }
 
@@ -3819,14 +3826,14 @@ function applyBundle(bundle) {
     rows: bundle.data.rows,
     cols: bundle.data.cols,
     name: bundle.data.name || bundle.name || 'Loaded project',
-    units: bundle.units || undefined,
+    units: bundle.units || bundle.data.units || undefined,
   };
   setActiveDataset(incoming, {
     source: DATASET_SOURCE.BUNDLE,
     treatments: bundle.treatments, // undefined for legacy bundle → _treatmentRecordUnknown = true
     projectName: bundle.name,
     name: bundle.data.name,
-    units: bundle.units,
+    units: bundle.units || bundle.data.units,
   });
   // Project bundles are already parsed. Re-run the same post-ingest refresh
   // contract as CSV upload so dashboard, DQ, provenance and preview cannot go stale.
@@ -4196,6 +4203,7 @@ function availableElements() {
   // column that doesn't match either pattern here silently vanishes on import
   // even though Core's data and intent both carried it through correctly.
   const declaredGradeByUpstream = (h) => {
+    if (DATA.units && Object.prototype.hasOwnProperty.call(DATA.units,h)) return true;
     const meta = (typeof window !== 'undefined' && window._lastSchemaMeta) ? window._lastSchemaMeta : _lastSchemaMeta;
     return !!(meta && meta.units && Object.prototype.hasOwnProperty.call(meta.units, h.toLowerCase()));
   };
@@ -4222,21 +4230,25 @@ function availableElements() {
 }
 
 function elementMeta(col) {
+  const assignedMeta=(source,token)=>{
+    const meta=Object.assign({},source),unit=token==='unitless'?'':OrebitGradeUnits.normalize(token)||token;
+    meta.unit=unit;
+    if(meta.typicalCutoff!=null && unit!==source.unit) {
+      try {meta.typicalCutoff=OrebitGradeUnits.convertGrade(meta.typicalCutoff,source.unit,unit);}
+      catch {meta.typicalCutoff=null;} // Mass/volume conversion needs density; do not invent it.
+    }
+    return meta;
+  };
   if (ELEMENT_REGISTRY[col]) {
     // User-assigned grade unit override from Column & Unit Assignment panel
     // takes priority over the hardcoded registry unit (e.g. sn_pct → kg/m³ for placer tin)
     if (typeof window !== 'undefined' && window._gradeUnitOverride && window._gradeColOverride && col === window._gradeColOverride) {
-      const meta = Object.assign({}, ELEMENT_REGISTRY[col]);
-      meta.unit = window._gradeUnitOverride === 'unitless' ? '' : window._gradeUnitOverride;
-      return meta;
+      return assignedMeta(ELEMENT_REGISTRY[col],window._gradeUnitOverride);
     }
     // Schema unit from cross-phase CSV header (Core→Assay, Assay→Resource)
-    const schemaUnit = (typeof window !== 'undefined' && window._lastSchemaMeta && window._lastSchemaMeta.units
-      && window._lastSchemaMeta.units[col]) ? window._lastSchemaMeta.units[col] : null;
+    const schemaUnit = DATA?.units?.[col] ?? DATA?.units?.[String(col).toLowerCase()] ?? window._lastSchemaMeta?.units?.[col];
     if (schemaUnit) {
-      const meta = Object.assign({}, ELEMENT_REGISTRY[col]);
-      meta.unit = schemaUnit === 'unitless' ? '' : schemaUnit;
-      return meta;
+      return assignedMeta(ELEMENT_REGISTRY[col],schemaUnit);
     }
     return ELEMENT_REGISTRY[col];
   }
@@ -4250,10 +4262,11 @@ function elementMeta(col) {
   if (m) label = m[1].toUpperCase().replace(/(\d)/g, '$1');
   // User-assigned grade unit override takes priority over all other sources
   if (typeof window !== 'undefined' && window._gradeUnitOverride && window._gradeColOverride && col === window._gradeColOverride) {
-    unit = window._gradeUnitOverride === 'unitless' ? '' : window._gradeUnitOverride;
+    unit = window._gradeUnitOverride === 'unitless' ? '' : OrebitGradeUnits.normalize(window._gradeUnitOverride)||window._gradeUnitOverride;
   } else if (userUnit) {
-    unit = userUnit === 'unitless' ? '' : userUnit;
-  } else if (lc.includes('kg/m') || lc.includes('_kg') || lc.includes('kg_m')) unit = 'kg/m³';
+    unit = userUnit === 'unitless' ? '' : OrebitGradeUnits.normalize(userUnit)||userUnit;
+  } else if (OrebitGradeUnits.fromHeader(col)) unit = OrebitGradeUnits.fromHeader(col);
+  else if (lc.includes('kg/m') || lc.includes('_kg') || lc.includes('kg_m')) unit = 'kg/m³';
   else if (lc.endsWith('o2') || lc.endsWith('o3') || lc.endsWith('_pct') || lc.includes('prsn')) unit = '%';
   else if (lc.endsWith('_gpt')) unit = 'g/t';
   else if (lc.endsWith('_ppm')) unit = 'ppm';
@@ -4564,7 +4577,7 @@ function processUploadedFiles(files) {
     if (rows.length < 2) throw new Error(`${f.name} is empty or has no data rows`);
     (window._lastRejected || []).forEach(r => rejected.push(
       files.length > 1 ? Object.assign({}, r, { reason: `${f.name}: ${r.reason}` }) : r));
-    return { name: f.name, headers: rows[0], rows: rows.slice(1) };
+    return { name: f.name, headers: rows[0], rows: rows.slice(1), schemaMeta:_lastSchemaMeta };
   });
 
   // CRITICAL: resolve the decimal/thousands convention ONCE, from the combined
@@ -4754,6 +4767,10 @@ function renderDataProvenance() {
 }
 
 function mergeSingle(file) {
+  if (Object.prototype.hasOwnProperty.call(file,'schemaMeta')) {
+    _lastSchemaMeta=file.schemaMeta;
+    window._lastSchemaMeta=_lastSchemaMeta;
+  }
   const headers = file.headers;
   const detected = {};
   const detectedRawName = {}; // Sprint F: track the actual header that matched, for unit detection
@@ -4784,17 +4801,22 @@ function mergeSingle(file) {
   // we infer from the raw column name (cu_ppm → ÷10000 → cu_pct).
   const PCT_FIELDS = ['cu_pct','pb_pct','zn_pct','fe_pct','ni_pct'];
   const meta = _lastSchemaMeta;
+  const incomingUnit=(raw,field)=>{
+    const exact=String(raw||'').toLowerCase(),canonical=String(field||'').toLowerCase(),symbol=canonical.split('_')[0];
+    const token=meta?.units?.[exact] ?? meta?.units?.[canonical] ?? meta?.units?.[symbol];
+    return token==='unitless'?'unitless':OrebitGradeUnits.normalize(token) || OrebitGradeUnits.fromHeader(raw);
+  };
   const conversions = {}; // field → divisor (1 means no conversion)
   const assumedPct = []; // bare columns with no unit anywhere and no value above 100: % is a guess, say so
   PCT_FIELDS.forEach(f => {
     const raw = detectedRawName[f];
     if (!raw) return;
-    const sym = f.split('_')[0]; // cu, pb, zn, fe, ni
-    const declared = meta && meta.units && meta.units[sym];
-    if (declared === 'pct') {
+    const sym = f.split('_')[0];
+    const declared = incomingUnit(headers[detected[f]],f);
+    if (declared === '%' || declared === 'unitless' || OrebitGradeUnits.isVolumetric(declared)) {
       conversions[f] = 1; // file says pct, trust it
-    } else if (declared === 'ppm') {
-      conversions[f] = 10000; // explicit ppm → divide
+    } else if (declared) {
+      conversions[f] = 1 / OrebitGradeUnits.convertGrade(1,declared,'%');
     } else if (raw.endsWith('_ppm') || raw === sym + 'ppm') {
       conversions[f] = 10000; // inferred from header text
     } else {
@@ -4820,6 +4842,14 @@ function mergeSingle(file) {
   // Append unknown columns
   const usedIdx = new Set(Object.values(detected));
   const extras = headers.map((h,i) => ({h,i})).filter(x => !usedIdx.has(x.i));
+  const units={};
+  for(const c of finalCols) {
+    const declared=incomingUnit(headers[detected[c]],c);
+    if(conversions[c] && conversions[c]!==1) units[c]='%';
+    else if(declared) units[c]=declared;
+    else {const inferred=OrebitGradeUnits.fromHeader(c);if(inferred)units[c]=inferred;}
+  }
+  for(const {h} of extras) {const declared=incomingUnit(h,h);if(declared)units[h]=declared;}
 
   const rows = file.rows.map(r => {
     const out = finalCols.map(c => {
@@ -4842,6 +4872,7 @@ function mergeSingle(file) {
     rows,
     detectedMap: detected,
     headers,
+    units,
     schemaMeta: meta // Sprint F
   };
 }
@@ -5019,7 +5050,7 @@ function renderColumnMapping(detected) {
   const gradeGuess = els[0] || '';
   const gradeOpts = '<option value="">(auto: all detected)</option>' +
     origCols.map(c => `<option value="${escapeHtml(c)}" ${c === gradeGuess ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
-  const units = ['auto','%','g/t','ppm','kg/m³'];
+  const units = ['auto',...OrebitGradeUnits.options];
   const savedUnit = window._gradeUnitOverride || 'auto';
   const unitOpts = units.map(u => `<option value="${u}" ${u === savedUnit ? 'selected' : ''}>${u === 'auto' ? 'auto-detect from name' : u}</option>`).join('');
 
@@ -12550,13 +12581,10 @@ function exportMasterForEstimation(opts) {
   // Build units header. If the user DECLARED a grade unit in the Column & Unit
   // Assignment panel, write it for the chosen grade column so P3 auto-detects it
   // (critical for volumetric kg/m³ commodities like placer tin).
-  let unitsLine = '# units: au=gpt, cu=pct, pb=pct, zn=pct, fe=pct, ni=pct, ag=gpt';
-  if (typeof window !== 'undefined' && window._gradeUnitOverride) {
-    const gc = window._gradeColOverride || (elemCols[0] || 'grade');
-    const uMap = { '%': 'pct', 'g/t': 'gpt', 'ppm': 'ppm', 'kg/m³': 'kgm3' };
-    const uTok = uMap[window._gradeUnitOverride] || window._gradeUnitOverride;
-    unitsLine = `# units: ${gc}=${uTok}`;
-  }
+  const unitsLine = '# units: ' + elemCols.map(col => {
+    const unit=elementMeta(col).unit;
+    return `${col}=${OrebitGradeUnits.schemaToken(unit) || 'unitless'}`;
+  }).join(', ');
   // Cap provenance. A resource estimate built on capped grades has to be
   // justifiable against the raw assays, and until now that fact lived only
   // in the browser's _capLog -- gone the moment the tab closed, and never in

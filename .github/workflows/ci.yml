@@ -49,6 +49,7 @@ jobs:
           sleep 2
           python tests/test_pipeline_known_answer.py
           python tests/test_lab_conventions.py
+          python tests/test_grade_units.py
           python tests/test_estimation_inputs.py
           python tests/test_module_handoff.py
           python tests/test_resource_compatibility.py

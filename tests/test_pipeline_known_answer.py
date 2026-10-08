@@ -997,8 +997,10 @@ def main():
         expected_metal = {
             "g/t": tons_mt * mean_grade,
             "ppm": tons_mt * mean_grade,
+            "ppb": tons_mt * mean_grade / 1000,
             "%": tons_mt * mean_grade * 1e4,
             "kg/m³": vol_mm3 * 1e6 * mean_grade / 1000,
+            "g/m³": vol_mm3 * mean_grade,
         }
         units_ok = True
         for unit, expected in expected_metal.items():
@@ -1007,7 +1009,7 @@ def main():
             if not close_enough(actual, expected):
                 units_ok = False
                 print(f"    unit {unit!r} mismatch: app={actual}, expected={expected}")
-        check("Resource: contained-metal formula correct for all 4 grade units", units_ok)
+        check("Resource: contained-metal formula correct for all 6 grade units", units_ok)
         page.evaluate("setupState.gradeUnit = null;")  # restore auto-detect
 
         browser.close()

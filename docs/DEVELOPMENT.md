@@ -52,6 +52,7 @@ python3 -m http.server 8769 -d dist &
 sleep 2
 python3 tests/test_pipeline_known_answer.py
 python3 tests/test_lab_conventions.py
+python3 tests/test_grade_units.py
 python3 tests/test_estimation_inputs.py
 python3 tests/test_module_handoff.py
 python3 tests/test_pwa_install.py

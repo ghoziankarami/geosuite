@@ -11949,7 +11949,8 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
  const report=haveEstim?resourceReportSummary(setupState.reportCutoff,window._gtCurveSnapshot?.useClass):null;
  window._resourceReportSnapshot=report;
  const text=(key,values={})=>Object.entries(values).reduce((out,[k,v])=>out.replaceAll('{'+k+'}',String(v)),t(['res.reportInsight',key].join('.')));
- const num=(v,dec=3)=>v==null?'n/a':Number(v).toLocaleString('en-US',{maximumFractionDigits:dec});
+ const num=(v,dec=3)=>OrebitScreeningReport.quantity(v,dec)??'n/a';
+ const briefText=(key,values={})=>Object.entries(values).reduce((out,[k,v])=>out.replaceAll('{'+k+'}',String(v)),t(['res.reportSummary.brief',key].join('.')));
  const scopeClass=text(report?.useClass?'highMedium':'allClasses');
  const cutoffForReport=setupState.reportCutoff;
  const cutLabel=cutoffForReport==null?text('allGrades'):text('cutoff',{cutoff:String(cutoffForReport),unit:gradeUnitFor(setupState.element)});
@@ -11964,7 +11965,19 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
    [t('res.reportSummary.checks'),report?text('coverage',{coverage:num(report.estimated.blocks/Math.max(1,report.generated.blocks)*100,1),unestimated:num(report.generated.blocks-report.estimated.blocks,0),fallback:num(passCounts?.[2]||0,0)}):text('noEstimate')],
    [t('res.reportSummary.scope'),text('scope',{element:elemLab,domain:setupState.domain,size:blockState.size?.join(' x ')||'n/a',density:blockState.blockDensities?'variable '+(blockState.densitySource||'by block'):num(blockState.density)+' t/m3'})],
    [t('res.reportSummary.next'),text('next')]
- ]);
+ ],{
+   scope:elemLab+' | '+setupState.domain+' | '+cutLabel+' | '+scopeClass,
+   metrics:[
+     {label:briefText('tonnes'),value:report?OrebitScreeningReport.quantity(selected.mt*1e6)+' t':null,detail:report?briefText('blocks',{n:selected.blocks}):''},
+     {label:briefText('grade'),value:selected?.meanGrade==null?null:OrebitScreeningReport.quantity(selected.meanGrade)+' '+report.unit,detail:briefText('weighted')},
+     {label:briefText('metal'),value:report?.metalTonnes==null?null:OrebitScreeningReport.quantity(report.metalTonnes)+' t',detail:briefText('inSitu')},
+     {label:briefText('coverage'),value:report?OrebitScreeningReport.quantity(report.estimated.blocks/Math.max(1,report.generated.blocks)*100,1)+' %':null,detail:briefText('finite')}
+   ],
+   attentionRequired:!report||!selected.blocks||report.estimated.blocks<report.generated.blocks,
+   interpretation:briefText(!report?'noEstimate':selected.blocks?'meaning':'empty'),
+   attention:haveVario&&!variogramState.model.struct1&&variogramState.model.covarianceMode!=='model-range'?briefText('legacy'):report?briefText('attention',{missing:report.generated.blocks-report.estimated.blocks,fallback:passCounts?.[2]||0}):briefText('noEstimate'),
+   next:briefText(report?'next':'fixNext')
+ });
  OrebitScreeningReport.append(pdf,'Resource',[
    ['Purpose','Initial screening and due-diligence insight. Confidence labels are not certified JORC/KCMI Resource categories.'],
    ['Input',DATA.name || 'Loaded composite dataset'],

@@ -12367,6 +12367,22 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
 
     const insightText=(key,values={})=>Object.entries(values).reduce((out,[k,v])=>out.replaceAll('{'+k+'}',String(v)),t(['core.reportInsight',key].join('.')));
     const findings=checks.filter(c=>c.severity==='fail'||c.severity==='warn');
+    const briefText=(key,values={})=>Object.entries(values).reduce((out,[k,v])=>out.replaceAll('{'+k+'}',String(v)),t(['core.reportSummary.brief',key].join('.')));
+    const failures=checks.filter(c=>c.severity==='fail').length,warnings=checks.filter(c=>c.severity==='warn').length;
+    const handoffReady=coreGeometryReady()&&!!STATE.merged?.length&&failures===0;
+    const executiveBrief={
+      scope:[briefText(window._coreUseProvidedXYZ?'sourceXYZ':'sourceSurvey'),briefText('crs',{crs:STATE.crs||briefText('noCRS')}),_lengthTag().replace(/^#\s*/,'')].join(' | '),
+      metrics:[
+        {label:briefText('holes'),value:OrebitScreeningReport.quantity(collar.length,0),detail:briefText('original')},
+        {label:briefText('assays'),value:OrebitScreeningReport.quantity(STATE.assay.length,0),detail:briefText('original')},
+        {label:briefText('merged'),value:OrebitScreeningReport.quantity(STATE.merged?.length||0,0),detail:briefText('joined')},
+        {label:briefText('failed'),value:OrebitScreeningReport.quantity(failures,0),detail:briefText('warnings',{n:warnings})}
+      ],
+      attentionRequired:!handoffReady||warnings>0||!STATE.crs,
+      interpretation:briefText(handoffReady?'ready':'notReady'),
+      attention:briefText('attention',{failed:failures,warns:warnings}),
+      next:briefText(handoffReady?'next':'fixNext')
+    };
     OrebitScreeningReport.prepend(pdf,'Core',[
       [t('core.reportSummary.result'),insightText('result',{holes:collar.length,assays:STATE.assay.length,merged:STATE.merged?.length||0,failed:checks.filter(c=>c.severity==='fail').length,warns:checks.filter(c=>c.severity==='warn').length})],
       [t('core.reportSummary.meaning'),insightText(coreGeometryReady()?'ready':'notReady')],
@@ -12374,7 +12390,7 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
       [t('core.reportSummary.scope'),insightText('coordinates',{source:window._coreUseProvidedXYZ?'supplied interval midpoint XYZ':'minimum-curvature survey',crs:STATE.crs||'not declared',missing:STATE.mergeAudit?.intervalsWithoutXYZ??'merge not run'})],
       [t('core.reportSummary.next'),insightText('next')],
       [t('core.reportSummary.evidence'),insightText('evidence')]
-    ]);
+    ],executiveBrief);
     OrebitScreeningReport.append(pdf,'Core',[
       ['Purpose','Initial data-preparation and geometry screening. This report does not verify geological Resource accuracy.'],
       ['Coordinate source',window._coreUseProvidedXYZ?'Supplied assay interval midpoint XYZ; directional survey not reconstructed or independently verified':'Minimum-curvature survey; inspect measured dip/azimuth and collar control'],

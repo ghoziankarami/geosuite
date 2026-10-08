@@ -13206,13 +13206,22 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
     const ei = colIdx(elemCol);
     const holes = [...new Set(DATA.rows.map(r => r[colIdx('hole_id')]))].filter(Boolean);
     const vals = DATA.rows.map(r => r[ei]).filter(v => typeof v === 'number' && Number.isFinite(v) && v >= 0);
+    const briefText=(key,values={})=>Object.entries(values).reduce((out,[k,v])=>out.replaceAll('{'+k+'}',String(v)),t(['asy.reportSummary.brief',key].join('.')));
     if(!vals.length){
       const noGrades=t('asy.reportInsight.noGrades').replace('{element}',elemCol).replace('{rows}',DATA.rows.length);
       OrebitScreeningReport.prepend(pdf,'Assay',[
         [t('asy.reportSummary.result'),noGrades],
         [t('asy.reportSummary.scope'),(DATA.name||'Current loaded dataset')+' '+methodBasis],
         [t('asy.reportSummary.next'),t('asy.reportInsight.next')]
-      ]);
+      ],{
+        scope:elemCol+' | '+briefText('allRows'),attentionRequired:true,
+        metrics:[
+          {label:briefText('rows'),value:OrebitScreeningReport.quantity(DATA.rows.length,0)},
+          {label:briefText('valid'),value:'0',detail:briefText('missing',{n:DATA.rows.length})},
+          {label:briefText('mean'),value:null},{label:briefText('composites'),value:null}
+        ],
+        interpretation:briefText('noGrades'),attention:briefText('fix'),next:briefText('fixNext')
+      });
       pdf.deletePage(pdf.internal.getNumberOfPages());
       OrebitScreeningReport.append(pdf,'Assay',[
         ['Grade statistics population',`Finite nonnegative current values including zeros: n=0; loaded rows ${DATA.rows.length}`],
@@ -13908,12 +13917,24 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
     const domainAudit=window._domainAudit;
     const domainDescription=insightText('domain',{method:domainAudit?.method||(colIdx('domain')>=0?t('asy.reportInsight.domainUnknown'):t('asy.reportInsight.noDomain')),element:domainAudit?.element||elemCol,controls:domainAudit?.method==='cutoff'?`cutoff >= ${domainAudit.cutoff} ${OrebitScreeningReport.unitLabel(elementMeta(domainAudit.element).unit)}`:domainAudit?.method==='grade'||domainAudit?.method==='auto'?`P33=${domainAudit.breakpoints[0]}, P67=${domainAudit.breakpoints[1]}, P80=${domainAudit.breakpoints[2]}`:'no grade cutoff recorded'});
     OrebitScreeningReport.prepend(pdf,'Assay',[
-      [t('asy.reportSummary.result'),insightText('result',{rows:DATA.rows.length,valid:vals.length,element:elementMeta(elemCol).label+' ('+OrebitScreeningReport.unitLabel(elementMeta(elemCol).unit)+')',missing:DATA.rows.length-vals.length,mean:s.mean.toFixed(3),median:s.p50.toFixed(3),cv:s.cv.toFixed(2),composites:compRes.composites.length,length:compositeLen})],
+      [t('asy.reportSummary.result'),insightText('result',{rows:DATA.rows.length,valid:vals.length,element:elementMeta(elemCol).label+' ('+OrebitScreeningReport.unitLabel(elementMeta(elemCol).unit)+')',missing:DATA.rows.length-vals.length,mean:OrebitScreeningReport.quantity(s.mean),median:OrebitScreeningReport.quantity(s.p50),cv:OrebitScreeningReport.quantity(s.cv,2),composites:compRes.composites.length,length:compositeLen})],
       [t('asy.reportSummary.meaning'),insightText('meaning')],
       [t('asy.reportSummary.checks'),insightText('support',{before:inputLength.toFixed(3),after:compLength.toFixed(3),change:inputGradeLength?((compGradeLength/inputGradeLength-1)*100).toFixed(4):'n/a',tails:compRes.droppedTailLength,gaps:compRes.gapLength})],
       [t('asy.reportSummary.scope'),domainDescription+' '+insightText('scope',{treatment:actualTreatmentDisplay})+' '+methodBasis],
       [t('asy.reportSummary.next'),insightText('next')]
-    ]);
+    ],{
+      scope:elementMeta(elemCol).label+' ('+OrebitScreeningReport.unitLabel(elementMeta(elemCol).unit)+') | '+briefText('allRows'),
+      metrics:[
+        {label:briefText('valid'),value:OrebitScreeningReport.quantity(vals.length,0),detail:briefText('missing',{n:DATA.rows.length-vals.length})},
+        {label:briefText('mean'),value:OrebitScreeningReport.quantity(s.mean)+' '+OrebitScreeningReport.unitLabel(elementMeta(elemCol).unit),detail:briefText('input')},
+        {label:briefText('composites'),value:OrebitScreeningReport.quantity(compRes.composites.length,0),detail:briefText('length',{n:compositeLen})},
+        {label:briefText('retained'),value:inputLength>0?OrebitScreeningReport.quantity(compLength/inputLength*100,2)+' %':null,detail:briefText('support')}
+      ],
+      attentionRequired:DATA.rows.length>vals.length||compRes.droppedTailLength>0||compRes.gapLength>0,
+      interpretation:briefText('meaning'),
+      attention:briefText('attention',{missing:DATA.rows.length-vals.length,tails:OrebitScreeningReport.quantity(compRes.droppedTailLength),gaps:OrebitScreeningReport.quantity(compRes.gapLength)}),
+      next:briefText('next')
+    });
     OrebitScreeningReport.append(pdf,'Assay',[
       ['Purpose','Initial grade-treatment and compositing audit, before spatial Resource screening'],
       ['Report scope',`All ${DATA.rows.length} currently loaded rows. Current UI domain view: ${window._domainScope || 'All'}. Report plots and statistics use all rows.`],

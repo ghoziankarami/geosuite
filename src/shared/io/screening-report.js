@@ -23,13 +23,13 @@
  }
  // Content is paginated before the footer. A long note/parameter record is never clipped.
  function cards(pdf,module,rows,opts={}){
-   const W=pdf.internal.pageSize.getWidth(),H=pdf.internal.pageSize.getHeight();let y=49,index=0;
+   const W=pdf.internal.pageSize.getWidth(),H=pdf.internal.pageSize.getHeight();let y=49,index=opts.afterPage||0;
    const newPage=()=>{opts.insert?pdf.insertPage(++index):pdf.addPage();if(opts.insert)pdf.setPage(index);header(pdf,module,opts.title,opts.subtitle);y=49;};
    newPage();
    rows.forEach(([label,value],rowIndex)=>{
      const first=!!opts.executive&&rowIndex===0,bodySize=first?11:9.5,lineHeight=first?5.6:4.7;
      pdf.setFont('helvetica','normal');pdf.setFontSize(bodySize);
-     const lines=pdf.splitTextToSize(ascii(value),W-46);
+     const lines=pdf.splitTextToSize(readable(value,label),W-46);
      pdf.setFont('helvetica','bold');pdf.setFontSize(10);
      const labels=pdf.splitTextToSize(ascii(label).replace(/^\d+\.\s*/,''),W-55);let at=0,continued=false;
      do{
@@ -53,10 +53,80 @@
    window._reportAuditSnapshot={module,rows:rows.map(row=>row.map(ascii)),generated:new Date().toISOString()};
    cards(pdf,module,window._reportAuditSnapshot.rows,{title:'Screening due-diligence insight',subtitle:'Data, assumptions and calculation audit | Orebit '+module});
  }
- function prepend(pdf,module,sections){
+ function quantity(value,digits=6){
+   if(value==null||!Number.isFinite(Number(value)))return null;
+   const n=Number(value),locale=document.documentElement.lang==='id'?'id-ID':'en-US';
+   return n!==0&&Math.abs(n)<10**-digits?n.toExponential(2):n.toLocaleString(locale,{maximumFractionDigits:digits});
+ }
+ // Keep machine-readable originals in the audit snapshot, but print labelled fields.
+ function readable(value,label=''){
+   const source=ascii(value).replace(/^#\s*/gm,'').trim();
+   try{
+     const parsed=JSON.parse(source);
+     if(parsed&&typeof parsed==='object'){
+       if(label==='Search pass counts')return Object.entries(parsed).map(([pass,n])=>
+         ({0:'Unestimated',1:'Primary search',2:'Fallback search'}[pass]||'Search pass '+pass)+': '+n).join('\n');
+       // Generic audit JSON is not an Assay review schema: a model's unit may
+       // describe distance rather than grade. Preserve every field and its meaning.
+       const human=key=>String(key).replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ').replace(/^./,c=>c.toUpperCase());
+       const lines=[];
+       const visit=(item,path)=>{
+         if(item&&typeof item==='object'){
+           const entries=Object.entries(item);
+           if(!entries.length)lines.push(path+': not available');
+           for(const [key,v] of entries)visit(v,path?path+' / '+human(key):human(key));
+         }else lines.push(path+': '+(item==null?'not available':String(item)));
+       };
+       visit(parsed,'');return lines.join('\n');
+     }
+   }catch(_){/* ordinary prose */}
+   return source;
+ }
+ function executive(pdf,module,brief,tr){
+   pdf.insertPage(1);pdf.setPage(1);
+   const W=pdf.internal.pageSize.getWidth(),H=pdf.internal.pageSize.getHeight(),width=W-30;
+   header(pdf,module,tr('title'),tr('subtitle'));
+   // A bounded cover is a reading aid, not a replacement for full notes/settings.
+   // Every original section follows on page 2, including text shortened here.
+   const text=(value,x,y,maxWidth,maxLines,size=10,color=ink,bold=false)=>{
+     pdf.setFont('helvetica',bold?'bold':'normal');pdf.setFontSize(size);pdf.setTextColor(...color);
+     let lines=pdf.splitTextToSize(readable(value),maxWidth);
+     if(lines.length>maxLines){lines=lines.slice(0,maxLines);lines[maxLines-1]=lines[maxLines-1].replace(/\s+\S*$/,'')+'...';}
+     pdf.text(lines,x,y,{lineHeightFactor:1.3});
+   };
+   text(tr('brief.scope'),15,48,width,1,8,muted,true);
+   text(brief.scope,15,54,width,2,10);
+   const gap=6,cell=(width-gap)/2,top=69,cardH=34;
+   brief.metrics.slice(0,4).forEach((metric,i)=>{
+     const x=15+(i%2)*(cell+gap),y=top+Math.floor(i/2)*(cardH+gap);
+     pdf.setFillColor(245,248,249);pdf.roundedRect(x,y,cell,cardH,2,2,'F');
+     text(metric.label,x+5,y+7,cell-10,1,8,muted,true);
+     const value=ascii(metric.value==null?tr('brief.unavailable'):metric.value);
+     pdf.setFont('helvetica','bold');let size=22;pdf.setFontSize(size);
+     while(size>12&&pdf.getTextWidth(value)>cell-10){size--;pdf.setFontSize(size);}
+     text(value,x+5,y+19,cell-10,1,size,teal,true);
+     text(metric.detail||'',x+5,y+28,cell-10,1,8,muted);
+   });
+   const y=151,warning=brief.attentionRequired;
+   pdf.setFillColor(...(warning?[255,246,225]:[230,245,242]));pdf.roundedRect(15,y,width,23,2,2,'F');
+   text(tr('brief.readout'),20,y+7,width-10,1,8,warning?[125,83,8]:teal,true);
+   text(brief.interpretation,20,y+14,width-10,2,10);
+   text(tr('brief.attentionTitle'),15,185,width,1,9,teal,true);
+   text(brief.attention,15,193,width,3,10);
+   pdf.setDrawColor(219,228,231);pdf.line(15,210,W-15,210);
+   text(tr('brief.nextTitle'),15,221,width,1,9,teal,true);
+   text(brief.next,15,229,width,3,11);
+   text(tr('brief.limits'),15,H-38,width,2,9,muted);
+   text(tr('brief.details'),15,H-23,width,1,8,teal,true);
+   window._reportBriefSnapshot={module,...brief,detailStartPage:2};
+ }
+ function prepend(pdf,module,sections,brief){
    const prefix={Core:'core',Assay:'asy',Resource:'res'}[module],tr=key=>ascii(window.__t(prefix+'.reportSummary.'+key));
    window._reportExecutiveSnapshot={module,sections:sections.map(row=>row.map(ascii))};
-   cards(pdf,module,window._reportExecutiveSnapshot.sections,{insert:true,executive:true,title:tr('title'),subtitle:'Orebit '+module+' | '+tr('subtitle')});
+   if(brief){
+     executive(pdf,module,brief,tr);
+     cards(pdf,module,window._reportExecutiveSnapshot.sections,{insert:true,afterPage:1,title:tr('brief.detailTitle'),subtitle:'Orebit '+module+' | '+tr('subtitle')});
+   }else cards(pdf,module,window._reportExecutiveSnapshot.sections,{insert:true,executive:true,title:tr('title'),subtitle:'Orebit '+module+' | '+tr('subtitle')});
  }
  // Keep JSON in the downloadable machine record; reports use labelled values.
  // Recorded labels belong to the review snapshot, including a stale review.
@@ -123,5 +193,5 @@
    catch(error){console.warn('PDF bridge failed, jsPDF fallback:',error);pdf.save(filename);}
    if(typeof window._recordExport==='function')window._recordExport('PDF','Orebit '+module+' - PDF Report',{filename,mime:'application/pdf',content:data.length<=1900000?data:''});
  }
- window.OrebitScreeningReport={prepare,append,prepend,interpretation,formatParameters,unitLabel,save};
+ window.OrebitScreeningReport={prepare,append,prepend,interpretation,formatParameters,unitLabel,quantity,save};
 })();

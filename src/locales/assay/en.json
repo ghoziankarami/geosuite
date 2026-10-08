@@ -22,7 +22,7 @@
   "asy.kcmi.lithoDistribution": "Lithology distribution: {l}.",
   "asy.kcmi.lithoNotLogged": "Lithology: not logged.",
   "asy.kcmi.compositingNote": "Compositing: 1m weighted-average by length.",
-  "asy.autoPilot": "Auto-Pilot",
+  "asy.autoPilot": "Review suggestions",
   "asy.beyondInferred": "Beyond Inferred",
   "asy.boxplotByDomain": "Boxplot by Domain/Lithology",
   "asy.cdf": "CDF (Cumulative Distribution)",
@@ -173,7 +173,7 @@
   "asy.wf.g11": "Gate: Working summary + standards-referenced commentary",
   "asy.st.title": "EDA Stats — Comprehensive Distribution Analysis",
   "asy.st.hint": "Review variability, outliers, support and geological context before choosing a treatment. CV or a log-normal appearance alone does not justify capping or a transform.",
-  "asy.st.autopilot": "Auto-Pilot",
+  "asy.st.autopilot": "Review suggestions",
   "asy.st.autoClean": "Screen &amp; Propose Caps",
   "asy.st.autoCleanHint": "Screens every element (P99 top-cut candidates, K-Means clustering, ANOVA) and proposes caps to review — nothing changes until you click Apply Caps.",
   "asy.autoClean.noopCap": "touches nothing at current threshold",
@@ -321,7 +321,7 @@
   "asy.tc.capped": "capped, mean drops",
   "asy.tc.perElement": "Per-element threshold at P95/P98/P99 with the impact on metal loss and mean.",
   "asy.tc.clickRowSelect": "Click a row to select the active element (the <strong>preset</strong> column follows ELEMENT_REGISTRY).",
-  "asy.tc.topcutRequiredCv": "Top-cut required if CV &gt; 1.5.",
+  "asy.tc.topcutRequiredCv": "CV above 1.5 prompts a tail review. Top-cut is optional and needs geological justification.",
   "asy.tc.exportMatrix": "Export top-cut matrix CSV",
   "asy.tc.threshShort": "thresh",
   "asy.tc.lossShort": "loss%",
@@ -1235,5 +1235,6 @@
   "flow.calculating": "Calculating with the current parameters… Next waits for the result.",
   "flow.notAdvanced": "Calculation was not completed. Inspect the status below, correct the parameters or retry; this stage has not advanced.",
   "asy.perf.plotBudget": "Plot: {shown} / {n} points<br>Analysis: all selected samples",
-  "asy.dm.checkingCurrent": "Checking the current domain definition…"
+  "asy.dm.checkingCurrent": "Checking the current domain definition…",
+  "asy.tc.applyScope": "Review first, then Apply: no cap is applied by opening this tab. A chosen threshold is applied to this element across all rows; the selected domain records where the threshold was reviewed. Sensitivity based on grade sums is not a resource-metal estimate."
 }

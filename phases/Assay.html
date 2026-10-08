@@ -8928,6 +8928,7 @@ function renderTopCut() {
   }
 
   document.getElementById('tc').innerHTML = `
+    <p class="hint">${t('asy.tc.applyScope')}</p>
     ${_domainScopeBadge()}
     ${(window._domainScope === 'All' && _domainValues().length > 1) ? '<div class="hint warn">' + ICONS.warn + ' ' + t('asy.scope.mixedWarn').replace('{n}', _domainValues().length) + '</div>' : ''}
     ${qiPanelTC}
@@ -10300,18 +10301,16 @@ function applyAutoCleanCaps() {
     const idx = typeof colIdx === 'function' ? colIdx(entry.col) : DATA.cols.indexOf(entry.col);
     if (idx < 0) return;
     const cut = typeof entry.cut === 'number' ? entry.cut : entry.p99;
-    if (cut == null) return;
+    if (!Number.isFinite(cut) || cut <= 0) return;
+    const pipeline = _pipelineFor(entry.col);
     if (!window._capLog[entry.col]) {
-      window._capLog[entry.col] = { original: DATA.rows.map(r => r[idx]), cut: null, appliedAt: null };
+      window._capLog[entry.col] = { original: pipeline.raw.slice(), cut: null, appliedAt: null };
     }
     const log = window._capLog[entry.col];
-    DATA.rows.forEach((r, ri) => {
-      const orig = log.original[ri];
-      if (typeof orig === 'number') {
-        r[idx] = orig > cut ? cut : orig;
-        if (orig > cut) totalAffected++;
-      }
-    });
+    const before = DATA.rows.map(r => r[idx]);
+    _pipelineSetOp(entry.col, { type: 'cap', cut });
+    totalAffected += DATA.rows.filter((r, ri) =>
+      typeof before[ri] === 'number' && typeof r[idx] === 'number' && r[idx] !== before[ri]).length;
     log.cut = cut;
     log.appliedAt = Date.now();
     log.source = 'autoclean';

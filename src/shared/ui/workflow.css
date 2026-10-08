@@ -50,3 +50,6 @@ body.screening-guided.screening-advanced-open nav.tabs .tab[data-workflow-advanc
 .tour-card .tour-actions{flex-wrap:wrap;gap:8px}
 .tour-card button{min-height:44px;padding:8px 12px}
 @media(max-width:600px){.tour-card{font-size:13px}.tour-card .tour-actions>div{margin-left:auto}.tour-card .tour-skip{padding:8px 12px!important}}
+
+.core-repair-issue{padding:16px 0;border-top:1px solid var(--border,#dce4ee)}
+.core-repair-issue p{max-width:76ch}

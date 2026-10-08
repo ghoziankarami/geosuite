@@ -172,9 +172,12 @@
     const actions=node('div',null,'workflow-actions');
     if(n===2)actions.append(button(tr('import'),'apply',()=>document.getElementById('fileInput').click()));
     const target=next(n);if(target&&!(resource()&&n===3)){const onward=button(tr('next',{stage:label(target)}),'next',()=>continueStage(n,target));onward.dataset.workflowNext='true';onward.disabled=!canContinue(n);actions.append(onward);}
+    if(!resource() && n===7 && !ready(n)){
+      const repair=button(window.__t('core.repair.title'),'next',()=>{const el=document.getElementById('coreValidationRemedies');el?.scrollIntoView({block:'start',behavior:'smooth'});el?.querySelector('button')?.focus({preventScroll:true});});repair.dataset.workflowRepair='true';actions.prepend(repair);
+    }
     if(n!==2){
       const inspect=button(tr('inspect'),'inspect',()=>{
-        const id=resource()?({3:'resourceSetupQuickInsight',4:'varPlot',5:blockState.blocks?.length?'blockGridSummary':'blockPreview',6:'estimResults',7:'cvResults'})[n]:({7:'validationPanel',10:'desurveyPanel',11:'mergePanel'})[n];
+        const id=resource()?({3:'resourceSetupQuickInsight',4:'varPlot',5:blockState.blocks?.length?'blockGridSummary':'blockPreview',6:'estimResults',7:'cvResults'})[n]:({7:'coreValidationRemedies',10:'desurveyPanel',11:'mergePanel'})[n];
         const result=(id&&document.getElementById(id))||panel.querySelector('.plot-container,.card');
         if(result){let parent=result.parentElement;while(parent&&parent!==panel){if(parent.tagName==='DETAILS')parent.open=true;parent=parent.parentElement;}result.scrollIntoView({block:'start',behavior:'smooth'});result.setAttribute('tabindex','-1');result.focus({preventScroll:true});}
       });

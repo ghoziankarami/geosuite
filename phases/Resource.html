@@ -7367,7 +7367,7 @@ function getSamples() {
  const rows = rowsFiltered();
  const eli = colIdx(setupState.element);
  const xi = colIdx('midx'), yi = colIdx('midy'), zi = colIdx('midz');
- const hi = colIdx('hole_id');
+ const hi = colIdx('hole_id'), fi = colIdx('from_m'), ti = colIdx('to_m');
  const out = [];
  const seen = new Map(); // "x,y,z" -> count
  for (const r of rows) {
@@ -7381,7 +7381,7 @@ function getSamples() {
  const jx = x + count * 0.001;
  const jy = y + count * 0.001;
  const jz = z + count * 0.001;
- out.push({ x: jx, y: jy, z: jz, v, rid: r[hi] });
+ out.push({ x: jx, y: jy, z: jz, v, rid: r[hi], md:fi>=0&&ti>=0&&asNum(r[fi])!==null&&asNum(r[ti])!==null?(asNum(r[fi])+asNum(r[ti]))/2:null });
  }
  return out;
 }
@@ -9937,12 +9937,14 @@ function render3D() {
  <label>${t('res.viewer.gradeMax')} (${escapeHtml(_resGradeUnit(setupState.element))}): <input type="number" id="d3Max" step="any" placeholder="${t('res.viewer.unbounded')}" style="width:120px;"></label>
  </div><p class="hint">${t('res.viewer.rangeHelp')}</p>
  <p id="d3Validation" class="hint warn" role="alert" hidden></p>
- <details class="workflow-notes"><summary>${t("res.viewer.filters")}</summary><div class="row-controls">
+ <div class="row-controls">
  <label>${t('res.viewer.scale')}:
  <select id="d3Scale"><option value="quantile">${t('res.viewer.quantile')}</option><option value="linear">${t('res.viewer.linear')}</option><option value="custom">${t('res.viewer.custom')}</option></select></label>
  <label>${t('res.viewer.palette')}:
  <select id="d3Palette"><option value="warm">${t('res.viewer.warm')}</option><option value="viridis">Viridis</option><option value="cividis">Cividis</option></select></label>
  <label id="d3BreaksLabel" hidden>${t('res.viewer.breaks')}: <input id="d3Breaks" placeholder="0.5, 1, 1.5, 2" style="width:200px;max-width:100%;"></label>
+ </div><p class="hint">${t('res.viewer.scaleHelp')}</p>
+ <details class="workflow-notes"><summary>${t("res.viewer.filters")}</summary><div class="row-controls">
  <label>Class filter:
  <select id="d3Class" ${!classState.labels? 'disabled' : ''}>
  <option value="all">All</option>
@@ -9953,11 +9955,11 @@ function render3D() {
  <label>Point / individual-block limit: <input type="number" id="d3Sub" value="2000" min="500" step="500" style="width:100px;"></label>
  <label>Vertical exaggeration:
  <input type="range" id="d3Exag" min="0.25" max="4" step="0.25" value="1"
-        oninput="document.getElementById('d3ExagVal').textContent=this.value+'×'" onchange="render3DPlot()"
+        oninput="document.getElementById('d3ExagVal').textContent=this.value+'×'"
         style="vertical-align:middle;width:110px;">
  <span id="d3ExagVal" style="font-variant-numeric:tabular-nums;">1×</span>
  </label>
- </div><p class="hint">${t('res.viewer.scaleHelp')}</p></details>
+ </div></details>
  <p class="hint">${t("res.viewer.hint")}</p>
  <button class="btn" onclick="render3DPlot();renderBlockSection()">${t("res.viewer.render")}</button>
  </div>
@@ -10068,7 +10070,7 @@ function renderBlockSection() {
   tx.push(`X: ${b.cx.toFixed(1)}<br>Y: ${b.cy.toFixed(1)}<br>Grade: ${r.ok[i].toFixed(2)}<br>n: ${r.nNb[i]}`);
  }
  const colours = _blockViewColours(cs, context);
- Plotly.newPlot('blockSectionPlot', [{x:xs,y:ys,type:'scatter',mode:'markers',marker:{size:7,color:colours.values,...colours.options,showscale:true},text:tx,hoverinfo:'text'}], {...plotTheme(),height:420,margin:{l:62,r:18,t:24,b:58},xaxis:{...plotTheme().xaxis,title:'Easting (m)'},yaxis:{...plotTheme().yaxis,title:'Northing (m)',scaleanchor:'x'},title:'Plan section'},{responsive:true,displayModeBar:true,scrollZoom:true,doubleClick:'reset'}).then(() => { const el=document.getElementById('blockSectionPlot'); if (el && Plotly.Plots) Plotly.Plots.resize(el); });
+ Plotly.newPlot('blockSectionPlot', [{x:xs,y:ys,type:'scatter',mode:'markers',marker:{size:7,color:colours.values,...colours.options,showscale:true},text:tx,hoverinfo:'text'}], {...plotTheme(),height:420,margin:{l:62,r:18,t:24,b:58},xaxis:{...plotTheme().xaxis,title:'Easting (m)'},yaxis:{...plotTheme().yaxis,title:'Northing (m)',scaleanchor:'x'},title:'Plan section'},{responsive:true,displayModeBar:true,scrollZoom:true,doubleClick:'reset'}).then(() => { if (host.isConnected && document.getElementById('blockSectionPlot')===host && Plotly.Plots) Plotly.Plots.resize(host); });
  // This is a full-model top-down projection (every estimated block collapsed
  // onto the XY plane), not a single elevation slice -- said explicitly so it
  // isn't mistaken for a bench plan. See T10.3.
@@ -10081,6 +10083,7 @@ function renderBlockSection() {
 // variance); this function only builds the box geometry. See T10.1.
 /* @orebit-inline: shared/geo/block-mesh.js */
 /* @orebit-inline: shared/geo/block-view.js */
+/* @orebit-inline: shared/geo/drillhole-display.js */
 
 function _blockViewContext() {
  const mode=document.getElementById('d3Mode')?.value||'grade';
@@ -10402,36 +10405,14 @@ function render3DPlot() {
  title: `${plotXs.length.toLocaleString('en-US')} blocks rendered${xs.length > subN? ' (subsampled)' : ''}`,
  scene: scene3dConfig(userExag)
  };
- // CHANGED 2026-07-31: senior geologist v2 — drillhole as connected line traces per hole
- // Group samples by hole_id and render each as a 3D line trace (like real drillhole traces)
- const samples = getSamples();
- const dhTraces = [];
- if (samples.length > 0) {
-   // Group by hole_id (samples[].rid = row id → group by same rid)
-   const holeGroups = new Map();
-   for (const s of samples) {
-     const key = s.rid !== undefined ? s.rid : 'default';
-     if (!holeGroups.has(key)) holeGroups.set(key, []);
-     holeGroups.get(key).push(s);
-   }
-   for (const [, holeSamples] of holeGroups) {
-     // Sort by depth (z descending = surface to depth)
-     holeSamples.sort((a, b) => b.z - a.z);
-     dhTraces.push({
-       type: 'scatter3d', mode: 'lines+markers',
-       x: holeSamples.map(s => s.x),
-       y: holeSamples.map(s => s.y),
-       z: holeSamples.map(s => s.z),
-       name: 'Drillholes',
-       line: { width: 2, color: 'rgba(30,58,138,0.6)' },
-       marker: { size: 3, color: 'rgba(30,58,138,0.8)', symbol: 'circle' },
-       hoverinfo: 'skip',
-       showlegend: dhTraces.length === 0 // only show legend once
-     });
-   }
- }
+ // One bounded trace avoids hundreds of WebGL draw calls. Null separators keep holes separate.
+ const overlay = drillholeDisplay(getSamples());
+ const dhTraces = overlay.displayed ? [{type:'scatter3d',mode:'lines+markers',
+   x:overlay.x,y:overlay.y,z:overlay.z,name:t('res.viewer.drillholes'),
+   line:{width:2,color:'rgba(30,58,138,0.6)'},marker:{size:3,color:'rgba(30,58,138,0.8)'},hoverinfo:'skip',showlegend:true}] : [];
  Plotly.newPlot('d3Plot', [trace, ...dhTraces], layout, { responsive: true, displayModeBar: true, doubleClick: 'reset', scrollZoom: true });
  _print3DExagNote(plotXs.length, xs.length, r.estimated, subStep);
+ const note=document.getElementById('d3PlotNote');if(note&&overlay.total)note.textContent+=' · '+t('res.viewer.drillholeDisplay').replace('{shown}',overlay.displayed).replace('{total}',overlay.total);
 }
 
 // Shared by the 3D viewer and the 2D Plan Section (T10.3): the same block

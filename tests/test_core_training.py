@@ -3,7 +3,7 @@
 This tests the UI/import boundary, not just a synthetic object written into STATE.
 """
 
-import csv, functools, http.server, io, tempfile, threading, zipfile
+import csv, functools, http.server, io, os, tempfile, threading, zipfile
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
@@ -18,7 +18,7 @@ class Quiet(http.server.SimpleHTTPRequestHandler):
 
 
 server = http.server.ThreadingHTTPServer(
-    ("127.0.0.1", 0), functools.partial(Quiet, directory=str(ROOT / "dist"))
+    ("127.0.0.1", 0), functools.partial(Quiet, directory=str(Path(os.environ.get("OREBIT_TEST_DIST",ROOT / "dist"))))
 )
 threading.Thread(target=server.serve_forever, daemon=True).start()
 passed = 0
@@ -40,6 +40,48 @@ try:
         page.evaluate(
             "document.querySelectorAll('.lang-picker-overlay,#tourOverlay').forEach(e=>e.remove());applyLanguage('en');window.orebitConfirm=async()=>true;"
         )
+        page.evaluate('showTab(7)')
+        before_repair = page.evaluate('JSON.stringify([STATE.assay,STATE.survey])')
+        check(page.locator('#coreRepairSource').is_visible(), 'Known synthetic source repair is visible beside actual failures')
+        page.evaluate('window.orebitConfirm=async()=>false')
+        page.locator('#coreRepairSource').click()
+        check(page.evaluate('STATE.collar.length===349'), 'Cancelling repair preserves the actual missing collar')
+        page.evaluate('window.orebitConfirm=async()=>true')
+        page.locator('#coreRepairSource').click()
+        page.wait_for_function('() => STATE.collar.length===350 && STATE.geology.length===1372')
+        check(not any(c['severity']=='fail' for c in page.evaluate('_p1RunValidationChecks()')), 'Reviewed known-source restoration resolves blocking findings')
+        check(before_repair==page.evaluate('JSON.stringify([STATE.assay,STATE.survey])'), 'Restoration never invents or changes grades and survey measurements')
+        check(page.evaluate("STATE.CHANGE_LOG.some(e=>e.table==='validation') && _pipelineLog.some(e=>e.action==='Validation repair')"), 'Repair is recorded in activity and PDF pipeline owners')
+        saved = page.evaluate("OrebitProject.save('synthetic-repair-record')")
+        check(any(e['action']=='Validation repair' for e in saved['metadata']['audit']['pipeline']), 'Project export contains the recorded correction')
+        check(saved['geologicalDomain']['schemaVersion']==1, 'Core exports additive S0 Domain interpretation without altering legacy CSV tables')
+        page.locator('#undoBtn').click()
+        check(page.evaluate('STATE.collar.length===349'), 'Native Undo reverses the correction before further edits')
+        check(page.locator('#tab7 [data-workflow-next]').is_disabled(), 'Undo reinstates the real downstream validation gate')
+        invalid_saved = page.evaluate("OrebitProject.save('unresolved-source')")
+        check(page.evaluate('STATE.merged===null') and not invalid_saved['phase1']['merged_csv'], 'Saving an invalid project does not fabricate a ready Merge handoff')
+        page.evaluate('applyBundle',saved)
+        page.wait_for_function("() => _pipelineLog.some(e=>e.action==='Validation repair')")
+        check(page.evaluate("STATE.CHANGE_LOG.some(e=>e.table==='validation')"), 'Repair audit survives project reopen')
+        check(not page.evaluate('OrebitCoreRepair.candidate()'), 'A reopened or uploaded project never offers synthetic source replacement')
+        domain_before = page.evaluate('JSON.stringify([STATE.collar,STATE.assay,STATE.geology])')
+        source_stamp = page.evaluate('OrebitCoreDomain.capture()')
+        check(len(source_stamp['sha256'])==64 and source_stamp['rows']==8896, 'Domain source uses actual Core data and SHA256')
+        check(domain_before==page.evaluate('JSON.stringify([STATE.collar,STATE.assay,STATE.geology])'), 'Domain source hashing preserves raw zero, null and interval values')
+        page.evaluate("setUnit('ni_pct','ppm')")
+        changed_stamp = page.evaluate('OrebitCoreDomain.capture()')
+        check(changed_stamp['sha256']!=source_stamp['sha256'], 'Domain source context includes the analyst grade-unit assignment')
+        unit_saved = page.evaluate("OrebitProject.save('assigned-unit-record')")
+        page.evaluate('applyBundle',unit_saved)
+        check(page.evaluate("_exportUnit('ni_pct')==='ppm'"), 'Explicit grade units survive actual Core project save and reopen')
+        audit_markup = '<img src="broken" onerror="window.auditInjected=1">'
+        unit_saved['metadata']['audit']['changes']=[{'table':audit_markup,'timestamp':'2026-10-08','summary':audit_markup,'diffs':[None,{'idx':audit_markup,'col':'test','old':0,'new':None}]}]
+        page.evaluate('applyBundle',unit_saved);page.evaluate('showTab(1);renderActivityPanel()')
+        check(page.locator('#activityPanel img').count()==0 and page.evaluate('!window.auditInjected'), 'Reopened audit strings are text, never executable markup')
+
+
+        check(page.evaluate('OrebitCoreDomain.readiness()')['status']=='none', 'S0 foundation never masquerades as a validated geological solid')
+        page.evaluate('resetToSample({notify:false});showTab(1)')
         pristine = page.evaluate("JSON.stringify(SAMPLE_DATA)")
         original = page.evaluate("JSON.stringify({collar:STATE.collar,survey:STATE.survey,assay:STATE.assay,geology:STATE.geology})")
         page.locator('#tab1 [data-action-role="next"]').click()
@@ -48,6 +90,7 @@ try:
         check(sum(c['severity']=='fail' for c in checks)>=4, 'Default sample exposes real linkage failures without a mode or button')
         check(any('without Geology' in c['name'] and c['value']=='1 hole' for c in checks), 'Default validation distinguishes a missing geology log')
         check(page.locator('#tab7 [data-workflow-next]').is_disabled(), 'Unresolved default failures block Desurvey')
+        check(page.evaluate('exportMasterCSV()') is False, 'Invalid source cannot bypass Validation via direct clean CSV export')
         check(page.locator('#coreTryValidation,#coreTrainingExercises,.workflow-training').count()==0, 'No separate imperfect-data mode remains')
         with page.expect_download() as download:
             page.locator('#tab7 .workflow-actions').get_by_role('button',name='Download source CSVs',exact=True).click()
@@ -65,6 +108,21 @@ try:
         page.evaluate('showTab(7)')
         check(not any(c['severity']=='fail' for c in page.evaluate('_p1RunValidationChecks()')), 'Original source CSV upload resolves every blocking linkage fault')
         check(page.locator('#tab7 [data-workflow-next]').is_enabled(), 'Corrected default can continue to Desurvey')
+        page.evaluate('showTab(4)')
+        dip = page.evaluate('STATE.survey[0].dip')
+        cell = page.locator("#tab4 td[onclick=\"editCell(this, 'survey', 0, 'dip', false)\"]")
+        cell.click();cell.locator('input').fill('91');cell.locator('input').press('Enter')
+        page.locator("#tab4 button[onclick=\"applyChanges('survey')\"]").click()
+        page.evaluate('showTab(7)')
+        check(page.locator('#tab7 [data-workflow-next]').is_disabled() and not page.evaluate('coreGeometryReady()'), 'An invalid measured dip blocks downstream geometry after normal Apply changes')
+        check(page.locator('#coreValidationRemedies').get_by_role('button',name='Inspect and edit table').count()>=1, 'Measured-data failure offers an actionable manual correction')
+        page.evaluate('showTab(4)')
+        cell = page.locator("#tab4 td[onclick=\"editCell(this, 'survey', 0, 'dip', false)\"]")
+        cell.click();cell.locator('input').fill(str(dip));cell.locator('input').press('Enter')
+        page.locator("#tab4 button[onclick=\"applyChanges('survey')\"]").click()
+        page.evaluate('showTab(7)')
+        check(page.locator('#tab7 [data-workflow-next]').is_enabled(), 'Verified manual correction reopens the real Desurvey path')
+        check(page.evaluate("STATE.CHANGE_LOG.filter(e=>e.table==='survey').length>=2"), 'Manual defect and correction are both recorded')
         # Additional malformed input fixtures use the ordinary file upload. There
         # is no special runtime exercise owner and no silent synthetic repair.
         for kind in ('missing-survey','overlapping-assay','missing-collar-and-geology'):

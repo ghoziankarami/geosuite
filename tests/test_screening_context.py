@@ -173,6 +173,7 @@ try:
         r.locator('#d3Max').fill('3');r.locator('#d3Max').press('Tab')
         check(r.evaluate('_filteredBlockIndexes().length===420 && _filteredBlockIndexes().every(i=>estimState.results.ok[i]===3)'), 'Inclusive equal bounds show exactly the requested grade, without rejecting zero-width ranges')
         r.locator('#d3Cut').fill('2');r.locator('#d3Cut').press('Tab')
+        check(r.locator('#d3Scale').is_visible() and r.locator('#d3Palette').is_visible(), 'Grade scale and palette are visible without opening Advanced filters')
         r.locator('#d3Scale').select_option('custom');r.locator('#d3Breaks').fill('2, 3');r.locator('#d3Breaks').press('Tab')
         r.locator('#d3Palette').select_option('viridis')
         check(r.evaluate('_filteredBlockIndexes().length===840'), 'Grade range includes both endpoints and excludes all other blocks')

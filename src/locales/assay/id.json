@@ -22,7 +22,7 @@
   "asy.kcmi.lithoDistribution": "Distribusi litologi: {l}.",
   "asy.kcmi.lithoNotLogged": "Litologi: tidak dicatat.",
   "asy.kcmi.compositingNote": "Compositing: rata-rata terbobot panjang 1m.",
-  "asy.autoPilot": "Auto-Pilot",
+  "asy.autoPilot": "Tinjau saran",
   "asy.beyondInferred": "Di luar Tereka",
   "asy.boxplotByDomain": "Boxplot per Domain/Litologi",
   "asy.cdf": "CDF (Distribusi Kumulatif)",
@@ -173,7 +173,7 @@
   "asy.wf.g11": "Syarat: Ringkasan kerja + komentar mengacu standar",
   "asy.st.title": "Statistik EDA — Analisis Distribusi Menyeluruh",
   "asy.st.hint": "Tinjau variasi, outlier, support dan konteks geologi sebelum memilih perlakuan. CV atau pola log-normal saja tidak menjustifikasi cap maupun transformasi.",
-  "asy.st.autopilot": "Mode Otomatis",
+  "asy.st.autopilot": "Tinjau saran",
   "asy.st.autoClean": "Saring &amp; Usulkan Cap",
   "asy.st.autoCleanHint": "Menyaring tiap unsur (kandidat top-cut P99, klasterisasi K-Means, ANOVA) dan mengusulkan cap untuk ditinjau — tidak ada yang berubah sampai Anda klik Apply Caps.",
   "asy.autoClean.noopCap": "tidak menyentuh apa pun pada ambang saat ini",
@@ -321,7 +321,7 @@
   "asy.tc.capped": "di-cap, mean turun",
   "asy.tc.perElement": "Ambang per unsur di P95/P98/P99 beserta dampaknya pada metal loss dan mean.",
   "asy.tc.clickRowSelect": "Klik satu baris untuk memilih unsur aktif (kolom <strong>preset</strong> mengikuti ELEMENT_REGISTRY).",
-  "asy.tc.topcutRequiredCv": "Top-cut diperlukan jika CV &gt; 1.5.",
+  "asy.tc.topcutRequiredCv": "CV di atas 1,5 menyarankan tinjauan ekor distribusi. Top-cut opsional dan perlu alasan geologi.",
   "asy.tc.exportMatrix": "Ekspor CSV matriks top-cut",
   "asy.tc.threshShort": "ambang",
   "asy.tc.lossShort": "rugi%",
@@ -1235,5 +1235,6 @@
   "flow.calculating": "Menghitung dengan parameter saat ini… Lanjut menunggu hasilnya.",
   "flow.notAdvanced": "Perhitungan belum selesai. Periksa status di bawah, perbaiki parameter atau coba lagi; tahap belum dilanjutkan.",
   "asy.perf.plotBudget": "Plot: {shown} / {n} titik<br>Analisis: seluruh sampel terpilih",
-  "asy.dm.checkingCurrent": "Memeriksa definisi domain saat ini…"
+  "asy.dm.checkingCurrent": "Memeriksa definisi domain saat ini…",
+  "asy.tc.applyScope": "Tinjau dahulu, lalu Terapkan: membuka tab ini tidak menerapkan cap. Ambang yang dipilih berlaku untuk unsur ini di seluruh baris; domain terpilih mencatat lingkup saat memilih ambang. Sensitivitas dari jumlah kadar bukan estimasi logam resource."
 }

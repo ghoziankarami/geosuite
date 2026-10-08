@@ -186,7 +186,7 @@
   "res.cv.hint2": "Untuk tiap composite: perkirakan nilainya dari composite lain (IDW + OK + NN), lalu bandingkan dengan nilai terukur. Target:",
   "res.cv.looNote": "(LOO bersifat O(n²); batas 200 tetap cepat dan andal)",
   "res.st.collarMapFull": "Collar lubang bor dalam tampilan denah X-Y, diwarnai menurut rata-rata",
-  "res.st.topcutHint": "Seberapa peka mean, variance dan CV terhadap pemotongan outlier. <a data-docs=\"workflows/topcut\">Memilih nilai cap →</a>",
+  "res.st.topcutHint": "Pratinjau diagnosis saja: alat ini tidak mengubah kadar impor atau menerapkan cap kedua. Untuk mengubah perlakuan, tinjau dan ekspor kembali dari Assay. Buffer menentukan dukungan screening; berbeda dari radius pencarian estimasi.",
   "res.st.nextTab4": "Setelah unsur dan domain dipilih, lanjut ke Tab 4 (Variography) untuk mencocokkan model.",
   "res.rp.noProcessing2": "Belum ada pemrosesan — muat composite lalu jalankan pipeline.",
   "res.rp.processingApplied": "Pemrosesan diterapkan ({n})",
@@ -250,7 +250,7 @@
   "res.swathPlot": "Swath Plot",
   "res.targetElement": "Elemen Target",
   "res.tolAngle": "Sudut toleransi (°):",
-  "res.topCutAnalysis": "Analisis Top-Cut",
+  "res.topCutAnalysis": "Tinjau sensitivitas perlakuan kadar",
   "res.topCutValue": "Nilai top-cut:",
   "res.type": "Tipe:",
   "res.uploadPanel": "Unggah Data — Impor CSV Composite",
@@ -1046,5 +1046,7 @@
   "res.envelope.radiusHelp": "Radius otomatis minimal 25 m dan setengah diagonal sel; menyesuaikan saat grid dibuat ulang. Isi radius untuk memakai pilihan Anda. Tinjau batas geologi: default ini tidak menentukan batas mineralisasi.",
   "flow.computeNext": "Hitung & lanjut: {stage}",
   "flow.calculating": "Menghitung dengan parameter saat ini… Lanjut menunggu hasilnya.",
-  "flow.notAdvanced": "Perhitungan belum selesai. Periksa status di bawah, perbaiki parameter atau coba lagi; tahap belum dilanjutkan."
+  "flow.notAdvanced": "Perhitungan belum selesai. Periksa status di bawah, perbaiki parameter atau coba lagi; tahap belum dilanjutkan.",
+  "res.viewer.drillholes": "Lubang bor",
+  "res.viewer.drillholeDisplay": "Tampilan bor: {shown} dari {total} sampel; perhitungan memakai seluruh data terpilih"
 }

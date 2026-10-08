@@ -110,3 +110,9 @@ Advanced sidebar, top stage controls, custom variogram calculation, optional
 diagnostics, report-button revisits and EN/ID mobile layouts. This opens a real
 browser. `test_core_training.py` also imports the one-click imperfect example
 and verifies restoration through the regular file-upload boundary.
+
+Run `python tests/test_screening_reports.py` for native PDF/PNG downloads,
+four-card executive hierarchy, EN/ID text, page bounds/bookmarks, readable
+structured audit fields and independent selected-tonnage/grade/metal answers.
+The test also checks missing grades, tiny values, no estimate and preservation
+of the actual cutoff, confidence filter and existing grade-tonnage curve.

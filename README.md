@@ -34,9 +34,9 @@ Windows: jangan mencari `.exe` di **Code → Download ZIP**.
    grade–tonnage. Export results, plots and the PDF insight report.
 
 Use **Continue in Assay/Resource** for direct data transfer when available.
-Assay now offers a six-stage guided route with editable parameters and optional
-advanced tools; the [workflow guide](docs/WORKFLOW.md) explains review records
-and what travels between modules.
+All three modules share a guided route, editable parameters and an Advanced
+tools sidebar. The [workflow guide](docs/WORKFLOW.md) explains review records,
+report scope and what travels between modules.
 
 Read the [input format and units](docs/DATA-FORMAT.md) before importing your own
 files. Nonstandard headers use manual column assignment; a missing value is not
@@ -120,7 +120,10 @@ If app files have not been cached, reconnect and use Retry. Export project backu
 Optional Drive access, basemaps and update checks contact external services;
 see the [privacy policy](https://geosuite.orebit.id/privacy/).
 
-PDFs provide initial screening insight, effective parameters and review questions.
+PDFs open with four result cards, scope, inspection priorities and a next step.
+Detailed results, effective parameters, plots and review records follow from
+page 2. Resource headline tonnage uses the selected cutoff and confidence
+filter; generated grid tonnage is reported separately.
 They do not certify a Mineral Resource or reserve. Geology, density, QA/QC,
 metallurgy, economics and Competent Person review remain necessary for reporting
 under KCMI/JORC. Read [methodology and limitations](docs/METHODOLOGY.md).

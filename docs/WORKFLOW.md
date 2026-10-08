@@ -75,3 +75,24 @@ Keep the Assay PDF/JSON with downstream Resource exports. The stable generic CSV
 carries domain, unit and treatment metadata but not the complete interpretation
 ledger. A quick screening report supports initial diligence; it does not establish
 laboratory QAQC, geological validity or a certified Mineral Resource.
+
+## Read the exported PDF
+
+Core, Assay and Resource use the same first-page summary: four result cards,
+current scope, a short interpretation, inspection priorities and the next step.
+Full results and evidence start on page 2; the summary does not replace the
+recorded settings or analyst notes.
+
+- **Core:** source collar/assay counts, merged intervals and checks requiring a
+  fix. Inspect warnings, coordinate source and CRS before handing data on.
+- **Assay:** usable grades, current sample mean, composite count and retained
+  informed length for the selected element. The sample mean is not a block
+  Resource grade. Missing grades remain different from measured zero.
+- **Resource:** selected tonnage, weighted block grade, contained metal and
+  grid estimation coverage. The headline follows the actual report cutoff and
+  confidence filter; generated, estimated and selected populations are separate.
+  An unfinished estimate shows unavailable results, rather than invented zeros.
+
+The PDF records cutoff choices and their justification, including no cutoff.
+Review geological limits, density, support and validation before using screening
+results in a decision or an enterprise modelling workflow.

@@ -5914,6 +5914,10 @@ function _lengthTag() {
 function _coreLoadTable(cls, mapped, headers, rows, opts = {}) {
   window.OrebitCoreRepair?.reset();
   window.OrebitCoreDomain?.reset();
+  STATE.desurvey = null; STATE.merged = null; STATE.mergeAudit = null; STATE.composite = null;
+  // Undo entries refer to row indices in the replaced source table.
+  UNDO.stack = UNDO.stack.filter(action => action.table !== cls && action.type !== 'validation-repair');
+  UNDO._updateBadge();
   if (cls === 'assay') {STATE.units = {}; STATE.unitsLocked = {};}
   if (cls === 'assay' && !opts.preserveCoordinateMode) setCoreProvidedXYZ(false);
   STATE[cls] = _coreApplyLengthUnit(cls, mapped);
@@ -5990,6 +5994,7 @@ function handleUpload(evt) {
   return Promise.all(files.map(f => readCSV(f))).then(parsed => {
     const results = [];
     const usedTables = new Set();
+    const previousCollarIds = new Set(STATE.collar.map(r => r.hole_id).filter(Boolean));
     PENDING_FILES.length = 0; // Clear previous pending
 
     let anyNoteworthy = false;   // D17/D18: a rejected row or a warning must not read as a plain green success
@@ -6043,6 +6048,20 @@ function handleUpload(evt) {
     // visible warning once the global "using sample" banner turned off on
     // first upload. Clearing to empty makes the gap honest and obvious.
     // 2026-08-18.
+    // A collar with entirely different hole IDs starts a different project.
+    // Preserve sequential imports/corrections with shared IDs; never attach an
+    // absent table from the previous deposit to a disjoint collar population.
+    if (usedTables.has('collar') && previousCollarIds.size &&
+        !STATE.collar.some(r => previousCollarIds.has(r.hole_id))) {
+      for (const table of ['survey','assay','geology']) if (!usedTables.has(table)) {
+        STATE[table] = []; STATE.rawHeaders[table] = []; STATE.rawRows[table] = [];
+        STATE.edits[table].clear(); STATE.newRows[table] = []; STATE.deletedIdx[table].clear();
+        delete STATE.manualMap[table]; STATE.isSample[table] = false;
+        if (table === 'assay') { STATE.units = {}; STATE.unitsLocked = {}; _cachedGradeCols = null; }
+      }
+      STATE.crs = ''; // A different deposit does not inherit the sample/old EPSG.
+      UNDO.stack = []; UNDO._updateBadge();
+    }
     if (usedTables.size > 0) {
       ['collar','survey','assay','geology'].forEach(t => {
         if (!usedTables.has(t) && STATE.isSample[t]) {
@@ -11618,7 +11637,10 @@ function _p1RunValidationChecks() {
   // Required-field completeness per table (warn if <100, fail if <95)
   ['collar','survey','assay','geology'].forEach(t => {
     const rows = STATE[t]; if (!rows.length) return;
-    const cols = TABLE_SCHEMA[t].required;
+    // Missing final depth is an explicit completeness warning, rather than a
+    // geometry failure: measured survey stations still support desurvey. Do
+    // not infer or write a replacement total depth from assays/surveys.
+    const cols = TABLE_SCHEMA[t].required.filter(c => t !== 'collar' || c !== 'depth');
     const totalCells = rows.length * cols.length;
     let filled = 0;
     rows.forEach(r => cols.forEach(c => {
@@ -11628,6 +11650,9 @@ function _p1RunValidationChecks() {
     const sev = pct === 100 ? 'ok' : pct >= 95 ? 'warn' : 'fail';
     checks.push({ name: `${t} required-field completeness`, value: `${pct.toFixed(1)}%`, severity: sev });
   });
+
+  const noFinalDepth = STATE.collar.filter(r => r.depth === null || r.depth === undefined || String(r.depth).trim() === '').length;
+  checks.push({name:'Collar without final measured depth',value:noFinalDepth+' hole',severity:noFinalDepth?'warn':'ok'});
 
   // Structural measurements must be usable, even when a mostly complete table
   // exceeds the percentage threshold. Optional missing grades stay missing.
@@ -11642,7 +11667,8 @@ function _p1RunValidationChecks() {
       const badSurvey = table==='survey' &&
         (!filled(row.depth) || Number(row.depth)<0 || !filled(row.dip) || Number(row.dip)<-90 || Number(row.dip)>90 ||
          !filled(row.azimuth) || Number(row.azimuth)<0 || Number(row.azimuth)>360);
-      if (!filled(row.hole_id) || numeric || badInterval || badSurvey) invalid++;
+      const badCollar = table==='collar' && filled(row.depth) && Number(row.depth)<0;
+      if (!filled(row.hole_id) || numeric || badInterval || badSurvey || badCollar) invalid++;
     }
     checks.push({name:table+' invalid structural measurements', value:invalid+' row', severity:invalid?'fail':'ok'});
   });

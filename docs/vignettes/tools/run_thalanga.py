@@ -7,7 +7,7 @@ screenshots it shows. Key numbers are also recomputed here from the CSV files
 the app exports, independently of the app's own code.
 
 Data: Geological Survey of Queensland, "NEQ Deposit Atlas - Thalanga" (ds100103),
-CC BY 4.0 -- the same dataset GeoSuite ships as its Core sample.
+CC BY 4.0. Imported from the published tables; the bundled Core sample is synthetic nickel.
 
 Usage: node build/build.mjs && python3 docs/vignettes/tools/run_thalanga.py [--no-shots]
 Writes docs/vignettes/data/thalanga.json (+ img/thalanga-*.png unless --no-shots).
@@ -75,7 +75,9 @@ def write_thalanga_csvs(tmp) -> Path:
     )
     fx = next((path for path in candidates if path.is_file()), None)
     if fx is None:
-        raise FileNotFoundError("Thalanga fixture missing from canonical/public source layout")
+        raise FileNotFoundError(
+            "Thalanga fixture missing from canonical/public source layout"
+        )
     data = json.loads(fx.read_text())
     out = Path(tmp) / "thalanga-src"
     out.mkdir(exist_ok=True)

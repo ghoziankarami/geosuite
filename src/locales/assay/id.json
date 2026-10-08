@@ -1236,5 +1236,5 @@
   "flow.notAdvanced": "Perhitungan belum selesai. Periksa status di bawah, perbaiki parameter atau coba lagi; tahap belum dilanjutkan.",
   "asy.perf.plotBudget": "Plot: {shown} / {n} titik<br>Analisis: seluruh sampel terpilih",
   "asy.dm.checkingCurrent": "Memeriksa definisi domain saat ini…",
-  "asy.tc.applyScope": "Tinjau dahulu, lalu Terapkan: membuka tab ini tidak menerapkan cap. Ambang yang dipilih berlaku untuk unsur ini di seluruh baris; domain terpilih mencatat lingkup saat memilih ambang. Sensitivitas dari jumlah kadar bukan estimasi logam resource."
+  "asy.tc.applyScope": "Tinjau sebelum Apply. Cap berlaku pada unsur ini di semua baris; domain mencatat lingkup review. Jumlah kadar bukan metal resource. <a data-docs=\"workflows/topcut\">Lingkup treatment →</a>"
 }

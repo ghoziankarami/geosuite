@@ -165,7 +165,7 @@
     panel.querySelector('.assay-workflow-card')?.remove();
     if(n===1){const loaded=resource()?!!DATA?.rows?.length:!!STATE.collar.length&&!!STATE.assay.length;dashboard(panel,facts(n),tr('purpose1'),loaded?(resource()?3:7):2);return;}
     const card=node('section',null,'assay-workflow-card');card.setAttribute('aria-label',tr('guide'));
-    const stages=main(),i=stages.indexOf(n);card.append(node('p',i<0?tr('optional'):tr('step',{n:i+1,total:stages.length}),'workflow-eyebrow'),node('h2',label(n)));
+    const stages=main(),i=stages.indexOf(n);card.classList.toggle('workflow-optional',i<0);card.append(node('p',i<0?tr('optional'):tr('step',{n:i+1,total:stages.length}),'workflow-eyebrow'),node('h2',label(n)));
     const purpose=window.__t('flow.purpose'+n);if(purpose!=='flow.purpose'+n)card.append(node('p',purpose,'workflow-purpose'));
     card.append(links(stages,n));
     const summary=node('div',null,'workflow-insight');summary.append(node('strong',tr('quickInsight')),node('p',facts(n)));card.append(summary);
@@ -177,7 +177,7 @@
     }
     if(n!==2){
       const inspect=button(tr('inspect'),'inspect',()=>{
-        const id=resource()?({3:'resourceSetupQuickInsight',4:'varPlot',5:blockState.blocks?.length?'blockGridSummary':'blockPreview',6:'estimResults',7:'cvResults'})[n]:({7:'coreValidationRemedies',10:'desurveyPanel',11:'mergePanel'})[n];
+        const id=resource()?({3:'resourceSetupQuickInsight',4:'varPlot',5:blockState.blocks?.length?'blockGridSummary':'blockPreview',6:'estimResults',7:'cvResults',11:'d3Plot'})[n]:({7:'coreValidationRemedies',10:'desurveyPanel',11:'mergePanel'})[n];
         const result=(id&&document.getElementById(id))||panel.querySelector('.plot-container,.card');
         if(result){let parent=result.parentElement;while(parent&&parent!==panel){if(parent.tagName==='DETAILS')parent.open=true;parent=parent.parentElement;}result.scrollIntoView({block:'start',behavior:'smooth'});result.setAttribute('tabindex','-1');result.focus({preventScroll:true});}
       });

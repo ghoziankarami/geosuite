@@ -1236,5 +1236,5 @@
   "flow.notAdvanced": "Calculation was not completed. Inspect the status below, correct the parameters or retry; this stage has not advanced.",
   "asy.perf.plotBudget": "Plot: {shown} / {n} points<br>Analysis: all selected samples",
   "asy.dm.checkingCurrent": "Checking the current domain definition…",
-  "asy.tc.applyScope": "Review first, then Apply: no cap is applied by opening this tab. A chosen threshold is applied to this element across all rows; the selected domain records where the threshold was reviewed. Sensitivity based on grade sums is not a resource-metal estimate."
+  "asy.tc.applyScope": "Review before Apply. Cap affects this element across all rows; domain records review scope. Grade sums are not resource metal. <a data-docs=\"workflows/topcut\">Treatment scope →</a>"
 }

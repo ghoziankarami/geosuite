@@ -1048,5 +1048,6 @@
   "flow.calculating": "Calculating with the current parameters… Next waits for the result.",
   "flow.notAdvanced": "Calculation was not completed. Inspect the status below, correct the parameters or retry; this stage has not advanced.",
   "res.viewer.drillholes": "Drillholes",
-  "res.viewer.drillholeDisplay": "Drillhole display: {shown} of {total} samples; calculations use the full selected data"
+  "res.viewer.drillholeDisplay": "Drillhole display: {shown} of {total} samples; calculations use the full selected data",
+  "res.viewer.reading": "How to read this view"
 }

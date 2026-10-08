@@ -1048,5 +1048,6 @@
   "flow.calculating": "Menghitung dengan parameter saat ini… Lanjut menunggu hasilnya.",
   "flow.notAdvanced": "Perhitungan belum selesai. Periksa status di bawah, perbaiki parameter atau coba lagi; tahap belum dilanjutkan.",
   "res.viewer.drillholes": "Lubang bor",
-  "res.viewer.drillholeDisplay": "Tampilan bor: {shown} dari {total} sampel; perhitungan memakai seluruh data terpilih"
+  "res.viewer.drillholeDisplay": "Tampilan bor: {shown} dari {total} sampel; perhitungan memakai seluruh data terpilih",
+  "res.viewer.reading": "Cara membaca tampilan"
 }

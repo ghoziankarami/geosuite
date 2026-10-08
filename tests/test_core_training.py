@@ -3,7 +3,7 @@
 This tests the UI/import boundary, not just a synthetic object written into STATE.
 """
 
-import csv, functools, http.server, io, os, tempfile, threading, zipfile
+import csv, json, functools, http.server, io, os, tempfile, threading, zipfile
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
@@ -214,6 +214,44 @@ try:
             page.evaluate("JSON.stringify(SAMPLE_DATA)") == pristine,
             "Source downloads and CSV corrections never mutate the default reference",
         )
+        # Real regional upload: an invalid survey outside a reviewed boundary
+        # remains a finding, while the genuinely usable selected population can
+        # be exported. Invalid measurements never produce plausible geometry.
+        small={
+            'collar':'hole_id,x,y,z,depth\nH1,1000,2000,300,10\nH2,1100,2100,300,10\n',
+            'survey':'hole_id,depth,dip,azimuth\nH1,0,-90,0\nH1,10,-90,0\nH2,0,-90,0\nH2,10,132,0\n',
+            'assay':'hole_id,from_m,to_m,ni_pct\nH1,0,10,1\nH2,0,10,2\n',
+            'geology':'hole_id,from_m,to_m,lithology\nH1,0,10,SAP\nH2,0,10,SAP\n'}
+        files=[]
+        for name,text in small.items():
+            path=Path(tmp)/(name+'.csv');path.write_text(text);files.append(str(path))
+        page.evaluate('showTab(2)');page.locator('#fileInput').set_input_files(files)
+        page.wait_for_function('()=>STATE.assay.length===2 && STATE.survey.length===4')
+        raw=page.evaluate('JSON.stringify([STATE.collar,STATE.survey,STATE.assay,STATE.geology])')
+        check(not page.evaluate('coreGeometryReady()'), 'Invalid regional survey blocks full-population clean handoff')
+        page.evaluate('showTab(11)')
+        check(page.evaluate('STATE.desurvey.invalidHoleIds.includes("H2") && STATE.desurvey.holes.H2.trace.length===0'), 'Out-of-range survey quarantines the whole affected trace')
+        check(page.evaluate('STATE.merged.find(r=>r.hole_id==="H2").midx===null'), 'Unusable surveyed geometry stays missing rather than becoming a plausible position')
+        boundary={'type':'Polygon','coordinates':[[[990,1990],[1010,1990],[1010,2010],[990,2010],[990,1990]]]}
+        path=Path(tmp)/'selected.geojson';path.write_text(json.dumps(boundary))
+        page.evaluate('showTab(13)');page.locator('#constraintFile').set_input_files(str(path))
+        page.wait_for_function('()=>CROP.polys.length===1')
+        check(page.evaluate('_cropStats().noCoord===1 && _croppedMerged().length===1'), 'Crop counts disclose missing XYZ and never coerce null coordinates to origin')
+        with page.expect_download() as selected:
+            page.evaluate('exportCroppedMaster()')
+        result=Path(tmp)/'selected-master.csv';selected.value.save_as(result)
+        rows=list(csv.DictReader(line for line in result.read_text().splitlines() if not line.startswith('#')))
+        check(len(rows)==1 and rows[0]['hole_id']=='H1' and float(rows[0]['ni_pct'])==1, 'Scoped clean export contains only the measured, validated selected interval')
+        check(page.evaluate('_pipelineLog.some(e=>e.action==="Scoped validation")'), 'Boundary export records its selected validation scope')
+        check(raw==page.evaluate('JSON.stringify([STATE.collar,STATE.survey,STATE.assay,STATE.geology])'), 'Scoped validation never changes original regional source rows')
+        # A duplicate inside that same scope must block every cleaned exporter.
+        page.evaluate('showTab(2)')
+        duplicate=small['collar']+'H1,1000,2000,300,10\n'
+        page.locator('#fileInput').set_input_files({'name':'collar.csv','mimeType':'text/csv','buffer':duplicate.encode()})
+        page.wait_for_function('()=>STATE.collar.length===3');page.evaluate('showTab(11)')
+        check(page.evaluate('exportCroppedMaster()') is False, 'Duplicate selected collar blocks cropped clean export')
+        check(page.evaluate('exportCroppedAssay()') is False, 'Duplicate selected collar cannot bypass the gate through cropped assay export')
+        check(page.evaluate('exportIndustryDrillholeCSV()') is False, 'Industry clean export shares the full-population validation gate')
         browser.close()
 finally:
     server.shutdown()

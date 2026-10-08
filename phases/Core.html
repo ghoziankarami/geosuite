@@ -9456,11 +9456,13 @@ function computeDesurvey() {
     const dip = strictNum(s.dip);
     const az = strictNum(s.azimuth);
     const depth = strictNum(s.depth);
-    if (!isFinite(dip)) badSurvey.push({ hole_id: s.hole_id, depth: s.depth, field: 'dip' });
-    if (!isFinite(az)) badSurvey.push({ hole_id: s.hole_id, depth: s.depth, field: 'azimuth' });
+    if (!isFinite(dip) || dip < -90 || dip > 90) badSurvey.push({ hole_id: s.hole_id, depth: s.depth, field: 'dip' });
+    if (!isFinite(az) || az < 0 || az > 360) badSurvey.push({ hole_id: s.hole_id, depth: s.depth, field: 'azimuth' });
     if (!isFinite(depth) || depth < 0) badSurvey.push({ hole_id: s.hole_id, depth: s.depth, field: 'depth' });
     // Skip rows we cannot trust — a guessed angle is worse than a dropped point.
-    if (!isFinite(dip) || !isFinite(az) || !isFinite(depth) || depth < 0) return;
+    if (!isFinite(dip) || dip < -90 || dip > 90 || !isFinite(az) || az < 0 || az > 360 || !isFinite(depth) || depth < 0) {
+      invalidHoleIds.add(s.hole_id); return;
+    }
     holes[s.hole_id].surveys.push({
       depth: depth,
       dip: dip,
@@ -10100,15 +10102,15 @@ function buildMasterExportCols(rows) {
   return { baseCols, gradeCols, densityCols, tailCols, outCols: [...baseCols, ...gradeCols, ...densityCols, ...tailCols] };
 }
 
-function coreGeometryReady() {
-  const surveyIds=new Set(STATE.survey.map(r=>r.hole_id));
+function coreGeometryReady(source = STATE) {
+  const surveyIds=new Set(source.survey.map(r=>r.hole_id));
   const finiteInput = v => v !== null && v !== undefined && String(v).trim() !== '' && Number.isFinite(Number(v));
   return window._coreUseProvidedXYZ
-    ? STATE.assay.length > 0 && STATE.assay.every(a => ['midx','midy','midz'].every((k,i)=>finiteInput(a[k] == null ? a[['x','y','z'][i]] : a[k])))
-    : STATE.collar.length > 0 && STATE.survey.length > 0 &&
-      STATE.collar.every(c=>['x','y','z'].every(k=>finiteInput(c[k]))) &&
-      STATE.survey.every(s=>['depth','dip','azimuth'].every(k=>finiteInput(s[k])) && Number(s.depth)>=0 && Number(s.dip)>=-90 && Number(s.dip)<=90 && Number(s.azimuth)>=0 && Number(s.azimuth)<=360) &&
-      [...new Set(STATE.assay.map(r=>r.hole_id))].every(h=>surveyIds.has(h));
+    ? source.assay.length > 0 && source.assay.every(a => ['midx','midy','midz'].every((k,i)=>finiteInput(a[k] == null ? a[['x','y','z'][i]] : a[k])))
+    : source.collar.length > 0 && source.survey.length > 0 &&
+      source.collar.every(c=>['x','y','z'].every(k=>finiteInput(c[k]))) &&
+      source.survey.every(s=>['depth','dip','azimuth'].every(k=>finiteInput(s[k])) && Number(s.depth)>=0 && Number(s.dip)>=-90 && Number(s.dip)<=90 && Number(s.azimuth)>=0 && Number(s.azimuth)<=360) &&
+      [...new Set(source.assay.map(r=>r.hole_id))].every(h=>surveyIds.has(h));
 }
 function setCoreProvidedXYZ(enabled) {
   window.OrebitCoreDomain?.invalidate('Coordinate source mode changed');
@@ -10999,7 +11001,7 @@ function _dataBBox() {
   let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity, n = 0;
   m.forEach(r => {
     const x = Number(r.midx), y = Number(r.midy);
-    if (!isFinite(x) || !isFinite(y)) return;
+    if (!['midx','midy'].every(k => r[k] !== null && r[k] !== undefined && String(r[k]).trim() !== '' && Number.isFinite(Number(r[k])))) return;
     n++;
     if (x < minx) minx = x; if (x > maxx) maxx = x;
     if (y < miny) miny = y; if (y > maxy) maxy = y;
@@ -11019,9 +11021,9 @@ function _looksLatLon(bb) {
 // ~111 km; a 40 m hole spans 0.0004 "units"). Audit 2026-09-25: such a collar
 // file loaded with no warning anywhere. Needs >= 2 collars with real spread;
 // a single (0,0) placeholder collar is not evidence of a CRS.
-function _collarLooksGeographic() {
+function _collarLooksGeographic(collars = STATE.collar) {
   const xs = [], ys = [];
-  STATE.collar.forEach(r => {
+  collars.forEach(r => {
     const x = Number(r.x), y = Number(r.y);
     if (r.x !== null && r.x !== '' && r.y !== null && r.y !== '' && Number.isFinite(x) && Number.isFinite(y)) { xs.push(x); ys.push(y); }
   });
@@ -11062,7 +11064,7 @@ function _cropStats() {
   const keptHoles = new Set();
   m.forEach(r => {
     const x = Number(r.midx), y = Number(r.midy);
-    if (!isFinite(x) || !isFinite(y)) { noCoord++; return; }
+    if (!['midx','midy','midz'].every(k => r[k] !== null && r[k] !== undefined && String(r[k]).trim() !== '' && Number.isFinite(Number(r[k])))) { noCoord++; return; }
     if (_pointInAnyPoly(x, y)) { kept++; keptHoles.add(r.hole_id); }
     else dropped++;
   });
@@ -11375,16 +11377,32 @@ function renderCropPanel() {
 function _croppedMerged() {
   if (!STATE.merged) computeMerge();
   return (STATE.merged || []).filter(r => {
-    const x = Number(r.midx), y = Number(r.midy);
-    return isFinite(x) && isFinite(y) && _pointInAnyPoly(x, y);
+    const filled = v => v !== null && v !== undefined && String(v).trim() !== '';
+    return ['midx','midy','midz'].every(k => filled(r[k]) && Number.isFinite(Number(r[k]))) && _pointInAnyPoly(Number(r.midx), Number(r.midy));
   });
 }
 function _cropTag() {
   return `# orebit-crop: constraint=${CROP.fileName} rings=${CROP.polys.length}`;
 }
 
+function _coreCropExportReady(rows) {
+  // Regional findings outside an explicitly selected population do not make
+  // that population invalid. Check all measured surveys/collars for its holes,
+  // selected assay intervals and their source geology without changing STATE.
+  const ids = new Set(rows.map(r => r.hole_id));
+  const source = {assay:rows};
+  ['collar','survey','geology'].forEach(name => {source[name] = STATE[name].filter(r => ids.has(r.hole_id));});
+  const checks = _p1RunValidationChecks(source);
+  if (!rows.length || checks.some(c => c.severity === 'fail')) {
+    toast(t('core.repair.exportBlocked'), 'warn'); showTab(7); return false;
+  }
+  logPipeline('Scoped validation', 'Boundary export: '+rows.length+' selected intervals / '+ids.size+' holes; selected source checks passed. Regional findings remain recorded.');
+  return true;
+}
+
 function exportCroppedMaster() {
   const rows = _croppedMerged();
+  if (!_coreCropExportReady(rows)) return false;
   if (!rows.length) { toast(t('core.exportCroppedMaster.nothingInsideConstraintExport'), 'warn'); return; }
   const { gradeCols, outCols } = buildMasterExportCols(rows);
   const unitSummary = gradeCols.map(c => `${c}=${_exportUnit(c)}`).join(', ');
@@ -11393,6 +11411,8 @@ function exportCroppedMaster() {
     '# units: ' + (unitSummary || 'unitless'),
     _lengthTag(),
     _cropTag(),
+    '# validation-scope: selected intervals='+rows.length+' holes='+new Set(rows.map(r=>r.hole_id)).size+'; regional findings retained in Core project/PDF',
+    '# source-audit: changes='+STATE.CHANGE_LOG.length+'; detailed corrections in Core project/PDF',
     outCols.join(',')
   ];
   const lines = header.slice();
@@ -11405,6 +11425,7 @@ function exportCroppedMaster() {
 
 function exportCroppedCollar() {
   const rows = _croppedMerged();
+  if (!_coreCropExportReady(rows)) return false;
   const keptHoles = new Set(rows.map(r => r.hole_id));
   const collar = STATE.collar.filter(c => keptHoles.has(c.hole_id));
   if (!collar.length) { toast(t('core.exportCroppedCollar.noCollarsInsideConstraint'), 'warn'); return; }
@@ -11418,6 +11439,7 @@ function exportCroppedCollar() {
 
 function exportCroppedAssay() {
   const rows = _croppedMerged();
+  if (!_coreCropExportReady(rows)) return false;
   if (!rows.length) { toast(t('core.exportCroppedAssay.nothingInsideConstraint'), 'warn'); return; }
   const gradeCols = getActualGradeColumns();
   const outCols = [..._masterBaseCols(), ...gradeCols];
@@ -11429,6 +11451,7 @@ function exportCroppedAssay() {
 
 function exportCroppedLithology() {
   const rows = _croppedMerged();
+  if (!_coreCropExportReady(rows)) return false;
   const litRows = rows.filter(r => (r.lithology !== undefined && r.lithology !== null && r.lithology !== ''));
   if (!litRows.length) { toast(t('core.exportCroppedLithology.noLithologyCroppedData'), 'warn'); return; }
   const outCols = [..._masterBaseCols(), ..._masterTailCols(litRows)];
@@ -11579,6 +11602,9 @@ function export3DTraceStr() {
 // Desurvey format: HOLEID, FROM, TO, X, Y, Z — standard 3D mining software import layout.
 // Extended with grade columns for direct import into downstream drillhole databases.
 function exportIndustryDrillholeCSV() {
+  if (!coreGeometryReady() || _p1RunValidationChecks().some(c => c.severity === 'fail')) {
+    toast(t('core.repair.exportBlocked'), 'warn'); showTab(7); return false;
+  }
   if (!STATE.merged) computeMerge();
   const gradeCols = getActualGradeColumns();
   const outCols = [..._masterBaseCols(), ...gradeCols];
@@ -11600,14 +11626,14 @@ function exportIndustryDrillholeCSV() {
 // helper (matches Stage 02 pattern), but P1 doesn't currently embed any charts —
 // staying within the scope contract: text+tables sufficient.
 
-function _p1RunValidationChecks() {
-  // Synthesize a uniform { name, value, severity } list from current STATE.
+function _p1RunValidationChecks(source = STATE) {
+  // Synthesize a uniform { name, value, severity } list from current source.
   // Mirrors the linkage matrix + completeness used in renderValidation().
   const checks = [];
-  const collarIds = new Set(STATE.collar.map(r => r.hole_id).filter(Boolean));
-  const surveyIds = new Set(STATE.survey.map(r => r.hole_id).filter(Boolean));
-  const assayIds = new Set(STATE.assay.map(r => r.hole_id).filter(Boolean));
-  const geoIds = new Set(STATE.geology.map(r => r.hole_id).filter(Boolean));
+  const collarIds = new Set(source.collar.map(r => r.hole_id).filter(Boolean));
+  const surveyIds = new Set(source.survey.map(r => r.hole_id).filter(Boolean));
+  const assayIds = new Set(source.assay.map(r => r.hole_id).filter(Boolean));
+  const geoIds = new Set(source.geology.map(r => r.hole_id).filter(Boolean));
 
   const orphanAssay = [...assayIds].filter(h => !collarIds.has(h));
   const orphanSurvey = [...surveyIds].filter(h => !collarIds.has(h));
@@ -11625,18 +11651,18 @@ function _p1RunValidationChecks() {
   checks.push({ name: 'Collar without Geology', value: `${collarNoGeo.length} hole`, severity: collarNoGeo.length ? 'warn' : 'ok' });
 
   // Collar CRS: geographic degrees cannot be mixed with depths in metres.
-  const geo = _collarLooksGeographic();
+  const geo = _collarLooksGeographic(source.collar);
   checks.push({ name: 'Collar X/Y in projected metres (not lat/long degrees)', value: geo ? 'looks like degrees' : 'ok', severity: geo ? 'fail' : 'ok' });
 
   // Duplicate collar hole_id (must be unique)
-  const cIds = STATE.collar.map(r => r.hole_id).filter(Boolean);
+  const cIds = source.collar.map(r => r.hole_id).filter(Boolean);
   const seenCollar = new Set();
   const dupCollar = cIds.filter(h => { if (seenCollar.has(h)) return true; seenCollar.add(h); return false; });
   checks.push({ name: 'Duplicate collar hole_id', value: `${[...new Set(dupCollar)].length} duplicate`, severity: dupCollar.length ? 'fail' : 'ok' });
 
   // Required-field completeness per table (warn if <100, fail if <95)
   ['collar','survey','assay','geology'].forEach(t => {
-    const rows = STATE[t]; if (!rows.length) return;
+    const rows = source[t]; if (!rows.length) return;
     // Missing final depth is an explicit completeness warning, rather than a
     // geometry failure: measured survey stations still support desurvey. Do
     // not infer or write a replacement total depth from assays/surveys.
@@ -11651,14 +11677,14 @@ function _p1RunValidationChecks() {
     checks.push({ name: `${t} required-field completeness`, value: `${pct.toFixed(1)}%`, severity: sev });
   });
 
-  const noFinalDepth = STATE.collar.filter(r => r.depth === null || r.depth === undefined || String(r.depth).trim() === '').length;
+  const noFinalDepth = source.collar.filter(r => r.depth === null || r.depth === undefined || String(r.depth).trim() === '').length;
   checks.push({name:'Collar without final measured depth',value:noFinalDepth+' hole',severity:noFinalDepth?'warn':'ok'});
 
   // Structural measurements must be usable, even when a mostly complete table
   // exceeds the percentage threshold. Optional missing grades stay missing.
   ['collar','survey','assay','geology'].forEach(table => {
     let invalid = 0;
-    for (const row of STATE[table]) {
+    for (const row of source[table]) {
       const filled = value => value !== null && value !== undefined && String(value).trim() !== '';
       const numeric = Object.keys(TABLE_SCHEMA[table].types || {}).some(key =>
         filled(row[key]) && !Number.isFinite(Number(row[key])));
@@ -11675,7 +11701,7 @@ function _p1RunValidationChecks() {
 
   // Assay gap/overlap
   const assayByHole = {};
-  STATE.assay.forEach(r => {
+  source.assay.forEach(r => {
     if (!r.hole_id) return;
     (assayByHole[r.hole_id] = assayByHole[r.hole_id] || []).push(r);
   });
@@ -11695,7 +11721,7 @@ function _p1RunValidationChecks() {
   const gradeColsList = getActualGradeColumns();
   let bdlAny = 0;
   gradeColsList.forEach(c => {
-    STATE.assay.forEach(r => {
+    source.assay.forEach(r => {
       const v = Number(r[c]);
       if (isFinite(v) && v < 0) bdlAny++;
     });
@@ -11704,7 +11730,7 @@ function _p1RunValidationChecks() {
 
   // Verdict (linkage gate)
   const linkOK = !orphanAssay.length && !orphanSurvey.length && !orphanGeo.length && !dupCollar.length;
-  const geometryReady=coreGeometryReady();
+  const geometryReady=coreGeometryReady(source);
   checks.push({name:'Coordinate source',value:window._coreUseProvidedXYZ?'Supplied assay interval midpoint XYZ (not independently surveyed here)':'Minimum-curvature directional survey',severity:'warn'});
   checks.push({name:'Assay geometry readiness',value:geometryReady?'READY':'MISSING / INVALID XYZ OR SURVEY',severity:geometryReady?'ok':'fail'});
   checks.push({ name: 'Linkage and geometry verdict', value: linkOK && geometryReady ? 'READY' : 'FIX REQUIRED', severity: linkOK && geometryReady ? 'ok' : 'fail' });

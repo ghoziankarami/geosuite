@@ -6,7 +6,7 @@ Contoh pembanding yang dapat direproduksi ini memakai **envelope screening XY** 
 
 | | |
 |---|---|
-| **Data** | *NEQ Deposit Atlas – Thalanga* (ds100103), Geological Survey of Queensland, **CC BY 4.0** — <https://geoscience.data.qld.gov.au/dataset/ds100103>. Ini juga dataset contoh bawaan Orebit Core, jadi Anda bisa mengikuti vignette ini tanpa mengunduh apa pun. |
+| **Data** | *NEQ Deposit Atlas – Thalanga* (ds100103), Geological Survey of Queensland, **CC BY 4.0** — <https://geoscience.data.qld.gov.au/dataset/ds100103>. Tutorial mengimpor empat tabel publik; contoh bawaan aplikasi adalah nickel sintetis. |
 | **Modul** | Core → Assay → Resource |
 | **Waktu** | ±45 menit bila diikuti manual |
 | **Hasil akhir** | Skrining *grade-tonnage*, lengkap dengan daftar alasan mengapa hasil ini **belum** Sumber Daya Mineral |
@@ -30,7 +30,7 @@ Satu batasan sejak awal: data ini **tidak memuat logging litologi untuk lubang-l
 
 ## 1. Memuat data (Core)
 
-Buka **Orebit Core**. Dataset Thalanga termuat otomatis sebagai contoh.
+Buka **Orebit Core** lalu impor empat CSV Thalanga. Runner membuat CSV dari [fixture publik](https://github.com/ghoziankarami/geosuite/blob/main/tests/fixtures/thalanga-core.json); data contoh bawaan tetap nickel sintetis.
 
 ![Dashboard Core dengan dataset Thalanga](img/thalanga-01-core-dashboard.png)
 
@@ -84,7 +84,7 @@ Mengapa ini penting: kolom Pb berisi kode **−995.000** dan Ag **−9.910.000**
 
 ## 3. Validasi: temukan, putuskan, catat
 
-Tab **Validation** Core menjalankan 16 pemeriksaan.
+Tab **Validation** Core menjalankan 23 pemeriksaan pada empat tabel ini.
 
 ![Validasi Core — status FIX REQUIRED](img/thalanga-02-core-validation.png)
 
@@ -96,6 +96,7 @@ Tab **Validation** Core menjalankan 16 pemeriksaan.
 | **hole_id collar ganda** | **6 ✗** | 6 ✗ |
 | Celah (gap) interval assay | 208 ⚠ | 206 ⚠ |
 | **Tumpang tindih (overlap) interval assay** | **115 ✗** | 113 ✗ |
+| **Pengukuran survey tidak valid** | **1 ✗** | **1 ✗** |
 | Keputusan keterkaitan | **FIX REQUIRED** | **FIX REQUIRED** |
 
 Apa isi temuan itu (diperiksa baris demi baris):
@@ -116,11 +117,11 @@ Keduanya dilakukan di editor data Core dan tercatat otomatis di **CHANGE_LOG**:
 assay: 1 rows edited, 0 added, 2 deleted
 ```
 
-CHANGE_LOG ikut terekspor. Siapa pun yang menerima file Anda bisa melihat persis apa yang diubah dan kapan.
+CHANGE_LOG lengkap tersimpan dalam proyek Core dan PDF. CSV cropped mencatat scope validasi dan merujuk audit tersebut; seluruh riwayat edit tidak disimpan di CSV.
 
 ### Mengapa status tetap "FIX REQUIRED", dan itu benar
 
-Sisa masalah (collar ganda LVRC/BEA, ratusan overlap TCRC dan sejenisnya) semuanya berada di **lubang regional di luar area endapan**. Geologis senior tidak "membersihkan" data yang tidak akan dipakai hanya supaya lampu indikator hijau. Data itu **dikeluarkan secara eksplisit** lewat batas area (§4), dan alasannya ditulis. Status merah di sini adalah catatan yang jujur, bukan kegagalan.
+Sisa masalah (collar ganda LVRC/BEA, ratusan overlap TCRC dan dip tidak valid TH38) semuanya berada di **lubang regional di luar area endapan**. Geologis senior tidak "membersihkan" data yang tidak akan dipakai hanya supaya lampu indikator hijau. Data itu **dikeluarkan secara eksplisit** lewat batas area (§4), dan alasannya ditulis. Status merah di sini adalah catatan yang jujur, bukan kegagalan.
 
 ---
 
@@ -128,7 +129,7 @@ Sisa masalah (collar ganda LVRC/BEA, ratusan overlap TCRC dan sejenisnya) semuan
 
 ### Desurvey
 
-Tab **Desurvey** mendeteksi konvensi dip dari data: `positive_down`, yaitu dip positif berarti ke bawah. Hasilnya: 711 lubang ter-desurvey, 0 survey rusak.
+Tab **Desurvey** mendeteksi konvensi dip dari data: `positive_down`, yaitu dip positif berarti ke bawah. Inventaris mencakup 711 lubang dan 1 temuan survey tidak valid: TH38 pada MD416 m memiliki dip132°. Jejak TH38 ditahan; pengukuran tidak ditebak atau diubah. TH38 tidak termasuk 13 lubang ekspor area.
 
 ![Jejak lubang ter-desurvey](img/thalanga-03-core-desurvey.png)
 
@@ -162,7 +163,7 @@ File: [`data/thalanga-deposit-area.geojson`](data/thalanga-deposit-area.geojson)
 
 Perhatikan: peta menunjukkan **12 collar** di dalam kotak, tetapi **13 lubang** menyumbang interval. Core memotong berdasarkan **posisi titik tengah interval yang sudah ter-desurvey**, bukan posisi collar. Satu lubang di-collar di luar kotak tetapi menembus ke dalamnya. Pemotongan berbasis collar akan kehilangan interval itu.
 
-Lubang yang tersisa: TE-1, TE-2, TH1, TH2, TH3, TH4, TH5, TH6, TH31, TH35, TH37, TH39, TH40. Ke-13 lubang ini (11 bor intan, 2 perkusi) semuanya punya survey, tidak ada yang termasuk collar ganda, dan satu-satunya overlap di dalamnya adalah dua spot sample TH37 yang sudah dihapus di §3. Ekspor **Cropped master CSV (desurveyed)** untuk langkah berikutnya.
+Lubang yang tersisa: TE-1, TE-2, TH1, TH2, TH3, TH4, TH5, TH6, TH31, TH35, TH37, TH39, TH40. Ke-13 lubang ini (11 bor intan, 2 perkusi) semuanya punya survey, tidak ada yang termasuk collar ganda, dan satu-satunya overlap di dalamnya adalah dua spot sample TH37 yang sudah dihapus di §3. Ekspor **Cropped master CSV (desurveyed)** untuk langkah berikutnya. Jalur ini memvalidasi interval terpilih serta collar, survey dan geologi lubangnya; kegagalan di dalam pilihan menahan ekspor. Scope tercatat pada header CSV dan riwayat pipeline, sementara temuan regional tetap tersimpan.
 
 ---
 

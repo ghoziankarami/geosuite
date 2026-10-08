@@ -55,7 +55,7 @@ The result is a 5,488 × 3,449 m footprint, which is plausible for one deposit.
 
 The table links are clean: no orphan holes, no duplicate collars, no gaps or overlaps. Two notes:
 
-- **No end-of-hole depth on the collars.** The collar completeness check fails (80 %) because there is no `depth` column. Core now extends each trace to the deepest logged interval.
+- **No end-of-hole depth on the collars.** The 399 missing final depths are reported as a warning; required geometric fields remain 100 % complete. Core extends along the last measured survey direction to the deepest logged interval without filling or changing `collar.depth`. This extrapolation is a directional assumption, not a measured final depth.
 - **Two holes have a single survey station** (at depth 0).
 
 Together, these two exposed a **real bug** in GeoSuite. A trace used to be extended only to `collar.depth`. Without that column, every sample below the last survey station was stacked *on that station*. On a single-station hole, every sample sat on the collar: 97 samples in Babbitt. Take B1-001 (−60° towards 327°): the mid-point of its deepest interval (about 129 m along the hole) belongs at elevation **382.53 m**, not at the collar's 494.05 m. The 382.53 m figure is recomputed with trigonometry in the runner and matched against Core's export.

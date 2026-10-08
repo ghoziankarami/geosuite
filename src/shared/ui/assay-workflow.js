@@ -151,7 +151,7 @@
     const notesOpen=card?.querySelector('.workflow-notes')?.open;
     if(n===1){OrebitScreeningWorkflow.dashboard(panel,insight(1),text('purpose1'),data()?.rows?.length?3:2);return;}
     if(card)card.remove();card=node('section',null,'assay-workflow-card');card.setAttribute('aria-label',text('guide'));
-    const step=MAIN.indexOf(n);card.append(node('p',step>=0?text('step',{n:step+1,total:MAIN.length}):text('optional'),'workflow-eyebrow'));
+    const step=MAIN.indexOf(n);card.classList.toggle('workflow-optional',step<0);card.append(node('p',step>=0?text('step',{n:step+1,total:MAIN.length}):text('optional'),'workflow-eyebrow'));
     card.append(node('h2',label(n)),node('p',text('purpose'+n),'workflow-purpose'));
     card.append(OrebitScreeningWorkflow.links(MAIN,n));
     if(data()&&[3,7,8,9,10,11,13].includes(n)&&availableElements().length){

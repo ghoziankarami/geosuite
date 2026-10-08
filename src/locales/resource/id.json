@@ -1043,5 +1043,8 @@
   "res.reportInsight.bridgeVolume": "Volume dibuat {generated} Mm3 ({cells} sel); volume estimasi {estimated} Mm3 ({estimatedBlocks} blok); pilihan laporan {selected} Mm3 ({selectedBlocks} blok). Ini volume, bukan tonase batuan.",
   "res.mass.generatedVolume": "Volume yang dibuat",
   "res.mass.densityNotApplied": "Tidak dipakai untuk kadar per volume",
-  "res.envelope.radiusHelp": "Radius otomatis minimal 25 m dan setengah diagonal sel; menyesuaikan saat grid dibuat ulang. Isi radius untuk memakai pilihan Anda. Tinjau batas geologi: default ini tidak menentukan batas mineralisasi."
+  "res.envelope.radiusHelp": "Radius otomatis minimal 25 m dan setengah diagonal sel; menyesuaikan saat grid dibuat ulang. Isi radius untuk memakai pilihan Anda. Tinjau batas geologi: default ini tidak menentukan batas mineralisasi.",
+  "flow.computeNext": "Hitung & lanjut: {stage}",
+  "flow.calculating": "Menghitung dengan parameter saat ini… Lanjut menunggu hasilnya.",
+  "flow.notAdvanced": "Perhitungan belum selesai. Periksa status di bawah, perbaiki parameter atau coba lagi; tahap belum dilanjutkan."
 }

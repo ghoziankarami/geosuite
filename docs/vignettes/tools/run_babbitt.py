@@ -426,6 +426,7 @@ def resource_stage(br, site, comp_csv, comp_rows, R):
     r["img_variogram"] = shot(pg, "09-resource-variogram")
 
     pg.evaluate("showTab(5)")
+    pg.evaluate("setResourceEnvelope('xy',25)")
     settle(pg, 1500)
     r["suggested_block_size"] = (
         pg.evaluate("""async () => { if (typeof autoSuggestBlockSize === 'function') await autoSuggestBlockSize();
@@ -433,6 +434,8 @@ def resource_stage(br, site, comp_csv, comp_rows, R):
     )
     pg.evaluate(f"""() => {{ const setv = (id, v) => {{ const el = document.getElementById(id); if (el) el.value = v; }};
         setv('bmX', {BLOCK[0]}); setv('bmY', {BLOCK[1]}); setv('bmZ', {BLOCK[2]}); }}""")
+    # This published known-answer tutorial explicitly uses the legacy XY support.
+    # New projects default to 3D proximity; do not silently change its reference geometry.
     pg.evaluate("async () => { await generateBlocks(); }")
     settle(pg, 2000)
     r["blocks"] = pg.evaluate(

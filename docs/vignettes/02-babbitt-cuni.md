@@ -1,5 +1,7 @@
 # Vignette 02 — Babbitt (Cu-Ni, Duluth Complex): feet, core yang tidak dianalisis, dan estimasi pada data rapat
 
+Contoh pembanding yang dapat direproduksi ini memakai **envelope screening XY** secara eksplisit di Block Model → Advanced. Proyek baru memakai kedekatan sampel 3D; pilih XY untuk mengulang angka di bawah. Kedua envelope bukan solid geologi tertutup.
+
 > **English:** [en/02-babbitt-cuni.md](en/02-babbitt-cuni.md) · Vignette sebelumnya: [01 — Thalanga](01-thalanga-vms.md)
 
 | | |

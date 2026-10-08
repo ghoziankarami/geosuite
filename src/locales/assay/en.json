@@ -1230,5 +1230,8 @@
   "asy.reportSummary.brief.fixNext": "Correct or complete the assay data, import it again, then review statistics and compositing.",
   "asy.reportSummary.brief.rows": "Loaded intervals",
   "asy.reportSummary.brief.attentionTitle": "WHAT TO CHECK",
-  "asy.reportSummary.brief.nextTitle": "RECOMMENDED NEXT STEP"
+  "asy.reportSummary.brief.nextTitle": "RECOMMENDED NEXT STEP",
+  "flow.computeNext": "Calculate & next: {stage}",
+  "flow.calculating": "Calculating with the current parameters… Next waits for the result.",
+  "flow.notAdvanced": "Calculation was not completed. Inspect the status below, correct the parameters or retry; this stage has not advanced."
 }

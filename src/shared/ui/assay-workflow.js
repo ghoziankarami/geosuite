@@ -165,7 +165,7 @@
     const calc=button(text(n===2?'chooseFile':n===3?'checkData':n===8?'reviewTail':n===7?'useMedian':n===13?'pdf':'refresh'),()=>recommend(n),false,n===2?'apply':n===13?'export':n===7?'custom':'inspect');
     calc.disabled=n!==2&&!data()?.rows?.length;actions.append(calc);
     if(n!==2&&n!==13){const next=button(text('recordContinue'),()=>record(n,true),false,'next');next.disabled=!data()?.rows?.length;actions.append(next);}
-    if(n===13&&typeof OrebitHandoff!=='undefined'&&OrebitHandoff.available())actions.append(button(window.__t('handoff.toResource'),()=>OrebitHandoff.send('Resource',exportMasterForEstimation),true));
+    if(n===13&&typeof OrebitHandoff!=='undefined'&&OrebitHandoff.available())actions.append(button(window.__t('handoff.toResource'),()=>OrebitHandoff.send('Resource',exportMasterForEstimation),false,'next'));
     if([7,8,9,10,11].includes(n))actions.append(button(text('custom'),()=>{const control=Array.from(panel.querySelectorAll('select,input[type=number]')).find(el=>!el.closest('.assay-workflow-card'));if(control){control.scrollIntoView({block:'center',behavior:'smooth'});control.focus({preventScroll:true});}},true,'custom'));
     card.append(actions);card.append(OrebitScreeningWorkflow.related('assay',n,navigate));
     const key=node('div',null,'action-key');for(const role of ['next','inspect','custom','advanced'])key.append(node('span',window.__t('ux.action.'+role),'action-key-'+role));card.append(key);

@@ -96,3 +96,10 @@ recorded settings or analyst notes.
 The PDF records cutoff choices and their justification, including no cutoff.
 Review geological limits, density, support and validation before using screening
 results in a decision or an enterprise modelling workflow.
+
+
+## Primary continuation
+
+Core computes Desurvey and Merge as their main stages open; the final main-stage action sends the merged data to Assay. Assay computes its displayed review stages, retains analyst notes and editable parameters, and sends its master export directly to Resource. Resource **Calculate & next** invokes the existing variogram, grid, estimation and cross-validation owners when no result exists or the calculation inputs changed. A completed custom model is retained. Invalid parameters, failed calculations and cancellation keep the current stage open with an explanation. Busy calculations prevent duplicate runs.
+
+The Resource main route is setup → continuity → grid → estimation → cross-validation → grade-tonnage → report. Swath, confidence and the 3D viewer remain linked from relevant stages and directly available in Advanced tools. These visits do not apply treatments or imply analyst approval. Numerical defaults, support assumptions and user changes are recorded in the native report; inspect them before interpreting the screening result.

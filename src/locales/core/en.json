@@ -914,5 +914,8 @@
   "core.reportSummary.brief.original": "Loaded source data",
   "core.reportSummary.brief.joined": "For the selected coordinate workflow",
   "core.reportSummary.brief.attentionTitle": "WHAT TO CHECK",
-  "core.reportSummary.brief.nextTitle": "RECOMMENDED NEXT STEP"
+  "core.reportSummary.brief.nextTitle": "RECOMMENDED NEXT STEP",
+  "flow.computeNext": "Calculate & next: {stage}",
+  "flow.calculating": "Calculating with the current parameters… Next waits for the result.",
+  "flow.notAdvanced": "Calculation was not completed. Inspect the status below, correct the parameters or retry; this stage has not advanced."
 }

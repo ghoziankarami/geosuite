@@ -1043,5 +1043,8 @@
   "res.reportInsight.bridgeVolume": "Generated volume {generated} Mm3 ({cells} cells); estimated volume {estimated} Mm3 ({estimatedBlocks} blocks); report selection {selected} Mm3 ({selectedBlocks} blocks). These are volumes, not rock tonnes.",
   "res.mass.generatedVolume": "Generated volume",
   "res.mass.densityNotApplied": "Not applied to volumetric grade",
-  "res.envelope.radiusHelp": "Automatic radius is at least 25 m and half the cell diagonal; it adapts when cells are regenerated. Set a radius to keep your explicit choice. Review geological support: this default does not infer the ore boundary."
+  "res.envelope.radiusHelp": "Automatic radius is at least 25 m and half the cell diagonal; it adapts when cells are regenerated. Set a radius to keep your explicit choice. Review geological support: this default does not infer the ore boundary.",
+  "flow.computeNext": "Calculate & next: {stage}",
+  "flow.calculating": "Calculating with the current parameters… Next waits for the result.",
+  "flow.notAdvanced": "Calculation was not completed. Inspect the status below, correct the parameters or retry; this stage has not advanced."
 }

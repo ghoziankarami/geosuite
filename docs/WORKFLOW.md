@@ -27,9 +27,22 @@ and dashed controls customize. Opening a view never approves an interpretation.
 
 Core's main route is Import → Validation → Desurvey → Merge → Export. Table,
 strip-log, section and optional composite views remain directly accessible.
-**Try imperfect example** in Import uses the normal four-CSV import and exposes
-missing collars, missing geology and mismatched hole IDs. Save your project first;
-restore the original source tables to clear the deliberate failures.
+The built-in synthetic sample contains a missing collar, missing geology and a
+mismatched hole ID. **Validation results** name each affected ID, source row and
+field. Open the affected cell or inspect the missing-record context. You can
+add verified source records, edit values and click **Apply changes**, then
+**Return and revalidate**. A missing collar stays empty until supplied; an ID is
+prefilled only to identify the record you chose to add. Mapping/unit controls
+remain available under the secondary details.
+
+For the untouched built-in sample, **Repair from bundled original source** uses
+its supplied original collar/geology records after confirmation; grades and
+measured surveys are preserved. Uploaded or edited projects cannot use that
+sample restoration. Otherwise import corrected CSVs or use the normal table
+editor. Added, removed and edited values are recorded in the project and PDF.
+The PDF includes the latest200 cell changes with an explicit limit; the project
+retains the complete audit. Unresolved structural findings block continuation;
+missing final measured depth or a geology log can remain recorded warnings.
 
 Resource's route is Setup → Variography → Block Model → Estimation → validation
 → Grade-Tonnage → Report. Compute & fit produces the experimental curve and

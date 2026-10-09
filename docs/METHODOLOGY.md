@@ -33,12 +33,22 @@ Collar X/Y that look like latitude/longitude degrees are flagged as a failed che
 every later step mixes X/Y with depths in metres, so coordinates must be projected
 (e.g. UTM).
 
+Core's validation owner also supplies stable finding codes, exact source row
+indices and affected fields. The UI shows these results before repairs or
+mapping controls. Missing records remain absent until verified values are
+entered or imported; manual Add prefills only the selected source ID. Only the
+unchanged bundled synthetic dataset can restore its known original records.
+Apply records the actual edits/additions/deletions and invalidates derived
+geometry/composites. The native PDF shows the latest200 applied cell changes
+with a stated limit; the project retains the complete audit.
+
 ## 2. Desurvey (Core)
 
 **Minimum curvature** (Sawaryn & Thorogood, 2003, SPE 84246) between consecutive
 survey stations; beyond the last station the hole continues on the last dip/azimuth
-to the collar's total depth. A hole without survey is treated as vertical and listed
-as a warning. Interval midpoints (`midx`, `midy`, `midz`) are interpolated along the
+to the collar's total depth. Assumed starts/final extensions are recorded explicitly. Missing measured survey
+for a hole used by Assay blocks the main geometry handoff; it is not silently
+replaced by an invented vertical survey. Interval midpoints (`midx`, `midy`, `midz`) are interpolated along the
 trace. Implementation: `src/shared/geostat/desurvey.js`.
 
 ## 3. Compositing (Assay; Core has a simpler preview)

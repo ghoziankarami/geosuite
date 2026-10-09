@@ -75,3 +75,16 @@ body.screening-guided.screening-advanced-open nav.tabs .tab[data-workflow-advanc
   .viewer-controls .row-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;flex-direction:row}
   .viewer-controls .row-controls label{flex:none;width:auto!important}
 }
+
+.core-repair-heading{display:flex;justify-content:space-between;align-items:start;gap:12px;flex-wrap:wrap}
+.core-repair-record{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border,#dce4ee)}
+.core-repair-record span{overflow-wrap:anywhere;min-width:0;flex:1;font-size:13px}
+.core-repair-record .btn{flex-shrink:0;min-height:44px}
+.core-repair-context{padding:18px;border:1px solid var(--warn,#c97700);border-radius:10px;background:var(--bg-panel);margin-bottom:16px}
+.core-repair-context p{font-size:13px;max-width:80ch}
+.editable-table td.cell-validation-focus{outline:2px solid var(--warn,#c97700);outline-offset:-2px;background:rgba(245,158,11,.13)}
+#coreValidationParameters,#coreValidationMapping{margin:16px 0;padding:14px;border:1px solid var(--border,#dce4ee);border-radius:10px}
+#coreValidationParameters>summary,#coreValidationMapping>summary{cursor:pointer;min-height:32px;font-weight:600}
+@media(max-width:600px){.core-repair-record{align-items:stretch;flex-direction:column}.core-repair-record .btn{align-self:start}.core-repair-context{padding:12px}.core-repair-heading{gap:6px}.core-repair-issue .workflow-actions .btn,.core-repair-context .workflow-actions .btn{min-height:44px;max-width:100%;white-space:normal;text-align:left}}
+
+.core-correction-guide{padding:14px;margin-bottom:14px}.core-correction-guide .workflow-eyebrow{margin-bottom:8px}

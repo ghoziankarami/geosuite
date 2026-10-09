@@ -137,7 +137,7 @@
   function sync() {
     if(resource())validateResourceCalculationContext();
     const panel=document.getElementById('tab'+current),card=panel?.querySelector('.assay-workflow-card');if(!card)return;
-    card.querySelector('.workflow-insight p').textContent=facts(current);
+    const insight=card.querySelector('.workflow-insight p');if(insight)insight.textContent=facts(current);
     if(calculation(current)&&dirty.has(current)&&result(current)!==dirty.get(current))dirty.delete(current);
     const gate=card.querySelector('.workflow-gate');if(gate){
       if(pending?.stage===current){gate.hidden=false;gate.textContent=tr('calculating');}
@@ -163,6 +163,9 @@
     if(!initialized)return;restoreActions();current=n;navigation(n);const panel=document.getElementById('tab'+n);if(!panel)return;
     if(!resource()&&n===7)validation=_p1RunValidationChecks();
     panel.querySelector('.assay-workflow-card')?.remove();
+    if(!resource()&&({3:'collar',4:'survey',5:'assay',6:'geology'})[n]===window.OrebitCoreRepair?.activeTable()){
+      const card=node('section',null,'assay-workflow-card core-correction-guide');card.append(node('p',window.__t('core.repair.focused')+' · '+label(n),'workflow-eyebrow'),links(main(),n));panel.prepend(card);return;
+    }
     if(n===1){const loaded=resource()?!!DATA?.rows?.length:!!STATE.collar.length&&!!STATE.assay.length;dashboard(panel,facts(n),tr('purpose1'),loaded?(resource()?3:7):2);return;}
     const card=node('section',null,'assay-workflow-card');card.setAttribute('aria-label',tr('guide'));
     const stages=main(),i=stages.indexOf(n);card.classList.toggle('workflow-optional',i<0);card.append(node('p',i<0?tr('optional'):tr('step',{n:i+1,total:stages.length}),'workflow-eyebrow'),node('h2',label(n)));
@@ -173,11 +176,11 @@
     if(n===2)actions.append(button(tr('import'),'apply',()=>document.getElementById('fileInput').click()));
     const target=next(n);if(target&&!(resource()&&n===3)){const onward=button(tr('next',{stage:label(target)}),'next',()=>continueStage(n,target));onward.dataset.workflowNext='true';onward.disabled=!canContinue(n);actions.append(onward);}
     if(!resource() && n===7 && !ready(n)){
-      const repair=button(window.__t('core.repair.title'),'next',()=>{const el=document.getElementById('coreValidationRemedies');el?.scrollIntoView({block:'start',behavior:'smooth'});el?.querySelector('button')?.focus({preventScroll:true});});repair.dataset.workflowRepair='true';actions.prepend(repair);
+      const repair=button(window.__t('core.repair.openFindings'),'next',()=>{const el=document.getElementById('coreValidationResults');el?.scrollIntoView({block:'start',behavior:'smooth'});el?.querySelector('button')?.focus({preventScroll:true});});repair.dataset.workflowRepair='true';actions.prepend(repair);
     }
     if(n!==2){
       const inspect=button(tr('inspect'),'inspect',()=>{
-        const id=resource()?({3:'resourceSetupQuickInsight',4:'varPlot',5:blockState.blocks?.length?'blockGridSummary':'blockPreview',6:'estimResults',7:'cvResults',11:'d3Plot'})[n]:({7:'coreValidationRemedies',10:'desurveyPanel',11:'mergePanel'})[n];
+        const id=resource()?({3:'resourceSetupQuickInsight',4:'varPlot',5:blockState.blocks?.length?'blockGridSummary':'blockPreview',6:'estimResults',7:'cvResults',11:'d3Plot'})[n]:({7:'coreValidationResults',10:'desurveyPanel',11:'mergePanel'})[n];
         const result=(id&&document.getElementById(id))||panel.querySelector('.plot-container,.card');
         if(result){let parent=result.parentElement;while(parent&&parent!==panel){if(parent.tagName==='DETAILS')parent.open=true;parent=parent.parentElement;}result.scrollIntoView({block:'start',behavior:'smooth'});result.setAttribute('tabindex','-1');result.focus({preventScroll:true});}
       });
@@ -194,6 +197,9 @@
     const key=node('div',null,'action-key');for(const role of ['next','inspect','custom','advanced'])key.append(node('span',window.__t('ux.action.'+role),'action-key-'+role));card.append(key);
     if(target){const gate=node('p',null,'workflow-gate');gate.setAttribute('role','status');card.append(gate);}
     card.append(related(resource()?'resource':'core',n,navigate));
+    if(!resource()&&n===7){
+      for(const id of ['coreValidationResults','coreValidationRemedies']){const element=document.getElementById(id);if(element){const marker=document.createComment('validation result location');element.before(marker);moved.set(id,{element,marker});card.insertBefore(element,actions);}}
+    }
     panel.prepend(card);sync();
   }
   function boot() {

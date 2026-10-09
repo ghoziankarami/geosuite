@@ -33,7 +33,8 @@
      "hole_id": "DH002",
      "to_m": "1"
     }
-   ]
+   ],
+   "schemaMeta": null
   }
  },
  "02-semicolon-euro-decimal.csv": {
@@ -70,7 +71,8 @@
      "hole_id": "DH002",
      "to_m": "1"
     }
-   ]
+   ],
+   "schemaMeta": null
   }
  },
  "03-tab-delimited.csv": {
@@ -107,7 +109,8 @@
      "hole_id": "DH002",
      "to_m": "1"
     }
-   ]
+   ],
+   "schemaMeta": null
   }
  },
  "04-thousands-comma-decimal-dot.csv": {
@@ -144,7 +147,8 @@
      "to_m": "1",
      "tonnage_kg": "987.65"
     }
-   ]
+   ],
+   "schemaMeta": null
   }
  },
  "05-indonesian-headers.csv": {
@@ -185,7 +189,8 @@
      "Lubang": "DH002",
      "Sampai": "1"
     }
-   ]
+   ],
+   "schemaMeta": null
   }
  },
  "06-datamine-headers.csv": {
@@ -230,7 +235,8 @@
      "YCOLLAR": "7749050",
      "ZCOLLAR": "338"
     }
-   ]
+   ],
+   "schemaMeta": null
   }
  },
  "07-bom-crlf.csv": {
@@ -267,7 +273,8 @@
      "hole_id": "DH002",
      "to_m": "1"
     }
-   ]
+   ],
+   "schemaMeta": null
   }
  },
  "08-quoted-newline.csv": {
@@ -297,7 +304,8 @@
      "notes": "thin vein",
      "to_m": "2"
     }
-   ]
+   ],
+   "schemaMeta": null
   }
  },
  "09-bdl-markers.csv": {
@@ -341,7 +349,8 @@
      "hole_id": "DH002",
      "to_m": "2"
     }
-   ]
+   ],
+   "schemaMeta": null
   }
  },
  "10-short-row.csv": {
@@ -377,7 +386,8 @@
      "hole_id": "DH002",
      "to_m": "1"
     }
-   ]
+   ],
+   "schemaMeta": null
   }
  },
  "11-schema-comment.csv": {
@@ -414,7 +424,21 @@
      "hole_id": "DH002",
      "to_m": "1"
     }
-   ]
+   ],
+   "schemaMeta": {
+    "notes": "exported from Orebit Core desurvey pipeline",
+    "raw": [
+     "orebit-schema=composite-v1 source=core-p1",
+     "units: au=g/t, cu=pct",
+     "notes: exported from Orebit Core desurvey pipeline"
+    ],
+    "schema": "composite-v1",
+    "source": "core-p1",
+    "units": {
+     "au": "g/t",
+     "cu": "pct"
+    }
+   }
   }
  },
  "12-single-column.csv": {
@@ -435,7 +459,8 @@
     {
      "hole_id": "DH002"
     }
-   ]
+   ],
+   "schemaMeta": null
   }
  }
 }

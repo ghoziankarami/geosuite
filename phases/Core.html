@@ -3152,6 +3152,7 @@ const SAMPLE_SOURCE_DATA = {...SAMPLE_DATA, ...SAMPLE_SOURCE_TABLES};
 /* @orebit-inline: shared/io/screening-report.js */
 /* @orebit-inline: shared/io/parse.js */
 /* @orebit-inline: shared/io/grades.js */
+/* @orebit-inline: shared/geostat/grade-units.js */
 /* @orebit-inline: shared/io/columns.js */
 /* @orebit-inline: shared/io/import.js */
 /* @orebit-inline: shared/ui/column-mapper.js */
@@ -5926,6 +5927,19 @@ function _coreLoadTable(cls, mapped, headers, rows, opts = {}) {
   delete STATE.manualMap[cls];
   STATE.isSample[cls] = false;
   if (cls === 'assay') _cachedGradeCols = null;
+  if (cls === 'assay' && opts.schemaMeta?.units) {
+    const declared=opts.schemaMeta.units;
+    getActualGradeColumns().forEach(col=>{
+      const aliases=TABLE_SCHEMA.assay.aliases?.[col] || [];
+      const key=Object.keys(declared).find(k=>k.toLowerCase()===col.toLowerCase()) ??
+        Object.keys(declared).find(k=>aliases.some(a=>a.toLowerCase()===k.toLowerCase()) || canonicalGradeName(k)===col);
+      const token=key==null?null:declared[key],unit=OrebitGradeUnits.normalize(token);
+      if(unit || token==='unitless') {
+        STATE.units[col]=unit?(OrebitGradeUnits.isVolumetric(unit)?unit:OrebitGradeUnits.schemaToken(unit)):'unitless';
+        STATE.unitsLocked[col]=true;
+      }
+    });
+  }
   STATE.edits[cls].clear();
   STATE.newRows[cls] = [];
   STATE.deletedIdx[cls].clear();
@@ -5968,7 +5982,7 @@ function applyCoreGateMapping(pfIdx) {
     if (host) host.innerHTML = _coreGatedHtml(pfIdx);
     return;
   }
-  _coreLoadTable(cls, gate.mapped, headers2, rows2);
+  _coreLoadTable(cls, gate.mapped, headers2, rows2, {schemaMeta:pf.schemaMeta});
   pf.assignedTo = cls; pf.gateFor = null;
   ['collar', 'survey', 'assay', 'geology'].forEach(t => { if (t !== cls && STATE.isSample[t]) { STATE[t] = []; STATE.rawHeaders[t] = []; } });
   STATE.desurvey = null;
@@ -5999,7 +6013,7 @@ function handleUpload(evt) {
     PENDING_FILES.length = 0; // Clear previous pending
 
     let anyNoteworthy = false;   // D17/D18: a rejected row or a warning must not read as a plain green success
-    parsed.forEach(({name, rows, headers, rejected}, i) => {
+    parsed.forEach(({name, rows, headers, rejected, schemaMeta}, i) => {
       try {
       const cls = classifyTable(headers, name);
       // Every file — classified, misclassified, duplicate, or unrecognized —
@@ -6010,13 +6024,13 @@ function handleUpload(evt) {
       // re-uploading. Found 2026-08-18 via MSK_DHA_001.csv.
       const pfIdx = PENDING_FILES.length;
       if (!cls) {
-        PENDING_FILES.push({name, rows, headers, assignedTo: null});
+        PENDING_FILES.push({name, rows, headers, schemaMeta, assignedTo: null});
         const headPreview = headers.slice(0,6).map(escapeHtml).join(', ');
         results.push(`<li>${ICONS.error} <strong>${escapeHtml(name)}</strong> — auto-classify failed.<br><span style="font-size:12px;color:var(--fg-mute);">Detected columns: ${headPreview}${headers.length>6?'...':''}</span><br>${tableAssignSelectHtml(pfIdx, null)}</li>`);
         return;
       }
       if (usedTables.has(cls)) {
-        PENDING_FILES.push({name, rows, headers, assignedTo: null});
+        PENDING_FILES.push({name, rows, headers, schemaMeta, assignedTo: null});
         results.push(`<li>${ICONS.warn} <strong>${escapeHtml(name)}</strong> — duplicate <code>${cls}</code>, skipped.<br><span style="font-size:12px;color:var(--fg-mute);">Route it to a different table if this was misdetected:</span><br>${tableAssignSelectHtml(pfIdx, null)}</li>`);
         return;
       }
@@ -6025,14 +6039,14 @@ function handleUpload(evt) {
       window._lastImportReport = gate.report;
       if (!gate.report.ready) {
         // Gate closed: the table keeps what it had (sample or an earlier upload) and the file waits for a mapping.
-        PENDING_FILES.push({name, rows, headers, rejected, assignedTo: null, gateFor: cls, gateReport: gate.report});
+        PENDING_FILES.push({name, rows, headers, rejected, schemaMeta, assignedTo: null, gateFor: cls, gateReport: gate.report});
         results.push(`<li id="coreGate-${pfIdx}">${_coreGatedHtml(pfIdx)}</li>`);
         anyNoteworthy = true;
         return;
       }
-      _coreLoadTable(cls, mapped, headers, rows, {preserveCoordinateMode:!!sameUpload});
+      _coreLoadTable(cls, mapped, headers, rows, {preserveCoordinateMode:!!sameUpload,schemaMeta});
       usedTables.add(cls);
-      PENDING_FILES.push({name, rows, headers, rejected, assignedTo: cls});
+      PENDING_FILES.push({name, rows, headers, rejected, schemaMeta, assignedTo: cls});
       if (gate.report.rejected.length || gate.report.warnings.some(w => w.indexOf('rejected_rows') !== 0)) anyNoteworthy = true;
       results.push(`<li>✓ <strong>${escapeHtml(name)}</strong> → <code>${cls}</code> (${mapped.length} rows) <span style="font-size:11px;color:var(--fg-mute);">— wrong table? </span>${tableAssignSelectHtml(pfIdx, cls)}${renderImportReportHtml(gate.report, { tr: _coreImportTr })}</li>`);
       } catch(e) {
@@ -6167,7 +6181,7 @@ function readCSV(file) {
         const coerced = coerceTokenRows(tokenized, decimal);
         const rows = parseResultToCoreStringRows(coerced);
         // D17: the parser reports every row it refused; Core used to read only tokenRows and drop the list.
-        resolve({ name: file.name, rows, headers: tokenized.headers, rejected: tokenized.rejected || [] });
+        resolve({ name: file.name, rows, headers: tokenized.headers, rejected: tokenized.rejected || [],schemaMeta:tokenized.schemaMeta });
       } catch (err) {
         console.error('[CSV] Read error:', err);
         reject(err);
@@ -6387,7 +6401,7 @@ function assignManual(idx) {
   }
 
   const mapped = gate.mapped;
-  _coreLoadTable(tableName, mapped, pending.headers, pending.rows);
+  _coreLoadTable(tableName, mapped, pending.headers, pending.rows, {schemaMeta:pending.schemaMeta});
   pending.assignedTo = tableName;
   pending.gateFor = null;
   STATE.usingSample = Object.keys(STATE.isSample).some(k => STATE.isSample[k] && STATE[k] && STATE[k].length > 0);
@@ -6544,17 +6558,18 @@ function csvEscape(v) {
 //            if mean < 1 → likely pct
 //            elements suffixed _gpt assumed g/t (no override needed)
 function autoDetectUnit(col) {
+  // An explicit header unit takes precedence over element/magnitude guesses,
+  // even for zero-only columns. Use the shared header owner, not a name list.
+  const headerUnit = OrebitGradeUnits.fromHeader(col);
+  if (headerUnit) return OrebitGradeUnits.isVolumetric(headerUnit) ? headerUnit : OrebitGradeUnits.schemaToken(headerUnit);
   const vals = STATE.assay
     .map(r => Number(r[col]))
     .filter(v => Number.isFinite(v) && v > 0);
   if (!vals.length) return STATE.units[col] || 'unitless';
   const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
   // Element-aware heuristic — uses column suffix when present, falls back to magnitude
-  const lc = col.toLowerCase();
-  if (lc.endsWith('_gpt') || lc.includes('au') || lc.includes('ag') || lc.includes('pt') || lc.includes('pd')) return 'gpt';
-  if (lc.endsWith('_ppb')) return 'ppb';
-  if (lc.endsWith('_ppm')) return 'ppm';
-  if (lc.endsWith('_pct')) return 'pct';
+  const lc = String(col).toLowerCase();
+  if (/^(au|ag|pt|pd)(_|$)/.test(lc)) return 'gpt';
   if (lc.endsWith('_kg') || lc.includes('kg/m') || lc.includes('kg_m')) return 'kg/m³';
   // A percent grade cannot exceed 100, so any value above 100 proves ppm (a bare "Cu" column at mean 50
   // with one 130 sample is ppm, not 130 % copper).
@@ -6569,9 +6584,9 @@ function autoDetectUnit(col) {
 // and only leave 'auto' when the magnitude is genuinely ambiguous (all values 1-100).
 function _exportUnit(c) {
   const u = STATE.units[c];
-  if (u && u !== 'auto') return u;
+  if (u && u !== 'auto') return OrebitGradeUnits.schemaToken(u) || u;
   const d = autoDetectUnit(c);
-  return (d === 'ppm' || d === 'pct' || d === 'gpt' || d === 'ppb' || d === 'kg/m³') ? d : 'auto';
+  return OrebitGradeUnits.schemaToken(d) || 'auto';
 }
 
 function refreshUnitProfile() {
@@ -6662,7 +6677,7 @@ function renderUnitColumnPanel() {
   refreshColumnMap();
 
   const elementCols = getActualGradeColumns();
-  const unitOptions = ['pct','ppm','gpt','kg/m³','unitless'];
+  const unitOptions = ['pct','ppm','gpt','ppb','kg/m³','g/m³','unitless'];
 
   // Sample stats per col for context
   const stats = {};
@@ -6836,12 +6851,13 @@ const GRADE_PALETTE_5 = ['#fef3c7', '#fbbf24', '#f97316', '#dc2626', '#7f1d1d'];
 
 // Core has no elementMeta() (that is an Assay concept) -- grade columns here
 // are plain TABLE_SCHEMA.assay names (au_gpt, cu_ppm, s_pct), so label and
-// unit are read straight off the column's own suffix.
-const GRADE_UNIT_SUFFIX = { gpt: 'g/t', ppm: 'ppm', pct: '%', ppb: 'ppb', kg: 'kg/m³' };
+// unit follow an assigned declaration, falling back to the explicit header unit.
 function gradeColMeta(col) {
-  const m = /^(.*)_(gpt|ppm|pct|ppb|kg)$/i.exec(String(col || ''));
+  const m = /^(.*)_(gpt|ppm|pct|ppb|kgm3|gm3|kg)$/i.exec(String(col || ''));
   const label = (m ? m[1] : col).replace(/_/g, ' ').toUpperCase();
-  const unit = m ? (GRADE_UNIT_SUFFIX[m[2].toLowerCase()] || '') : '';
+  const declared = STATE.units[col];
+  const assigned = declared && declared !== 'auto' ? declared : autoDetectUnit(col);
+  const unit = assigned === 'unitless' || assigned === 'auto' ? '' : (OrebitGradeUnits.normalize(assigned) || assigned || '');
   return { label, unit };
 }
 
@@ -10466,7 +10482,7 @@ function renderComposite() {
     const cols = STATE._compCols || gradeCols;
     const baseCols = ['hole_id', 'from_m', 'to_m', 'midx', 'midy', 'midz', 'lithology'];
     const outCols = [...baseCols, ...cols];
-    const lines = [outCols.join(',')];
+    const lines = ['# units: ' + cols.map(c => `${c}=${_exportUnit(c)}`).join(', '), outCols.join(',')];
     STATE.composite.forEach(r => {
       lines.push(outCols.map(c => csvEscape(r[c] === undefined ? '' : r[c])).join(','));
     });
@@ -12588,7 +12604,7 @@ document.addEventListener('keydown', (e) => {
           if (STATE.composite && STATE.composite.length && STATE._compLen > 0) {
             const baseCols = ['hole_id','from_m','to_m','midx','midy','midz','lithology','recovery_pct'];
             const outCols  = [...baseCols, ...(STATE._compCols || [])];
-            const lines    = [outCols.join(',')];
+            const lines    = ['# units: ' + (STATE._compCols || []).map(c=>`${c}=${_exportUnit(c)}`).join(', '), outCols.join(',')];
             STATE.composite.forEach(r => {
               lines.push(outCols.map(c => csvEscape(r[c] === undefined ? '' : r[c])).join(','));
             });

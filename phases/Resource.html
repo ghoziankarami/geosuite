@@ -2894,6 +2894,7 @@ const EMBEDDED_DATA = /* @orebit-inline: assets/sample/resource.json */;
 /* @orebit-inline: shared/io/screening-report.js */
 /* @orebit-inline: shared/io/parse.js */
 /* @orebit-inline: shared/io/grades.js */
+/* @orebit-inline: shared/geostat/grade-units.js */
 /* @orebit-inline: shared/io/columns.js */
 /* @orebit-inline: shared/io/import.js */
 /* @orebit-inline: shared/ui/column-mapper.js */
@@ -4038,7 +4039,7 @@ let setupState = {
  domain: 'all',
  reportCutoffNote: "",
  reportCutoff: null, // explicit PDF headline selection; blank means no cutoff
- gradeUnit: null, // null = auto-detect from column name; else '%' | 'g/t' | 'ppm' | 'kg/m³' (user override, Setup tab)
+ gradeUnit: null, // null = declaration/header inference; otherwise a shared physical grade unit (Setup override)
  declusterCell: null, // m
  decluster: null // {weights:Map<rowIdx,w>, summary:{...}}
 };
@@ -4121,15 +4122,12 @@ function elementLabelFor(col) {
    const base = (ELEMENT_LABEL[col] || col).replace(/\s*\([^)]*\)\s*$/, '');
    return `${base} (${setupState.gradeUnit})`;
  }
- if (ELEMENT_LABEL[col]) return ELEMENT_LABEL[col];
  const m = col.match(/(sno2|sn|fe2o3|wo3|moo3|cuo|zno|pbo|reeo|au|cu|pb|zn|ag|ni|fe|w|mo|co|pt|pd|as|sb|bi|cr|mn|ti|v|u|th)/i);
- let label = m? m[1].toUpperCase() : col;
- let unit = '';
+ let label = ELEMENT_LABEL[col] ? ELEMENT_LABEL[col].replace(/\s*\([^)]*\)\s*$/, '') : m? m[1].toUpperCase() : col;
+ let unit = resourceDeclaredUnit(DATA?.units?.[col] ?? DATA?.units?.[String(col).toLowerCase()]) || OrebitGradeUnits.fromHeader(col);
  const lc = col.toLowerCase();
- if (lc.includes('kg/m') || lc.includes('kgm3') || lc.endsWith('_kg') || lc.includes('kg_m')) unit = 'kg/m³';
- else if (lc.endsWith('o2') || lc.endsWith('o3') || lc.endsWith('_pct') || lc.includes('prsn')) unit = '%';
- else if (lc.endsWith('_gpt')) unit = 'g/t';
- else if (lc.endsWith('_ppm')) unit = 'ppm';
+ if (!unit && (lc.endsWith('o2') || lc.endsWith('o3') || lc.includes('prsn'))) unit = '%';
+ if (!unit && ELEMENT_LABEL[col]) return ELEMENT_LABEL[col];
  return unit? `${label} (${unit})` : label;
 }
 const ELEMENT_LABEL = {
@@ -4148,13 +4146,14 @@ const ELEMENT_LABEL = {
  * and 100× the true metal tonnes for %. This fixes both.
  */
 function resourceDeclaredUnit(token) {
- return {pct:'%', '%':'%',gpt:'g/t','g/t':'g/t',ppm:'ppm',kgm3:'kg/m³','kg/m³':'kg/m³','kg/m3':'kg/m³'}[String(token||'').toLowerCase()]||null;
+ return OrebitGradeUnits.normalize(token);
 }
 function gradeUnitFor(elKey) {
  // User override from Setup tab wins (handles columns whose NAME lies about the unit,
  // e.g. a placer-tin column called "sn_pct" that actually carries kg/m³).
  if (typeof setupState !== 'undefined' && setupState && setupState.gradeUnit && elKey===setupState.element) return setupState.gradeUnit;
- const declared=resourceDeclaredUnit(DATA?.units?.[String(elKey).toLowerCase()]);if(declared)return declared;
+ const declared=resourceDeclaredUnit(DATA?.units?.[elKey] ?? DATA?.units?.[String(elKey).toLowerCase()]);if(declared)return declared;
+ const headerUnit=OrebitGradeUnits.fromHeader(elKey);if(headerUnit)return headerUnit;
  const lc = String(elKey || '').toLowerCase();
  if (lc.includes('kg/m') || lc.includes('kgm3') || lc.endsWith('_kg') || lc.includes('kg_m')) return 'kg/m³';
  if (lc.endsWith('_gpt')) return 'g/t';
@@ -4168,9 +4167,9 @@ function gradeUnitFor(elKey) {
  if (lbl.includes('%')) return '%';
  return 'g/t';
 }
-// True when the grade is expressed per unit VOLUME (kg/m³), not per unit MASS (%, g/t, ppm).
+// Volumetric grades (kg/m³ or g/m³) use volume; mass grades (%, g/t, ppm or ppb) use rock tonnes.
 // Volume-based grades give contained metal directly from volume — density must NOT be applied.
-function isVolumetricGrade(elKey) { return gradeUnitFor(elKey) === 'kg/m³'; }
+function isVolumetricGrade(elKey) { return OrebitGradeUnits.isVolumetric(gradeUnitFor(elKey)); }
 // contained metal in tonnes of metal.
 //   tonsMt   = in-situ ROCK tonnage in Mt (mass-based grades) — IGNORED for kg/m³
 //   volM m3  = in-situ VOLUME in million m³ (required for kg/m³ volumetric grades)
@@ -4180,22 +4179,14 @@ function isVolumetricGrade(elKey) { return gradeUnitFor(elKey) === 'kg/m³'; }
 //   ppm  : metal_t = tonnage_Mt × grade            (1 ppm = 1 g/t)
 //   kg/m³: metal_t = volume_m3 × grade / 1000      (volume-based; density irrelevant)
 function containedMetalTonnes(tonsMt, grade, elKey, volMm3) {
- if (!isFinite(grade)) return NaN;
- const u = gradeUnitFor(elKey);
- if (u === 'kg/m³') {
-   if (!isFinite(volMm3)) return NaN;
-   return volMm3 * 1e6 * grade / 1000; // (Mm³→m³) × kg/m³ → kg → /1000 → tonnes
- }
- if (!isFinite(tonsMt)) return NaN;
- if (u === '%') return tonsMt * grade * 1e4;
- return tonsMt * grade; // g/t or ppm
+ return OrebitGradeUnits.containedTonnes(tonsMt*1e6,volMm3*1e6,grade,gradeUnitFor(elKey));
 }
 // formatted string: tonnes of metal, plus kg for precious g/t commodities
 function containedMetalFmt(tonsMt, grade, elKey, volMm3) {
  const t = containedMetalTonnes(tonsMt, grade, elKey, volMm3);
  if (!isFinite(t)) return '—';
  const u = gradeUnitFor(elKey);
- if (u === 'g/t' || u === 'ppm') {
+ if (u === 'g/t' || u === 'ppm' || u === 'ppb') {
    // precious/trace: tonnes are small, also show kg
    return `${t.toLocaleString('en-US',{maximumFractionDigits:1})} t (${(t*1000).toLocaleString('en-US',{maximumFractionDigits:0})} kg)`;
  }
@@ -4830,7 +4821,7 @@ function renderColumnMappingPanel(parsed, fileName, missing, elFound0, report, r
  const gradeGuess = elFound0 && elFound0.length ? elFound0[0] : '';
  const gradeOpts = '<option value="">(choose grade column)</option>' +
  origCols.map(c => `<option value="${escapeHtml(c)}" ${c === gradeGuess ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
- const units = ['auto', '%', 'g/t', 'ppm', 'kg/m³'];
+ const units = ['auto', ...OrebitGradeUnits.options];
  const unitOpts = units.map(u => `<option value="${u}">${u === 'auto' ? 'auto-detect from name' : u}</option>`).join('');
 
  // Without a report (legacy caller) keep the old one-line note; with one, the report says it.
@@ -5112,7 +5103,7 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
 </label>
  <label title="Grade unit. Auto = detected from column name. Override here if the column name does not match the real unit (e.g. placer-tin stored as kg/m³ in a column named sn_pct).">${t('res.st.gradeUnit')}
  <select id="setupGradeUnit">
- ${['auto','%','g/t','ppm','kg/m³'].map(u => {
+ ${['auto',...OrebitGradeUnits.options].map(u => {
    const val = u === 'auto' ? '' : u;
    const sel = (setupState.gradeUnit || '') === val ? 'selected' : '';
    const lbl = u === 'auto' ? `${t('res.auto')} (${gradeUnitFor(setupState.element)})` : u;
@@ -5121,7 +5112,7 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
  </select>
  </label>
  </div>
- <p style="margin-top:8px;font-size:12px;color:var(--fg-mute);">${t('res.activeUnit')} <strong>${escapeHtml(gradeUnitFor(setupState.element))}</strong>. ${gradeUnitFor(setupState.element) === 'kg/m³' ? t('res.unitVolumetric') : t('res.unitMass')}</p>
+ <p style="margin-top:8px;font-size:12px;color:var(--fg-mute);">${t('res.activeUnit')} <strong>${escapeHtml(gradeUnitFor(setupState.element))}</strong>. ${isVolumetricGrade(setupState.element) ? t('res.unitVolumetric') : t('res.unitMass')}</p>
  <div id="setupDomainWarn">${_allDomainsWarnHtml()}</div>
  <div id="resourceSetupQuickInsight" class="resource-quick-insight"></div>
  </div>
@@ -6956,7 +6947,7 @@ function restoreResourceSession() {
   return null;
  }
  let restored = false;
- if([null,'%','g/t','ppm','kg/m³'].includes(p.gradeUnit))setupState.gradeUnit=p.gradeUnit;
+ if([null,...OrebitGradeUnits.options].includes(p.gradeUnit))setupState.gradeUnit=p.gradeUnit;
  if(Number.isFinite(p.massDensityBeforeVolumetric)&&p.massDensityBeforeVolumetric>0)blockState.massDensityBeforeVolumetric=p.massDensityBeforeVolumetric;
  setupState.reportCutoffNote=typeof p.reportCutoffNote==="string"?p.reportCutoffNote:"";if(document.getElementById("reportCutoffNote"))document.getElementById("reportCutoffNote").value=setupState.reportCutoffNote;
  if(p.reportCutoff==null || (Number.isFinite(p.reportCutoff)&&p.reportCutoff>=0)){setupState.reportCutoff=p.reportCutoff??null;if(document.getElementById("reportCutoff"))document.getElementById("reportCutoff").value=setupState.reportCutoff??"";}
@@ -12017,7 +12008,7 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
    ['Block volume and mass basis',massBasis],
    ['Block viewer display',JSON.stringify(window._blockViewAppliedSettings||{purpose:'No block view rendered; report selection is independent'})],
    ['Density assignment audit',report?JSON.stringify(report.densityAudit):'Not estimated'],
-   ['Effective unit conversion',volumeGrade?'metal_t = volume_m3 x grade_kg_m3 / 1000; rock tonnage is not determined':gradeUnitFor(setupState.element)==='%'?'metal_t = rock_t x grade_percent / 100': 'metal_t = rock_t x grade_gpt_or_ppm / 1000000'],
+   ['Effective unit conversion',OrebitGradeUnits.metalFormula(gradeUnitFor(setupState.element))],
    ['Grade-tonnage settings',haveEstim?text('curve',{min:num(window._gtCurveSnapshot.min,6),max:num(window._gtCurveSnapshot.max,6),steps:window._gtCurveSnapshot.steps,classes:scopeClass}):'Estimation not run'],
    ['Geometry limitation',blockState.envelopeMode==='xyz'?'Distance-to-samples 3D screening envelope; not a geological solid, probability shell or topographic mask':'Data-envelope screening grid; geological limits and topography require independent review'],
    ['Decision evidence needed','Verify geology, top-cut, anisotropy, density, support, cutoff, metallurgy, economics and independent estimate validation before an investment or reporting decision']
@@ -12471,7 +12462,7 @@ function _estimationParamsNote() {
     // never mislabel a plain uniform export.
     const dSrc = (blockState.blockDensities && blockState.densitySource === 'sample') ? 'per-sample density (from composite CSV)'
       : (blockState.blockDensities && blockState.densitySource === 'domain') ? 'per-domain table'
-      : (typeof isVolumetricGrade === 'function' && isVolumetricGrade(setupState.element)) ? 'not applied (volumetric grade, kg/m³ x volume)'
+      : (typeof isVolumetricGrade === 'function' && isVolumetricGrade(setupState.element)) ? 'not applied (volumetric grade, '+gradeUnitFor(setupState.element)+' x volume)'
       : `uniform ${blockState.density} t/m³`;
     lines.push(`# Block size: ${(blockState.size || []).join('x')}m · density: ${dSrc}`);
     lines.push(`# Sample envelope: ${blockState.envelopeMode||'xy'} radius=${blockState.envelopeRadius||25}m origin=${(blockState.origin||[]).join(',')}`);

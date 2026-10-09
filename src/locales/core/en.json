@@ -928,5 +928,12 @@
   "core.domain.invalidState": "Domain interpretation could not be restored for the current source. Raw drillhole tables remain available.",
   "core.repair.exportBlocked": "Resolve blocking validation findings before exporting a clean handoff. Raw source tables remain available for correction.",
   "core.repair.count": "{n} finding(s)",
-  "core.repair.needsReview": "Review required"
+  "core.repair.needsReview": "Review required",
+  "core.renderDesurvey.assumptionTitle": "Trace assumptions to inspect",
+  "core.renderDesurvey.assumptionBody": "{n} holes use an assumed start or extension. Raw measurements stay unchanged. Review Survey before using these positions to build a geological solid.",
+  "core.renderDesurvey.assumedStart": "Vertical direction assumed before the first measured survey",
+  "core.renderDesurvey.noSurvey": "No measured survey: vertical screening assumption",
+  "core.renderDesurvey.lastExtension": "Straight extension of the last measured direction",
+  "core.renderDesurvey.reviewSurvey": "Review Survey",
+  "core.renderDesurvey.invalidTrajectory": "These survey records do not define a usable trajectory. Correct the missing, out-of-range or conflicting measurements in Survey."
 }

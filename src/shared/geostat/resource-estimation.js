@@ -1,7 +1,7 @@
 // Isolated pure geostatistics engine: typed arrays / plain objects in,
 // plain objects out. No UI, no rendering, no global state.
-// Prepared for a future Rust/WASM port. Behaviour-identical to the
-// previously-inline copies (baseline: _meta/tests/fixtures/task7-baseline.json).
+// Shared owner for estimation, diagnostics and cross-validation. Independent
+// known-answer tests exercise this shipped engine rather than legacy copies.
 (function () {
 function variogramModelEval(h, model) {
  // Backward-compatible: works for legacy single-structure model AND nested {struct1, struct2}.
@@ -280,7 +280,18 @@ function ordinaryKriging(neighbors, x, y, z, samples, model, anis, buffers) {
 
 function nearestNeighbor(neighbors, samples) {
  if (neighbors.length === 0) return null;
- return samples[neighbors[0].idx].v;
+ // Equal-spacing composites can differ by floating-point roundoff after
+ // desurvey. Resolve indistinguishable normalized distances by source index;
+ // do not let coordinate roundoff pick a different grade. Search selection and
+ // IDW/kriging weights are unchanged. Legacy callers without ndist keep order.
+ const first = neighbors[0];
+ let selected = first;
+ if (Number.isFinite(first.ndist)) {
+  for (const candidate of neighbors) {
+   if (Number.isFinite(candidate.ndist) && Math.abs(candidate.ndist-first.ndist)<=1e-10 && candidate.idx<selected.idx) selected=candidate;
+  }
+ }
+ return samples[selected.idx].v;
 }
 
 // Enumerate only cells within a 3D distance of samples. Walking a deposit's

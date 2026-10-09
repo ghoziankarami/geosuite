@@ -87,6 +87,10 @@ Serve the complete `dist/` folder under one path, such as `/geosuite/`. The mani
 
 Core exports structural density under the canonical `density` field; standard SG/BD_TM3 headers map to it, and other headers can be assigned manually. Measured zeros are retained as grades; blank grade columns are excluded. Preserve the values, units and schema metadata when continuing to Assay/Resource.
 
+Core and direct four-table Assay imports share prepared minimum-curvature arc positions. Keep raw surveys untouched; conflicting same-depth or opposite directions require source correction. Assumed starts and final-direction extensions belong in the project/report record. Supplied midpoint coordinates do not establish interval endpoints or a geological solid. Assay composites exported from midpoint-only input still interpolate between those midpoints; full trace/solid transport is a later integration step.
+
+Nearest-neighbour estimates resolve numerically equal normalized distances (within 1e-10) by the lower source index. Preserve deterministic ties without changing the IDW/kriging weights. Test corrected same-name CSV reimports through actual file selection, alongside independent curved-trace answers, source preservation and project reopen. The Core training and shared Domain/search known-answer suites cover these contracts.
+
 ### UI and teaching-data regression coverage
 
 The action/disclosure and Core exercise suites own isolated local servers:

@@ -129,7 +129,7 @@ The remaining problems (LVRC/BEA duplicates, the hundreds of TCRC-type overlaps 
 
 ### Desurvey
 
-The **Desurvey** tab detects the dip convention from the data: `positive_down`, meaning positive dip points downward. The inventory contains 711 holes and 1 invalid survey finding: TH38 has dip132° at MD416 m. Its trace is withheld without guessing or changing the measurement. TH38 is outside the 13-hole area export.
+The **Desurvey** tab detects the dip convention from the data: `positive_down`, meaning positive dip points downward. The inventory contains 711 holes and 33 survey findings: 32 conflicting directions at the same MD, plus TH38 has dip132° at MD416 m. Its trace is withheld without guessing or changing the measurement. TH38 is outside the 13-hole area export.
 
 ![Desurveyed hole traces](../img/thalanga-03-core-desurvey.png)
 
@@ -263,213 +263,95 @@ Export with **Export composite CSV** (`exportMasterForEstimation`). The file alr
 
 ---
 
-## 7. Resource: setup, variogram, block model
+## 7. Variogram and grid
 
-Upload the composites to **Orebit Resource**. On **Setup** choose element **zn_pct** and domain **M1-Mineralised**: 98 composites.
+Open Variography, compute Downhole first, then Compute and Auto-fit. The downhole nugget is retained. A range at the fitting search boundary is not proven geological continuity.
 
-![Resource setup](../img/thalanga-09-resource-setup.png)
-
-### Variogram
-
-![Zn variogram in domain M1](../img/thalanga-10-resource-variogram.png)
-
-**Down-hole first.** Between holes the closest composites are about 90 m apart, so the nugget, the variability at zero distance, can only be read *along* the holes. Open **Variogram Downhole** on the **Variography** tab: pairs of samples within the same hole, 2 m lags. It finds **840** within-hole pairs, and γ rises from **22.2** (%²) at 1 m to **113.5** at 15 m. Real short-range structure: over a few metres the grade changes from massive sulphide to wall rock.
-
-**Then between holes.** **Compute** the experimental variogram and **Auto-fit**. Because the down-hole variogram exists for this element and domain, auto-fit holds the nugget at the down-hole value and fits only the sill and range: **exponential**, nugget **22.2**, sill **104.0** (%²), range **72.5 m**. The nugget is about 21 % of the sill.
-
-The app marks the range in yellow, and it should: **72.5 m is the shortest range the fit is allowed to try**, not a measurement. The first lag says why. Over 0–50 m, where almost every pair is a down-hole pair, γ is already **77.4**, 97 % of the data variance (80.0), and the down-hole variogram passes the variance by 15 m. Down the hole, Zn grade stops being correlated within about 10–15 m, roughly the thickness of a lens. Along strike the continuity is not measured at all: the closest holes are 90 m apart.
-
-What that means for the estimate: with holes about 90 m apart (below), a block between holes gets close to the local mean of its neighbours. That smoothing is forced by the drill spacing, not by a modelling choice. Only infill drilling can resolve it, and a Competent Person will weigh it in any classification.
-
-> **A correction this vignette forced.** Earlier revisions reported nugget 67.2, "60 % of the sill". That was the ceiling of the fitting grid (the nugget search stopped at 60 %), reported as if it were a property of the deposit. The same artefact appeared on Babbitt and on an epithermal gold dataset. The grid now reaches 90 %, the nugget comes from the down-hole variogram, and a fit that lands on an edge of the grid is flagged. Cross-validation improved with it (OK slope 0.68 → 0.75, §9).
-
-### Block size
-
-The app suggests 15 × 15 × 8 m. The Estimation tab reports **nearest between-hole spacing: median 91 m, P90 96 m**. Blocks much smaller than about a quarter of the drill spacing only create an illusion of resolution: kriging 15 m blocks between holes 90 m apart produces hundreds of nearly identical blocks that look like detail and are not.
-
-Used: **25 × 25 × 10 m** (about ¼ of the hole spacing; 10 m is a typical bench/level height). Result: **20,967 blocks** (84 × 20 × 29). Density is left at the default **2.8 t/m³**, which the app correctly flags as **ASSUMED** (§11).
-
----
-
-## 8. Estimation: the most important lesson in this vignette
-
-Three runs on the **Estimation** tab, with the same composites and the same variogram. Only two decisions change: the **domain boundary** and the **search strategy**.
-
-### Run A — default parameters, no domain boundary
-
-Switch **Keep blocks inside the domain** off. That is how every GeoSuite version before 25 September 2026 behaved. Use the auto-suggested search (1.5 × the variogram range, widened for sparse data): **218 × 218 × 135 m**, minimum 2 composites.
-
-![Estimate without a domain boundary](../img/thalanga-11a-resource-estimate-unconstrained.png)
-
-| | |
+| Parameter | Result |
 |---|---:|
-| Blocks estimated | **11,522** of 20,967 |
-| Tonnes (2.8 t/m³) | **202 Mt** |
-| Zn metal | **11.9 Mt** |
-| Lowest OK grade | 1.05 % |
+| Downhole pairs | 840 |
+| Nugget (%²) | 22.2 |
+| First between-hole lag γ (%²) | 77.4 |
+| Sill (%²) | 104.0 |
+| Range (m; rangeMin flag) | 72.5 |
+| Median hole spacing (m) | 90 |
+| Block size (m) | 25 ×25 ×10 |
+| Generated screening cells | 20,967 |
 
-That is **43 times** historical production. No error, no red warning, and completely wrong. The estimate uses only M1 composites (all ≥ 1 % Zn) and **spreads that grade into every block within 218 m**, including hundreds of metres of wall rock. The lowest block grade is 1.05 % because no low sample ever takes part.
+![Variogram](img/thalanga-10-resource-variogram.png)
 
-### A domain boundary without a wireframe
+Cells are not the entire bounding box. Support and sample-domain assignment restrict the population. Default density 2.8 t/m³ is ASSUMED, not measured.
 
-No lithology means no wireframe. But the 409 M0 composites (Zn < 1 %) still know where the ore is *not*. GeoSuite now uses all of them as the boundary: **a block belongs to domain M1 only if its nearest composite, of any domain and measured with the same search ellipsoid, is an M1 composite.** This is nearest-neighbour domain assignment, the standard way to build a hard boundary from drilling when no geological model exists yet. It is on by default.
+## 8. Compare estimation decisions
 
-> This feature was added to GeoSuite because of Run A in this vignette.
+All three experiments use the same composites and variogram. A categorical nearest-neighbour boundary is not a geological solid. Estimation search radius differs from support buffer.
 
-### Run A2 — default parameters, with the domain boundary
-
-| | |
-|---|---:|
-| Blocks estimated | **810** |
-| Blocks within reach removed by the domain boundary | 20,123 |
-| Tonnes | **14.2 Mt** @ **7.24 %** Zn |
-
-The boundary alone cuts the tonnage 14-fold. But 14 Mt is still 3 times production, because the round 218 m ellipsoid still reaches far into **undrilled** ground. At the edge of the drilling there are no M0 composites to "reject" a block, so the outermost M1 composite becomes the nearest one for blocks hundreds of metres away.
-
-### Run B — domain boundary + a geologically constrained search
-
-Strike from the composite distribution (PCA): **azimuth 98°**, roughly east–west, matching the TH-series hole distribution. Parameters:
-
-| | | Reason |
-|---|---|---|
-| r Major | 100 m | about half the along-strike hole spacing |
-| r Semi | 50 m | the across-strike geometry is unresolved (below) |
-| r Minor | 25 m | lens thickness is far below 100 m |
-| Azimuth / dip | 98° / 0° | strike from the data; dip cannot be determined reliably |
-| Min / max composites | 4 / 12 | no block is informed by a single intercept |
-
-![Estimate with domain boundary and constrained search](../img/thalanga-11-resource-estimate.png)
-
-| | OK | IDW | NN |
+| Experiment | OK cells | Model mass (Mt) | Mean Zn (%) |
 |---|---:|---:|---:|
-| Blocks | 209 | 209 | 209 |
-| Mean Zn grade | **8.10 %** | 8.72 % | 9.24 % |
-| Tonnes | **3.658 Mt** | | |
-| Zn metal | **296.3 kt** | | |
+| A: no categorical boundary | 11,527 | 202 | 5.85 |
+| A2: default search + boundary | 833 | 14.6 | 7.16 |
+| B: reviewed search + boundary | 221 | 3.867 | 7.83 |
 
-**The dip of the lens is unresolved.** Cross-sections between holes give dips of 2°, 12° and 41°, which are inconsistent. With 13 holes and no lithology, the lens orientation cannot be determined, so the ellipsoid is kept flat and tight across strike. That is a conservative choice, and it is also this result's biggest limitation.
+A2: 20,129 in-range cells excluded by the categorical boundary.
 
-**Global mean check:** the NN mean (9.24 %) is **14 % above** OK (8.10 %). Practice looks for agreement within ±5 %. With only 209 blocks, the NN mean is dominated by a few high-grade composites that happen to be nearest to many blocks, while OK smooths them. This yellow flag points the unusual way: OK is *conservative* relative to the nearest data. A better reference is the declustered composite mean (Declustering in Assay).
+B keeps major100 m, semi50 m, minor25 m, azimuth98°, dip0°, minimum4/maximum12 composites. These choices restrict unsupported influence; the lens orientation remains unresolved from these holes alone.
 
----
+![Estimate](img/thalanga-11-resource-estimate.png)
+
+| Method | Mean Zn (%) |
+|---|---:|
+| OK | 7.83 |
+| IDW | 8.44 |
+| NN | 8.45 |
+
+NN differs by about 8.0 % from OK. Review clustering and declustered means; this difference is not an accuracy certification.
 
 ## 9. Cross-validation
 
-**Cross-Val** tab (leave-one-out, n = 92 composites):
+Leave-one-out: 92 pairs.
 
-![Cross-validation](../img/thalanga-12-resource-crossval.png)
+| Method | Slope | r² | Bias | RMSE |
+|---|---:|---:|---:|---:|
+| OK | 0.73 | 0.73 | 0.08 | 4.72 |
+| IDW | 0.77 | 0.75 | 0.24 | 4.62 |
+| NN | 0.82 | 0.73 | -0.12 | 4.84 |
 
-| | OK | IDW | NN |
-|---|---:|---:|---:|
-| Regression slope (estimate on actual) | **0.73** | 0.77 | 0.82 |
-| r² | 0.73 | 0.75 | 0.71 |
-| Mean bias (estimate − actual) | **+0.08** | +0.24 | +0.19 |
-| RMSE | 4.72 | 4.62 | 5.07 |
+![Cross-validation](img/thalanga-12-resource-crossval.png)
 
-How to read it: OK is **globally unbiased** (+0.08 % Zn on a mean of 8.43 %) but **conditionally biased**. A slope of 0.73 means high grades are under-estimated and low grades over-estimated. That is the smoothing you expect when the correlation range is shorter than the hole spacing (§7). It means the grade-tonnage curve **at high cut-offs** must be read with care: tonnes above a high cut-off tend to be too many at too low a grade. A slope of 0.8–0.9 or better is usually sought for an estimate used for block-by-block decisions.
+Slope below1 indicates smoothing. Small mean bias does not establish accurate individual blocks; inspect errors by grade and position before block decisions.
 
----
+## 10. Confidence and grade-tonnage
 
-## 10. Confidence screen and grade-tonnage
+High: 48; medium: 86; low: 87. This is computational screening, not Measured/Indicated/Inferred classification or CP approval.
 
-### Confidence screen
+![Confidence](img/thalanga-12b-resource-confidence.png)
 
-The **Preliminary Confidence** tab splits the 209 blocks by distance to data and number of holes:
+The table is independently calculated from the OK block CSV. Rounding at0.001 Mt can differ between Python and the app; tests retain the existing rounding tolerance and method.
 
-| Tier | Blocks |
-|---|---:|
-| High confidence | 45 |
-| Medium confidence | 85 |
-| Low confidence | 79 |
-
-![Confidence screen](../img/thalanga-12b-resource-confidence.png)
-
-This is a **computational screen**, not a *Measured / Indicated / Inferred* classification. KCMI 2017 and JORC 2012 set no numeric thresholds. Classification is a Competent Person's written judgement, weighing geology, QAQC, density and continuity. That is why GeoSuite deliberately does not use those terms.
-
-The mean grade of the high + medium blocks (**7.72 %**) is **lower** than that of all blocks (8.10 %). The highest grades sit in the blocks furthest from data, the classic signature of extrapolation. That is one more reason to distrust the high-cut-off numbers.
-
-### Grade-tonnage, checked independently
-
-The curve on the **Grade-Tonnage** tab is computed by the app. The table below is **recomputed independently** from the exported block model (`exportBlockCSV`) in plain Python and compared with the app's curve. `test_vignettes.py` fails the build if they disagree.
-
-| Zn cut-off | Tonnes (Mt) | Zn grade | Zn metal (kt) | High + medium only: Mt @ % |
+| Cutoff Zn (%) | Mass (Mt) | Zn (%) | Metal (kt) | High+medium Mt @ % |
 |---|---:|---:|---:|---|
-| 0 / 1 % | 3.658 | 8.10 % | 296.3 | 2.275 @ 7.72 |
-| 2 % | 3.465 | 8.46 % | 293.0 | 2.135 @ 8.11 |
-| 3 % | 2.643 | 10.30 % | 272.2 | 1.663 @ 9.70 |
-| 5 % | 2.188 | 11.72 % | 256.4 | 1.365 @ 11.07 |
-| 8 % | 1.785 | 12.89 % | 230.0 | 1.120 @ 12.01 |
+| 0 | 3.867 | 7.83 | 302.8 | 2.345 @ 7.82 |
+| 1 | 3.867 | 7.83 | 302.8 | 2.345 @ 7.82 |
+| 2 | 3.692 | 8.12 | 299.8 | 2.240 @ 8.10 |
+| 3 | 2.765 | 10.00 | 276.5 | 1.715 @ 9.80 |
+| 5 | 2.205 | 11.64 | 256.7 | 1.365 @ 11.43 |
+| 8 | 1.837 | 12.69 | 233.2 | 1.155 @ 12.30 |
 
-![Grade-tonnage curve (high + medium only)](../img/thalanga-13-resource-grade-tonnage.png)
+![Grade-tonnage](img/thalanga-13-resource-grade-tonnage.png)
 
----
+## 11. Density and geometry
 
-## 11. Density: one number that moves tonnage by ±30 %
+221 cells × 6,250 m³ × 2.8 t/m³ = 3.867 Mt. Zn metal: 302.8 kt.
 
-The **KCMI** tab shows the density basis as:
+Changing only density to3.6 t/m³ gives 4.973 Mt. Measure sulphide density by domain; grade units do not change rock volume.
 
-> *ASSUMED uniform default — not measured. Enter the deposit's measured SG before reporting tonnage.*
+Interval positions now follow minimum-curvature arcs rather than station chords. Sources and tutorial parameters are not tuned to match a reference. Changed positions affect distances, support and estimated cells. Conflicting survey geometry remains missing rather than guessed.
 
-![KCMI tab with ASSUMED density](../img/thalanga-14-resource-kcmi.png)
+## 12. Reasonableness and next steps
 
-Massive sulphide ore with sphalerite, galena and pyrite typically runs **3.2–4.0 t/m³**, not 2.8. Tonnage scales directly with density, so 2.8 **under-states massive-sulphide tonnage by 12–30 %**; in stringer / disseminated zones 2.8 is reasonable. Density must be measured, per domain or regressed against Fe+S+Zn+Pb. Until then the tonnage is not reportable.
+Historical1989–1998 production of about4.7 Mt @8.3% Zn provides context, not a resource target to match. ExperimentB has a comparable order of magnitude, but production uses different cutoff, dilution and recovery decisions. Numerical similarity does not validate ore geometry.
 
-For scale: the same 209 blocks at **3.6 t/m³** give **4.702 Mt**, not 3.658 Mt.
-
----
-
-## 12. Sanity check against historical production
-
-| | Tonnes | Zn |
-|---|---:|---:|
-| **Production 1989–1998** | **4.7 Mt** | **8.3 %** |
-| Run A: no domain boundary | 202 Mt | 5.88 % |
-| Run A2: domain boundary, default search | 14.2 Mt | 7.24 % |
-| Run B: boundary + geological search (2.8 t/m³) | 3.7 Mt | 8.10 % |
-| Run B at a massive-sulphide density of 3.6 t/m³ | 4.7 Mt | 8.10 % |
-| Run B, high + medium confidence only | 1.9 Mt | 7.72 % |
-
-The **grade** is within about 3 % of the mined grade. The **tonnage** is 78 % of production at the assumed density, and practically the same at a reasonable massive-sulphide density.
-
-**Do not celebrate too early.** Part of this agreement is coincidence, and a senior geologist has to say so:
-
-1. **Production is not a resource.** The mine extracted part of the deposit at an economic cut-off with dilution (which lowers the grade), then closed for economic reasons. The deposit was later redeveloped, so mineralisation remained after 1998.
-2. **Unresolved orientation.** A horizontal ellipsoid on a lens of unknown dip can put volume in the wrong place even when the total happens to come out close.
-3. **The domain boundary rests on one cut-off (1 % Zn).** Move it to 0.5 % or 2 % and the tonnage moves. Without a lithology wireframe, this volume still depends on that decision.
-
-Conclusion: with a domain boundary and a geologically constrained search, 13 holes with no lithology produce **a plausible order of magnitude, grade and tonnage** against the mine's history. But **the volume and its classification are still not reportable**. That is what a screen is for: telling you *what to do next*, not replacing it.
-
----
-
-## 13. This is not a Mineral Resource. What it would take:
-
-- [ ] **Lithology logging and a 3D geological model** of massive sulphide / stringer / wall rock, replacing the grade shell;
-- [ ] A resolved **lens orientation** (interpreted sections, structural data, or more drilling);
-- [ ] **Measured density** per domain;
-- [ ] **QAQC**: standards (CRMs), blanks and duplicates for the campaigns used, lab certificates, including resolving **TH35's Au 1,380 g/t**;
-- [ ] **Collar and downhole survey verification** (coordinate system, survey method);
-- [ ] A geologist's decision on **unsampled intervals**;
-- [ ] Swath-plot validation, and reconciliation against historical production and existing mine voids;
-- [ ] Classification and reporting by a **Competent Person** under KCMI 2017 / JORC 2012.
-
----
-
-## Try it yourself
-
-1. Change the domain cut-off to **0.5 %** and **2 %**. Watch how much metal enters or leaves the domain, and how the in-domain CV changes.
-2. Switch **Keep blocks inside the domain** off for Run B. How many tonnes are added, and where do the extra blocks sit?
-3. Re-run Run B with **minimum 2 composites** and **octant search** on. Which blocks change most?
-4. Raise r Semi to 100 m and look at the cross-validation and the OK/NN ratio.
-
-## Reproducing this vignette
-
-```bash
-node build/build.mjs                                     # build Core/Assay/Resource into dist/
-python3 docs/vignettes/tools/run_thalanga.py             # ~90 s; writes data/thalanga.json + img/
-python3 docs/vignettes/tools/run_thalanga.py --no-shots  # skip screenshots
-```
-
-The script drives the same app build users get, in Chromium, step by step as above. The key numbers are re-derived independently from the exported files.
+Next: lithology, solid/topography, honouring, measured SG, QA/QC, directional variograms and CP review. Grade groups do not replace geological modelling. This screening is not a reportable Mineral Resource.
 
 ## Attribution
 

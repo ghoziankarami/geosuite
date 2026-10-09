@@ -160,6 +160,11 @@
         "severity": "ok"
       },
       {
+        "name": "Survey conflicting or opposite directions",
+        "value": "32 station",
+        "severity": "fail"
+      },
+      {
         "name": "Assay interval gaps",
         "value": "208 gap",
         "severity": "warn"
@@ -311,6 +316,11 @@
         "severity": "ok"
       },
       {
+        "name": "Survey conflicting or opposite directions",
+        "value": "32 station",
+        "severity": "fail"
+      },
+      {
         "name": "Assay interval gaps",
         "value": "206 gap",
         "severity": "warn"
@@ -344,24 +354,24 @@
     "desurvey": {
       "convention": "positive_down",
       "holes": 711,
-      "bad_survey": 1,
+      "bad_survey": 33,
       "TH5_end": {
         "depth": 395.9,
         "x": 371662.0355341647,
         "y": 7750484.185639508,
-        "z": 117.20186647643203
+        "z": 117.201866476432
       },
       "TH1_end": {
         "depth": 257,
         "x": 371643.5592648842,
         "y": 7750480.619844384,
-        "z": 140.94749893796262
+        "z": 140.94749893796268
       },
       "TH40_end": {
         "depth": 593.3,
         "x": 370625.03157204227,
         "y": 7750904.658388674,
-        "z": -103.13142443920718
+        "z": -103.13142443920715
       }
     },
     "img_desurvey": "thalanga-03-core-desurvey.png",
@@ -369,8 +379,8 @@
     "crop": {
       "total": 9071,
       "kept": 667,
-      "dropped": 8404,
-      "noCoord": 0,
+      "dropped": 7582,
+      "noCoord": 822,
       "keptHoles": 13,
       "totalHoles": 695
     },
@@ -603,7 +613,7 @@
         20,
         29
       ],
-      "n": 20938,
+      "n": 20967,
       "density": 2.8,
       "density_user_set": false
     },
@@ -617,26 +627,26 @@
     },
     "estimate_unconstrained": {
       "ok": {
-        "n": 11522,
-        "mean": 5.835336011227087,
-        "min": 1.049875020980835,
-        "max": 26.418760299682617
+        "n": 11527,
+        "mean": 5.8454141723341255,
+        "min": 1.0498766899108887,
+        "max": 26.41873550415039
       },
       "idw": {
-        "n": 11522,
-        "mean": 6.2365896678637185,
-        "min": 1.0463604927062988,
-        "max": 26.817270278930664
+        "n": 11527,
+        "mean": 6.245215813739453,
+        "min": 1.0463768243789673,
+        "max": 26.817136764526367
       },
       "nn": {
-        "n": 11522,
-        "mean": 3.929654855174419,
+        "n": 11527,
+        "mean": 3.9316855060720193,
         "min": 1,
         "max": 33.45800018310547
       },
-      "blocks_total": 20938,
-      "tonnes_Mt": 201.635,
-      "zn_metal_kt": 11766.079766237735,
+      "blocks_total": 20967,
+      "tonnes_Mt": 201.7225,
+      "zn_metal_kt": 11791.515603786707,
       "outside_domain": 0,
       "domain_boundary": false,
       "search": {
@@ -652,27 +662,27 @@
     "img_estimate_unconstrained": "thalanga-11a-resource-estimate-unconstrained.png",
     "estimate_default_bounded": {
       "ok": {
-        "n": 810,
-        "mean": 7.238993552584707,
-        "min": 1.875229835510254,
-        "max": 20.816261291503906
+        "n": 833,
+        "mean": 7.1558985146296985,
+        "min": 1.7813204526901245,
+        "max": 20.8117618560791
       },
       "idw": {
-        "n": 810,
-        "mean": 7.568459230882151,
-        "min": 1.670540452003479,
-        "max": 22.946659088134766
+        "n": 833,
+        "mean": 7.458628634158589,
+        "min": 1.6715511083602905,
+        "max": 22.9514102935791
       },
       "nn": {
-        "n": 810,
-        "mean": 7.224178873315269,
+        "n": 833,
+        "mean": 6.961683409125293,
         "min": 1,
         "max": 33.45800018310547
       },
-      "blocks_total": 20938,
-      "tonnes_Mt": 14.175,
-      "zn_metal_kt": 1026.1273360788823,
-      "outside_domain": 20123,
+      "blocks_total": 20967,
+      "tonnes_Mt": 14.5775,
+      "zn_metal_kt": 1043.1511059701443,
+      "outside_domain": 20129,
       "domain_boundary": true,
       "search": {
         "rMaj": 218,
@@ -686,27 +696,27 @@
     },
     "estimate": {
       "ok": {
-        "n": 209,
-        "mean": 8.101397613018893,
-        "min": 1.5626262426376343,
-        "max": 28.310731887817383
+        "n": 221,
+        "mean": 7.8302098847082835,
+        "min": 1.5626274347305298,
+        "max": 26.43540382385254
       },
       "idw": {
-        "n": 209,
-        "mean": 8.722411050180499,
-        "min": 1.5066064596176147,
-        "max": 28.028675079345703
+        "n": 221,
+        "mean": 8.438331549523642,
+        "min": 1.5065416097640991,
+        "max": 26.856552124023438
       },
       "nn": {
-        "n": 209,
-        "mean": 9.235774251832916,
+        "n": 221,
+        "mean": 8.454281510810507,
         "min": 1,
-        "max": 33.45800018310547
+        "max": 32.4379997253418
       },
-      "blocks_total": 20938,
-      "tonnes_Mt": 3.6575,
-      "zn_metal_kt": 296.308617696166,
-      "outside_domain": 20677,
+      "blocks_total": 20967,
+      "tonnes_Mt": 3.8674999999999997,
+      "zn_metal_kt": 302.8333672910928,
+      "outside_domain": 20692,
       "domain_boundary": true,
       "search": {
         "rMaj": 100,
@@ -719,7 +729,7 @@
       "seconds": 3
     },
     "spacing_note": {
-      "median_m": 91,
+      "median_m": 90,
       "p90_m": 96
     },
     "search_constrained": {
@@ -736,138 +746,138 @@
       "metrics": {
         "idw": {
           "n": 92,
-          "mae": 2.92448618054599,
-          "rmse": 4.620164347669186,
-          "r2": 0.7455772478748878,
-          "slope": 0.7741189244598505,
+          "mae": 2.927753829669216,
+          "rmse": 4.621693891855616,
+          "r2": 0.7454207364531399,
+          "slope": 0.7738900471915268,
           "meanAct": 8.429439130434785,
-          "meanPred": 8.66844343475808,
-          "bias": 0.239004304323295
+          "meanPred": 8.67163911043906,
+          "bias": 0.24219998000427445
         },
         "ok": {
           "n": 92,
-          "mae": 3.1386813719328517,
-          "rmse": 4.71520140274676,
-          "r2": 0.7332356601811427,
-          "slope": 0.7315417779027887,
+          "mae": 3.140877154278575,
+          "rmse": 4.716928147053313,
+          "r2": 0.7330443226784495,
+          "slope": 0.7313984542150392,
           "meanAct": 8.429439130434785,
-          "meanPred": 8.511724603653553,
-          "bias": 0.08228547321876789
+          "meanPred": 8.513903517036951,
+          "bias": 0.08446438660216593
         },
         "nn": {
           "n": 92,
-          "mae": 3.154820652173913,
-          "rmse": 5.071700626719329,
-          "r2": 0.7091295294944151,
-          "slope": 0.8203210986633662,
+          "mae": 2.989644565217391,
+          "rmse": 4.842085432940161,
+          "r2": 0.7297085024751092,
+          "slope": 0.8191136641234453,
           "meanAct": 8.429439130434785,
-          "meanPred": 8.616646739130438,
-          "bias": 0.1872076086956529
+          "meanPred": 8.314418478260874,
+          "bias": -0.11502065217391078
         }
       },
       "pairs": 92
     },
     "img_crossval": "thalanga-12-resource-crossval.png",
     "confidence_screen": {
-      "high": 45,
-      "medium": 85,
-      "low": 79,
-      "outside": 20729
+      "high": 48,
+      "medium": 86,
+      "low": 87,
+      "outside": 20746
     },
     "img_confidence": "thalanga-12b-resource-confidence.png",
     "gt_app": {
       "all_blocks": [
         {
           "cutoff_pct": 0,
-          "tonnes_Mt": 3.658,
-          "grade_pct": 8.1
+          "tonnes_Mt": 3.868,
+          "grade_pct": 7.83
         },
         {
           "cutoff_pct": 1,
-          "tonnes_Mt": 3.658,
-          "grade_pct": 8.1
+          "tonnes_Mt": 3.868,
+          "grade_pct": 7.83
         },
         {
           "cutoff_pct": 2,
-          "tonnes_Mt": 3.465,
-          "grade_pct": 8.46
+          "tonnes_Mt": 3.693,
+          "grade_pct": 8.12
         },
         {
           "cutoff_pct": 3,
-          "tonnes_Mt": 2.643,
-          "grade_pct": 10.3
+          "tonnes_Mt": 2.765,
+          "grade_pct": 10
         },
         {
           "cutoff_pct": 4,
-          "tonnes_Mt": 2.188,
-          "grade_pct": 11.72
+          "tonnes_Mt": 2.24,
+          "grade_pct": 11.53
         },
         {
           "cutoff_pct": 5,
-          "tonnes_Mt": 2.188,
-          "grade_pct": 11.72
+          "tonnes_Mt": 2.205,
+          "grade_pct": 11.64
         },
         {
           "cutoff_pct": 6,
           "tonnes_Mt": 2.083,
-          "grade_pct": 12.04
+          "grade_pct": 12
         },
         {
           "cutoff_pct": 7,
           "tonnes_Mt": 1.925,
-          "grade_pct": 12.5
+          "grade_pct": 12.46
         },
         {
           "cutoff_pct": 8,
-          "tonnes_Mt": 1.785,
-          "grade_pct": 12.89
+          "tonnes_Mt": 1.838,
+          "grade_pct": 12.69
         }
       ],
       "high_medium": [
         {
           "cutoff_pct": 0,
-          "tonnes_Mt": 2.275,
-          "grade_pct": 7.72
+          "tonnes_Mt": 2.345,
+          "grade_pct": 7.82
         },
         {
           "cutoff_pct": 1,
-          "tonnes_Mt": 2.275,
-          "grade_pct": 7.72
+          "tonnes_Mt": 2.345,
+          "grade_pct": 7.82
         },
         {
           "cutoff_pct": 2,
-          "tonnes_Mt": 2.135,
-          "grade_pct": 8.11
+          "tonnes_Mt": 2.24,
+          "grade_pct": 8.1
         },
         {
           "cutoff_pct": 3,
-          "tonnes_Mt": 1.663,
-          "grade_pct": 9.7
+          "tonnes_Mt": 1.715,
+          "grade_pct": 9.8
         },
         {
           "cutoff_pct": 4,
-          "tonnes_Mt": 1.365,
-          "grade_pct": 11.07
+          "tonnes_Mt": 1.383,
+          "grade_pct": 11.34
         },
         {
           "cutoff_pct": 5,
           "tonnes_Mt": 1.365,
-          "grade_pct": 11.07
+          "grade_pct": 11.43
         },
         {
           "cutoff_pct": 6,
           "tonnes_Mt": 1.313,
-          "grade_pct": 11.3
+          "grade_pct": 11.67
         },
         {
           "cutoff_pct": 7,
           "tonnes_Mt": 1.225,
-          "grade_pct": 11.64
+          "grade_pct": 12.04
         },
         {
           "cutoff_pct": 8,
-          "tonnes_Mt": 1.12,
-          "grade_pct": 12.01
+          "tonnes_Mt": 1.155,
+          "grade_pct": 12.3
         }
       ]
     },
@@ -893,48 +903,48 @@
   },
   "independent_gt": {
     "grade_column": "OK",
-    "blocks_estimated": 209,
+    "blocks_estimated": 221,
     "block_volume_m3": 6250,
     "density_t_m3": 2.8,
     "curve": [
       {
         "cutoff_pct": 0.0,
-        "tonnes_Mt": 3.658,
-        "grade_pct": 8.1,
-        "zn_metal_kt": 296.3
+        "tonnes_Mt": 3.867,
+        "grade_pct": 7.83,
+        "zn_metal_kt": 302.8
       },
       {
         "cutoff_pct": 1.0,
-        "tonnes_Mt": 3.658,
-        "grade_pct": 8.1,
-        "zn_metal_kt": 296.3
+        "tonnes_Mt": 3.867,
+        "grade_pct": 7.83,
+        "zn_metal_kt": 302.8
       },
       {
         "cutoff_pct": 2.0,
-        "tonnes_Mt": 3.465,
-        "grade_pct": 8.46,
-        "zn_metal_kt": 293.0
+        "tonnes_Mt": 3.692,
+        "grade_pct": 8.12,
+        "zn_metal_kt": 299.8
       },
       {
         "cutoff_pct": 3.0,
-        "tonnes_Mt": 2.643,
-        "grade_pct": 10.3,
-        "zn_metal_kt": 272.2
+        "tonnes_Mt": 2.765,
+        "grade_pct": 10.0,
+        "zn_metal_kt": 276.5
       },
       {
         "cutoff_pct": 5.0,
-        "tonnes_Mt": 2.188,
-        "grade_pct": 11.72,
-        "zn_metal_kt": 256.4
+        "tonnes_Mt": 2.205,
+        "grade_pct": 11.64,
+        "zn_metal_kt": 256.7
       },
       {
         "cutoff_pct": 8.0,
-        "tonnes_Mt": 1.785,
-        "grade_pct": 12.89,
-        "zn_metal_kt": 230.0
+        "tonnes_Mt": 1.837,
+        "grade_pct": 12.69,
+        "zn_metal_kt": 233.2
       }
     ],
-    "tonnes_Mt_at_3_6": 4.702
+    "tonnes_Mt_at_3_6": 4.973
   },
-  "runtime_s": 91
+  "runtime_s": 89
 }

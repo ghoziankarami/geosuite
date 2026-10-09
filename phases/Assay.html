@@ -6237,9 +6237,24 @@ function toggleLithoLegend(litho) {
 // ============= VALIDATION =============
 // Validation tab is currently dead code and has been removed (see line 4052-4070 showTab()).
 
+// Per-call grouping preserves input order and strict hole-key matching.
+// NaN never matched the former === filter; retain it only in the hole inventory.
+function _assayHoleRows(rows, holeIndex) {
+  const holes = new Set(), byHole = new Map();
+  for (const row of rows) {
+    const hole = row[holeIndex];
+    holes.add(hole);
+    if (hole !== hole) continue;
+    if (!byHole.has(hole)) byHole.set(hole, []);
+    byHole.get(hole).push(row);
+  }
+  return { holes: [...holes], byHole };
+}
+
 function runValidationChecks() {
   const checks = [];
-  const holes = [...new Set(DATA.rows.map(r => r[colIdx('hole_id')]))].filter(Boolean);
+  const grouped = _assayHoleRows(DATA.rows, colIdx('hole_id'));
+  const holes = grouped.holes.filter(Boolean);
 
   // Critical fields completeness
   const critical = ['hole_id','from_m','to_m'];
@@ -6309,7 +6324,7 @@ function runValidationChecks() {
   const fi = colIdx('from_m'), ti = colIdx('to_m');
   let gaps = 0, overlaps = 0, invertedDepths = 0;
   holes.forEach(h => {
-    const intervals = DATA.rows.filter(r => r[colIdx('hole_id')] === h).map(r => ({ from: r[fi], to: r[ti] })).sort((a,b) => a.from - b.from);
+    const intervals = (grouped.byHole.get(h) || []).map(r => ({ from: r[fi], to: r[ti] })).sort((a,b) => a.from - b.from);
     for (let k = 0; k < intervals.length; k++) {
       if (intervals[k].to <= intervals[k].from) invertedDepths++;
       if (k > 0) {
@@ -7638,7 +7653,8 @@ function computeComposites(length = 1.0, minLength = 0.5, breakAtLitho = false, 
   const densIdx = colIdx('density');
 
   const composites = [];
-  const holes = [...new Set(DATA.rows.map(r => r[colIdx('hole_id')]))];
+  const grouped = _assayHoleRows(DATA.rows, colIdx('hole_id'));
+  const holes = grouped.holes;
   let droppedTailLength = 0, gapLength = 0, overlapCount = 0;
   // I1 (docs/PLAN-domain-aware-dan-dokumentasi.md): a hole whose only raw
   // interval(s) fall entirely below minLength -- typically one short interval
@@ -7651,8 +7667,8 @@ function computeComposites(length = 1.0, minLength = 0.5, breakAtLitho = false, 
   // short are both caught the same way.
   const holesWithComposites = new Set();
   holes.forEach(h => {
-    const intervals = DATA.rows
-      .filter(r => r[colIdx('hole_id')] === h && typeof r[fi] === 'number' && typeof r[ti] === 'number')
+    const intervals = (grouped.byHole.get(h) || [])
+      .filter(r => typeof r[fi] === 'number' && typeof r[ti] === 'number')
       .sort((a,b) => a[fi] - b[fi]);
     if (!intervals.length) return;
 
@@ -9461,7 +9477,7 @@ function dataTreatmentLog() {
     if (!v.length) return null;
     const mean = v.reduce((a, b) => a + b, 0) / v.length;
     const sd = Math.sqrt(v.reduce((a, x) => a + (x - mean) ** 2, 0) / Math.max(1, v.length - 1));
-    return { n: v.length, mean, cv: mean > 0 ? sd / mean : 0, max: Math.max(...v) };
+    return { n: v.length, mean, cv: mean > 0 ? sd / mean : 0, max: v.reduce((maximum, value) => Math.max(maximum, value), -Infinity) };
   };
 
   // Changes are read straight off the pipeline, in the order they were applied, and each
@@ -11859,8 +11875,8 @@ function renderDomain() {
     if (xi < 0 || yi < 0) return null;
     const dims = zi >= 0 ? [xi, yi, zi] : [xi, yi];
     const pts = domainRows.map(r => dims.map(d => r[d])).filter(p => p.every(v => typeof v === 'number' && isFinite(v)));
-    const mins = dims.map((_, j) => Math.min(...pts.map(p => p[j])));
-    const maxs = dims.map((_, j) => Math.max(...pts.map(p => p[j])));
+    const mins = dims.map((_, j) => pts.reduce((minimum, p) => Math.min(minimum, p[j]), Infinity));
+    const maxs = dims.map((_, j) => pts.reduce((maximum, p) => Math.max(maximum, p[j]), -Infinity));
     const norm = pts.map(p => p.map((v, j) => (maxs[j] - mins[j]) ? (v - mins[j]) / (maxs[j] - mins[j]) : 0));
     const k = Math.min(4, norm.length);
     if (k < 2) return norm.map(() => 'S1');
@@ -12865,8 +12881,12 @@ function _qaqcHardStats(pairs) {
 function _qaqcDetectionLimit(elemCol) {
   const ei = colIdx(elemCol);
   if (ei < 0 || !DATA) return null;
-  const positives = DATA.rows.map(r => Number(r[ei])).filter(v => isFinite(v) && v > 0);
-  return positives.length ? Math.min(...positives) : null;
+  let minimum = Infinity;
+  for (const row of DATA.rows) {
+    const value = Number(row[ei]);
+    if (isFinite(value) && value > 0 && value < minimum) minimum = value;
+  }
+  return minimum === Infinity ? null : minimum;
 }
 
 function _qaqcBlankAnalysis(classified, elemCol) {
@@ -13423,7 +13443,7 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
 
     // Validation summary preview
     yDist += 12;
-    const passCount = checks.filter(c => c.severity === 'ok').length;
+    const passCount = checks.filter(c => c.severity === 'pass').length;
     const warnCount = checks.filter(c => c.severity === 'warn').length;
     const failCount = checks.filter(c => c.severity === 'fail').length;
     pdf.setFont('helvetica','bold'); pdf.setFontSize(10);

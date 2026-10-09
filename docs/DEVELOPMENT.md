@@ -67,6 +67,37 @@ Stop the background servers afterward. `test_vignettes.py` drives tutorial workf
 
 For a numeric fix, add a small known-answer case with an independently calculated expected value. A test that calls the same calculation twice will not catch a wrong formula. For a UI or import fix, exercise the user path that was broken, including file upload when the bug only appears after upload.
 
+## Windows desktop dependency inputs
+
+Windows CI and releases use CPython 3.11 x64 and two SHA256 input files. In a fresh
+Windows environment, install the source-build tools first, then the runtime inputs:
+
+```powershell
+py -3.11 -m pip install --require-hashes --only-binary=:all: -r desktop/requirements-windows-build.lock
+py -3.11 -m pip install --require-hashes --no-build-isolation --no-cache-dir --only-binary=:all: --no-binary=proxy-tools -r desktop/requirements-windows.lock
+py -3.11 -m pip check
+py -3.11 desktop/build_exe.py Core Assay Resource
+```
+
+The runtime file retains the 14 resolved package versions recorded with v3.1.0
+and adds the explicit `setuptools` dependency required by PyInstaller. The build
+file pins `setuptools`, `wheel` and wheel's `packaging` dependency; shared entries
+have identical versions/hashes. Together they cover 16 distinct package inputs.
+Hashes come from the published PyPI artifacts compatible with Windows x64 and
+CPython 3.11. `proxy-tools` 0.1.0 is published only as source, so its verified source
+archive is the single exception to wheel-only installation. `--no-build-isolation`
+uses the already locked tools instead of fetching an independent build backend.
+`--no-cache-dir` prevents reuse of a source-built wheel from an older backend.
+
+An update requires reviewing PyPI release metadata, advisories, every compatible
+artifact hash and dependency markers/constraints, then running Windows CI. Do not
+replace a hash merely to accept modified bytes. Cross-platform wheel downloads
+and an offline source build help verify inputs; they do not certify a Windows
+install, native GUI or byte-for-byte EXE reproducibility. These files do not lock
+CPython, pip, Windows, WebView2 or OS DLLs. `PYTHON-DEPENDENCIES.txt` remains a record
+of the actual release environment. Mac/Linux keep `desktop/requirements.txt` and
+the existing local web/PWA workflow.
+
 ## Desktop storage and module handoff
 
 The Windows EXEs serve their built HTML at stable loopback origins: Core 18767, Assay 18768, Resource 18769. WebView2 stores projects and preferences in the per-user Orebit profile. If a port is occupied, that session uses a temporary port; close the conflicting process and reopen the EXE to see projects at the normal origin. Never bind the server to a non-loopback interface.

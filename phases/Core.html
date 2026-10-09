@@ -7582,7 +7582,7 @@ function renderValidation() {
           <table style="margin-top:8px;">
             <tr><th data-i18n="core.vc.field">Field</th><th>${window.__t('core.vc.complete')}</th><th data-i18n="core.missing">Missing</th><th></th></tr>
             ${cols.map(c => `<tr>
-              <td>${c.col}</td>
+              <td><code>${escapeHtml(c.col)}</code></td>
               <td><span class="badge ${c.pct === 100 ? 'good' : c.pct >= 95 ? 'warn' : 'bad'}">${c.pct.toFixed(1)}%</span></td>
               <td>${c.missing}</td>
               <td>${c.pct < 100 ? `<button class="btn small" onclick="goFixMissing('${t}','${c.col}')">Go fix →</button>` : ''}</td>

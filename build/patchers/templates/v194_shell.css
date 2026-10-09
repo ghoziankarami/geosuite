@@ -1145,6 +1145,7 @@ details.hint[open] .hint-more-count::before {{ content: '\25b4 '; }}
 @media(max-width:1079px) {{
  .mobile-nav-drawer .drawer-heading {{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 10px 12px}}
  .mobile-nav-drawer .drawer-close {{min-width:44px;min-height:44px;background:var(--bg-card);color:var(--fg-body);border:1px solid var(--border);border-radius:8px;font-size:24px}}
- .orebit-help-bubble {{bottom:calc(88px + env(safe-area-inset-bottom,0px))!important}}
+ /* The persistent bottom Tour action provides help without covering content. */
+ .orebit-help-bubble {{display:none!important}}
 }}
 </style>

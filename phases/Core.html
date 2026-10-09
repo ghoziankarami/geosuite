@@ -12465,17 +12465,31 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
       pdf.text('Time', W - 30, y);
       y += 2; pdf.line(15, y, W - 15, y); y += 5;
       pdf.setFont('helvetica','normal');
+      const logLineHeight = 4.5, previousLineHeight = pdf.getLineHeightFactor();
+      const continueLogPage = () => {
+        addFooter(); pdf.addPage();
+        addHeader('05 · Processing Log (continued)', 'Transforms applied this session — traceability for the exported data');
+        y = 35; pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+        pdf.text('Step',15,y); pdf.text('Detail',55,y); pdf.text('Time',W-30,y);
+        y += 2; pdf.line(15,y,W-15,y); y += 5;
+      };
+      pdf.setLineHeightFactor(logLineHeight * pdf.internal.scaleFactor / 9);
       _plog.forEach(e => {
-        if (y > H - 20) return;
-        const t = new Date(e.at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        pdf.setFont('helvetica','bold');
-        pdf.text(String(e.action || '').slice(0, 22), 15, y);
-        pdf.setFont('helvetica','normal');
+        pdf.setFontSize(9); pdf.setFont('helvetica','normal');
         const detLines = pdf.splitTextToSize(String(e.detail || ''), W - 55 - 22);
-        pdf.text(detLines, 55, y);
-        pdf.text(t, W - 30, y);
-        y += Math.max(5, detLines.length * 4.5);
+        const time = new Date(e.at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        let at = 0;
+        do {
+          if (y > H - 28) continueLogPage();
+          const count = Math.max(1,Math.min(detLines.length-at,Math.floor((H-23-y)/logLineHeight)));
+          pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+          pdf.text(String(e.action || '').slice(0,22),15,y);
+          pdf.setFont('helvetica','normal');
+          pdf.text(detLines.slice(at,at+count),55,y); pdf.text(time,W-30,y);
+          at += count; y += Math.max(6,count*logLineHeight+2);
+        } while (at < detLines.length);
       });
+      pdf.setLineHeightFactor(previousLineHeight);
     }
     addFooter();
 

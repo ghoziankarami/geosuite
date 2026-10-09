@@ -408,6 +408,38 @@ def main():
                 stage(page,7)
                 check(page.evaluate('OrebitCoreScope.record()===null&&STATE.desurvey===null&&STATE.merged===null') and page.locator('#tab7 [data-workflow-next]').is_enabled(),'Corrected source import retires scope and enables the full valid population')
                 check(not errors and not page.evaluate('__repairErrors.length'),'Scoped continuation has no page or swallowed-render errors')
+                # Real long notes and repeated decisions must paginate the log.
+                tables['collar']='hole_id,x,y,z,depth\nFIX-001,1000,2000,300,10\nFIX-002,1100,2100,301,500\n'
+                tables['survey']='hole_id,depth,dip,azimuth\nFIX-001,0,-90,0\nFIX-002,0,-120,0\n'
+                tables['assay']='hole_id,from_m,to_m,ni_pct\nFIX-001,0,10,1.1\n'+''.join(f'FIX-002,{i},{i+1},1.4\n' for i in range(500))
+                tables['geology']='hole_id,from_m,to_m,lith1\nFIX-001,0,10,SAP\nFIX-002,0,500,SAP\n'
+                for name,value in tables.items():
+                    (folder/(name+'.csv')).write_text(value)
+                upload(page,paths)
+                for iteration in range(1,6):
+                    page.locator('[data-core-skip]').click()
+                    page.locator('#coreScopeNote').fill('Survey orientation awaits original source verification. '*30+f'AUDIT-NOTE-{iteration}-END')
+                    page.locator('[data-core-scope-preview] [data-action-role="next"]').click()
+                    page.wait_for_function('()=>document.getElementById("tab10").classList.contains("active")')
+                    if iteration<5:
+                        page.locator('.panel.active [data-core-analysis-scope] button').click()
+                        page.locator('.panel.active .workflow-step-links button').filter(has_text='Validation').click()
+                for n in [10,11]:
+                    page.locator(f'#tab{n} [data-workflow-next]').click()
+                with page.expect_download() as result:
+                    page.locator('#pdf-export-btn').click()
+                long_report=folder/'long-processing-log.pdf'
+                result.value.save_as(str(long_report))
+                with fitz.open(long_report) as doc:
+                    log_pages=[p for p in doc if 'Transforms applied this session' in p.get_text()]
+                    log_text='\n'.join(p.get_text() for p in log_pages)
+                    if PROOF:
+                        import shutil
+                        shutil.copy2(long_report, PROOF/'core-native-long-log.pdf')
+                        log_pages[0].get_pixmap(matrix=fitz.Matrix(1,1)).save(PROOF/'core-native-long-log-page.png')
+                    check(len(log_pages)>1 and all(f'AUDIT-NOTE-{i}-END' in log_text for i in range(1,6)), 'Long processing notes retain every scoped decision on paginated log pages')
+                    spans=[span for p in log_pages for block in p.get_text('dict')['blocks'] for line in block.get('lines',[]) for span in line['spans'] if span['size']>=8.9 and span['bbox'][3]>p.rect.height-40]
+                    check(not spans,'Processing log body never enters the footer or falls off the PDF page')
                 context.close()
             browser.close()
     finally:

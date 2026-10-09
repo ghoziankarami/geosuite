@@ -5,7 +5,10 @@ real bottom-nav/drawer buttons. Check rendered controls, not merely overflow
 hidden on the page root. OREBIT_TEST_DIST can replay the previous artifact.
 """
 
-import functools, http.server, json, os, threading
+import functools
+import http.server
+import os
+import threading
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
@@ -257,6 +260,15 @@ try:
                 check(page.locator("#mobileNavDrawer").evaluate('e=>e.classList.contains("show")') and menu.get_attribute("aria-expanded")=="true",name + " real header hamburger opens Steps with install visible")
                 page.locator("#mobileNavDrawer .drawer-close").click()
                 check(menu.get_attribute("aria-expanded")=="false",name + " closing the menu resets the real hamburger")
+                page.wait_for_function("()=>{const e=document.getElementById('mobileNavDrawer');return e.inert&&e.getBoundingClientRect().right<=0;}")
+                primary = page.locator('#tab1 .workflow-actions [data-action-role="next"]')
+                primary.scroll_into_view_if_needed()
+                check(
+                    primary.evaluate("e=>{const r=e.getBoundingClientRect();return [.1,.5,.9].every(x=>[.2,.5,.8].every(y=>e.contains(document.elementFromPoint(r.x+x*r.width,r.y+y*r.height))))}")
+                    and page.locator("#mobileTourBtn").is_visible()
+                    and not page.locator(".orebit-help-bubble").is_visible(),
+                    name + " mobile dashboard action is fully unobscured while Tour remains reachable",
+                )
                 before = raw(page)
                 page.locator('#mobileBottomNav [data-group="analysis"]').click()
                 check(

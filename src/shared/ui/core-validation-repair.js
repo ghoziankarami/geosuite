@@ -281,7 +281,7 @@
       if(!note.value.trim()){note.reportValidity();note.focus();return;}
       if(snapshot()!==before){status.textContent=tr('changed');apply.disabled=true;return;}
       if(!activate(plan,note.value.trim())){status.textContent=tr('none');return;}
-      logPipeline('Validation deferred — scoped screening',describe()+' '+plan.excluded.slice(0,200).map(row=>row.table+' row '+row.row+' ['+(row.hole_id||'no ID')+']: '+row.reason).join('; '));
+      logPipeline('Validation deferred — scoped screening',describe()+' Complete excluded-source records remain in project metadata and the exclusion CSV; the PDF details list the first 200.');
       STATE.CHANGE_LOG.push({table:'validation',timestamp:active.record.at,summary:describe(),diffs:[],scope:record()});
       AutoSave.schedule();showTab(onward);
     };

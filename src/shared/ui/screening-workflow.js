@@ -63,6 +63,20 @@
   function links(stages,n) {
     const row=node('nav',null,'workflow-step-links');row.setAttribute('aria-label',tr('workflow'));
     for(const [i,stage] of stages.entries()){const b=button(label(stage),'inspect',()=>navigate(stage));if(stage===n)b.setAttribute('aria-current','step');row.append(b);}
+    row.addEventListener('focusin',event=>{
+      const focused=event.target;
+      if(focused.parentElement!==row||focused.tagName!=='BUTTON')return;
+      // Native reverse tabbing can leave a button behind the overflow clip.
+      // Wait for the browser's focus scroll, then move only this stage strip.
+      requestAnimationFrame(()=>{
+        if(document.activeElement!==focused||focused.parentElement!==row||!_visibleFocusTarget(focused)||
+          !row.closest('.panel.active')||row.scrollWidth<=row.clientWidth)return;
+        const bounds=row.getBoundingClientRect(),target=focused.getBoundingClientRect();
+        const left=bounds.left+row.clientLeft,right=left+row.clientWidth;
+        if(target.left<left)row.scrollLeft+=target.left-left;
+        else if(target.right>right)row.scrollLeft+=target.right-right;
+      });
+    });
     return row;
   }
   // One inventory serves every module. Links reveal existing owners; they never apply a treatment.

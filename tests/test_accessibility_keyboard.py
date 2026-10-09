@@ -3,6 +3,7 @@
 Bounded accessibility checks; this suite does not certify WCAG conformance.
 OREBIT_TEST_DIST can replay the prior artifact. OREBIT_A11Y_CASE=confirm runs
 the independent destructive-Cancel regression against its existing Core UI.
+OREBIT_A11Y_CASE=stage-links runs the native top-stage Tab/Shift+Tab checks.
 """
 import functools
 import http.server
@@ -87,6 +88,39 @@ def assert_stage_context(page, message):
           message + ' keeps its stage heading below the persistent header')
     check(page.evaluate('document.documentElement.scrollWidth <= innerWidth+1'),
           message + ' contains horizontal content within the viewport')
+
+
+def assert_stage_link_focus(page, message):
+    # Start at the actual destination focused by Enter, without scrolling or
+    # focusing a stage link ourselves: the browser owns sequential navigation.
+    panel = page.locator('.panel.active')
+    panel_id = panel.get_attribute('id')
+    before = raw(page)
+    links = panel.locator('.workflow-step-links > button')
+    count = links.count()
+    check(count >= 4 and panel.evaluate('e=>e===document.activeElement'),
+          message + ' starts native stage-link navigation at its destination panel')
+    for key, indices in (('Tab', range(count)), ('Shift+Tab', range(count-2, -1, -1))):
+        for index in indices:
+            page.keyboard.press(key)
+            # Allow browser focus scrolling and the next render frame to settle.
+            page.evaluate('async()=>{await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);}')
+            geometry = links.nth(index).evaluate("""e=>{
+              const row=e.parentElement,r=row.getBoundingClientRect(),b=e.getBoundingClientRect();
+              const text=document.createRange();text.selectNodeContents(e);const t=text.getBoundingClientRect();
+              const left=r.left+row.clientLeft,right=left+row.clientWidth;
+              return {focused:e===document.activeElement,label:e.textContent.trim(),
+                buttonLeft:b.left,buttonRight:b.right,textLeft:t.left,textRight:t.right,
+                stripLeft:left,stripRight:right,scrollLeft:row.scrollLeft};
+            }""")
+            check(geometry['focused'] and
+                  geometry['buttonLeft'] >= geometry['stripLeft']-1 and
+                  geometry['buttonRight'] <= geometry['stripRight']+1 and
+                  geometry['textLeft'] >= geometry['stripLeft']-1 and
+                  geometry['textRight'] <= geometry['stripRight']+1,
+                  message + f' native {key} reveals stage {index+1} button and label: {geometry}')
+    check(panel_id == page.locator('.panel.active').get_attribute('id') and raw(page) == before,
+          message + ' sequential stage-link focus preserves the stage and raw measurements')
 
 
 def stage(page, number, mobile):
@@ -185,19 +219,20 @@ try:
                 errors = []
                 page.on('pageerror', lambda e: errors.append(str(e)))
                 mobile = width < 1080
-                boot(page, 'Core')
-                stage(page, 2, mobile)
-                page.locator('#btnOpenProject').click()
-                page.locator('#pmNewName').wait_for(state='visible')
-                name = 'Synthetic keyboard project'
-                page.locator('#pmNewName').fill(name)
-                page.locator('#pmCreateNew').click()
-                page.locator('#projectManagerModal [data-action="delete"]').wait_for(state='visible')
-                if CASE == 'confirm':
-                    cancel_confirmation(page, phase, language, name, full=False)
-                    context.close()
-                    continue
-                page.locator('#pmClose').click()
+                if CASE != 'stage-links':
+                    boot(page, 'Core')
+                    stage(page, 2, mobile)
+                    page.locator('#btnOpenProject').click()
+                    page.locator('#pmNewName').wait_for(state='visible')
+                    name = 'Synthetic keyboard project'
+                    page.locator('#pmNewName').fill(name)
+                    page.locator('#pmCreateNew').click()
+                    page.locator('#projectManagerModal [data-action="delete"]').wait_for(state='visible')
+                    if CASE == 'confirm':
+                        cancel_confirmation(page, phase, language, name, full=False)
+                        context.close()
+                        continue
+                    page.locator('#pmClose').click()
                 boot(page, phase)
                 before = raw(page)
                 key = {'Core':'core','Assay':'asy','Resource':'res'}[phase]
@@ -214,6 +249,12 @@ try:
                       page.locator('.panel.active').get_attribute('tabindex') == '-1',
                       phase + ' primary Enter focuses the named destination without adding a tab stop')
                 assert_stage_context(page, phase + ' primary navigation')
+                assert_stage_link_focus(page, f'{phase} {language} {width}px')
+                if CASE == 'stage-links':
+                    check(not errors and not page.evaluate('window.__keyboardRenderFailures.length'),
+                          phase + ' native stage-link navigation has no uncaught or swallowed render errors')
+                    context.close()
+                    continue
                 if phase == 'Resource':
                     check(page.locator('#tab3 .action-key').count() == 1,
                           'Resource Setup has one action-role legend')

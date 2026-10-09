@@ -12530,7 +12530,7 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
       ['Validation analysis scope',window.OrebitCoreScope.describe()],
       ['Purpose','Initial data-preparation and geometry screening. This report does not verify geological Resource accuracy.'],
       ['Coordinate source',window._coreUseProvidedXYZ?'Supplied assay interval midpoint XYZ; directional survey not reconstructed or independently verified':'Minimum-curvature survey; inspect measured dip/azimuth and collar control'],
-      ['Analysis geometry readiness',_coreAnalysisReady()?'READY for the explicitly recorded analysis population':'FIX REQUIRED: missing or invalid geometry'],
+      ['Geometry readiness',_coreAnalysisReady()?'READY for the explicitly recorded analysis population':'FIX REQUIRED: missing or invalid geometry'],
       ['Regional validation findings',failures+' failed checks retained across all raw source records'],
       ['CRS',STATE.crs || 'Not declared; verify projected CRS before spatial estimation'],
       ['Length units',_lengthTag()],

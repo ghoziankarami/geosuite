@@ -1,4 +1,4 @@
-name: Release (Windows EXE)
+name: Reviewed Windows EXE artifact build
 
 # Builds the three Desktop Edition EXEs on a GitHub-hosted Windows runner and
 # attaches them to the GitHub Release for the tag. Pushing a tag vX.Y.Z is the
@@ -30,17 +30,17 @@ concurrency:
 jobs:
   exe:
     permissions:
-      contents: write
+      contents: read
     runs-on: windows-latest
     timeout-minutes: 45
     env:
-      TAG: ${{ inputs.tag || github.ref_name }}
+      TAG: v3.1.0
       PYTHONIOENCODING: utf-8
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          ref: ${{ inputs.tag && format('refs/tags/{0}', inputs.tag) || github.ref }}
+          ref: f3c4f55a29f6c79a7d5434a8b0b2f24db265de78
           persist-credentials: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
@@ -87,18 +87,9 @@ jobs:
         working-directory: desktop/dist
         run: sha256sum Orebit-*.exe geosuite-*-web.zip > SHA256SUMS.txt && cat SHA256SUMS.txt
 
-      - name: Attach to the GitHub Release
-        shell: bash
-        run: |
-          cd desktop/dist
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --verify-tag --title "GeoSuite $TAG" --generate-notes
-          fi
-          gh release upload "$TAG" Orebit-Core.exe Orebit-Assay.exe Orebit-Resource.exe geosuite-*-web.zip SHA256SUMS.txt PYTHON-DEPENDENCIES.txt
-
       - name: Keep the EXEs as a workflow artifact too
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: geosuite-exe-${{ env.TAG }}
+          name: geosuite-exe-v3.1.0-a9f15f3c
           path: desktop/dist/*
 

@@ -39,13 +39,18 @@ def check(condition, message):
 def nav(page, number):
     # These are main stages in both modules; never force hidden navigation.
     target = page.locator(f'nav.tabs .tab[onclick="showTab({number})"]')
+    if page.viewport_size['width'] < 1080 and not target.is_visible():
+        page.locator('.mobile-nav-hamburger').click()
+        target = page.locator(f'#mobileNavDrawer .sub-tab[data-tab="{number}"]')
     check(target.is_visible(), f"stage {number} is reachable in the main navigation")
     target.click()
     page.wait_for_function('(n)=>document.getElementById("tab"+n).classList.contains("active")', arg=number)
 
 
-def ready(browser, base, module):
-    context = browser.new_context(accept_downloads=True, service_workers="block", viewport={"width":1440,"height":1000})
+def ready(browser, base, module, viewport=None, language="en"):
+    viewport = viewport or {"width": 1440, "height": 1000}
+    context = browser.new_context(accept_downloads=True, service_workers="block", viewport=viewport,
+                                  is_mobile=viewport["width"] < 1080, has_touch=viewport["width"] < 1080)
     context.route("**/*", lambda route: route.continue_() if route.request.url.startswith(base + "/") else route.abort())
     page = context.new_page()
     page.audit_errors = []
@@ -55,10 +60,13 @@ def ready(browser, base, module):
     # Open real first-run controls when this build does not open them itself.
     if not page.locator(".lang-picker-overlay").is_visible():
         page.locator("#lang-switch").click()
-    page.locator('.lang-picker-overlay [data-pick="en"]').click()
+    page.locator(f'.lang-picker-overlay [data-pick="{language}"]').click()
     if not page.locator(".tour-skip").is_visible():
-        page.locator("button.orebit-help-bubble").click()
-        page.locator('.orebit-help-menu [data-action="tour"]').click()
+        if viewport["width"] < 1080:
+            page.locator('#mobileTourBtn').click()
+        else:
+            page.locator("button.orebit-help-bubble").click()
+            page.locator('.orebit-help-menu [data-action="tour"]').click()
     page.locator(".tour-skip").click()
     page.wait_for_function("()=>!window._tourActive&&!document.querySelector('.lang-picker-overlay')")
     page.evaluate("""()=>{

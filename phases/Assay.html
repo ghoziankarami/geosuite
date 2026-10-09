@@ -11924,9 +11924,9 @@ function renderDomain() {
   // domains (S1, G3-High, etc.) into auditable geological labels ("Main Sulphide
   // Lode", "Oxide Cap") that flow into plots, stats, CSV, and the JORC/KCMI report.
   // Names are keyed per-method so switching method keeps each method's own labels.
-  window._domainNames = window._domainNames || {};
+  window._domainNames = window._domainNames || Object.create(null);
   const _nameKey = domainMethod;
-  window._domainNames[_nameKey] = window._domainNames[_nameKey] || {};
+  window._domainNames[_nameKey] = Object.assign(Object.create(null), window._domainNames[_nameKey] || {});
   const _nameMap = window._domainNames[_nameKey];
   // domainLabel(raw) → custom name if set, else the raw machine label.
   const domainLabel = (d) => (_nameMap[d] && String(_nameMap[d]).trim()) ? _nameMap[d] : d;
@@ -12047,7 +12047,7 @@ function renderDomain() {
         <tr><th>Domain</th><th data-i18n="asy.customName">Custom name</th><th>n</th><th>${t('asy.stat.mean')}</th><th>Median</th><th>SD</th><th>${abbr('CV','CV')}</th></tr>
         ${domainStats.map(d => `<tr>
           <td><span style="color:${dcolor(d.d)}">●</span> ${escapeHtml(d.d)}</td>
-          <td><input type="text" value="${escapeHtml(domainLabel(d.d) === d.d ? '' : domainLabel(d.d))}" placeholder="${escapeHtml(d.d)}" onchange="setDomainName('${escapeHtml(_nameKey)}','${escapeHtml(d.d)}',this.value)" style="width:160px;padding:3px 8px;font-size:12px;" title="Custom geological name for this domain"></td>
+          <td><input type="text" value="${escapeHtml(domainLabel(d.d) === d.d ? '' : domainLabel(d.d))}" placeholder="${escapeHtml(d.d)}" data-method="${escapeHtml(_nameKey)}" data-domain="${escapeHtml(d.d)}" onchange="setDomainName(this.dataset.method,this.dataset.domain,this.value)" style="width:160px;padding:3px 8px;font-size:12px;" title="Custom geological name for this domain"></td>
           <td>${(d.n||0).toLocaleString('en-US')}</td>
           <td>${(d.mean||0).toFixed(3)}</td>
           <td>${(d.p50||0).toFixed(3)}</td>
@@ -12255,8 +12255,8 @@ function setDomainMethod(method) {
 // Keyed per method so each method keeps its own naming. Re-render so the new
 // label flows into plots, stats, the domain column, and exports immediately.
 function setDomainName(methodKey, rawDomain, name) {
-  window._domainNames = window._domainNames || {};
-  window._domainNames[methodKey] = window._domainNames[methodKey] || {};
+  window._domainNames = window._domainNames || Object.create(null);
+  window._domainNames[methodKey] = Object.assign(Object.create(null), window._domainNames[methodKey] || {});
   window._domainNames[methodKey][rawDomain] = name;
   if (typeof renderDomain === 'function') renderDomain();
 }

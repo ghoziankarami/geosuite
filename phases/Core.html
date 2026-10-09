@@ -4842,7 +4842,7 @@ function renderRichDashboard() {
     ct: missingSurvey > 0 ? (missingSurvey + (t('core.renderRichDashboard.missing'))) : (survey.length + ' ok') });
   // assay overlaps (rough): same hole, overlapping from/to
   let overlaps = 0;
-  const byHole = {};
+  const byHole = Object.create(null);
   assay.forEach(r => { const h = _field(r, holeKey); if (!h) return; (byHole[h] = byHole[h] || []).push(r); });
   Object.values(byHole).forEach(rows => {
     rows.sort((a, b) => (_numField(a, ['from_m','from','sampfrom']) || 0) - (_numField(b, ['from_m','from','sampfrom']) || 0));
@@ -6921,7 +6921,7 @@ function buildHoleStatusData() {
   const surveyIds = new Set(STATE.survey.map(r => r.hole_id).filter(Boolean));
   const assayIds = new Set(STATE.assay.map(r => r.hole_id).filter(Boolean));
   const geoIds = new Set(STATE.geology.map(r => r.hole_id).filter(Boolean));
-  const collarMap = {};
+  const collarMap = Object.create(null);
   STATE.collar.forEach(c => { if (c.hole_id) collarMap[c.hole_id] = c; });
   return [...collarIds].map(hid => {
     const c = collarMap[hid] || {};
@@ -7108,7 +7108,7 @@ function renderColumnMapping(container) {
         ? `<div style="margin-top:4px;">
             <p style="font-size:12px;color:var(--fg-mute);margin:0 0 4px;">${t('core.cm.otherColumns')}</p>
             <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              ${leftovers.map(c => `<button class="btn small secondary" onclick="markAsGradeColumn('${escapeHtml(c)}'); return false;" style="font-family:monospace;font-size:11px;">+ ${escapeHtml(c)}</button>`).join('')}
+              ${leftovers.map(c => `<button class="btn small secondary" data-column="${escapeHtml(c)}" onclick="markAsGradeColumn(this.dataset.column); return false;" style="font-family:monospace;font-size:11px;">+ ${escapeHtml(c)}</button>`).join('')}
             </div>
           </div>`
         : '';
@@ -7294,7 +7294,7 @@ function renderValidation() {
   });
 
   // Gap/overlap on assay
-  const assayByHole = {};
+  const assayByHole = Object.create(null);
   STATE.assay.forEach(r => {
     if (!r.hole_id) return;
     (assayByHole[r.hole_id] = assayByHole[r.hole_id] || []).push(r);
@@ -7865,7 +7865,7 @@ function renderValidation() {
     }
 
     // Build assay-count lookup
-    const assayCount = {};
+    const assayCount = Object.create(null);
     STATE.assay.forEach(r => { if (r.hole_id) assayCount[r.hole_id] = (assayCount[r.hole_id] || 0) + 1; });
 
     // Filter + classify — collapse audit categories: complete | noGeo | orphan
@@ -7959,7 +7959,7 @@ function renderValidation() {
     if (STATE.mapUI.colorBy === 'prospect') {
       // Group by prospect with distinct palette
       const palette = ['#2D7A8E','#E87722','#1D3557','#6C3DC8','#16a34a','#dc2626','#eab308','#ec4899','#0ea5e9','#84cc16','#f97316','#a855f7'];
-      const byProspect = {};
+      const byProspect = Object.create(null);
       points.forEach(p => { (byProspect[p.prospect] = byProspect[p.prospect] || []).push(p); });
       Object.entries(byProspect).forEach(([prospect, pts], i) => {
         const color = palette[i % palette.length];
@@ -8028,7 +8028,7 @@ function renderValidation() {
         const unit = meta.unit || '';
 
         // Per-hole average (BDL/negative excluded)
-        const holeAvg = {};
+        const holeAvg = Object.create(null);
         STATE.assay.forEach(r => {
           if (!r.hole_id) return;
           const v = Number(r[activeCol]);
@@ -8494,7 +8494,7 @@ function renderStripLog() {
         const bg = active ? '#2D7A8E' : 'transparent';
         const fg = active ? '#fff' : 'var(--fg)';
         const bd = active ? '#2D7A8E' : 'var(--border, rgba(0,0,0,0.2))';
-        return `<span onclick="stripLogToggleExtra('${escapeHtml(spec)}')" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;border:1px solid ${bd};background:${bg};color:${fg};font-size:11px;user-select:none;" title="${escapeHtml(table)}.${escapeHtml(col)}"><strong>${escapeHtml(col)}</strong> <span style="opacity:0.65;font-size:10px;">${escapeHtml(table)}</span></span>`;
+        return `<span data-extra="${escapeHtml(spec)}" onclick="stripLogToggleExtra(this.dataset.extra)" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;border:1px solid ${bd};background:${bg};color:${fg};font-size:11px;user-select:none;" title="${escapeHtml(table)}.${escapeHtml(col)}"><strong>${escapeHtml(col)}</strong> <span style="opacity:0.65;font-size:10px;">${escapeHtml(table)}</span></span>`;
       }).join('')
     : '<span style="color:var(--fg-mute);font-size:12px;">no extra columns available</span>';
 
@@ -8955,7 +8955,7 @@ function renderSection() {
   }
 
   // Default origin: pick prospect with most holes, use its centroid (more useful than global median)
-  const prospectGroups = {};
+  const prospectGroups = Object.create(null);
   STATE.collar.forEach(c => {
     if (c.x == null || c.y == null) return;
     const key = c.prospect || '__none__';
@@ -9474,7 +9474,7 @@ function computeDesurvey() {
     : (dip) => Math.PI / 180 * (90 + dip);  // dip=-90 vertical → inc=0
 
   // For each hole, walk survey points and compute (X,Y,Z) at any depth via min curvature.
-  const holes = {};
+  const holes = Object.create(null);
   source.collar.forEach(c => {
     if (!c.hole_id) return;
     holes[c.hole_id] = { collar: c, surveys: [] };
@@ -9536,7 +9536,7 @@ function computeDesurvey() {
   // sample below the last station stacked on that one point: a single-station
   // hole put all its samples at the collar. Assay's own merge already uses
   // max(to) the same way. Found 2026-09-25 building the Babbitt vignette.
-  const maxTo = {};
+  const maxTo = Object.create(null);
   ['assay', 'geology'].forEach(tbl => (source[tbl] || []).forEach(r => {
     const to = strictNum(r.to_m);
     if (r.hole_id && isFinite(to) && !(to <= (maxTo[r.hole_id] || 0))) maxTo[r.hole_id] = to;
@@ -9867,7 +9867,7 @@ function render3DTraces() {
     // draws the holes as dotted lines, because the dropped intervals leave
     // real gaps in a line that should be continuous. Measured on 200 holes /
     // 20,000 intervals: merging gives ~800 segments and solid holes.
-    const byHole = {};
+    const byHole = Object.create(null);
     rows.forEach(g => { (byHole[g.hole_id] = byHole[g.hole_id] || []).push(g); });
     // Build every run first, decide what to draw second. Merging usually does
     // all the work, but it cannot help a hole whose lithology alternates on
@@ -9892,7 +9892,7 @@ function render3DTraces() {
     const runStep = Math.max(1, Math.ceil(allRuns.length / D3_SEGMENT_BUDGET));
     if (runStep > 1) dropped = allRuns.length - Math.ceil(allRuns.length / runStep);
 
-    const byLith = {};
+    const byLith = Object.create(null);
     allRuns.forEach((r, idx) => {
       if (idx % runStep) return;
       const a = getXYZAtDepth(r.hid, r.from);
@@ -10169,7 +10169,7 @@ function computeMerge() {
   const source = _coreAnalysisSource();
   if (!window._coreUseProvidedXYZ && !STATE.desurvey) computeDesurvey();
   // Build geology lookup by hole + depth range
-  const geoByHole = {};
+  const geoByHole = Object.create(null);
   source.geology.forEach(g => {
     if (!g.hole_id) return;
     (geoByHole[g.hole_id] = geoByHole[g.hole_id] || []).push(g);
@@ -10420,7 +10420,7 @@ function computeComposites(compLen, selectedGradeCols) {
   const results = [];
 
   // Group by hole_id
-  const byHole = {};
+  const byHole = Object.create(null);
   m.forEach(r => {
     if (!r.hole_id) return;
     (byHole[r.hole_id] = byHole[r.hole_id] || []).push(r);
@@ -11185,7 +11185,7 @@ function renderSpatialMap() {
   const gd = document.getElementById('cropSpatialMap');
   if (!gd || typeof Plotly === 'undefined') return;
   if (!STATE.merged) { try { computeMerge(); } catch (e) {} }
-  const holes = {};
+  const holes = Object.create(null);
   (STATE.merged || []).forEach(r => {
     const x = Number(r.midx), y = Number(r.midy);
     if (!isFinite(x) || !isFinite(y)) return;
@@ -11765,7 +11765,7 @@ function _p1RunValidationChecks(source = STATE) {
   if(directionIssues.length)checks.push({code:'directions',table:'survey',records:source.survey.flatMap((r,i)=>directionKeys.get(r.hole_id)?.has(Number(r.depth))?[ref('survey',i,['depth','dip','azimuth'])]:[]),name:'Survey conflicting or opposite directions',value:directionIssues.length+' station',severity:'fail'});
 
   // Assay gap/overlap
-  const assayByHole = {};
+  const assayByHole = Object.create(null);
   source.assay.forEach(r => {
     if (!r.hole_id) return;
     (assayByHole[r.hole_id] = assayByHole[r.hole_id] || []).push(r);
@@ -12086,12 +12086,12 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
       : '—';
 
     // Counts of intervals per hole
-    const assayPerHole = {}, geoPerHole = {};
+    const assayPerHole = Object.create(null), geoPerHole = Object.create(null);
     STATE.assay.forEach(r => { if (r.hole_id) assayPerHole[r.hole_id] = (assayPerHole[r.hole_id]||0) + 1; });
     STATE.geology.forEach(r => { if (r.hole_id) geoPerHole[r.hole_id] = (geoPerHole[r.hole_id]||0) + 1; });
 
     // First-survey azimuth/dip per hole (top-of-hole orientation)
-    const firstSurveyByHole = {};
+    const firstSurveyByHole = Object.create(null);
     [...STATE.survey].sort((a,b) => Number(a.depth) - Number(b.depth)).forEach(r => {
       if (r.hole_id && firstSurveyByHole[r.hole_id] === undefined) firstSurveyByHole[r.hole_id] = r;
     });

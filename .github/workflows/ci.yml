@@ -62,6 +62,8 @@ jobs:
           python tests/test_screening_reports.py
           python tests/test_assay_performance.py
           python tests/test_assay_large_report.py
+          python tests/test_assay_domain_names.py
+          python tests/test_core_literal_headers.py
           python tests/test_assay_workflow.py
           python tests/test_screening_context.py
           python tests/test_screening_navigation.py

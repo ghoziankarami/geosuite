@@ -81,7 +81,7 @@ BACKUP_SUFFIX = ".bak-patch"
 
 PHASE_CFG = {
     "01-Core/Core.html": {
-        "pill": "Free Web",
+        "pill": "Web",
         "label_en": "Orebit Core",
         "label_id": "Orebit Core",
         "tour_storage_key": "orebit-tour-seen-p1",
@@ -93,7 +93,7 @@ PHASE_CFG = {
         "qs_cta_id": "Ikuti tour 6-langkah →",
     },
     "02-Assay/Assay.html": {
-        "pill": "Free Web",
+        "pill": "Web",
         "label_en": "Orebit Assay",
         "label_id": "Orebit Assay",
         "tour_storage_key": "orebit-tour-seen-p2",
@@ -105,7 +105,7 @@ PHASE_CFG = {
         "qs_cta_id": "Ikuti tour 6-langkah →",
     },
     "03-Resource/Resource.html": {
-        "pill": "Free Web",
+        "pill": "Web",
         "label_en": "Orebit Resource",
         "label_id": "Orebit Resource",
         "tour_storage_key": "orebit-tour-seen-p3",
@@ -359,7 +359,9 @@ def detect_phase(path: Path) -> tuple[str, dict] | tuple[None, None]:
     return None, None
 
 
-def idempotency_check(base: Path, allow_drift: bool = False, phases_dir: Path | None = None) -> int:
+def idempotency_check(
+    base: Path, allow_drift: bool = False, phases_dir: Path | None = None
+) -> int:
     """Run detection+transform twice in memory; 2nd run must be a no-op.
     ALSO checks for template drift: does the file's CURRENT shell block
     already match what today's templates would produce?
@@ -475,7 +477,11 @@ def main() -> int:
         "instead of a failure. Rarely what you want -- see the docstring "
         "on idempotency_check().",
     )
-    parser.add_argument("--phases-dir", type=Path, help="Check resolved Core/Assay/Resource HTML in this directory (no vault dependency).")
+    parser.add_argument(
+        "--phases-dir",
+        type=Path,
+        help="Check resolved Core/Assay/Resource HTML in this directory (no vault dependency).",
+    )
     args = parser.parse_args()
 
     if not args.target and not args.phases_dir and not PATCHER_CONFIG["vault_path"]:
@@ -483,7 +489,9 @@ def main() -> int:
     base = Path(PATCHER_CONFIG["vault_path"]) if PATCHER_CONFIG["vault_path"] else None
 
     if args.check_idempotent:
-        return idempotency_check(base, allow_drift=args.allow_drift, phases_dir=args.phases_dir)
+        return idempotency_check(
+            base, allow_drift=args.allow_drift, phases_dir=args.phases_dir
+        )
 
     # Single explicit target file.
     if args.target:

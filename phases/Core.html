@@ -2792,6 +2792,7 @@ input[type="checkbox"], input[type="radio"] {
   <div class="hint">
     <p>Verify linkage across all 4 tables. Holes in assay but not in collar → flagged. Holes without survey → flagged. Completeness summary per critical column.</p>
   </div>
+  <section id="coreValidationResults" class="card" aria-live="polite"></section>
   <section id="coreValidationRemedies" class="card" hidden></section>
   <div id="validationPanel"></div>
 </div>
@@ -3316,6 +3317,7 @@ function orebitConfirm(message, opts) {
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);';
     const box = document.createElement('div');
+    box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');
     box.style.cssText = 'background:var(--bg,#fff);color:var(--fg,#111);border-radius:12px;padding:22px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.35);';
     const msg = document.createElement('div');
     msg.style.cssText = 'font-size:14px;line-height:1.5;margin-bottom:18px;white-space:pre-line;';
@@ -4221,7 +4223,7 @@ function resetToSample(options = {}) {
     STATE.deletedIdx[t].clear();
     STATE.page[t] = 0;
   });
-  STATE.desurvey = null;
+  window.OrebitCoreScope?.reset(); STATE.desurvey = null;
   STATE.merged = null;
   STATE.usingSample = true;
   // Sprint F: auto-apply BDL with default mode (half) so demo data is immediately
@@ -4510,11 +4512,11 @@ function p1IsTabReady(n) {
     case 4: return STATE.survey.length > 0;
     case 5: return STATE.assay.length > 0;
     case 6: return STATE.geology && STATE.geology.length > 0;
-    case 7: return STATE.collar.length > 0 && STATE.assay.length > 0 && coreGeometryReady() && !_p1RunValidationChecks().some(c => c.severity === 'fail');
+    case 7: return _coreAnalysisReady();
     case 8: return STATE.collar.length > 0 && STATE.assay.length > 0;
     case 9: return STATE.collar.length > 0 && STATE.assay.length > 0;
-    case 10: return coreGeometryReady() && Object.values(STATE.desurvey?.holes || {}).some(h => h.trace?.length > 0) && !(STATE.desurvey?.invalidHoleIds || []).length;
-    case 11: return !!STATE.merged?.length && coreGeometryReady();
+    case 10: return _coreAnalysisReady() && Object.values(STATE.desurvey?.holes || {}).some(h => h.trace?.length > 0) && !(STATE.desurvey?.invalidHoleIds || []).length;
+    case 11: return !!STATE.merged?.length && _coreAnalysisReady();
     case 12: return !!(STATE.merged && STATE.merged.length > 0);
     case 13: return !!(STATE.merged && STATE.merged.length > 0);
     default: return false;
@@ -5144,6 +5146,10 @@ function renderEditableTable(tableName, containerId) {
     return allDataRows.some(r => r[c] !== null && r[c] !== undefined && r[c] !== '');
   });
 
+  const focusedColumns=window.OrebitCoreRepair?.columnsFor(tableName)||[];
+  for(const col of focusedColumns)if(!displayCols.includes(col))displayCols.push(col);
+  rows=rows.filter(({idx})=>window.OrebitCoreRepair?.rowVisible(tableName,idx)!==false);
+
   // FILTER
   const filterText = (STATE.filter[tableName] || '').trim().toLowerCase();
   if (filterText) {
@@ -5230,7 +5236,9 @@ function renderEditableTable(tableName, containerId) {
         ${sortCfg ? `<button class="btn small secondary" onclick="clearSort('${tableName}')">⤫ clear sort</button>` : ''}
         <span class="filter-info">${t('core.tbl.clickHeaderSort')}</span>
       </div>
-      ${issues.summary.length === 0 ? `<div class="hint good">${t('core.tbl.noIssues')}</div>`
+      ${issues.summary.length === 0 ? (window.OrebitCoreRepair?.pendingFinding(tableName)
+        ? `<div class="hint warn" data-core-linked-finding>${t('core.repair.linkedFinding')}</div>`
+        : `<div class="hint good">${t('core.tbl.noIssues')}</div>`)
         : issues.summary.length === 1 ? `
         <div class="hint ${issues.severity}">
           <div>${issues.summary[0]}</div>
@@ -5274,6 +5282,7 @@ function renderEditableTable(tableName, containerId) {
       </div>
     </div>
   `;
+  window.OrebitCoreRepair?.renderContext(tableName,container);
 }
 
 function renderRow(tableName, row, idx, kind, displayCols, requiredCols, cellIssues) {
@@ -5299,9 +5308,9 @@ function renderRow(tableName, row, idx, kind, displayCols, requiredCols, cellIss
     const display = val === null || val === undefined ? '' : String(val);
     const hm = STATE.highlightMissing;
     const isMissing = hm && hm.table === tableName && hm.col === col && (val === null || val === undefined || val === '');
-    const cellCls = (isMissing ? 'cell-missing' : cellIssues[col] ? 'cell-invalid' : '') + ' editable';
+    const cellCls = (isMissing ? 'cell-missing' : cellIssues[col] ? 'cell-invalid' : '') + ' editable' + (window.OrebitCoreRepair?.cellFocused(tableName,idx,col)?' cell-validation-focus':'');
     const title = isMissing ? `title="${escapeHtml(t('core.renderRow.missingClickToEdit').replace('{col}', col))}"` : cellIssues[col] ? `title="${cellIssues[col]}"` : '';
-    return `<td class="${cellCls}" ${title} onclick="editCell(this, '${tableName}', ${idx}, '${col}', ${isNew})">${escapeHtml(display)}</td>`;
+    return `<td class="${cellCls}" tabindex="${window.OrebitCoreRepair?.cellFocused(tableName,idx,col)||col===displayCols[0]?0:-1}" data-col="${escapeHtml(col)}" ${title} onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();editCell(this, '${tableName}', ${idx}, '${col}', ${isNew});}" onclick="editCell(this, '${tableName}', ${idx}, '${col}', ${isNew})">${escapeHtml(display)}</td>`;
   }).join('');
 
   const action = isDeleted
@@ -5571,6 +5580,8 @@ function applyChanges(tableName) {
   });
   const editedCount = new Set(diffs.map(d => d.idx)).size;
   const addedCount = STATE.newRows[tableName].length;
+  STATE.newRows[tableName].forEach((row,offset)=>Object.entries(row).forEach(([col,value])=>{if(value!==null&&value!==undefined)diffs.push({idx:STATE[tableName].length+offset,col,old:null,new:value,kind:'added'});}));
+  STATE.deletedIdx[tableName].forEach(idx=>Object.entries(STATE[tableName][idx]||{}).forEach(([col,value])=>diffs.push({idx,col,old:value,new:null,kind:'deleted'})));
   const deletedCount = STATE.deletedIdx[tableName].size;
 
   STATE.edits[tableName].forEach((edited, idx) => {
@@ -5583,8 +5594,10 @@ function applyChanges(tableName) {
   STATE.edits[tableName].clear();
   STATE.newRows[tableName] = [];
   STATE.deletedIdx[tableName].clear();
-  STATE.desurvey = null;
+  window.OrebitCoreScope?.reset(); STATE.desurvey = null;
   STATE.merged = null;
+
+  STATE.composite = null;
 
   // === Improvement 1: push to CHANGE_LOG ===
   STATE.CHANGE_LOG.push({
@@ -5596,18 +5609,21 @@ function applyChanges(tableName) {
 
   // === Improvement 2: detailed post-apply toast ===
   const isIdApply = document.documentElement.lang === 'id';
-  const editedRowNums = [...new Set(diffs.map(d => d.idx))].slice(0, 5);
-  const editedCols = [...new Set(diffs.map(d => d.col))];
+  const editedDiffs = diffs.filter(d => !d.kind);
+  const editedRowNums = [...new Set(editedDiffs.map(d => d.idx))].slice(0, 5).map(idx => idx + 1);
+  const editedCols = [...new Set(editedDiffs.map(d => d.col))];
   const editedDetail = editedCount > 0
     ? (isIdApply
-        ? `${editedCount} sel diedit (${editedCols.join(', ')}: baris ${editedRowNums.join(', ')}${editedCount > 5 ? ', …' : ''})`
-        : `${editedCount} cells edited (${editedCols.join(', ')}: row ${editedRowNums.join(', ')}${editedCount > 5 ? ', …' : ''})`)
+        ? `${editedCount} baris diedit (${editedCols.join(', ')}: baris ${editedRowNums.join(', ')}${editedCount > 5 ? ', …' : ''})`
+        : `${editedCount} rows edited (${editedCols.join(', ')}: row ${editedRowNums.join(', ')}${editedCount > 5 ? ', …' : ''})`)
     : (isIdApply ? '0 sel diedit' : '0 cells edited');
   const detail = isIdApply
     ? `Diterapkan: ${editedDetail}, ${addedCount} baris ditambah, ${deletedCount} dihapus`
     : `Applied: ${editedDetail}, ${addedCount} row${addedCount !== 1 ? 's' : ''} added, ${deletedCount} deleted`;
   toast(detail, 'good');
+  logPipeline('Source correction', tableName+': '+editedCount+' rows edited, '+addedCount+' added, '+deletedCount+' deleted. Revalidate before recalculating geometry.');
 
+  window.OrebitCoreRepair?.applied(tableName);
   updateDataTag();
   rerenderTable(tableName);
   // Refresh activity panel if dashboard is visible
@@ -5915,7 +5931,7 @@ function _lengthTag() {
 function _coreLoadTable(cls, mapped, headers, rows, opts = {}) {
   window.OrebitCoreRepair?.reset();
   window.OrebitCoreDomain?.reset();
-  STATE.desurvey = null; STATE.merged = null; STATE.mergeAudit = null; STATE.composite = null;
+  window.OrebitCoreScope?.reset(); STATE.desurvey = null; STATE.merged = null; STATE.mergeAudit = null; STATE.composite = null;
   // Undo entries refer to row indices in the replaced source table.
   UNDO.stack = UNDO.stack.filter(action => action.table !== cls && action.type !== 'validation-repair');
   UNDO._updateBadge();
@@ -5985,7 +6001,7 @@ function applyCoreGateMapping(pfIdx) {
   _coreLoadTable(cls, gate.mapped, headers2, rows2, {schemaMeta:pf.schemaMeta});
   pf.assignedTo = cls; pf.gateFor = null;
   ['collar', 'survey', 'assay', 'geology'].forEach(t => { if (t !== cls && STATE.isSample[t]) { STATE[t] = []; STATE.rawHeaders[t] = []; } });
-  STATE.desurvey = null;
+  window.OrebitCoreScope?.reset(); STATE.desurvey = null;
   STATE.merged = null;
   STATE.usingSample = Object.keys(STATE.isSample).some(k => STATE.isSample[k] && STATE[k] && STATE[k].length > 0);
   if (host) host.innerHTML = `✓ <strong>${escapeHtml(pf.name)}</strong> → <code>${cls}</code> (${gate.mapped.length} rows)` + renderImportReportHtml(gate.report, { tr: _coreImportTr });
@@ -6086,7 +6102,7 @@ function handleUpload(evt) {
       });
     }
 
-    STATE.desurvey = null;
+    window.OrebitCoreScope?.reset(); STATE.desurvey = null;
     STATE.merged = null;
 
     // Build slot checklist (4 expected tables)
@@ -6415,7 +6431,7 @@ function assignManual(idx) {
   const checklist = ['collar','survey','assay','geology'].map(t => `<li>${slotIcon(t)} ${slotLabel(t)}</li>`).join('');
   status.innerHTML = `<div class="hint good">✓ Manual assignment successful</div><ul>${checklist}</ul>`;
 
-  STATE.desurvey = null;
+  window.OrebitCoreScope?.reset(); STATE.desurvey = null;
   STATE.merged = null;
   rerenderAll();
 
@@ -6896,6 +6912,10 @@ function mapShowLabelsChanged(checked) {
 }
 
 /* ---- Per-Hole Status Table (drilldown) ---- */
+function _coreMapHasXY(row) {
+  return ['x','y'].every(k => row[k] !== null && row[k] !== undefined &&
+    String(row[k]).trim() !== '' && Number.isFinite(Number(row[k])));
+}
 function buildHoleStatusData() {
   const collarIds = new Set(STATE.collar.map(r => r.hole_id).filter(Boolean));
   const surveyIds = new Set(STATE.survey.map(r => r.hole_id).filter(Boolean));
@@ -7118,7 +7138,7 @@ function renderColumnMapping(container) {
             <thead><tr><th data-i18n="core.targetColumn">Target Column</th><th data-i18n="core.mappedToCsv">Mapped to CSV Column</th></tr></thead>
             <tbody>${mappingRows}</tbody>
           </table>
-          <button class="btn small" onclick="applyColumnMapping('${tableName}')" style="margin-top:8px;" data-i18n="core.applyMapping">Apply Mapping</button>
+          <button class="btn small" onclick="applyColumnMapping('${tableName}')" data-action-role="apply" style="margin-top:8px;" data-i18n="core.applyMapping">Apply Mapping</button>
           ${gradeSectionHTML}
         </div>
       </details>
@@ -7137,7 +7157,7 @@ function renderColumnMapping(container) {
     </div>
   `;
 
-  container.insertAdjacentHTML('afterbegin', section);
+  container.insertAdjacentHTML('beforeend', section);
 }
 
 function applyColumnMapping(tableName) {
@@ -7198,7 +7218,7 @@ function applyColumnMapping(tableName) {
   });
 
   STATE[tableName] = sourceRows === STATE.rawRows[tableName] ? _coreApplyLengthUnit(tableName, remapped, STATE.lengthUnitSource) : remapped;
-  STATE.desurvey = null; STATE.merged = null; STATE.mergeAudit = null; STATE.composite = null;
+  window.OrebitCoreScope?.reset(); STATE.desurvey = null; STATE.merged = null; STATE.mergeAudit = null; STATE.composite = null;
   // Record what the user actually chose so the Column Mapping badge reports the
   // mapping in effect. rawHeaders must stay the TRUE file headers — overwriting
   // them with canonical names (as this did before 2026-08-22) left the dropdowns
@@ -7211,8 +7231,10 @@ function applyColumnMapping(tableName) {
   STATE.deletedIdx[tableName].clear();
 
   const mappedList = Object.keys(mapping).length ? Object.entries(mapping).map(([t,s]) => `${s}→${t}`).join(', ') : (t('core.applyColumnMapping.noChanges'));
+  logPipeline('Column mapping', tableName+': '+mappedList);
   toast(t('core.remapTable.remapped').replace('{table}', tableName).replace('{n}', remapped.length).replace('{list}', mappedList), 'good');
   renderValidation();
+  window.OrebitScreeningWorkflow?.refresh();
 }
 
 // ============= GO FIX MISSING (Improvement 4) =============
@@ -7243,7 +7265,8 @@ function goFixMissing(tableName, colName) {
 // === MODULE: crossval.js ===
 // ============= CROSS-TABLE VALIDATION =============
 function renderValidation() {
-  window.OrebitCoreRepair?.render();
+  const validationChecks=_p1RunValidationChecks();
+  window.OrebitCoreRepair?.render(validationChecks);
   const container = document.getElementById('validationPanel');
   if (!container) return;
 
@@ -7423,10 +7446,10 @@ function renderValidation() {
       </div>
       <div class="qi-row">
         <div><strong>${t('core.verdict')}:</strong> ${
-          (geometryReady && linkV.cls === 'qi-ok' && compV.cls === 'qi-ok' && bdlV.cls === 'qi-ok' && gapVerdict.cls === 'qi-ok')
+          (!validationChecks.some(c=>c.severity==='fail') && geometryReady && linkV.cls === 'qi-ok' && compV.cls === 'qi-ok' && bdlV.cls === 'qi-ok' && gapVerdict.cls === 'qi-ok')
             ? '<span class="qi-ok">' + ICONS.check + (qiIsId ? ' Data siap untuk desurvey + merge' : ' Data ready for desurvey + merge') + '</span>'
-            : (linkV.cls === 'qi-warn' || gapVerdict.cls === 'qi-warn')
-              ? '<span class="qi-warn">' + ICONS.warn + (qiIsId ? ' Perbaiki linkage/gap sebelum desurvey' : ' Fix linkage/gaps before desurvey') + '</span>'
+            : validationChecks.some(c=>c.severity==='fail')
+              ? '<span class="qi-warn">' + ICONS.warn + (qiIsId ? ' Perbaiki temuan yang menghalangi proses sebelum Desurvey' : ' Resolve blocking findings before Desurvey') + '</span>'
               : '<span class="qi-mid">▸ ' + (qiIsId ? 'Bisa lanjut, dengan catatan di atas' : 'Can continue, with notes above') + '</span>'
         }</div>
       </div>
@@ -7435,7 +7458,7 @@ function renderValidation() {
 
   container.innerHTML = `
     ${qiPanel}
-    ${renderUnitColumnPanel()}
+    <details id="coreValidationParameters"><summary>${t('core.repair.parameters')}</summary>${renderUnitColumnPanel()}</details>
     <div class="card">
       <h3 data-i18n="core.linkageMatrix">Linkage Matrix</h3>
       <table>
@@ -7568,7 +7591,7 @@ function renderValidation() {
           <table style="margin-top:8px;">
             <tr><th data-i18n="core.vc.field">Field</th><th>${window.__t('core.vc.complete')}</th><th data-i18n="core.missing">Missing</th><th></th></tr>
             ${cols.map(c => `<tr>
-              <td>${c.col}</td>
+              <td><code>${escapeHtml(c.col)}</code></td>
               <td><span class="badge ${c.pct === 100 ? 'good' : c.pct >= 95 ? 'warn' : 'bad'}">${c.pct.toFixed(1)}%</span></td>
               <td>${c.missing}</td>
               <td>${c.pct < 100 ? `<button class="btn small" onclick="goFixMissing('${t}','${c.col}')">Go fix →</button>` : ''}</td>
@@ -7792,7 +7815,9 @@ function renderValidation() {
   // overwrites container.innerHTML, which erased it before it was ever seen.
   // The dropdown-based reassign controls (Column Mapping card is read-only —
   // this is the interactive one) never actually appeared to users. 2026-08-18.
-  renderColumnMapping(container);
+  const mappingHost=document.createElement('details');mappingHost.id='coreValidationMapping';
+  const mappingSummary=document.createElement('summary');mappingSummary.textContent=t('core.map.title');mappingHost.append(mappingSummary);container.append(mappingHost);
+  renderColumnMapping(mappingHost);
 
   // Plot collar linkage map (enhanced)
   if (typeof Plotly !== 'undefined') {
@@ -7851,7 +7876,7 @@ function renderValidation() {
     // hand Plotly "MNaN,NaN" geometry. 2026-08-22.
     STATE.collar.forEach(c => {
       if (!c.hole_id) return;
-      if (!Number.isFinite(Number(c.x)) || !Number.isFinite(Number(c.y))) return;
+      if (!_coreMapHasXY(c)) return;
       if (STATE.mapUI.prospect && c.prospect !== STATE.mapUI.prospect) return;
       const hid = c.hole_id;
       const hasSurvey = surveyIds.has(hid);
@@ -9437,8 +9462,11 @@ function detectDipConvention(surveys) {
   return median > 0 ? 'positive_down' : 'negative_down';
 }
 
+function _coreAnalysisSource() { return window.OrebitCoreScope?.source() || STATE; }
+function _coreAnalysisReady() { return window.OrebitCoreScope?.ready() ?? (coreGeometryReady() && !_p1RunValidationChecks().some(c=>c.severity==='fail')); }
 function computeDesurvey() {
-  const dipConv = detectDipConvention(STATE.survey);
+  const source = _coreAnalysisSource();
+  const dipConv = detectDipConvention(source.survey);
   STATE.dipConvention = dipConv;
   // Normalize fn: returns inclination from vertical (rad). Vertical down → 0, horizontal → π/2.
   const incFromVert = dipConv === 'positive_down'
@@ -9447,7 +9475,7 @@ function computeDesurvey() {
 
   // For each hole, walk survey points and compute (X,Y,Z) at any depth via min curvature.
   const holes = {};
-  STATE.collar.forEach(c => {
+  source.collar.forEach(c => {
     if (!c.hole_id) return;
     holes[c.hole_id] = { collar: c, surveys: [] };
   });
@@ -9468,7 +9496,7 @@ function computeDesurvey() {
     return isFinite(n) ? n : NaN;
   };
 
-  STATE.survey.forEach(s => {
+  source.survey.forEach(s => {
     if (!s.hole_id || !holes[s.hole_id]) return;
     const dip = strictNum(s.dip);
     const az = strictNum(s.azimuth);
@@ -9487,7 +9515,7 @@ function computeDesurvey() {
     });
   });
 
-  OrebitMinimumCurvature.issues(STATE.survey,incFromVert).filter(row=>row.code!=='INVALID_MEASUREMENT').forEach(row=>{
+  OrebitMinimumCurvature.issues(source.survey,incFromVert).filter(row=>row.code!=='INVALID_MEASUREMENT').forEach(row=>{
     if(!holes[row.hole_id])return;
     invalidHoleIds.add(row.hole_id);badSurvey.push({...row,field:'curvature'});
   });
@@ -9509,7 +9537,7 @@ function computeDesurvey() {
   // hole put all its samples at the collar. Assay's own merge already uses
   // max(to) the same way. Found 2026-09-25 building the Babbitt vignette.
   const maxTo = {};
-  ['assay', 'geology'].forEach(tbl => (STATE[tbl] || []).forEach(r => {
+  ['assay', 'geology'].forEach(tbl => (source[tbl] || []).forEach(r => {
     const to = strictNum(r.to_m);
     if (r.hole_id && isFinite(to) && !(to <= (maxTo[r.hole_id] || 0))) maxTo[r.hole_id] = to;
   }));
@@ -10131,16 +10159,18 @@ function coreGeometryReady(source = STATE) {
       _coreDirectionIssues(source).length===0;
 }
 function setCoreProvidedXYZ(enabled) {
+  window.OrebitCoreScope?.reset();
   window.OrebitCoreDomain?.invalidate('Coordinate source mode changed');
   window._coreUseProvidedXYZ = !!enabled;
   const toggle = document.getElementById('coreProvidedXYZ'); if (toggle) toggle.checked = !!enabled;
   STATE.merged = null; STATE.mergeAudit = null; STATE.composite = null;
 }
 function computeMerge() {
+  const source = _coreAnalysisSource();
   if (!window._coreUseProvidedXYZ && !STATE.desurvey) computeDesurvey();
   // Build geology lookup by hole + depth range
   const geoByHole = {};
-  STATE.geology.forEach(g => {
+  source.geology.forEach(g => {
     if (!g.hole_id) return;
     (geoByHole[g.hole_id] = geoByHole[g.hole_id] || []).push(g);
   });
@@ -10149,10 +10179,10 @@ function computeMerge() {
   const merged = [];
   const assayHoles = new Set();
   const geologyHoles = new Set(Object.keys(geoByHole));
-  const surveyHoles = new Set(STATE.survey.filter(s => s.hole_id).map(s => s.hole_id));
+  const surveyHoles = new Set(source.survey.filter(s => s.hole_id).map(s => s.hole_id));
   let intervalsWithoutXYZ = 0;
   let intervalsWithoutGeology = 0;
-  STATE.assay.forEach(a => {
+  source.assay.forEach(a => {
     if (!a.hole_id || a.from_m == null || a.to_m == null) return;
     assayHoles.add(a.hole_id);
     const f = Number(a.from_m), t = Number(a.to_m);
@@ -10201,7 +10231,7 @@ function computeMerge() {
     merged.push(mergedRow);
   });
   STATE.merged = merged;
-  const collarHoles = new Set(STATE.collar.filter(c => c.hole_id).map(c => c.hole_id));
+  const collarHoles = new Set(source.collar.filter(c => c.hole_id).map(c => c.hole_id));
   STATE.mergeAudit = {
     assayHoles: assayHoles.size,
     collarHoles: collarHoles.size,
@@ -11316,7 +11346,7 @@ function renderCropPanel() {
   if (!CROP.polys.length) {
     el.innerHTML = `
       <div class="card">
-        <h3>${ICONS.upload} ${t('core.cr.title')} <span style="font-size:11px;font-weight:600;color:#06b6d4;border:1px solid #06b6d4;border-radius:4px;padding:1px 6px;margin-left:6px;">FREE</span></h3>
+        <h3>${ICONS.upload} ${t('core.cr.title')} </h3>
         <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;">${t('core.cr.hint')} ${t('core.cr.formatsMore')}</p>
         <input type="file" id="constraintFile" accept=".shp,.geojson,.json,.kml,.dxf" onchange="handleConstraintFile(this)" aria-label="Upload constraint boundary file" data-i18n-attr="aria-label:a11y.uploadConstraint">
         <div id="cropStatus" style="margin-top:8px;"></div>
@@ -11351,7 +11381,7 @@ function renderCropPanel() {
   const bb = CROP.bbox;
   el.innerHTML = `
     <div class="card">
-      <h3>${ICONS.upload} ${t('core.cr.title')} <span style="font-size:11px;font-weight:600;color:#06b6d4;border:1px solid #06b6d4;border-radius:4px;padding:1px 6px;margin-left:6px;">FREE</span></h3>
+      <h3>${ICONS.upload} ${t('core.cr.title')} </h3>
       <div class="hint good" style="font-size:13px;"><strong>${escapeHtml(CROP.fileName)}</strong> loaded — ${CROP.polys.length} ring${CROP.polys.length!==1?'s':''}, source <code>.${escapeHtml(CROP.source)}</code>.</div>
       <p style="font-size:12px;color:var(--fg-mute);margin:6px 0;">Boundary bbox: X [${bb.minx.toFixed(1)} … ${bb.maxx.toFixed(1)}] · Y [${bb.miny.toFixed(1)} … ${bb.maxy.toFixed(1)}]</p>
       <div class="stat-grid">
@@ -11488,7 +11518,7 @@ function renderExport() {
   // Opening Export (including the tour) must not create geometry from source
   // records that Validation rejects or describe an unfinished project as complete.
   if (!STATE.merged) {
-    const validated=coreGeometryReady() && !_p1RunValidationChecks().some(row=>row.severity==='fail');
+    const validated=_coreAnalysisReady();
     container.replaceChildren();
     const notice=document.createElement('div');notice.className='hint warn';notice.textContent=t(validated?'core.ex.mergeFirst':'flow.blockedGeometry');
     const review=document.createElement('button');review.className='btn secondary';review.type='button';review.textContent=t(validated?'tab.merge':'tab.validation');review.onclick=()=>showTab(validated?11:7);
@@ -11554,7 +11584,7 @@ function renderExport() {
 // match downstream EDA + Resource modules. Schema header line lets P2 detect
 // provenance and emit a "✓ P1 export detected" badge instead of guessing.
 function exportMasterCSV() {
-  if (!coreGeometryReady() || _p1RunValidationChecks().some(c => c.severity === 'fail')) {
+  if (!_coreAnalysisReady()) {
     toast(t('core.repair.exportBlocked'), 'warn'); showTab(7); return false;
   }
   if (!STATE.merged) computeMerge();
@@ -11572,6 +11602,7 @@ function exportMasterCSV() {
     _lengthTag(),
     '# notes: BDL applied per STATE.bdlMode. Grade columns dynamically detected from input.',
     '# coordinates: ' + (STATE.mergeAudit && STATE.mergeAudit.coordinateSource || 'minimum-curvature-survey'),
+    window.OrebitCoreScope.csv(),
     outCols.join(',')
   ];
 
@@ -11648,6 +11679,7 @@ function _p1RunValidationChecks(source = STATE) {
   // Synthesize a uniform { name, value, severity } list from current source.
   // Mirrors the linkage matrix + completeness used in renderValidation().
   const checks = [];
+  const ref = (table, idx, columns) => ({idx, hole_id:source[table][idx]?.hole_id, columns});
   const collarIds = new Set(source.collar.map(r => r.hole_id).filter(Boolean));
   const surveyIds = new Set(source.survey.map(r => r.hole_id).filter(Boolean));
   const assayIds = new Set(source.assay.map(r => r.hole_id).filter(Boolean));
@@ -11661,22 +11693,22 @@ function _p1RunValidationChecks(source = STATE) {
   const collarNoGeo = [...collarIds].filter(h => !geoIds.has(h));
 
   // Linkage (orphan = fail; missing optional linkage = warn)
-  checks.push({ name: 'Holes in Assay but not in Collar', value: `${orphanAssay.length} orphan`,  severity: orphanAssay.length ? 'fail' : 'ok' });
-  checks.push({ name: 'Holes in Survey but not in Collar', value: `${orphanSurvey.length} orphan`, severity: orphanSurvey.length ? 'fail' : 'ok' });
-  checks.push({ name: 'Holes in Geology but not in Collar', value: `${orphanGeo.length} orphan`,   severity: orphanGeo.length ? 'fail' : 'ok' });
-  checks.push({ name: 'Collar without measured directional Survey', value: `${collarNoSurvey.length} hole`, severity: collarNoSurvey.length ? 'warn' : 'ok' });
-  checks.push({ name: 'Collar without Assay', value: `${collarNoAssay.length} hole`, severity: collarNoAssay.length ? 'warn' : 'ok' });
-  checks.push({ name: 'Collar without Geology', value: `${collarNoGeo.length} hole`, severity: collarNoGeo.length ? 'warn' : 'ok' });
+  checks.push({ code:'missing-collar', table:'assay', holes:orphanAssay, name: 'Holes in Assay but not in Collar', value: `${orphanAssay.length} orphan`,  severity: orphanAssay.length ? 'fail' : 'ok' });
+  checks.push({ code:'missing-collar', table:'survey', holes:orphanSurvey, name: 'Holes in Survey but not in Collar', value: `${orphanSurvey.length} orphan`, severity: orphanSurvey.length ? 'fail' : 'ok' });
+  checks.push({ code:'missing-collar', table:'geology', holes:orphanGeo, name: 'Holes in Geology but not in Collar', value: `${orphanGeo.length} orphan`,   severity: orphanGeo.length ? 'fail' : 'ok' });
+  checks.push({ code:'missing-table', table:'survey', holes:collarNoSurvey, name: 'Collar without measured directional Survey', value: `${collarNoSurvey.length} hole`, severity: collarNoSurvey.length ? 'warn' : 'ok' });
+  checks.push({ code:'missing-table', table:'assay', holes:collarNoAssay, name: 'Collar without Assay', value: `${collarNoAssay.length} hole`, severity: collarNoAssay.length ? 'warn' : 'ok' });
+  checks.push({ code:'missing-table', table:'geology', holes:collarNoGeo, name: 'Collar without Geology', value: `${collarNoGeo.length} hole`, severity: collarNoGeo.length ? 'warn' : 'ok' });
 
   // Collar CRS: geographic degrees cannot be mixed with depths in metres.
   const geo = _collarLooksGeographic(source.collar);
-  checks.push({ name: 'Collar X/Y in projected metres (not lat/long degrees)', value: geo ? 'looks like degrees' : 'ok', severity: geo ? 'fail' : 'ok' });
+  checks.push({code:'crs',table:'collar',records:source.collar.map((r,i)=>ref('collar',i,['x','y'])), name: 'Collar X/Y in projected metres (not lat/long degrees)', value: geo ? 'looks like degrees' : 'ok', severity: geo ? 'fail' : 'ok' });
 
   // Duplicate collar hole_id (must be unique)
   const cIds = source.collar.map(r => r.hole_id).filter(Boolean);
   const seenCollar = new Set();
   const dupCollar = cIds.filter(h => { if (seenCollar.has(h)) return true; seenCollar.add(h); return false; });
-  checks.push({ name: 'Duplicate collar hole_id', value: `${[...new Set(dupCollar)].length} duplicate`, severity: dupCollar.length ? 'fail' : 'ok' });
+  checks.push({code:'duplicate',table:'collar',holes:[...new Set(dupCollar)], name: 'Duplicate collar hole_id', value: `${[...new Set(dupCollar)].length} duplicate`, severity: dupCollar.length ? 'fail' : 'ok' });
 
   // Required-field completeness per table (warn if <100, fail if <95)
   ['collar','survey','assay','geology'].forEach(t => {
@@ -11687,22 +11719,25 @@ function _p1RunValidationChecks(source = STATE) {
     const cols = TABLE_SCHEMA[t].required.filter(c => t !== 'collar' || c !== 'depth');
     const totalCells = rows.length * cols.length;
     let filled = 0;
-    rows.forEach(r => cols.forEach(c => {
-      if (r[c] !== null && r[c] !== undefined && r[c] !== '') filled++;
-    }));
+    const records=[];
+    rows.forEach((r,idx) => {
+      const missing=[];
+      cols.forEach(c => {if (r[c] !== null && r[c] !== undefined && r[c] !== '') filled++;else missing.push(c);});
+      if(missing.length)records.push(ref(t,idx,missing));
+    });
     const pct = totalCells ? (filled / totalCells * 100) : 0;
     const sev = pct === 100 ? 'ok' : pct >= 95 ? 'warn' : 'fail';
-    checks.push({ name: `${t} required-field completeness`, value: `${pct.toFixed(1)}%`, severity: sev });
+    checks.push({code:'completeness',table:t,records, name: `${t} required-field completeness`, value: `${pct.toFixed(1)}%`, severity: sev });
   });
 
   const noFinalDepth = source.collar.filter(r => r.depth === null || r.depth === undefined || String(r.depth).trim() === '').length;
-  checks.push({name:'Collar without final measured depth',value:noFinalDepth+' hole',severity:noFinalDepth?'warn':'ok'});
+  checks.push({code:'final-depth',table:'collar',records:source.collar.flatMap((r,i)=>r.depth==null||String(r.depth).trim()===''?[ref('collar',i,['depth'])]:[]),name:'Collar without final measured depth',value:noFinalDepth+' hole',severity:noFinalDepth?'warn':'ok'});
 
   // Structural measurements must be usable, even when a mostly complete table
   // exceeds the percentage threshold. Optional missing grades stay missing.
   ['collar','survey','assay','geology'].forEach(table => {
-    let invalid = 0;
-    for (const row of source[table]) {
+    let invalid = 0;const records=[];
+    for (const [idx,row] of source[table].entries()) {
       const filled = value => value !== null && value !== undefined && String(value).trim() !== '';
       const numeric = Object.keys(TABLE_SCHEMA[table].types || {}).some(key =>
         filled(row[key]) && !Number.isFinite(Number(row[key])));
@@ -11712,13 +11747,22 @@ function _p1RunValidationChecks(source = STATE) {
         (!filled(row.depth) || Number(row.depth)<0 || !filled(row.dip) || Number(row.dip)<-90 || Number(row.dip)>90 ||
          !filled(row.azimuth) || Number(row.azimuth)<0 || Number(row.azimuth)>360);
       const badCollar = table==='collar' && filled(row.depth) && Number(row.depth)<0;
-      if (!filled(row.hole_id) || numeric || badInterval || badSurvey || badCollar) invalid++;
+      if (!filled(row.hole_id) || numeric || badInterval || badSurvey || badCollar) {
+        invalid++;const columns=[];
+        if(!filled(row.hole_id))columns.push('hole_id');
+        for(const key of Object.keys(TABLE_SCHEMA[table].types || {}))if(filled(row[key])&&!Number.isFinite(Number(row[key])))columns.push(key);
+        if(badInterval)columns.push('from_m','to_m');
+        if(badCollar)columns.push('depth');
+        if(badSurvey){if(!filled(row.depth)||Number(row.depth)<0)columns.push('depth');if(!filled(row.dip)||Math.abs(Number(row.dip))>90)columns.push('dip');if(!filled(row.azimuth)||Number(row.azimuth)<0||Number(row.azimuth)>360)columns.push('azimuth');}
+        records.push(ref(table,idx,[...new Set(columns)]));
+      }
     }
-    checks.push({name:table+' invalid structural measurements', value:invalid+' row', severity:invalid?'fail':'ok'});
+    checks.push({code:'measurement',table,records,name:table+' invalid structural measurements', value:invalid+' row', severity:invalid?'fail':'ok'});
   });
 
   const directionIssues=_coreDirectionIssues(source).filter(row=>row.code!=='INVALID_MEASUREMENT');
-  if(directionIssues.length)checks.push({name:'Survey conflicting or opposite directions',value:directionIssues.length+' station',severity:'fail'});
+  const directionKeys=new Map();for(const issue of directionIssues){if(!directionKeys.has(issue.hole_id))directionKeys.set(issue.hole_id,new Set());directionKeys.get(issue.hole_id).add(Number(issue.depth));}
+  if(directionIssues.length)checks.push({code:'directions',table:'survey',records:source.survey.flatMap((r,i)=>directionKeys.get(r.hole_id)?.has(Number(r.depth))?[ref('survey',i,['depth','dip','azimuth'])]:[]),name:'Survey conflicting or opposite directions',value:directionIssues.length+' station',severity:'fail'});
 
   // Assay gap/overlap
   const assayByHole = {};
@@ -11727,33 +11771,34 @@ function _p1RunValidationChecks(source = STATE) {
     (assayByHole[r.hole_id] = assayByHole[r.hole_id] || []).push(r);
   });
   let assayGaps = 0, assayOverlaps = 0;
+  const gaps=[],overlaps=[],assayIndex=new Map(source.assay.map((row,idx)=>[row,idx]));
   Object.values(assayByHole).forEach(rows => {
     rows.sort((a, b) => Number(a.from_m) - Number(b.from_m));
     for (let i = 1; i < rows.length; i++) {
       const gap = Number(rows[i].from_m) - Number(rows[i-1].to_m);
-      if (gap > 0.01) assayGaps++;
-      if (gap < -0.01) assayOverlaps++;
+      if (gap > 0.01) {assayGaps++;gaps.push({...ref('assay',assayIndex.get(rows[i]),['from_m','to_m']),relatedRows:[assayIndex.get(rows[i-1])]});}
+      if (gap < -0.01) {assayOverlaps++;overlaps.push({...ref('assay',assayIndex.get(rows[i]),['from_m','to_m']),relatedRows:[assayIndex.get(rows[i-1])]});}
     }
   });
-  checks.push({ name: 'Assay interval gaps', value: `${assayGaps} gap`, severity: assayGaps ? 'warn' : 'ok' });
-  checks.push({ name: 'Assay interval overlaps', value: `${assayOverlaps} overlap`, severity: assayOverlaps ? 'fail' : 'ok' });
+  checks.push({code:'gaps',table:'assay',records:gaps, name: 'Assay interval gaps', value: `${assayGaps} gap`, severity: assayGaps ? 'warn' : 'ok' });
+  checks.push({code:'overlaps',table:'assay',records:overlaps, name: 'Assay interval overlaps', value: `${assayOverlaps} overlap`, severity: assayOverlaps ? 'fail' : 'ok' });
 
   // Negative grade (BDL placeholder) presence flag
   const gradeColsList = getActualGradeColumns();
-  let bdlAny = 0;
+  let bdlAny = 0;const negative=new Map();
   gradeColsList.forEach(c => {
-    source.assay.forEach(r => {
+    source.assay.forEach((r,idx) => {
       const v = Number(r[c]);
-      if (isFinite(v) && v < 0) bdlAny++;
+      if (isFinite(v) && v < 0) {bdlAny++;if(!negative.has(idx))negative.set(idx,[]);negative.get(idx).push(c);}
     });
   });
-  checks.push({ name: 'Below-detection (negative) grade values', value: `${bdlAny} sample`, severity: bdlAny ? 'warn' : 'ok' });
+  checks.push({code:'bdl',table:'assay',records:[...negative].map(([idx,columns])=>ref('assay',idx,columns)), name: 'Below-detection (negative) grade values', value: `${bdlAny} sample`, severity: bdlAny ? 'warn' : 'ok' });
 
   // Verdict (linkage gate)
   const linkOK = !orphanAssay.length && !orphanSurvey.length && !orphanGeo.length && !dupCollar.length;
   const geometryReady=coreGeometryReady(source);
   checks.push({name:'Coordinate source',value:window._coreUseProvidedXYZ?'Supplied assay interval midpoint XYZ (not independently surveyed here)':'Minimum-curvature directional survey',severity:'warn'});
-  checks.push({name:'Assay geometry readiness',value:geometryReady?'READY':'MISSING / INVALID XYZ OR SURVEY',severity:geometryReady?'ok':'fail'});
+  checks.push({code:'geometry',table:window._coreUseProvidedXYZ?'assay':'survey',name:'Assay geometry readiness',value:geometryReady?'READY':'MISSING / INVALID XYZ OR SURVEY',severity:geometryReady?'ok':'fail'});
   checks.push({ name: 'Linkage and geometry verdict', value: linkOK && geometryReady ? 'READY' : 'FIX REQUIRED', severity: linkOK && geometryReady ? 'ok' : 'fail' });
 
   return checks;
@@ -11782,7 +11827,7 @@ function _p1Stats(values) {
 // Returns the div id on success, or null. Caller must remove the div after use.
 async function _p1RenderCollarMapForPDF() {
   if (!window.Plotly) return null;
-  const holes = buildHoleStatusData().filter(h => isFinite(Number(h.x)) && isFinite(Number(h.y)));
+  const holes = buildHoleStatusData().filter(_coreMapHasXY);
   if (!holes.length) return null;
 
   const STATUS_COLOR = { complete: '#16a34a', noSurvey: '#eab308', noGeo: '#ea580c', noAssay: '#dc2626', orphan: '#dc2626' };
@@ -12420,27 +12465,62 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
       pdf.text('Time', W - 30, y);
       y += 2; pdf.line(15, y, W - 15, y); y += 5;
       pdf.setFont('helvetica','normal');
+      const logLineHeight = 4.5, previousLineHeight = pdf.getLineHeightFactor();
+      const continueLogPage = () => {
+        addFooter(); pdf.addPage();
+        addHeader('05 · Processing Log (continued)', 'Transforms applied this session — traceability for the exported data');
+        y = 35; pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+        pdf.text('Step',15,y); pdf.text('Detail',55,y); pdf.text('Time',W-30,y);
+        y += 2; pdf.line(15,y,W-15,y); y += 5;
+      };
+      pdf.setLineHeightFactor(logLineHeight * pdf.internal.scaleFactor / 9);
       _plog.forEach(e => {
-        if (y > H - 20) return;
-        const t = new Date(e.at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        pdf.setFont('helvetica','bold');
-        pdf.text(String(e.action || '').slice(0, 22), 15, y);
-        pdf.setFont('helvetica','normal');
-        const detLines = pdf.splitTextToSize(String(e.detail || ''), W - 55 - 22);
-        pdf.text(detLines, 55, y);
-        pdf.text(t, W - 30, y);
-        y += Math.max(5, detLines.length * 4.5);
+        pdf.setFontSize(9); pdf.setFont('helvetica','normal');
+        const detLines = pdf.splitTextToSize(String(e.detail || ''), W - 55 - 38);
+        const time = new Date(e.at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        let at = 0;
+        do {
+          if (y > H - 28) continueLogPage();
+          const count = Math.max(1,Math.min(detLines.length-at,Math.floor((H-23-y)/logLineHeight)));
+          pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+          pdf.text(String(e.action || '').slice(0,22),15,y);
+          pdf.setFont('helvetica','normal');
+          pdf.text(detLines.slice(at,at+count),55,y); pdf.text(time,W-30,y);
+          at += count; y += Math.max(6,count*logLineHeight+2);
+        } while (at < detLines.length);
       });
+      pdf.setLineHeightFactor(previousLineHeight);
     }
     addFooter();
+
+    // Cell-level applied corrections belong in the report, alongside the
+    // processing log. Full original audit remains in the project export.
+    const corrections=(STATE.CHANGE_LOG||[]).flatMap(entry=>(entry.diffs||[]).map(diff=>({...diff,table:diff.table||entry.table,at:entry.timestamp})));
+    if(corrections.length){
+      const title=t('core.repair.pdfTitle'),limit=200,shown=corrections.slice(-limit);
+      const startCorrectionPage=()=>{pdf.addPage();addHeader(title,t('core.repair.pdfScope').replace('{n}',corrections.length));y=35;};
+      startCorrectionPage();
+      const valueText=value=>{const text=value===null||value===undefined?t('core.repair.empty'):typeof value==='object'?JSON.stringify(value):String(value);return text.length>180?text.slice(0,177)+'...':text;};
+      shown.forEach(diff=>{
+        const row=Number.isInteger(diff.idx)?t('core.repair.row').replace('{n}',diff.idx+1):t('core.repair.sourceRecord');
+        const heading=String(diff.table)+' · '+row+' · '+String(diff.col||'');
+        const lines=pdf.splitTextToSize(t('core.repair.pdfBefore')+': '+valueText(diff.old)+'  /  '+t('core.repair.pdfAfter')+': '+valueText(diff.new),W-30);
+        const height=8+lines.length*4;
+        if(y+height>H-23){addFooter();startCorrectionPage();}
+        pdf.setTextColor(15,23,42);pdf.setFont('helvetica','bold');pdf.setFontSize(9);pdf.text(heading,15,y);y+=5;
+        pdf.setFont('helvetica','normal');pdf.setFontSize(8);pdf.text(lines,15,y);y+=lines.length*4+5;
+      });
+      if(corrections.length>limit){const note=pdf.splitTextToSize(t('core.repair.pdfLimit').replace('{n}',limit),W-30);if(y+note.length*4>H-23){addFooter();startCorrectionPage();}pdf.text(note,15,y);}
+      addFooter();
+    }
 
     const insightText=(key,values={})=>Object.entries(values).reduce((out,[k,v])=>out.replaceAll('{'+k+'}',String(v)),t(['core.reportInsight',key].join('.')));
     const findings=checks.filter(c=>c.severity==='fail'||c.severity==='warn');
     const briefText=(key,values={})=>Object.entries(values).reduce((out,[k,v])=>out.replaceAll('{'+k+'}',String(v)),t(['core.reportSummary.brief',key].join('.')));
     const failures=checks.filter(c=>c.severity==='fail').length,warnings=checks.filter(c=>c.severity==='warn').length;
-    const handoffReady=coreGeometryReady()&&!!STATE.merged?.length&&failures===0;
+    const handoffReady=_coreAnalysisReady()&&!!STATE.merged?.length;
     const executiveBrief={
-      scope:[briefText(window._coreUseProvidedXYZ?'sourceXYZ':'sourceSurvey'),briefText('crs',{crs:STATE.crs||briefText('noCRS')}),_lengthTag().replace(/^#\s*/,'')].join(' | '),
+      scope:[window.OrebitCoreScope.describe(),briefText(window._coreUseProvidedXYZ?'sourceXYZ':'sourceSurvey'),briefText('crs',{crs:STATE.crs||briefText('noCRS')}),_lengthTag().replace(/^#\s*/,'')].join(' | '),
       metrics:[
         {label:briefText('holes'),value:OrebitScreeningReport.quantity(collar.length,0),detail:briefText('original')},
         {label:briefText('assays'),value:OrebitScreeningReport.quantity(STATE.assay.length,0),detail:briefText('original')},
@@ -12454,16 +12534,18 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
     };
     OrebitScreeningReport.prepend(pdf,'Core',[
       [t('core.reportSummary.result'),insightText('result',{holes:collar.length,assays:STATE.assay.length,merged:STATE.merged?.length||0,failed:checks.filter(c=>c.severity==='fail').length,warns:checks.filter(c=>c.severity==='warn').length})],
-      [t('core.reportSummary.meaning'),insightText(coreGeometryReady()?'ready':'notReady')],
+      [t('core.reportSummary.meaning'),insightText(_coreAnalysisReady()?'ready':'notReady')],
       [t('core.reportSummary.checks'),findings.slice(0,4).map(c=>c.name+': '+c.value).join('. ')||'No failed or warning checks in this validation.'],
       [t('core.reportSummary.scope'),insightText('coordinates',{source:window._coreUseProvidedXYZ?'supplied interval midpoint XYZ':'minimum-curvature survey',crs:STATE.crs||'not declared',missing:STATE.mergeAudit?.intervalsWithoutXYZ??'merge not run'})],
       [t('core.reportSummary.next'),insightText('next')],
       [t('core.reportSummary.evidence'),insightText('evidence')]
     ],executiveBrief);
     OrebitScreeningReport.append(pdf,'Core',[
+      ['Validation analysis scope',window.OrebitCoreScope.describe()],
       ['Purpose','Initial data-preparation and geometry screening. This report does not verify geological Resource accuracy.'],
       ['Coordinate source',window._coreUseProvidedXYZ?'Supplied assay interval midpoint XYZ; directional survey not reconstructed or independently verified':'Minimum-curvature survey; inspect measured dip/azimuth and collar control'],
-      ['Geometry readiness',coreGeometryReady()?'READY for the selected coordinate workflow':'FIX REQUIRED: missing or invalid geometry'],
+      ['Geometry readiness',_coreAnalysisReady()?'READY for the explicitly recorded analysis population':'FIX REQUIRED: missing or invalid geometry'],
+      ['Regional validation findings',failures+' failed checks retained across all raw source records'],
       ['CRS',STATE.crs || 'Not declared; verify projected CRS before spatial estimation'],
       ['Length units',_lengthTag()],
       ['Geometry algorithm',STATE.desurvey?.algorithm||'Not computed'],
@@ -12473,6 +12555,12 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
       ['Grade statistics population','Finite nonnegative grades including valid zero values; missing and negative BDL placeholders excluded'],
       ['Further evidence needed','Assay certificates, QA/QC controls, survey verification, geological interpretation and measured density require independent project evidence'],
       ['Next step','Export the merged master, inspect coordinate/source notes, then review treatment and compositing in Assay before Resource estimation']
+    ]);
+    const scopeRecord=window.OrebitCoreScope.record();
+    if(scopeRecord)OrebitScreeningReport.append(pdf,'Core',[
+      [t('core.scope.title'),window.OrebitCoreScope.describe()],
+      [t('core.scope.policy'),t('core.scope.excluded')+' (first 200; complete record in project metadata)'],
+      ...scopeRecord.excluded.slice(0,200).map(row=>[row.table+' · '+t('core.scope.row').replace('{n}',row.row)+' · '+(row.hole_id||'—'),row.reason])
     ]);
     const _pdfName = `Orebit-Core-Report-${today}.pdf`;
     await OrebitScreeningReport.save(pdf,'Core',_pdfName);
@@ -12550,7 +12638,7 @@ document.addEventListener('keydown', (e) => {
     // P2-ready merged data: assay joined with desurveyed XYZ + geology (lithology/weathering).
     // This is the canonical handoff payload — Assay imports merged_csv, NOT raw assay rows.
     let merged_csv = '';
-    if (coreGeometryReady() && !_p1RunValidationChecks().some(c => c.severity === 'fail')) try {
+    if (_coreAnalysisReady()) try {
       if (!STATE.merged) computeMerge();
       const { gradeCols, outCols } = buildMasterExportCols(STATE.merged);
       console.log('[buildBundle] grade columns detected:', gradeCols.length, gradeCols);
@@ -12561,6 +12649,7 @@ document.addEventListener('keydown', (e) => {
         _lengthTag(),
         '# notes: BDL applied per STATE.bdlMode. Grade columns dynamically detected from input.',
         '# coordinates: ' + (STATE.mergeAudit && STATE.mergeAudit.coordinateSource || 'minimum-curvature-survey'),
+    window.OrebitCoreScope.csv(),
         outCols.join(',')
       ];
       const lines = header.slice();
@@ -12632,7 +12721,7 @@ document.addEventListener('keydown', (e) => {
         bdl_mode:      STATE.bdlMode,
         units:         STATE.units || {},
         units_locked:  STATE.unitsLocked || {},
-        audit: {schemaVersion:1, changes:STATE.CHANGE_LOG || [], pipeline:window._pipelineLog || []},
+        audit: {schemaVersion:1, changes:STATE.CHANGE_LOG || [], pipeline:window._pipelineLog || [], validationScope:window.OrebitCoreScope.record()},
       },
     };
   }
@@ -12705,7 +12794,7 @@ document.addEventListener('keydown', (e) => {
       STATE.page[t] = 0;
     });
 
-    STATE.desurvey = null;
+    window.OrebitCoreScope?.reset(); STATE.desurvey = null;
     STATE.merged   = null;
     window.OrebitCoreDomain?.reset();
     STATE.usingSample = Object.keys(STATE.isSample).some(k => STATE.isSample[k] && STATE[k] && STATE[k].length > 0);
@@ -12727,6 +12816,7 @@ document.addEventListener('keydown', (e) => {
       toast(t('core.domain.invalidState'), 'warn');
     });
 
+    window.OrebitCoreScope.restore(audit?.validationScope);
     refreshDemoBanner();
     updateDataTag();
     rerenderAll();

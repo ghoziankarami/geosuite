@@ -118,6 +118,7 @@ assay: 1 rows edited, 0 added, 2 deleted
 ```
 
 The detailed CHANGE_LOG stays in the Core project and PDF. The cropped CSV records its selected validation scope and points to that audit; it does not contain the complete edit history.
+This audit retains 33 cell changes: the blanked Au value and 32 original fields from the two deleted records. Missing fields are recorded too, so each source record remains traceable.
 
 ### Why the verdict stays "FIX REQUIRED", correctly
 

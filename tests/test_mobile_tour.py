@@ -5,7 +5,10 @@ real bottom-nav/drawer buttons. Check rendered controls, not merely overflow
 hidden on the page root. OREBIT_TEST_DIST can replay the previous artifact.
 """
 
-import functools, http.server, json, os, threading
+import functools
+import http.server
+import os
+import threading
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
@@ -242,6 +245,30 @@ try:
                         in " ".join(page.evaluate("__mobileErrors.splice(0)")),
                         name + " swallowed-render detector is live",
                     )
+                check(not page.locator(".orebit-phase-pill").count(), name + " web header has no Free badge")
+                # Browser install availability is an external browser event, not
+                # a test-created button. Reproduce the previously untested header.
+                page.evaluate("""() => {window.__installClicks=0;const event=new Event('beforeinstallprompt');event.prompt=()=>{window.__installClicks++};event.userChoice=Promise.resolve({outcome:'dismissed'});window.dispatchEvent(event);}""")
+                menu=page.locator(".mobile-nav-hamburger")
+                install=page.locator("[data-install-app]")
+                for control in (menu,install,page.locator("#lang-switch"),page.locator(".orebit-avatar")):
+                    check(fits(page,control) and control.bounding_box()["height"]>=43 and control.evaluate("e=>{const r=e.getBoundingClientRect();return e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))}"),name + " header control is touch-sized and unobscured with install visible " + str(width))
+                check(install.get_attribute("aria-label")=="Install app",name + " compact install icon has an accessible label")
+                install.click()
+                check(page.evaluate("__installClicks")==1,name + " install invokes the browser prompt exactly once")
+                menu.click()
+                check(page.locator("#mobileNavDrawer").evaluate('e=>e.classList.contains("show")') and menu.get_attribute("aria-expanded")=="true",name + " real header hamburger opens Steps with install visible")
+                page.locator("#mobileNavDrawer .drawer-close").click()
+                check(menu.get_attribute("aria-expanded")=="false",name + " closing the menu resets the real hamburger")
+                page.wait_for_function("()=>{const e=document.getElementById('mobileNavDrawer');return e.inert&&e.getBoundingClientRect().right<=0;}")
+                primary = page.locator('#tab1 .workflow-actions [data-action-role="next"]')
+                primary.scroll_into_view_if_needed()
+                check(
+                    primary.evaluate("e=>{const r=e.getBoundingClientRect();return [.1,.5,.9].every(x=>[.2,.5,.8].every(y=>e.contains(document.elementFromPoint(r.x+x*r.width,r.y+y*r.height))))}")
+                    and page.locator("#mobileTourBtn").is_visible()
+                    and not page.locator(".orebit-help-bubble").is_visible(),
+                    name + " mobile dashboard action is fully unobscured while Tour remains reachable",
+                )
                 before = raw(page)
                 page.locator('#mobileBottomNav [data-group="analysis"]').click()
                 check(
@@ -316,6 +343,8 @@ try:
                         == ("Steps" if language == "en" else "Alur"),
                         name + " mobile labels follow the real language control",
                     )
+                    check(install.get_attribute("aria-label")==("Install app" if language=="en" else "Install aplikasi"),name + " install accessible label follows EN/ID")
+                    check(menu.get_attribute("aria-label")==("Steps" if language=="en" else "Alur"),name + " header menu accessible label follows EN/ID")
                     tour(page, name, language)
                 page.locator("#mobileTourBtn").click()
                 page.set_viewport_size({"width": 568, "height": 320})

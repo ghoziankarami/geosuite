@@ -3672,6 +3672,7 @@ function buildBundle(projectName) {
     schema: 'orebit-project',
     schemaVersion: 2,
     sourcePhase: 'Resource',
+    schemaMeta: _lastSchemaMeta,
     name: projectName || 'Untitled Project',
     version: '1.0',
     phase: document.title.includes('Drillhole') ? 'P1' :
@@ -3776,7 +3777,8 @@ function loadBundle(bundle) {
     }
     // Carry forward user-assigned units from P2 so ingest/element detection respects
     // the unit choice. ingestDataset → finalizeUploadLoad reads _lastSchemaMeta.units.
-    _lastSchemaMeta = bundle.units && Object.keys(bundle.units).length ? {units:bundle.units} : null;
+    _lastSchemaMeta = bundle.schemaMeta || (bundle.units && Object.keys(bundle.units).length ? {units:bundle.units} : null);
+    if(bundle.units&&Object.keys(bundle.units).length)_lastSchemaMeta={..._lastSchemaMeta,units:bundle.units};
     window._lastSchemaMeta = _lastSchemaMeta;
     const parsed = {
       cols: bundle.data.cols.slice(),
@@ -11990,6 +11992,8 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
    attention:haveVario&&!variogramState.model.struct1&&variogramState.model.covarianceMode!=='model-range'?briefText('legacy'):report?massBasis+' '+briefText('attention',{missing:report.generated.blocks-report.estimated.blocks,fallback:passCounts?.[2]||0}):briefText('noEstimate'),
    next:briefText(report?'next':'fixNext')
  });
+ const upstreamScope=OrebitScreeningReport.sourceScope(_lastSchemaMeta).summary;
+ if(upstreamScope)OrebitScreeningReport.append(pdf,'Resource',[['Core source scope',upstreamScope]]);
  OrebitScreeningReport.append(pdf,'Resource',[
    ['Purpose','Initial screening and due-diligence insight. Confidence labels are not certified JORC/KCMI Resource categories.'],
    ['Input',DATA.name || 'Loaded composite dataset'],
@@ -12417,6 +12421,7 @@ function _provHeader(withCP) {
     '# https://orebit.id',
   ];
   if (window.OREBIT_BUILD_ID) h.push('# build: ' + window.OREBIT_BUILD_ID);
+  h.push(...OrebitScreeningReport.sourceScope(_lastSchemaMeta).lines);
   if (withCP) h.push(_CP_REVIEW_LINE);
   return h;
 }

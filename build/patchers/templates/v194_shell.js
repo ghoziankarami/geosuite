@@ -11,7 +11,7 @@
 (function () {{
   'use strict';
 
-  const PHASE_PILL = window.__OREBIT_RT__ ? 'Desktop Edition' : {pill!r};
+  const PHASE_PILL = window.__OREBIT_RT__ ? 'Desktop Edition' : 'Web';
   const LABEL_EN = {label_en!r};
   const LABEL_ID = {label_id!r};
   const TOUR_KEY = {tour_key!r};
@@ -376,7 +376,7 @@
     const header = document.querySelector('header.orebit-header');
     if (!header) return;
     const h1 = header.querySelector('h1');
-    if (h1 && !h1.querySelector('.orebit-phase-pill')) {{
+    if (h1 && window.__OREBIT_RT__ && !h1.querySelector('.orebit-phase-pill')) {{
       h1.textContent = LABEL_EN + ' ';
       const pill = document.createElement('span');
       pill.className = 'orebit-phase-pill';
@@ -999,6 +999,7 @@
         if(current)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
       }});
       nav.setAttribute('aria-label',t('nav.workflow'));
+      document.querySelector('.mobile-nav-hamburger')?.setAttribute('aria-label',t('nav.workflow'));
       if(drawer.classList.contains('show')){{renderDrawer(drawerKey);if(typeof trapFocus==='function')trapFocus(drawer);}}
     }};
     window.__updateMobileNavLabels=window.__updateMobileNavigation;

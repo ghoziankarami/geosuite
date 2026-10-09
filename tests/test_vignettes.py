@@ -126,6 +126,7 @@ def thalanga_consistency(d: dict, docs: dict[str, str]):
 
     # the prose quotes the JSON
     c, ind, a = d["core"], d["independent"], d["assay"]
+    check(c["fixes"].get("audit_verified") is True, "deleted source cells and the actual Au correction must survive the tutorial audit")
     quoted(docs, "grade codes bdl", c["grade_codes"]["bdl"], 0)
     quoted(docs, "cropped samples", c["crop"]["kept"], 0)
     quoted(docs, "zn cv", ind["zn_cv"], 2)

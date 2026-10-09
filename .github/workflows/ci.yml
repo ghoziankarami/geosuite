@@ -60,6 +60,7 @@ jobs:
           python tests/test_screening_navigation.py
           python tests/test_action_hierarchy.py
           python tests/test_core_training.py
+          python tests/test_core_validation_resolution.py
           python tests/test_mobile_tour.py
 
       - name: CSV import matches committed parser snapshots

@@ -225,9 +225,10 @@
         {
           "table": "assay",
           "summary": "1 rows edited, 0 added, 2 deleted",
-          "diffs": 1
+          "diffs": 33
         }
-      ]
+      ],
+      "audit_verified": true
     },
     "checks_after": [
       {

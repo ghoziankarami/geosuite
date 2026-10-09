@@ -53,6 +53,7 @@ sleep 2
 python3 tests/test_pipeline_known_answer.py
 python3 tests/test_lab_conventions.py
 python3 tests/test_grade_units.py
+python3 tests/test_core_validation_resolution.py
 python3 tests/test_estimation_inputs.py
 python3 tests/test_module_handoff.py
 python3 tests/test_pwa_install.py
@@ -125,3 +126,5 @@ four-card executive hierarchy, EN/ID text, page bounds/bookmarks, readable
 structured audit fields and independent selected-tonnage/grade/metal answers.
 The test also checks missing grades, tiny values, no estimate and preservation
 of the actual cutoff, confidence filter and existing grade-tonnage curve.
+
+The Core validation-resolution test uses fresh desktop/phone sessions and normal UI actions: known-source confirmation/cancellation, four-CSV upload, exact row/cell links, verified record Add/Apply, ID and measurement correction, Desurvey/Merge, native PDF/project export and actual project reopen. The swallowed-render detector has a live canary. `OREBIT_TEST_DIST` replays an immutable prior artifact for regression controls; it does not bypass app actions.

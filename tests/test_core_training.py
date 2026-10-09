@@ -294,8 +294,8 @@ try:
             "An invalid measured dip blocks downstream geometry after normal Apply changes",
         )
         check(
-            page.locator("#coreValidationRemedies")
-            .get_by_role("button", name="Inspect and edit table")
+            page.locator("#coreValidationResults")
+            .get_by_role("button", name="Open affected cell")
             .count()
             >= 1,
             "Measured-data failure offers an actionable manual correction",
@@ -427,6 +427,7 @@ try:
             "() => STATE.rawHeaders.assay.includes('Measured rock value')"
         )
         page.evaluate("showTab(7)")
+        page.locator("#coreValidationMapping > summary").click()
         page.locator("#map_assay_density").select_option("Measured rock value")
         page.locator("button[onclick=\"applyColumnMapping('assay')\"]").click()
         expected_density = [r["density"] for r in data["assay"]]

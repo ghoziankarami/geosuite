@@ -193,5 +193,16 @@
    catch(error){console.warn('PDF bridge failed, jsPDF fallback:',error);pdf.save(filename);}
    if(typeof window._recordExport==='function')window._recordExport('PDF','Orebit '+module+' - PDF Report',{filename,mime:'application/pdf',content:data.length<=1900000?data:''});
  }
- window.OrebitScreeningReport={prepare,append,prepend,interpretation,formatParameters,unitLabel,quantity,save};
+ // Carry source-declared exclusions through the CSV chain; this is provenance,
+ // never a claim that a downstream app independently validated the raw source.
+ function sourceScope(meta){
+   const line=Array.isArray(meta?.raw)?meta.raw.find(row=>typeof row==='string'&&row.startsWith('validation-scope: {')):null;
+   if(!line)return {lines:[],summary:''};
+   try{const r=JSON.parse(line.slice('validation-scope: '.length));
+     if(r.schema!=='orebit-core-validation-scope'||r.version!==1||!Array.isArray(r.included)||!Array.isArray(r.excluded)||typeof r.note!=='string')return {lines:[],summary:''};
+     const id=document.documentElement.lang==='id';
+     return {lines:['# '+line],summary:(id?'Lingkup sumber Core: ':'Core source scope: ')+r.included.length+(id?' lubang dipakai; ':' holes retained; ')+r.excluded.length+(id?' baris sumber dikecualikan. Alasan: ':' source records excluded. Reason: ')+r.note};
+   }catch(_error){return {lines:[],summary:''};}
+ }
+ window.OrebitScreeningReport={prepare,append,prepend,interpretation,formatParameters,unitLabel,quantity,save,sourceScope};
 })();

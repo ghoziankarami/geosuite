@@ -3337,99 +3337,9 @@ function plotTheme() {
   };
 }
 
-// ============= PNG EXPORT: FORCE WHITE, PUBLICATION-READY BACKGROUND =============
-// plotTheme() always renders charts with a fully TRANSPARENT paper/plot
-// background (rgba(0,0,0,0)) so they blend into the app's light or dark theme
-// on screen. Plotly.toImage() captures the graph div exactly as it is, so a
-// raw "Export PNG" inherited that transparency -- and a transparent PNG opened
-// outside a browser (Windows Photos, pasted into a slide/report, etc.) renders
-// as solid BLACK instead of see-through, which read to users as "the export
-// has a black background". Force the LIGHT theme's colors (white bg, dark
-// text/gridlines, on every x/y axis a chart has) just for the capture, then
-// put back whatever the live chart actually had -- exported PNGs always look
-// the same, readable on white, regardless of which theme the app is in.
-async function plotlyToImageWhiteBg(gd, opts) {
-  if (!gd || !window.Plotly) return Plotly.toImage(gd, opts);
-  const layout = gd.layout || (gd._fullLayout) || {};
-  const full = gd._fullLayout || layout;
-  const axisKeys = Object.keys(layout).filter(k => /^[xy]axis\d*$/.test(k));
-  const prev = { paper_bgcolor: layout.paper_bgcolor, plot_bgcolor: layout.plot_bgcolor, 'font.color': layout.font && layout.font.color };
-  const upd = { paper_bgcolor: '#ffffff', plot_bgcolor: '#ffffff', 'font.color': '#0f172a' };
-  axisKeys.forEach(k => {
-    const ax = layout[k] || {};
-    prev[k + '.gridcolor'] = ax.gridcolor;
-    prev[k + '.zerolinecolor'] = ax.zerolinecolor;
-    prev[k + '.linecolor'] = ax.linecolor;
-    upd[k + '.gridcolor'] = '#f1f5f9';
-    upd[k + '.zerolinecolor'] = '#cbd5e1';
-    if (ax.linecolor) upd[k + '.linecolor'] = '#cbd5e1';
-  });
-
-  // ── Typography must grow with the export canvas ──
-  // Plotly.toImage re-renders at opts.width (1400-1600px) but leaves every font
-  // at its on-screen size. Measured 2026-09-02: a chart shown 514px wide exports
-  // at 1400px -- 2.72x bigger -- while its labels stay 12.5px, so axis titles and
-  // ticks land at ~37% of the on-screen prominence and read as unreadable. Scale
-  // every text size AND the margins by the same factor the canvas grew, so the
-  // PNG is the on-screen chart enlarged rather than a differently-proportioned
-  // one. Effective sizes come from _fullLayout (Plotly's resolved defaults live
-  // there, not in .layout), and those same values are restored afterwards so the
-  // live chart is identical to before the export.
-  const onW = gd.getBoundingClientRect().width || full.width || 800;
-  const exW = (opts && opts.width) || onW;
-  const fontK = Math.min(2.5, Math.max(1, exW / onW));
-  if (fontK > 1.05) {
-    const sc = (v, d) => Math.round((typeof v === 'number' ? v : d) * fontK * 10) / 10;
-    prev['font.size'] = (full.font && full.font.size) || 12.5;
-    upd['font.size'] = sc(prev['font.size'], 12.5);
-    if (full.title && full.title.font) {
-      prev['title.font.size'] = full.title.font.size || 17;
-      upd['title.font.size'] = sc(prev['title.font.size'], 17);
-    }
-    if (full.legend && full.legend.font) {
-      prev['legend.font.size'] = full.legend.font.size || 12.5;
-      upd['legend.font.size'] = sc(prev['legend.font.size'], 12.5);
-    }
-    axisKeys.forEach(axk => {
-      const fa = full[axk] || {};
-      // Tick labels are the DENSE text: charts using tickmode:'array' (e.g. the
-      // CDF's 0/0.25/0.5/0.75/0.9/0.95/0.99/1) pin every label, and Plotly
-      // cannot thin an explicit tick array, so scaling ticks as hard as titles
-      // makes the crowded end of such an axis collide. Titles/labels -- the
-      // things actually reported unreadable -- still scale fully; ticks scale
-      // more gently so they gain readability without overlapping.
-      const tickK = Math.min(fontK, 1.8);
-      const scTick = (v, d) => Math.round((typeof v === 'number' ? v : d) * tickK * 10) / 10;
-      prev[axk + '.tickfont.size'] = (fa.tickfont && fa.tickfont.size) || 11;
-      upd[axk + '.tickfont.size'] = scTick(prev[axk + '.tickfont.size'], 11);
-      if (fa.title && fa.title.font) {
-        prev[axk + '.title.font.size'] = fa.title.font.size || 15;
-        upd[axk + '.title.font.size'] = sc(prev[axk + '.title.font.size'], 15);
-      }
-    });
-    (full.annotations || []).forEach((an, i) => {
-      const sz = (an.font && an.font.size) || (full.font && full.font.size) || 12.5;
-      prev['annotations[' + i + '].font.size'] = sz;
-      upd['annotations[' + i + '].font.size'] = sc(sz, 12.5);
-    });
-    ['l', 'r', 't', 'b'].forEach(side => {
-      const m = full.margin && full.margin[side];
-      if (typeof m === 'number') {
-        prev['margin.' + side] = m;
-        upd['margin.' + side] = Math.round(m * fontK);
-      }
-    });
-  }
-
-  try { await Plotly.relayout(gd, upd); } catch (e) { console.warn('plotlyToImageWhiteBg relayout failed', e); }
-  try {
-    return await Plotly.toImage(gd, opts);
-  } finally {
-    const restore = {};
-    Object.keys(prev).forEach(k => { if (prev[k] !== undefined) restore[k] = prev[k]; });
-    if (Object.keys(restore).length) { try { await Plotly.relayout(gd, restore); } catch (e) {} }
-  }
-}
+// Shared PNG export makes a light-theme snapshot and scales its text without
+// changing the active graph, camera, filters or analytical data.
+/* @orebit-inline: shared/plots/png-export.js */
 
 /* ============= GEOSUITE SHARED SATELLITE BASEMAP HELPERS (ported from Core) =============
    Self-contained: UTM→lon/lat projection + CRS parsing so the spatial map can render
@@ -10046,7 +9956,9 @@ function scene3dConfig(userExag) {
  },
  aspectmode: 'manual',
  aspectratio: { x: xr / horiz, y: yr / horiz, z: Math.min(1.2, (zr / horiz) * autoExag * userExag) },
- camera: { eye: { x: 1.3, y: 1.3, z: 0.55 } },
+ // Start with the complete model and axis labels in view. Rotation/zoom
+ // remain native Plotly controls; export snapshots retain the current camera.
+ camera: { eye: { x: 1.7, y: 1.7, z: 0.72 } },
  bgcolor: 'rgba(248,250,252,0.8)'
  };
 }

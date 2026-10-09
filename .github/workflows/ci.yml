@@ -60,6 +60,7 @@ jobs:
           python tests/test_module_handoff.py
           python tests/test_resource_compatibility.py
           python tests/test_screening_reports.py
+          python tests/test_native_png_export.py
           python tests/test_assay_performance.py
           python tests/test_assay_large_report.py
           python tests/test_assay_domain_names.py

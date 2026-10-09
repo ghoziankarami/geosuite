@@ -55,6 +55,7 @@ python3 tests/test_lab_conventions.py
 python3 tests/test_grade_units.py
 python3 tests/test_core_validation_resolution.py
 python3 tests/test_estimation_inputs.py
+python3 tests/test_native_png_export.py
 python3 tests/test_module_handoff.py
 python3 tests/test_pwa_install.py
 python3 tests/test_pwa_subpath.py
@@ -66,6 +67,31 @@ python3 tests/test_vignettes.py
 Stop the background servers afterward. `test_vignettes.py` drives tutorial workflows and may take longer or require access to the public tutorial datasets. The public [CI workflow](../.github/workflows/ci.yml) is the reference for the complete tested command sequence and environment.
 
 For a numeric fix, add a small known-answer case with an independently calculated expected value. A test that calls the same calculation twice will not catch a wrong formula. For a UI or import fix, exercise the user path that was broken, including file upload when the bug only appears after upload.
+
+## Repeatable workflow measurements
+
+The optional benchmark uses a sibling checkout of the public
+[orebit-datasets](https://github.com/ghoziankarami/orebit-datasets). It creates and
+removes its own CSVs, server and fresh browser contexts. Build first, then run:
+
+```bash
+python3 tests/benchmark_workflow_performance.py --datasets ../orebit-datasets \
+  --output ../workflow-observations.json --repeats 3 \
+  --device-label "my-device-browser" --contention "describe other running work"
+```
+
+It checks complete populations, supplied columns, units, coordinate bounds and
+renderer errors while measuring actual Core → Assay → Resource actions. Chromium
+also provides heap snapshots at action boundaries; these include instrumentation
+and are not peak process memory. Latency has no default pass threshold. Record
+hardware/browser/load before comparing results; the benchmark does not certify
+native Windows, Safari/Dock, GPU rendering, estimation or production stability.
+`--browser webkit` selects Playwright's WebKit, not installed Safari.
+
+Native PNG export is shared in `src/shared/plots/png-export.js`. The actual PNG
+and ZIP regression checks title/scene boundaries, dark-theme ink, failure retry
+and unchanged live plots/data. Export uses an isolated Plotly snapshot; model,
+filter and camera controls remain editable in the app.
 
 ## Windows desktop dependency inputs
 

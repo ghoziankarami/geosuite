@@ -255,6 +255,30 @@ def main():
                 audit = page.evaluate('async()=>await OrebitProject.save("duplicate-overlap")')
                 changes = [d for e in audit['metadata']['audit']['changes'] for d in e.get('diffs', [])]
                 check(any(d.get('kind') == 'deleted' and d.get('col') == 'x' and d.get('old') == 1001 for d in changes), 'Deleted source values remain in the saved correction audit')
+                page.locator('#lang-switch').click()
+                if page.locator('.lang-picker-overlay').count():
+                    page.locator('.lang-picker-overlay [data-pick="en"]').click()
+                page.wait_for_function('()=>document.documentElement.lang==="en"')
+                tables['collar'] = 'hole_id,E_custom,N_custom,Z_custom,TD_custom\nFIX-001,1000,2000,300,10\nFIX-002,1100,2100,301,10\n'
+                tables['assay'] = 'hole_id,from_m,to_m,ni_pct\nFIX-001,0,7,1.1\nFIX-001,7,10,1.2\nFIX-002,0,10,1.4\n'
+                for name, text in tables.items():
+                    (folder / (name + '.csv')).write_text(text)
+                stage(page, 2)
+                page.evaluate('()=>{window.__beforeMappingCsv=STATE.collar;}')
+                page.locator('#fileInput').set_input_files([str(p) for p in paths])
+                page.wait_for_function('()=>STATE.collar!==window.__beforeMappingCsv&&STATE.collar.length===2')
+                stage(page, 7)
+                check(page.locator('#tab7 [data-workflow-next]').is_disabled() and page.evaluate('()=>STATE.collar.every(r=>r.x===null)&&STATE.rawHeaders.collar.includes("E_custom")'), 'Unknown coordinate headers remain available for manual assignment without new aliases')
+                page.locator('[data-repair-issue="completeness:collar"] [data-repair-row="0"]').click()
+                page.locator('#collarPanel [data-repair-mapping="collar"]').click()
+                check(page.locator('#map_collar_x').is_visible() and page.evaluate('()=>document.activeElement.id==="map_collar_x"'), 'Contextual mapping opens and focuses the actual affected column selector')
+                for key, value in [('x','E_custom'),('y','N_custom'),('z','Z_custom'),('depth','TD_custom')]:
+                    page.locator('#map_collar_' + key).select_option(value)
+                page.locator('#coreValidationMapping button[onclick="applyColumnMapping(\'collar\')"]').click()
+                check(page.evaluate('()=>JSON.stringify(STATE.collar.map(r=>[r.x,r.y,r.z,r.depth]))') == '[[1000,2000,300,10],[1100,2100,301,10]]', 'Normal Apply Mapping uses verified raw coordinates without entering replacement measurements')
+                check(page.locator('#tab7 [data-workflow-next]').is_enabled() and page.locator('[data-repair-issue="completeness:collar"]').count() == 0, 'Mapping Apply refreshes actual findings and main continuation immediately')
+                mapping_project = page.evaluate('async()=>await OrebitProject.save("mapped-source")')
+                check(any(e['action'] == 'Column mapping' and 'E_custom' in e['detail'] for e in mapping_project['metadata']['audit']['pipeline']) and page.evaluate('()=>JSON.stringify(STATE.assay.map(r=>r.ni_pct))') == '[1.1,1.2,1.4]', 'Source column assignments are recorded and measured grades remain unchanged')
                 render_errors = page.evaluate('()=>window.__repairErrors')
                 assert not errors and not render_errors, {'page_errors': errors, 'renderer_errors': render_errors}
                 check(True, 'Complete correction journey has no renderer or page errors')

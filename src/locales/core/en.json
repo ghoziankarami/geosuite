@@ -993,5 +993,6 @@
   "core.repair.sourceRecord": "Source record",
   "core.repair.pdfLimit": "The most recent {n} cell changes are shown. Export the .orebit project for the complete correction audit.",
   "core.repair.draftInstructions": "This new record is a draft. Fill the highlighted fields from verified measurements, then apply and revalidate. Empty measurements are not estimated.",
-  "core.repair.applyAndReview": "Apply changes & revalidate"
+  "core.repair.applyAndReview": "Apply changes & revalidate",
+  "core.repair.assignColumns": "Assign source columns"
 }

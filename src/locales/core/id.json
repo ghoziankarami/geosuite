@@ -993,5 +993,6 @@
   "core.repair.sourceRecord": "Catatan sumber",
   "core.repair.pdfLimit": "Ditampilkan {n} perubahan sel terakhir. Ekspor proyek .orebit untuk audit perbaikan lengkap.",
   "core.repair.draftInstructions": "Record baru ini masih draf. Isi kolom yang ditandai dari pengukuran terverifikasi, lalu terapkan dan validasi ulang. Pengukuran kosong tidak diperkirakan.",
-  "core.repair.applyAndReview": "Terapkan perubahan & validasi ulang"
+  "core.repair.applyAndReview": "Terapkan perubahan & validasi ulang",
+  "core.repair.assignColumns": "Sesuaikan kolom sumber"
 }

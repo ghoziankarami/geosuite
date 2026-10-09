@@ -136,6 +136,12 @@
   function returnToResults(){
     context=null;showTab(7);document.getElementById('coreValidationResults')?.scrollIntoView({block:'start'});
   }
+  function openMapping(table,columns){
+    context=null;showTab(7);
+    const target=columns.map(col=>document.getElementById('map_'+table+'_'+col)).find(Boolean)||document.getElementById('map_'+table+'_hole_id');
+    const host=document.getElementById('coreValidationMapping');if(host)host.open=true;
+    if(target){let parent=target.parentElement;while(parent){if(parent.tagName==='DETAILS')parent.open=true;parent=parent.parentElement;}target.scrollIntoView({block:'center'});target.focus({preventScroll:true});}
+  }
   function addRecord(){
     const c=currentContext();if(!c||c.added)return;
     // Only the known identifier is prefilled. Measured XYZ/direction/intervals
@@ -158,6 +164,7 @@
     const back=button(tr('revalidate'),returnToResults,!dirty&&c.applied);back.dataset.repairReturn='true';back.dataset.actionRole=!dirty&&c.applied?'next':'inspect';actions.append(back);
     actions.append(button(tr('showAll'),()=>{context=null;rerenderTable(table);}));
     actions.append(button(tr('import'),()=>showTab(2)));
+    if(STATE.rawHeaders[table]?.length){const mapping=button(tr('assignColumns'),()=>openMapping(table,c.columns));mapping.dataset.repairMapping=table;mapping.dataset.actionRole='custom';actions.append(mapping);}
     if(c.issue.sources){
       for(const source of c.issue.sources){const inspect=button(tr('inspectSource').replace('{table}',window.__t('core.table.'+source)),()=>{
         const record=STATE[source].map((r,idx)=>({idx,hole_id:r.hole_id,columns:['hole_id']})).find(r=>r.hole_id===c.hole_id);locate(c.id,record,source);

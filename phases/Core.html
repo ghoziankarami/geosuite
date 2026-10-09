@@ -7132,7 +7132,7 @@ function renderColumnMapping(container) {
             <thead><tr><th data-i18n="core.targetColumn">Target Column</th><th data-i18n="core.mappedToCsv">Mapped to CSV Column</th></tr></thead>
             <tbody>${mappingRows}</tbody>
           </table>
-          <button class="btn small" onclick="applyColumnMapping('${tableName}')" style="margin-top:8px;" data-i18n="core.applyMapping">Apply Mapping</button>
+          <button class="btn small" onclick="applyColumnMapping('${tableName}')" data-action-role="apply" style="margin-top:8px;" data-i18n="core.applyMapping">Apply Mapping</button>
           ${gradeSectionHTML}
         </div>
       </details>
@@ -7225,8 +7225,10 @@ function applyColumnMapping(tableName) {
   STATE.deletedIdx[tableName].clear();
 
   const mappedList = Object.keys(mapping).length ? Object.entries(mapping).map(([t,s]) => `${s}→${t}`).join(', ') : (t('core.applyColumnMapping.noChanges'));
+  logPipeline('Column mapping', tableName+': '+mappedList);
   toast(t('core.remapTable.remapped').replace('{table}', tableName).replace('{n}', remapped.length).replace('{list}', mappedList), 'good');
   renderValidation();
+  window.OrebitScreeningWorkflow?.refresh();
 }
 
 // ============= GO FIX MISSING (Improvement 4) =============

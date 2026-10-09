@@ -34,15 +34,24 @@ def page(browser,phase):
     pg=browser.new_page(accept_downloads=True,viewport={'width':1400,'height':1000})
     pg.goto(f'http://127.0.0.1:{server.server_port}/{phase}.html',wait_until='domcontentloaded')
     pg.wait_for_function("() => typeof showTab === 'function'")
-    pg.evaluate("() => document.querySelectorAll('.lang-picker-overlay,#tourOverlay').forEach(e=>e.remove())")
+    pg.wait_for_function('()=>window.__i18nBooted===true')
+    if pg.locator('.lang-picker-overlay').count():
+        pg.locator('.lang-picker-overlay [data-pick="en"]').click()
     return pg
 
 def tab(pg,n): pg.evaluate(f'showTab({n})')
 
 def assign(pg,table,mapping):
     tab(pg,7)
-    for key,val in mapping.items(): pg.locator(f'#map_{table}_{key}').select_option(val)
-    pg.evaluate(f"applyColumnMapping('{table}')")
+    panel=pg.locator('#coreValidationMapping')
+    if panel.get_attribute('open') is None:
+        panel.locator(':scope > summary').click()
+    group=pg.locator(f'#map_{table}_hole_id').locator('xpath=ancestor::details[1]')
+    if group.get_attribute('open') is None:
+        group.locator(':scope > summary').click()
+    for key,val in mapping.items():
+        pg.locator(f'#map_{table}_{key}').select_option(val)
+    group.locator(f"button[onclick=\"applyColumnMapping('{table}')\"]").click()
 
 with tempfile.TemporaryDirectory() as temp:
     tmp=Path(temp)

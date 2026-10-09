@@ -5607,12 +5607,13 @@ function applyChanges(tableName) {
 
   // === Improvement 2: detailed post-apply toast ===
   const isIdApply = document.documentElement.lang === 'id';
-  const editedRowNums = [...new Set(diffs.map(d => d.idx))].slice(0, 5);
-  const editedCols = [...new Set(diffs.map(d => d.col))];
+  const editedDiffs = diffs.filter(d => !d.kind);
+  const editedRowNums = [...new Set(editedDiffs.map(d => d.idx))].slice(0, 5).map(idx => idx + 1);
+  const editedCols = [...new Set(editedDiffs.map(d => d.col))];
   const editedDetail = editedCount > 0
     ? (isIdApply
-        ? `${editedCount} sel diedit (${editedCols.join(', ')}: baris ${editedRowNums.join(', ')}${editedCount > 5 ? ', …' : ''})`
-        : `${editedCount} cells edited (${editedCols.join(', ')}: row ${editedRowNums.join(', ')}${editedCount > 5 ? ', …' : ''})`)
+        ? `${editedCount} baris diedit (${editedCols.join(', ')}: baris ${editedRowNums.join(', ')}${editedCount > 5 ? ', …' : ''})`
+        : `${editedCount} rows edited (${editedCols.join(', ')}: row ${editedRowNums.join(', ')}${editedCount > 5 ? ', …' : ''})`)
     : (isIdApply ? '0 sel diedit' : '0 cells edited');
   const detail = isIdApply
     ? `Diterapkan: ${editedDetail}, ${addedCount} baris ditambah, ${deletedCount} dihapus`

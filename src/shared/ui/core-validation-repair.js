@@ -64,7 +64,7 @@
   const sameSource = source => source.every((rows,i) => rows === STATE[tables[i]]);
   const filled = value => value !== null && value !== undefined && String(value).trim() !== '';
   const el = (tag,text,className) => {const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(className)n.className=className;return n;};
-  const button = (text,fn,primary=false) => {const n=el('button',text);n.type='button';n.className='btn'+(primary?'':' secondary');n.onclick=fn;return n;};
+  const button = (text,fn,primary=false) => {const n=el('button',text);n.type='button';n.className='btn'+(primary?'':' secondary');n.dataset.actionRole=primary?'apply':'inspect';n.onclick=fn;return n;};
   function recordsFor(check) {
     if(check.records)return check.records;
     const holes=new Set(check.holes||[]);
@@ -155,7 +155,7 @@
     if(!hasRows&&!c.added&&!c.applied){const add=button(tr('addRecord'),addRecord,true);add.dataset.repairAdd='true';actions.append(add);}
     const dirty=STATE.edits[table].size||STATE.newRows[table].length||STATE.deletedIdx[table].size;
     if(dirty){const apply=button(tr('applyAndReview'),()=>{applyChanges(table);returnToResults();},true);apply.dataset.repairApply='true';actions.append(apply);}
-    const back=button(tr('revalidate'),returnToResults,!dirty&&c.applied);back.dataset.repairReturn='true';actions.append(back);
+    const back=button(tr('revalidate'),returnToResults,!dirty&&c.applied);back.dataset.repairReturn='true';back.dataset.actionRole=!dirty&&c.applied?'next':'inspect';actions.append(back);
     actions.append(button(tr('showAll'),()=>{context=null;rerenderTable(table);}));
     actions.append(button(tr('import'),()=>showTab(2)));
     if(c.issue.sources){
@@ -187,7 +187,7 @@
         issue.records.slice(0,5).forEach(record=>section.append(makeRecord(record)));
         if(issue.records.length>5){const more=el('details');more.append(el('summary',tr('more').replace('{n}',issue.records.length-5)));let shown=5;const batch=()=>{const end=Math.min(shown+25,issue.records.length);issue.records.slice(shown,end).forEach(record=>more.append(makeRecord(record)));shown=end;if(shown<issue.records.length){const next=button(tr('nextRows'),()=>{next.remove();batch();});more.append(next);}};more.addEventListener('toggle',()=>{if(more.open&&shown===5)batch();});section.append(more);}
       }else{
-        const action=button(issue.code==='missing-input'?tr('import'):tr('openIssue').replace('{table}',window.__t('core.table.'+issue.table)),()=>{if(issue.code==='missing-input')showTab(2);else if(sameSource(source))locate(issue.id);else returnToResults();},true);action.dataset.repairLocate=issue.id;section.append(action);
+        const action=button(issue.code==='missing-input'?tr('import'):tr('openIssue').replace('{table}',window.__t('core.table.'+issue.table)),()=>{if(issue.code==='missing-input')showTab(2);else if(sameSource(source))locate(issue.id);else returnToResults();});action.dataset.repairLocate=issue.id;section.append(action);
       }
       results.append(section);
     }

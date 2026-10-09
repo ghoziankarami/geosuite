@@ -109,6 +109,7 @@ def main():
                 check(page.evaluate('()=>{const r=document.getElementById("coreValidationResults"),m=document.getElementById("coreValidationRemedies"),a=document.querySelector("#tab7 .workflow-actions");return !!(r.compareDocumentPosition(m)&Node.DOCUMENT_POSITION_FOLLOWING)&&!!(r.compareDocumentPosition(a)&Node.DOCUMENT_POSITION_FOLLOWING);}'), 'Results precede repairs and generic actions')
                 check(page.locator('#coreValidationMapping').get_attribute('open') is None, 'Mapping stays secondary to actual findings')
                 check(page.locator('#coreValidationResults [data-repair-locate^="missing-collar:"]').count() == 2, 'Default names both exact orphan IDs instead of generic table links')
+                check(page.locator('#coreValidationResults [data-repair-locate^="missing-collar:"]').first.get_attribute('data-action-role') == 'inspect', 'Inspecting a finding uses the shared secondary action hierarchy')
                 if PROOF:
                     page.locator('#coreValidationResults').screenshot(path=str(PROOF / f'default-findings-{viewport["width"]}.png'))
                 prior = page.evaluate('()=>JSON.stringify([STATE.assay,STATE.survey])')
@@ -141,6 +142,7 @@ def main():
                 check(page.locator('#collarPanel .editable-table tbody tr').count() == 0, 'Missing collar is visibly absent instead of showing unrelated good rows')
                 page.locator('#collarPanel [data-repair-add]').click()
                 check(page.evaluate('()=>STATE.newRows.collar[0].hole_id==="FIX-002"&&["x","y","z","depth"].every(k=>STATE.newRows.collar[0][k]===null)'), 'Add prefills only identifier, never coordinates or depth')
+                check(page.locator('#collarPanel [data-repair-apply]').get_attribute('data-action-role') == 'apply' and page.locator('#collarPanel [data-repair-apply]').evaluate('(el)=>getComputedStyle(el).backgroundColor') == 'rgb(8, 126, 130)', 'Applying source corrections uses the shared prominent primary action')
                 check(page.locator('#collarPanel [data-repair-apply]').is_visible() and 'draft' in page.locator('#collarPanel .core-repair-context').inner_text(), 'New collar clearly identifies its draft and Apply/revalidate action')
                 check(page.locator('#tab3 [data-workflow-next]').count() == 0, 'Focused correction removes unrelated advance-to-Survey action')
                 # Hold the real compact editor through its one-second UI sync.

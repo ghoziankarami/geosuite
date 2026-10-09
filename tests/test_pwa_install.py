@@ -69,6 +69,12 @@ def serve(directory: Path):
     class Quiet(http.server.SimpleHTTPRequestHandler):
         def log_message(self, *args):
             pass
+        def end_headers(self):
+            # Prime an actual long-lived HTTP cache entry before migration.
+            # The worker must revalidate it; a fresh 200 cannot hide the 308.
+            if not self.server.test_root_routes and urllib.parse.urlsplit(self.path).path in ['/try/'+mod+'.html' for mod in ('Core','Assay','Resource')]:
+                self.send_header('Cache-Control','public, max-age=3600')
+            super().end_headers()
         def do_GET(self):
             path=urllib.parse.urlsplit(self.path)
             if self.server.test_root_routes and path.path in ['/try/'+mod+'.html' for mod in ('Core','Assay','Resource')]:

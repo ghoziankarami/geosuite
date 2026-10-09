@@ -87,7 +87,9 @@ async function networkFirst(request) {
   const controller=new AbortController();
   const timer=hit?setTimeout(()=>controller.abort(),8000):null;
   try {
-    const res = await fetch(request,{signal:controller.signal});
+    // Revalidate the HTTP cache as well as our offline cache. A still-fresh
+    // legacy 200 otherwise hides a new module/route until its cache expires.
+    const res = await fetch(request,{signal:controller.signal,cache:'no-cache'});
     // fetch follows redirects before respondWith. Return a navigation redirect
     // so an old /try/ URL adopts the root scope instead of retaining that path.
     if (request.mode === 'navigate' && res.redirected && res.url &&

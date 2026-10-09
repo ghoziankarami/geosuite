@@ -12476,7 +12476,7 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
       pdf.setLineHeightFactor(logLineHeight * pdf.internal.scaleFactor / 9);
       _plog.forEach(e => {
         pdf.setFontSize(9); pdf.setFont('helvetica','normal');
-        const detLines = pdf.splitTextToSize(String(e.detail || ''), W - 55 - 22);
+        const detLines = pdf.splitTextToSize(String(e.detail || ''), W - 55 - 38);
         const time = new Date(e.at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         let at = 0;
         do {

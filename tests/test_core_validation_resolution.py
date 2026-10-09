@@ -440,6 +440,8 @@ def main():
                     check(len(log_pages)>1 and all(f'AUDIT-NOTE-{i}-END' in log_text for i in range(1,6)), 'Long processing notes retain every scoped decision on paginated log pages')
                     spans=[span for p in log_pages for block in p.get_text('dict')['blocks'] for line in block.get('lines',[]) for span in line['spans'] if span['size']>=8.9 and span['bbox'][3]>p.rect.height-40]
                     check(not spans,'Processing log body never enters the footer or falls off the PDF page')
+                    detail_spans=[span for p in log_pages for block in p.get_text('dict')['blocks'] for line in block.get('lines',[]) for span in line['spans'] if abs(span['bbox'][0]-55*72/25.4)<1]
+                    check(all(span['bbox'][2]<=(log_pages[0].rect.width-38*72/25.4)+1 for span in detail_spans), 'Processing log detail stays clear of the separate time column')
                 context.close()
             browser.close()
     finally:

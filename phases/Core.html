@@ -5310,7 +5310,7 @@ function renderRow(tableName, row, idx, kind, displayCols, requiredCols, cellIss
     const isMissing = hm && hm.table === tableName && hm.col === col && (val === null || val === undefined || val === '');
     const cellCls = (isMissing ? 'cell-missing' : cellIssues[col] ? 'cell-invalid' : '') + ' editable' + (window.OrebitCoreRepair?.cellFocused(tableName,idx,col)?' cell-validation-focus':'');
     const title = isMissing ? `title="${escapeHtml(t('core.renderRow.missingClickToEdit').replace('{col}', col))}"` : cellIssues[col] ? `title="${cellIssues[col]}"` : '';
-    return `<td class="${cellCls}" data-col="${escapeHtml(col)}" ${title} onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();editCell(this, '${tableName}', ${idx}, '${col}', ${isNew});}" onclick="editCell(this, '${tableName}', ${idx}, '${col}', ${isNew})">${escapeHtml(display)}</td>`;
+    return `<td class="${cellCls}" tabindex="${window.OrebitCoreRepair?.cellFocused(tableName,idx,col)||col===displayCols[0]?0:-1}" data-col="${escapeHtml(col)}" ${title} onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();editCell(this, '${tableName}', ${idx}, '${col}', ${isNew});}" onclick="editCell(this, '${tableName}', ${idx}, '${col}', ${isNew})">${escapeHtml(display)}</td>`;
   }).join('');
 
   const action = isDeleted

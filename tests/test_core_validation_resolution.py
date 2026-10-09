@@ -13,7 +13,7 @@ import threading
 from pathlib import Path
 
 import fitz
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / 'build/build.mjs').exists())
 DIST = Path(os.environ.get('OREBIT_TEST_DIST', ROOT / 'dist'))
@@ -68,7 +68,9 @@ def upload(page, paths):
 def edit(page, table, idx, col, value, keyboard=False):
     cell = page.locator(f'#{table}Panel tr[data-idx="{idx}"] td[data-col="{col}"]')
     if keyboard:
+        expect(cell).to_have_attribute("tabindex", "0")
         cell.focus()
+        expect(cell).to_be_focused()
         cell.press('Enter')
     else:
         cell.click()

@@ -148,10 +148,18 @@ def core_stage(br, site, tmp, R):
                                             sample_id: STATE.assay[i].sample_id, zn_ppm: STATE.assay[i].zn_ppm}));
         const au = STATE.assay.findIndex(r => r.hole_id === 'TH35' && Number(r.from_m) === 100 && Number(r.au_gpt) === 1380);
         out.au = au >= 0 ? {hole: 'TH35', from: 100, to: 100.2, au_gpt: STATE.assay[au].au_gpt, ag_gpt: STATE.assay[au].ag_gpt, zn_ppm: STATE.assay[au].zn_ppm} : null;
+        // Snapshot the actual records before deletion; verify every original
+        // field (including missing values) survives the audit, independently
+        // of the expected count in the committed tutorial JSON.
+        const expectedDeleted = spots.flatMap(idx => Object.entries(STATE.assay[idx]).map(([col,old]) => ({idx,col,old})));
         if (au >= 0) setCellValue('assay', au, 'au_gpt', null, false);
         spots.sort((p, q) => q - p).forEach(i => deleteRow('assay', i, false));
         applyChanges('assay');
         out.change_log = STATE.CHANGE_LOG.map(e => ({table: e.table, summary: e.summary, diffs: (e.diffs || []).length}));
+        const recorded = STATE.CHANGE_LOG.flatMap(e => e.diffs || []);
+        out.audit_verified = expectedDeleted.length > 0 && expectedDeleted.every(want =>
+            recorded.some(d => d.kind === 'deleted' && d.idx === want.idx && d.col === want.col && d.old === want.old && d.new === null)) &&
+            recorded.some(d => d.idx === au && d.col === 'au_gpt' && d.old === 1380 && d.new === null);
         return out;
     }""")
     c["fixes"] = fixes

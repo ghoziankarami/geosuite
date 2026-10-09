@@ -118,6 +118,7 @@ assay: 1 rows edited, 0 added, 2 deleted
 ```
 
 CHANGE_LOG lengkap tersimpan dalam proyek Core dan PDF. CSV cropped mencatat scope validasi dan merujuk audit tersebut; seluruh riwayat edit tidak disimpan di CSV.
+Audit ini menyimpan 33 perubahan sel: satu nilai Au yang dikosongkan dan 32 field asli dari dua record yang dihapus. Field kosong ikut dicatat agar isi record asal dapat ditelusuri.
 
 ### Mengapa status tetap "FIX REQUIRED", dan itu benar
 

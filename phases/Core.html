@@ -6910,6 +6910,10 @@ function mapShowLabelsChanged(checked) {
 }
 
 /* ---- Per-Hole Status Table (drilldown) ---- */
+function _coreMapHasXY(row) {
+  return ['x','y'].every(k => row[k] !== null && row[k] !== undefined &&
+    String(row[k]).trim() !== '' && Number.isFinite(Number(row[k])));
+}
 function buildHoleStatusData() {
   const collarIds = new Set(STATE.collar.map(r => r.hole_id).filter(Boolean));
   const surveyIds = new Set(STATE.survey.map(r => r.hole_id).filter(Boolean));
@@ -7870,7 +7874,7 @@ function renderValidation() {
     // hand Plotly "MNaN,NaN" geometry. 2026-08-22.
     STATE.collar.forEach(c => {
       if (!c.hole_id) return;
-      if (!Number.isFinite(Number(c.x)) || !Number.isFinite(Number(c.y))) return;
+      if (!_coreMapHasXY(c)) return;
       if (STATE.mapUI.prospect && c.prospect !== STATE.mapUI.prospect) return;
       const hid = c.hole_id;
       const hasSurvey = surveyIds.has(hid);
@@ -11815,7 +11819,7 @@ function _p1Stats(values) {
 // Returns the div id on success, or null. Caller must remove the div after use.
 async function _p1RenderCollarMapForPDF() {
   if (!window.Plotly) return null;
-  const holes = buildHoleStatusData().filter(h => isFinite(Number(h.x)) && isFinite(Number(h.y)));
+  const holes = buildHoleStatusData().filter(_coreMapHasXY);
   if (!holes.length) return null;
 
   const STATUS_COLOR = { complete: '#16a34a', noSurvey: '#eab308', noGeo: '#ea580c', noAssay: '#dc2626', orphan: '#dc2626' };

@@ -70,6 +70,12 @@ def serve(directory: Path):
         def log_message(self, *args):
             pass
         def do_GET(self):
+            path=urllib.parse.urlsplit(self.path)
+            if self.server.test_root_routes and path.path in ['/try/'+mod+'.html' for mod in ('Core','Assay','Resource')]:
+                self.send_response(308)
+                self.send_header('Location',path.path.removeprefix('/try')+('?' + path.query if path.query else ''))
+                self.end_headers()
+                return
             failure=self.server.test_responses.get(urllib.parse.urlsplit(self.path).path)
             if failure:
                 status,body=failure
@@ -78,6 +84,7 @@ def serve(directory: Path):
     handler = functools.partial(Quiet, directory=str(directory))
     httpd = http.server.ThreadingHTTPServer(("127.0.0.1", port), handler)
     httpd.test_responses={}
+    httpd.test_root_routes=False
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     return httpd, f"http://localhost:{port}"
 
@@ -98,6 +105,10 @@ def main():
         shutil.copy2(dist / f, site / f)
     shutil.copytree(dist / "pwa", site / "pwa")
     shutil.copytree(vendor_dir(root), site / "vendor")
+    # Preserve a real former /try/ shell to exercise an existing SW registration,
+    # then turn on the same entry redirects as the reviewed Nginx configuration.
+    shutil.copytree(site, site.parent / (site.name+'-legacy'))
+    shutil.move(str(site.parent / (site.name+'-legacy')), str(site / 'try'))
     httpd, base = serve(site)
 
     with sync_playwright() as p:
@@ -200,6 +211,33 @@ def main():
             }, {capture:true,once:true})""")
             btn.click()
             check("clicking it opens the browser's install prompt", pg.evaluate("window.__prompted === true"))
+        print("\n── Existing /try/ app → unified root ──")
+        httpd.test_responses.clear()
+        pg.goto(base+'/try/Core.html?project=synthetic-review',wait_until='load')
+        pg.wait_for_function("async()=>!!(await navigator.serviceWorker.getRegistrations()).find(r=>new URL(r.scope).pathname==='/try/'&&r.active)",timeout=60000)
+        pg.reload(wait_until='load')
+        pg.wait_for_function("()=>navigator.serviceWorker.controller?.scriptURL.endsWith('/try/service-worker.js')",timeout=60000)
+        pg.evaluate("""async()=>{
+            localStorage.setItem('root-migration-project','preserve-me');
+            const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('root-migration-fixture',1);r.onupgradeneeded=()=>r.result.createObjectStore('projects');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+            await new Promise((resolve,reject)=>{const tx=db.transaction('projects','readwrite');tx.objectStore('projects').put({name:'synthetic-review',holes:['FIX-001','FIX-002']},'saved');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();
+        }""")
+        httpd.test_root_routes=True
+        pg.goto(base+'/try/Core.html?project=synthetic-review',wait_until='load')
+        check('legacy Core entry lands at root and preserves query',pg.url==base+'/Core.html?project=synthetic-review',pg.url)
+        pg.wait_for_function("()=>navigator.serviceWorker.controller?.scriptURL.endsWith('/service-worker.js')&&!navigator.serviceWorker.controller.scriptURL.includes('/try/')",timeout=60000)
+        check('root migration preserves local project storage',pg.evaluate("localStorage.getItem('root-migration-project')==='preserve-me'"))
+        saved=pg.evaluate("""async()=>{const db=await new Promise(resolve=>{const r=indexedDB.open('root-migration-fixture',1);r.onsuccess=()=>resolve(r.result)});const value=await new Promise(resolve=>{const r=db.transaction('projects').objectStore('projects').get('saved');r.onsuccess=()=>resolve(r.result)});db.close();return value;}""")
+        check('root migration preserves indexed project records',saved=={'name':'synthetic-review','holes':['FIX-001','FIX-002']})
+        for mod in ('Assay','Resource'):
+            pg.goto(base+'/try/'+mod+'.html?project=synthetic-review',wait_until='load')
+            check(mod+' old link opens the same root module',pg.url==base+'/'+mod+'.html?project=synthetic-review',pg.url)
+        ctx.set_offline(True)
+        for mod in ('Core','Assay','Resource'):
+            pg.goto(base+'/'+mod+'.html?source=app',wait_until='load',timeout=60000)
+            pg.wait_for_function("()=>typeof showTab==='function'",timeout=60000)
+            check(mod+' root shell works offline after online migration',pg.evaluate("typeof Plotly==='object'&&localStorage.getItem('root-migration-project')==='preserve-me'"))
+        ctx.set_offline(False)
         ctx.close()
         shutil.rmtree(profile, ignore_errors=True)
 

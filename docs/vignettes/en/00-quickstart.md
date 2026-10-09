@@ -6,7 +6,7 @@ Each module opens with synthetic nickel laterite data (CC BY 4.0, credit Orebit.
 
 ## 1. Core: check the drillholes (3 minutes)
 
-[Open Orebit Core](https://geosuite.orebit.id/try/Core.html). Use **Start review** for the main path. **Advanced tools** in the sidebar opens the detailed table and section views directly.
+[Open Orebit Core](https://geosuite.orebit.id/Core.html). Use **Start review** for the main path. **Advanced tools** in the sidebar opens the detailed table and section views directly.
 
 - **Dashboard** shows 349 collars (one original collar is missing), 8,896 assay intervals and 8.8 km of drilling, with overburden, limonite, saprolite and bedrock logged; 10 holes stop before bedrock.
 - **Validation** checks every hole for missing surveys, overlapping or gapped intervals and holes without a geology log, and lists each finding with the reason.
@@ -16,7 +16,7 @@ Each module opens with synthetic nickel laterite data (CC BY 4.0, credit Orebit.
 
 ## 2. Assay: understand the grades (3 minutes)
 
-[Open Orebit Assay](https://geosuite.orebit.id/try/Assay.html). It opens with nominal 1 m intervals from all 350 holes: Ni, Co, Fe, MgO, SiO2, Al2O3 and Cr2O3, split into a saprolite and a limonite domain.
+[Open Orebit Assay](https://geosuite.orebit.id/Assay.html). It opens with nominal 1 m intervals from all 350 holes: Ni, Co, Fe, MgO, SiO2, Al2O3 and Cr2O3, split into a saprolite and a limonite domain.
 
 - **Stats** gives mean, CV and percentiles per element and per domain.
 - **Top-Cut** shows where the upper tail breaks up and suggests a cap.
@@ -24,7 +24,7 @@ Each module opens with synthetic nickel laterite data (CC BY 4.0, credit Orebit.
 
 ## 3. Resource: estimate and report (4 minutes)
 
-[Open Orebit Resource](https://geosuite.orebit.id/try/Resource.html).
+[Open Orebit Resource](https://geosuite.orebit.id/Resource.html).
 
 - On the **Dashboard**, click **Start review**. In Setup choose Ni, percent units and one horizon such as saprolite; run limonite separately if justified.
 - **Variography:** click **Compute & fit**, inspect the experimental points, pair counts and model. Custom settings and optional directional/downhole tools are below.

@@ -6,7 +6,7 @@ Setiap modul memuat data laterit nikel sintetis (CC BY 4.0, kredit Orebit.id). C
 
 ## 1. Core: periksa data bor (3 menit)
 
-[Buka Orebit Core](https://geosuite.orebit.id/try/Core.html). Gunakan **Mulai review** untuk alur utama. **Advanced tools** di sidebar membuka tabel dan penampang secara langsung.
+[Buka Orebit Core](https://geosuite.orebit.id/Core.html). Gunakan **Mulai review** untuk alur utama. **Advanced tools** di sidebar membuka tabel dan penampang secara langsung.
 
 - **Dashboard** menampilkan 349 collar (satu collar sumber hilang), 8.896 interval assay, dan 8,8 km pengeboran, dengan overburden, limonit, saprolit, dan batuan dasar tercatat; 10 lubang berhenti sebelum batuan dasar.
 - **Validasi** memeriksa setiap lubang: survey yang hilang, interval tumpang tindih atau berlubang, lubang tanpa log geologi, dan mendaftar setiap temuan beserta alasannya.
@@ -16,7 +16,7 @@ Setiap modul memuat data laterit nikel sintetis (CC BY 4.0, kredit Orebit.id). C
 
 ## 2. Assay: pahami kadarnya (3 menit)
 
-[Buka Orebit Assay](https://geosuite.orebit.id/try/Assay.html). Modul ini terbuka dengan interval nominal 1 m dari seluruh 350 lubang: Ni, Co, Fe, MgO, SiO2, Al2O3, dan Cr2O3, dibagi menjadi domain saprolit dan limonit.
+[Buka Orebit Assay](https://geosuite.orebit.id/Assay.html). Modul ini terbuka dengan interval nominal 1 m dari seluruh 350 lubang: Ni, Co, Fe, MgO, SiO2, Al2O3, dan Cr2O3, dibagi menjadi domain saprolit dan limonit.
 
 - **Stats** memberi rata-rata, CV, dan persentil per unsur dan per domain.
 - **Top-Cut** menunjukkan di mana ekor atas distribusi mulai pecah dan menyarankan batas atasnya.
@@ -24,7 +24,7 @@ Setiap modul memuat data laterit nikel sintetis (CC BY 4.0, kredit Orebit.id). C
 
 ## 3. Resource: estimasi dan laporan (4 menit)
 
-[Buka Orebit Resource](https://geosuite.orebit.id/try/Resource.html).
+[Buka Orebit Resource](https://geosuite.orebit.id/Resource.html).
 
 - Di **Dashboard**, klik **Mulai review**. Pada Setup pilih Ni, satuan persen dan satu horizon seperti saprolit; estimasi limonit terpisah jika sesuai interpretasi.
 - **Variografi:** klik **Hitung & fit variogram**, lalu periksa titik eksperimen, jumlah pasangan dan model. Parameter custom serta pemeriksaan arah/downhole tersedia di bawah.

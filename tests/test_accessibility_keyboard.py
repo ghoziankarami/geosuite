@@ -63,10 +63,38 @@ def raw(page):
     return page.evaluate("JSON.stringify(typeof DATA!=='undefined'?DATA.rows:[STATE.collar,STATE.survey,STATE.assay,STATE.geology])")
 
 
+def assert_stage_context(page, message):
+    # Wait for actual finite transitions and smooth scrolling, then inspect geometry.
+    page.evaluate("""async()=>{
+      await Promise.all(document.getAnimations().filter(a=>a.effect.getTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{})));
+      let previous='',stable=0;
+      for(let i=0;i<120&&stable<10;i++){
+        await new Promise(requestAnimationFrame);
+        const next=[scrollY,document.body.scrollTop,document.querySelector('.wrap').scrollTop].join(',');
+        stable=next===previous?stable+1:0;previous=next;
+      }
+    }""")
+    viewport = page.viewport_size
+    for selector,part in (('header.orebit-header','header'),('header.orebit-header .brand','brand'),('#orebitToolbar','toolbar')):
+        box = page.locator(selector).bounding_box()
+        check(box and box['x'] >= -1 and box['y'] >= -1 and
+              box['x']+box['width'] <= viewport['width']+1 and
+              box['y']+box['height'] <= viewport['height']+1,
+              message + ' keeps the entire ' + part + ' visible after scrolling settles')
+    header = page.locator('header.orebit-header').bounding_box()
+    heading = page.locator('.panel.active .assay-workflow-card h2').bounding_box()
+    check(heading and heading['y'] >= header['y']+header['height']-1,
+          message + ' keeps its stage heading below the persistent header')
+    check(page.evaluate('document.documentElement.scrollWidth <= innerWidth+1'),
+          message + ' contains horizontal content within the viewport')
+
+
 def stage(page, number, mobile):
     if mobile:
         if number == 1:
             page.locator('#mobileBottomNav [data-group="home"]').click()
+        elif number == page.locator('nav.tabs .tab').count():
+            page.locator('#mobileBottomNav [data-group="export"]').click()
         else:
             page.locator('#mobileBottomNav [data-group="analysis"]').click()
             page.locator(f'#mobileNavDrawer [data-tab="{number}"]').click()
@@ -185,12 +213,50 @@ try:
                 check(page.locator('.panel.active').evaluate('e=>e===document.activeElement') and
                       page.locator('.panel.active').get_attribute('tabindex') == '-1',
                       phase + ' primary Enter focuses the named destination without adding a tab stop')
+                assert_stage_context(page, phase + ' primary navigation')
                 if phase == 'Resource':
                     check(page.locator('#tab3 .action-key').count() == 1,
                           'Resource Setup has one action-role legend')
                     check(page.locator('#setupElement').is_visible() and page.locator('#setupDomain').is_visible() and
                           page.locator('#setupGradeUnit').is_visible() and page.locator('#resourceSetupNext').is_visible(),
                           'Resource Setup keeps essential parameter controls and continuation available')
+                    page.locator('#resourceSetupNext').focus()
+                    page.keyboard.press('Enter')
+                    check(active(page) == 4, 'Resource actual Setup continuation opens Variography')
+                    check(page.evaluate('variogramState.model === null'),
+                          'Resource begins continuation without a computed variogram model')
+                    page.locator('#tab4 .workflow-actions [data-workflow-next]').focus()
+                    page.keyboard.press('Enter')
+                    page.wait_for_function("()=>document.activeElement===document.querySelector('#tab5.panel.active')", timeout=5000)
+                    check(active(page) == 5 and page.evaluate('!!variogramState.model && Number.isFinite(variogramState.model.range) && variogramState.model.range>0'),
+                          'Resource actual variogram owner computes before continuation focuses Block Model')
+                    assert_stage_context(page, 'Resource asynchronous continuation')
+                    check(raw(page) == before, 'Resource asynchronous continuation preserves raw measurements')
+                if phase == 'Assay':
+                    table = page.locator('#tbl')
+                    table.locator('xpath=..').hover()
+                    page.mouse.wheel(160, 0)
+                    page.wait_for_function("()=>{const t=document.getElementById('tbl');return t.scrollLeft>0||t.parentElement.scrollLeft>0;}", timeout=3000)
+                    check(page.evaluate('document.documentElement.scrollWidth <= innerWidth+1'),
+                          'Assay actual horizontal table scrolling stays inside the viewport')
+                    reviewed = page.locator('nav.tabs .tab[onclick="showTab(3)"]')
+                    check(not reviewed.evaluate('e=>e.classList.contains("workflow-reviewed")'),
+                          'Assay visiting Data does not mark analyst approval')
+                    page.locator('#tab3 .workflow-notes>summary').click()
+                    page.locator('#assay-stage-note-3').fill('Keyboard accessibility review')
+                    page.locator('#tab3 .workflow-actions [data-action-role="next"]').focus()
+                    page.keyboard.press('Enter')
+                    page.wait_for_function("()=>document.activeElement===document.querySelector('#tab8.panel.active')", timeout=3000)
+                    check(active(page) == 8 and reviewed.evaluate('e=>e.classList.contains("workflow-reviewed")'),
+                          'Assay Record and continue focuses Stats and retains the Data approval badge')
+                    check(not page.locator('nav.tabs .tab[onclick="showTab(8)"]').evaluate('e=>e.classList.contains("workflow-reviewed")'),
+                          'Assay continuation does not approve the destination stage')
+                    assert_stage_context(page, 'Assay Record and continue')
+                    stage(page, 13, mobile)
+                    page.locator('.workflow-review-list>summary').click()
+                    check(page.locator('.workflow-review-row').filter(has_text='Keyboard accessibility review').count() == 1,
+                          'Assay actual report retains the recorded analyst note')
+                    check(raw(page) == before, 'Assay recording and continuation preserve raw measurements')
                 stage(page, 1, mobile)
                 if not mobile:
                     selected = page.locator('nav.tabs .tab.active')

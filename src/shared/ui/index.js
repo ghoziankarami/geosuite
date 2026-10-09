@@ -217,11 +217,24 @@ function tourSkip() {
   localStorage.setItem('orebit-tour-seen-' + (window.__tourPhaseId || 'x'), '1');
 }
 
-function _activateTab(n) {
-  const previousFocus = document.activeElement;
+function _focusWorkflowDestination(n, previousFocus) {
   const workflowNavigation = previousFocus?.matches('button') &&
     previousFocus.closest('.assay-workflow-card') &&
     previousFocus.closest('.workflow-actions,.workflow-step-links,.workflow-related');
+  // A continuation may disable its initiating button while its owner computes.
+  // Retain that exact origin; do not move focus if the user chose another control.
+  if (workflowNavigation) requestAnimationFrame(() => {
+    const panel = document.getElementById('tab' + n);
+    if (!_visibleFocusTarget(previousFocus) &&
+        (document.activeElement === previousFocus || document.activeElement === document.body) &&
+        panel?.isConnected && panel.classList.contains('active')) {
+      panel.setAttribute('tabindex','-1'); panel.focus({preventScroll:true});
+    }
+  });
+}
+
+function _activateTab(n) {
+  const previousFocus = document.activeElement;
   document.querySelectorAll('nav.tabs .tab').forEach((b, i) => {
     b.classList.toggle('active', i === n - 1);
     b.setAttribute('aria-selected', i === n - 1 ? 'true' : 'false');
@@ -241,14 +254,7 @@ function _activateTab(n) {
   // Workflow buttons can disappear or become hidden when their destination is
   // rendered. Announce the existing named stage after the owner finishes, without
   // adding a persistent tab stop or moving focus from an editable control.
-  if (workflowNavigation) requestAnimationFrame(() => {
-    const panel = document.getElementById('tab' + n);
-    if (!_visibleFocusTarget(previousFocus) &&
-        (document.activeElement === previousFocus || document.activeElement === document.body) &&
-        panel?.classList.contains('active')) {
-      panel.setAttribute('tabindex','-1'); panel.focus({preventScroll:true});
-    }
-  });
+  _focusWorkflowDestination(n, previousFocus);
   window.__updateMobileNavigation?.();
   try { _injectTabHelp(n); } catch (e) { /* non-fatal */ }
   try { _collapseTabHelpOnTouch(); } catch (e) { /* non-fatal */ }

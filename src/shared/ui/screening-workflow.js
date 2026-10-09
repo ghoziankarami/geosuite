@@ -28,6 +28,7 @@
     const rows=DATA.rows,before=result(n);
     const needsRun=!ready(n)||dirty.has(n);
     if(!needsRun){navigate(target);return;}
+    const navigationOpener=document.activeElement;
     const controls=Array.from(document.querySelectorAll('#tab'+n+' input,#tab'+n+' select')).map(el=>[el,el.disabled]);
     failedAttempt=null;
     pending={stage:n};controls.forEach(([el])=>el.disabled=true);sync();
@@ -38,7 +39,7 @@
       while(estimState._running||estimState._confirming||crossvalState._running)
         await new Promise(resolve=>setTimeout(resolve,100));
       if(DATA.rows===rows && current===n){
-        if(result(n)!==before && ready(n)){dirty.delete(n);navigate(target);}
+        if(result(n)!==before && ready(n)){dirty.delete(n);navigate(target);_focusWorkflowDestination(target,navigationOpener);}
         else {
           failedAttempt={stage:n,rows,signature:failureSignature(n)};
           const status=document.querySelector('#tab'+n+' .workflow-gate');

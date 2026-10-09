@@ -45,6 +45,15 @@ function applyLanguage(lang) {
   // actual switch, never on the call that runs during boot.
   const _langBefore = _i18nLang;
   if (!window.TR || !window.TR[lang]) lang = 'en';
+  // Owners may retain unsaved controls through the language-only redraw.
+  // The returned closures restore display drafts, never apply calculations.
+  const restoreDrafts = [];
+  if (_langBefore !== lang && window.__i18nBooted) {
+    (window.__i18nBeforeRenderHooks || []).forEach(fn => {
+      try { const restore=fn(); if(typeof restore==='function')restoreDrafts.push(restore); }
+      catch(e) { console.warn('Language draft capture failed',e); }
+    });
+  }
   _i18nLang = lang;
   try { document.documentElement.setAttribute('lang', lang); } catch (e) {}
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -121,10 +130,6 @@ function applyLanguage(lang) {
   try {
     if (typeof _collapseTabHelpOnTouch === 'function') _collapseTabHelpOnTouch();
   } catch (e) {}
-  // Re-render dynamic tour text if a tour is currently visible
-  if (window._tourActive && typeof _tourRender === 'function') {
-    try { _tourRender(); } catch (e) {}
-  }
   // Phase-specific post-switch work (e.g. Assay's glossary/data-provenance
   // refresh) that this shared function has no business knowing the names of.
   if (Array.isArray(window.__i18nPostApplyHooks)) {
@@ -147,6 +152,7 @@ function applyLanguage(lang) {
       if (_idx >= 0) {
         const _y = window.scrollY;
         showTab(_idx + 1);
+        restoreDrafts.forEach(fn=>{try{fn();}catch(e){console.warn('Language draft restore failed',e);}});
         // The V194 header breadcrumb mirrors the active tab's label, but it is
         // only re-synced inside the shell's own setLang(). Anything that calls
         // applyLanguage() directly — the in-app language picker included — left
@@ -161,4 +167,10 @@ function applyLanguage(lang) {
       console.warn('[i18n re-render]', e && e.message);
     }
   }
+  window.__updateMobileNavigation?.();
+  // Re-render dynamic tour text if a tour is currently visible
+  if (window._tourActive && typeof _tourRender === 'function') {
+    try { _tourRender(); } catch (e) {}
+  }
+
 }

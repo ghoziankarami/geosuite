@@ -6,7 +6,7 @@ This reproducible reference explicitly uses **XY screening support** in Block Mo
 
 | | |
 |---|---|
-| **Data** | *NEQ Deposit Atlas – Thalanga* (ds100103), Geological Survey of Queensland, **CC BY 4.0** — <https://geoscience.data.qld.gov.au/dataset/ds100103>. It is also Orebit Core's built-in sample, so you can follow along without downloading anything. |
+| **Data** | *NEQ Deposit Atlas – Thalanga* (ds100103), Geological Survey of Queensland, **CC BY 4.0** — <https://geoscience.data.qld.gov.au/dataset/ds100103>. This tutorial imports the four public tables; the bundled app example is synthetic nickel. |
 | **Modules** | Core → Assay → Resource |
 | **Time** | about 45 minutes by hand |
 | **Outcome** | A grade-tonnage screen, with the list of reasons it is **not yet** a Mineral Resource |
@@ -30,7 +30,7 @@ One limit up front: the dataset has **no lithology logging for the deposit's dia
 
 ## 1. Load the data (Core)
 
-Open **Orebit Core**. The Thalanga dataset loads automatically as the sample.
+Open **Orebit Core** and import the four Thalanga CSVs. The runner writes them from the [public fixture](https://github.com/ghoziankarami/geosuite/blob/main/tests/fixtures/thalanga-core.json); the bundled example remains synthetic nickel.
 
 ![Core dashboard with the Thalanga dataset](../img/thalanga-01-core-dashboard.png)
 
@@ -84,7 +84,7 @@ Why this matters: the Pb column contains the code **−995,000** and Ag contains
 
 ## 3. Validation: find, decide, record
 
-Core's **Validation** tab runs 16 checks.
+Core's **Validation** tab runs 23 checks for these four tables.
 
 ![Core validation — FIX REQUIRED](../img/thalanga-02-core-validation.png)
 
@@ -96,6 +96,7 @@ Core's **Validation** tab runs 16 checks.
 | **Duplicate collar hole_id** | **6 ✗** | 6 ✗ |
 | Assay interval gaps | 208 ⚠ | 206 ⚠ |
 | **Assay interval overlaps** | **115 ✗** | 113 ✗ |
+| **Invalid survey measurements** | **1 ✗** | **1 ✗** |
 | Linkage verdict | **FIX REQUIRED** | **FIX REQUIRED** |
 
 What the findings are (checked row by row):
@@ -116,11 +117,11 @@ Both edits are made in Core's data editor and are logged automatically in the **
 assay: 1 rows edited, 0 added, 2 deleted
 ```
 
-The CHANGE_LOG travels with the export. Anyone who receives your file can see exactly what was changed and when.
+The detailed CHANGE_LOG stays in the Core project and PDF. The cropped CSV records its selected validation scope and points to that audit; it does not contain the complete edit history.
 
 ### Why the verdict stays "FIX REQUIRED", correctly
 
-The remaining problems (LVRC/BEA duplicates, the hundreds of TCRC-type overlaps) are all in **regional holes outside the deposit area**. A senior geologist does not "clean" data they will not use just to turn the indicator green. That data is **explicitly excluded** by the area boundary (§4), and the reason is written down. A red verdict here is an honest record, not a failure.
+The remaining problems (LVRC/BEA duplicates, the hundreds of TCRC-type overlaps and the invalid TH38 dip) are all in **regional holes outside the deposit area**. A senior geologist does not "clean" data they will not use just to turn the indicator green. That data is **explicitly excluded** by the area boundary (§4), and the reason is written down. A red verdict here is an honest record, not a failure.
 
 ---
 
@@ -128,7 +129,7 @@ The remaining problems (LVRC/BEA duplicates, the hundreds of TCRC-type overlaps)
 
 ### Desurvey
 
-The **Desurvey** tab detects the dip convention from the data: `positive_down`, meaning positive dip points downward. Result: 711 holes desurveyed, 0 bad surveys.
+The **Desurvey** tab detects the dip convention from the data: `positive_down`, meaning positive dip points downward. The inventory contains 711 holes and 1 invalid survey finding: TH38 has dip132° at MD416 m. Its trace is withheld without guessing or changing the measurement. TH38 is outside the 13-hole area export.
 
 ![Desurveyed hole traces](../img/thalanga-03-core-desurvey.png)
 
@@ -162,7 +163,7 @@ File: [`../data/thalanga-deposit-area.geojson`](../data/thalanga-deposit-area.ge
 
 Note: the map shows **12 collars** inside the box, but **13 holes** contribute intervals. Core crops on the **desurveyed mid-point of each interval**, not on the collar. One hole is collared outside the box and drills into it. A collar-based crop would lose those intervals.
 
-Holes kept: TE-1, TE-2, TH1, TH2, TH3, TH4, TH5, TH6, TH31, TH35, TH37, TH39, TH40. All 13 (11 diamond, 2 percussion) have surveys, none is a duplicate collar, and the only overlaps among them were the two TH37 spot samples removed in §3. Export **Cropped master CSV (desurveyed)** for the next step.
+Holes kept: TE-1, TE-2, TH1, TH2, TH3, TH4, TH5, TH6, TH31, TH35, TH37, TH39, TH40. All 13 (11 diamond, 2 percussion) have surveys, none is a duplicate collar, and the only overlaps among them were the two TH37 spot samples removed in §3. Export **Cropped master CSV (desurveyed)** for the next step. This path validates the selected intervals and their source collars, surveys and geology. A failure inside that selection blocks export. Its scope is recorded in the CSV header and pipeline history; regional findings remain in the Core project.
 
 ---
 

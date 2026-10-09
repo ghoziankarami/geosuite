@@ -1226,8 +1226,7 @@ table.data-table th {
 /* C1: Toast — proper float with elevation */
 #toast,
 .toast,
-.toast-container,
-[role="status"]:not(.btn) {
+.toast-container {
   position: fixed !important;
   bottom: 16px !important;
   right: 16px !important;
@@ -2522,7 +2521,7 @@ body.assay-guided.assay-advanced-open nav.tabs .tab[data-workflow-advanced="true
   <h2><span data-i18n="asy.st.title">EDA Stats — Comprehensive Distribution Analysis</span></h2>
   <div class="hint"><span data-i18n="asy.st.hint">A high CV (&gt;1.5) flags the need for a top-cut. Log-skewed distributions are candidates for a log-transform before kriging.</span></div>
   <div id="st"></div>
-  <details class="assay-optional-tools" id="assayStatsAdvanced">
+  <details class="assay-optional-tools" id="assayStatsAdvanced" ontoggle="if(this.open && DATA){safeRender(t('tab.stats'),()=>{renderGradeContribution();renderDecluster();});}">
     <summary data-i18n="asy.workflow.statsAdvanced">Optional: treatment proposals, metal contribution and declustering</summary>
   <div class="card">
     <h3><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <span data-i18n="asy.st.autopilot">Auto-Pilot</span></h3>
@@ -2930,6 +2929,8 @@ let DATA = EMBEDDED_DATA;
 /* @orebit-inline: shared/ui/assay-workflow.js */
 /* @orebit-inline: shared/io/parse.js */
 /* @orebit-inline: shared/io/grades.js */
+/* @orebit-inline: shared/geo/spatial-index.js */
+/* @orebit-inline: shared/geo/plot-sampling.js */
 /* @orebit-inline: shared/io/columns.js */
 /* @orebit-inline: shared/io/import.js */
 /* @orebit-inline: shared/ui/column-mapper.js */
@@ -3715,6 +3716,10 @@ function _resetDatasetState(treatments, projectName) {
   window._primaryElement = null;
   window._domainCutoff = null;
   window._domainAudit = null;
+  clearTimeout(window._domainValidationTimer);
+  window._domainValidationTimer = null;
+  window._domainValidationControls = null;
+  clearDomainValidation();
   if (document.getElementById('assayReportNote')) document.getElementById('assayReportNote').value = '';
   window._gradeColOverride = null;
   window._gradeUnitOverride = null;
@@ -4299,10 +4304,10 @@ function showTab(n) {
   if (n === 5) safeRender(t('tab.multivariate'), () => renderMultivariate());
   if (n === 6) { safeRender(t('tab.spacing'), () => { renderSpacing(); renderSwath(); }); }
   if (n === 7) { safeRender(t('tab.composite'), () => { renderCompositing(); renderCompositeSensitivity(); }); }
-  if (n === 8) { safeRender(t('tab.stats'), () => { renderStats(); renderGradeContribution(); renderDecluster(); }); }
+  if (n === 8) { safeRender(t('tab.stats'), () => { renderStats(); if(document.getElementById('assayStatsAdvanced').open){renderGradeContribution();renderDecluster();} }); }
   if (n === 9) safeRender(t('tab.topcut'), () => renderTopCut());
   if (n === 10) safeRender(t('tab.litho'), () => renderLithoBoxplot());
-  if (n === 11) { safeRender(t('tab.domain'), () => { renderDomain(); setTimeout(() => safeRender(t('asy.safeRender.domainValidation'), () => renderDomainValidation()), 100); }); }
+  if (n === 11) safeRender(t('tab.domain'), () => renderDomain());
   if (n === 12) { safeRender(t('tab.qaqc'), () => renderQAQC()); }
   if (n === 13) { safeRender(t('tab.report'), () => { renderReport(); renderKCMI(); renderTreatmentHistory('reportTreatment'); }); }
 
@@ -5298,12 +5303,12 @@ document.addEventListener('keydown', (e) => {
 
 /* ---------- First-run guided tour (Sprint H) ---------- */
 const TOUR_STEPS_P2 = [
-  { titleKey: 'tour.p2.s1.title', bodyKey: 'tour.p2.s1.body', target: null },
-  { titleKey: 'tour.p2.s2.title', bodyKey: 'tour.p2.s2.body', target: 'nav.tabs .tab[onclick="showTab(2)"]' },
-  { titleKey: 'tour.p2.s3.title', bodyKey: 'tour.p2.s3.body', target: 'nav.tabs .tab[onclick="showTab(8)"]' },
-  { titleKey: 'tour.p2.s4.title', bodyKey: 'tour.p2.s4.body', target: 'nav.tabs .tab[onclick="showTab(9)"]' },
-  { titleKey: 'tour.p2.s5.title', bodyKey: 'tour.p2.s5.body', target: 'nav.tabs .tab[onclick="showTab(11)"]' },
-  { titleKey: 'tour.p2.s6.title', bodyKey: 'tour.p2.s6.body', target: '.orebit-help-bubble' }
+  {"titleKey": "tour.p2.s1.title", "bodyKey": "tour.p2.s1.body", "tab": 1, "target": "#tab1 .workflow-actions"},
+  {"titleKey": "tour.p2.s2.title", "bodyKey": "tour.p2.s2.body", "tab": 2, "target": "#tab2 .workflow-actions"},
+  {"titleKey": "tour.p2.s3.title", "bodyKey": "tour.p2.s3.body", "tab": 3, "target": "#tab3 .workflow-insight"},
+  {"titleKey": "tour.p2.s4.title", "bodyKey": "tour.p2.s4.body", "tab": 8, "target": "#tab8 .workflow-related"},
+  {"titleKey": "tour.p2.s5.title", "bodyKey": "tour.p2.s5.body", "tab": 11, "target": "#tab11 .workflow-insight"},
+  {"titleKey": "tour.p2.s6.title", "bodyKey": "tour.p2.s6.body", "tab": 13, "target": "#tab13 .workflow-actions"}
 ];
 window.TOUR_STEPS = TOUR_STEPS_P2;
 window.__tourPhaseId = 'p2';
@@ -8040,34 +8045,49 @@ function exportComposites() {
 // thread. In a weak embedded webview (the desktop EXE / pywebview) that synchronous
 // burst freezes the window hard enough for the OS to "force close" the tab. We instead
 // render ONE plot per animation frame and wrap each in try/catch, so:
-//   (1) the UI stays responsive between plots (no freeze, ever),
+//   (1) the UI yields between plots, reducing sustained blocking,
 //   (2) a single bad plot (degenerate data) can't abort the whole tab — it shows an
 //       inline error in that one panel and the rest still render.
 // Successive _queuePlot calls in the same render replace any pending queue so we never
 // stack stale plot jobs when the user switches element/tab rapidly.
 let _plotQueue = [];
 let _plotQueueRunning = false;
-function _drainPlotQueue() {
+async function _drainPlotQueue() {
   if (!_plotQueue.length) { _plotQueueRunning = false; return; }
   _plotQueueRunning = true;
   const job = _plotQueue.shift();
   try {
     const node = document.getElementById(job.id);
-    if (node && typeof Plotly !== 'undefined') {
-      Plotly.newPlot(job.id, job.data, job.layout, job.config || { responsive: true, displayModeBar: false });
+    if (node === job.node && DATA === job.source && currentTab === job.tab && typeof Plotly !== 'undefined') {
+      await Plotly.newPlot(job.id, job.data, job.layout, job.config || { responsive: true, displayModeBar: false });
     }
   } catch (e) {
     const node = document.getElementById(job.id);
-    if (node) node.innerHTML = '<div class="hint warn" style="margin:8px;">' +
+    if (node === job.node) node.innerHTML = '<div class="hint warn" style="margin:8px;">' +
       (typeof ICONS !== 'undefined' && ICONS.warn ? ICONS.warn + ' ' : '') +
-      'Chart could not be rendered for this data (' + (e && e.message ? String(e.message).slice(0, 80) : 'unknown') + ').</div>';
+      'Chart could not be rendered for this data (' + escapeHtml(e && e.message ? String(e.message).slice(0, 80) : 'unknown') + ').</div>';
     if (typeof console !== 'undefined') console.warn('[plot] ' + job.id + ' failed:', e);
   }
   (window.requestAnimationFrame || ((f) => setTimeout(f, 16)))(_drainPlotQueue);
 }
 function _queuePlot(id, data, layout, config) {
-  _plotQueue.push({ id, data, layout, config });
-  if (!_plotQueueRunning) (window.requestAnimationFrame || ((f) => setTimeout(f, 16)))(_drainPlotQueue);
+  const node = document.getElementById(id);
+  if (!node || node.closest('.card[aria-hidden="true"]')) return;
+  const drawn=data.map(trace=>OrebitPlotSampling.sampleTrace(trace));
+  let full=0,shown=0,limited=false;
+  data.forEach((trace,i)=>{if(trace.type==='scatter'&&Array.isArray(trace.x)){full+=trace.x.length;shown+=drawn[i].x.length;limited=limited||drawn[i]!==trace;}});
+  if(limited){
+    const notice=t('asy.perf.plotBudget').replace('{n}',full.toLocaleString('en-US')).replace('{shown}',shown.toLocaleString('en-US'));
+    layout={...layout,title:{...layout.title,text:(layout.title?.text?layout.title.text+'<br>':'')+notice,font:{size:11}},margin:{...layout.margin,t:Math.max(layout.margin?.t||0,80)}};
+  }
+  data=drawn;
+  const job={id,data,layout,config,node,source:DATA,tab:currentTab};
+  const pending=_plotQueue.findIndex(j=>j.id===id);
+  if(pending>=0)_plotQueue[pending]=job;else _plotQueue.push(job);
+  if (!_plotQueueRunning) {
+    _plotQueueRunning=true;
+    (window.requestAnimationFrame || ((f) => setTimeout(f, 16)))(_drainPlotQueue);
+  }
 }
 
 // ============= SPRINT 2 v2.3: GRADE CONTRIBUTION / METAL BALANCE (Feature 2) =============
@@ -8148,7 +8168,7 @@ function renderGradeContribution() {
     '</div>' +
     '<div class="grid-2">' + summaryCards + '</div>';
 
-  Plotly.newPlot('gradeContribChart', traces, {
+  _queuePlot('gradeContribChart', traces, {
     ...plotTheme(),
     xaxis: { title: t('asy.gc.axXShort'), gridcolor: 'rgba(128,128,128,0.2)', range: [0, 100] },
     yaxis: { title: t('asy.gc.axY'), gridcolor: 'rgba(128,128,128,0.2)', range: [0, 100] },
@@ -8430,7 +8450,6 @@ function renderStats() {
   `;
 
   renderStatsCharts(elemCol);
-  renderStatsOverlay();
 }
 
 function setStatsElement(col) {
@@ -8909,6 +8928,7 @@ function renderTopCut() {
   }
 
   document.getElementById('tc').innerHTML = `
+    <p class="hint">${t('asy.tc.applyScope')}</p>
     ${_domainScopeBadge()}
     ${(window._domainScope === 'All' && _domainValues().length > 1) ? '<div class="hint warn">' + ICONS.warn + ' ' + t('asy.scope.mixedWarn').replace('{n}', _domainValues().length) + '</div>' : ''}
     ${qiPanelTC}
@@ -9083,7 +9103,7 @@ function renderTopCut() {
     const m = capped.reduce((a,b)=>a+b,0)/capped.length;
     return s.mean - m; // grade units
   });
-  Plotly.newPlot('tcCurve', [
+  _queuePlot('tcCurve', [
     { x: cuts, y: metalLosses, type: 'scatter', mode: 'lines+markers', name: t('asy.metalLoss'),
       line: { color: '#dc2626' }, marker: { size: 5 }, yaxis: 'y' },
     { x: cuts, y: deltaMeans, type: 'scatter', mode: 'lines+markers', name: `Δ Mean (${meta.unit})`,
@@ -9117,7 +9137,7 @@ function renderTopCut() {
     //    a slope break marks where the upper tail stops belonging to that population.
     // Legends sit below the x-axis title: the bottom margin has to hold both, or the
     // legend spills out of its 300 px box over the next heading (seen in the vignettes).
-    Plotly.newPlot('tcLogProb', [
+    _queuePlot('tcLogProb', [
       { x: srt, y: tcDiag.z, type: 'scatter', mode: 'markers',
         marker: { color: meta.color, size: 4 }, name: t('asy.tc.observed'),
         hovertemplate: '%{x:.4f}<br>z = %{y:.2f}<extra></extra>' },
@@ -9146,7 +9166,7 @@ function renderTopCut() {
       const sd = Math.sqrt(cp.reduce((a, v) => a + (v - mu) ** 2, 0) / (cp.length - 1));
       return mu > 0 ? sd / mu : 0;
     });
-    Plotly.newPlot('tcMeanVar', [
+    _queuePlot('tcMeanVar', [
       { x: cuts, y: mvMeans, type: 'scatter', mode: 'lines', name: t('asy.tc.cappedMean'),
         line: { color: meta.color }, yaxis: 'y' },
       { x: cuts, y: mvCVs, type: 'scatter', mode: 'lines', name: 'CV',
@@ -9169,7 +9189,7 @@ function renderTopCut() {
     const metalAbove = cuts.map(c =>
       vals.filter(v => v > c).reduce((a, b) => a + b, 0) / totalMetal * 100);
     const pctAbove = cuts.map(c => vals.filter(v => v > c).length / vals.length * 100);
-    Plotly.newPlot('tcCumMetal', [
+    _queuePlot('tcCumMetal', [
       { x: cuts, y: metalAbove, type: 'scatter', mode: 'lines', name: t('asy.tc.metalAbove'),
         line: { color: '#dc2626' }, fill: 'tozeroy', fillcolor: 'rgba(220,38,38,0.10)' },
       { x: cuts, y: pctAbove, type: 'scatter', mode: 'lines', name: t('asy.tc.samplesAbove'),
@@ -9186,7 +9206,7 @@ function renderTopCut() {
   }
 
   // Boxplot
-  Plotly.newPlot('tcBox', [{
+  _queuePlot('tcBox', [{
     x: vals, type: 'box', name: meta.label, marker: { color: meta.color }, boxpoints: 'outliers'
   }], {
     ...plotTheme(),
@@ -10281,18 +10301,16 @@ function applyAutoCleanCaps() {
     const idx = typeof colIdx === 'function' ? colIdx(entry.col) : DATA.cols.indexOf(entry.col);
     if (idx < 0) return;
     const cut = typeof entry.cut === 'number' ? entry.cut : entry.p99;
-    if (cut == null) return;
+    if (!Number.isFinite(cut) || cut <= 0) return;
+    const pipeline = _pipelineFor(entry.col);
     if (!window._capLog[entry.col]) {
-      window._capLog[entry.col] = { original: DATA.rows.map(r => r[idx]), cut: null, appliedAt: null };
+      window._capLog[entry.col] = { original: pipeline.raw.slice(), cut: null, appliedAt: null };
     }
     const log = window._capLog[entry.col];
-    DATA.rows.forEach((r, ri) => {
-      const orig = log.original[ri];
-      if (typeof orig === 'number') {
-        r[idx] = orig > cut ? cut : orig;
-        if (orig > cut) totalAffected++;
-      }
-    });
+    const before = DATA.rows.map(r => r[idx]);
+    _pipelineSetOp(entry.col, { type: 'cap', cut });
+    totalAffected += DATA.rows.filter((r, ri) =>
+      typeof before[ri] === 'number' && typeof r[idx] === 'number' && r[idx] !== before[ri]).length;
     log.cut = cut;
     log.appliedAt = Date.now();
     log.source = 'autoclean';
@@ -10796,7 +10814,7 @@ function renderSpacing() {
   const byHole = {};
   DATA.rows.forEach(r => {
     const h = r[colIdx('hole_id')];
-    if (typeof r[xi] !== 'number' || typeof r[yi] !== 'number') return;
+    if (!Number.isFinite(r[xi]) || !Number.isFinite(r[yi])) return;
     const f = typeof r[fi] === 'number' ? r[fi] : Infinity;
     if (!byHole[h] || f < byHole[h].from) {
       byHole[h] = { x: r[xi], y: r[yi], from: f };
@@ -11187,16 +11205,41 @@ function _medianDrillSpacing(xi, yi) {
   });
   const collars = [...seen.values()];
   if (collars.length < 2) return null;
+  const index = OrebitSpatial.createIndex(collars);
   const nn = collars.map((c, i) => {
-    let best = Infinity;
-    collars.forEach((q, j) => {
-      if (i === j) return;
-      const d = Math.hypot(c.x - q.x, c.y - q.y);
-      if (d < best) best = d;
-    });
-    return best;
+    const hit = OrebitSpatial.nearest(index,c.x,c.y,1,i)[0];
+    return hit ? Math.sqrt(hit.distanceSquared) : Infinity;
   }).filter(v => isFinite(v) && v > 0).sort((a, b) => a - b);
   return nn.length ? nn[Math.floor(nn.length / 2)] : null;
+}
+
+function clearDomainValidation() {
+  const el = document.getElementById('domainValidation');
+  if (!el) return;
+  el.querySelectorAll('.js-plotly-plot').forEach(node => Plotly.purge(node));
+  el.replaceChildren();
+}
+
+function scheduleDomainValidation() {
+  const el = document.getElementById('domainValidation');
+  if (!el) return;
+  const previous = window._domainValidationControls;
+  const controls = previous && previous.source === DATA ? {...previous} : {source: DATA};
+  for (const [key, id] of [['element','domainValElementSelect'], ['pair','contactPairSelect'], ['bin','contactBinWidth']]) {
+    const input = document.getElementById(id);
+    if (input) controls[key] = input.value;
+  }
+  window._domainValidationControls = controls;
+  clearTimeout(window._domainValidationTimer);
+  clearDomainValidation();
+  if (currentTab !== 11) return;
+  el.textContent = t('asy.dm.checkingCurrent');
+  const source = DATA, tagged = window._domainTagged;
+  window._domainValidationTimer = setTimeout(() => {
+    window._domainValidationTimer = null;
+    if (DATA !== source || window._domainTagged !== tagged || currentTab !== 11 || document.getElementById('domainValidation') !== el) return;
+    safeRender(t('asy.safeRender.domainValidation'), () => renderDomainValidation());
+  }, 100);
 }
 
 function renderDomainValidation() {
@@ -11210,7 +11253,9 @@ function renderDomainValidation() {
   if (!elems.length) { el.innerHTML = ''; return; }
 
   const sel = document.getElementById('domainValElementSelect');
-  const elemCol = (sel && elems.includes(sel.value)) ? sel.value : elems[0];
+  const controls = window._domainValidationControls?.source === DATA ? window._domainValidationControls : {};
+  const selectedElement = sel ? sel.value : controls.element;
+  const elemCol = elems.includes(selectedElement) ? selectedElement : elems[0];
   const ei = colIdx(elemCol);
   const meta = elementMeta(elemCol);
 
@@ -11231,7 +11276,7 @@ function renderDomainValidation() {
   const domainTraces = domains.map(d => {
     const pts = tagged.filter(t => t.domain === d && typeof t.row[ei] === 'number' && t.row[ei] > 0);
     const grades = pts.map(t => t.row[ei]);
-    const maxG = grades.length ? Math.max(...grades) : 1;
+    const maxG = grades.length ? grades.reduce((m,g)=>Math.max(m,g),-Infinity) : 1;
     return {
       x: pts.map(t => t.row[xi]),
       y: pts.map(t => t.row[yi]),
@@ -11269,7 +11314,13 @@ function renderDomainValidation() {
   // whose domains sit in different holes, which is most of them.
   const drillSpacing = _medianDrillSpacing(xi, yi);
   const boundaryData = [];
-  const taggedWithCoord = tagged.filter(t => typeof t.row[xi] === 'number' && typeof t.row[yi] === 'number');
+  const taggedWithCoord = tagged.filter(t => Number.isFinite(t.row[xi]) && Number.isFinite(t.row[yi]));
+  const spatialByDomain = new Map();
+  taggedWithCoord.forEach((t, order) => {
+    if(!spatialByDomain.has(t.domain))spatialByDomain.set(t.domain,[]);
+    spatialByDomain.get(t.domain).push({x:t.row[xi],y:t.row[yi],t,order});
+  });
+  const domainIndexes = new Map([...spatialByDomain].map(([d, points])=>[d,OrebitSpatial.createIndex(points)]));
   const sampleSubset = taggedWithCoord.slice(0, 800); // limit for performance
 
   sampleSubset.forEach((t, i) => {
@@ -11279,12 +11330,11 @@ function renderDomainValidation() {
 
     // Nearest 5 samples in OTHER domains.
     const others = [];
-    taggedWithCoord.forEach((q, j) => {
-      if (i === j || q.domain === myDomain) return;
-      const d = Math.sqrt((t.row[xi] - q.row[xi]) ** 2 + (t.row[yi] - q.row[yi]) ** 2);
-      others.push({ d, grade: q.row[ei], domain: q.domain });
+    domainIndexes.forEach((index, d) => {
+      if(d===myDomain)return;
+      OrebitSpatial.nearest(index,t.row[xi],t.row[yi],5).forEach(hit=>others.push({d:Math.sqrt(hit.distanceSquared),grade:hit.point.t.row[ei],domain:d,order:hit.point.order}));
     });
-    others.sort((a, b) => a.d - b.d);
+    others.sort((a, b) => a.d - b.d || a.order - b.order);
     const nn5 = others.slice(0, 5);
     if (nn5.length < 3) return;
 
@@ -11338,20 +11388,17 @@ function renderDomainValidation() {
     const inB = taggedWithCoord.filter(t => t.domain === bDom);
     if (inA.length < CONTACT_MIN_PER_BIN || inB.length < CONTACT_MIN_PER_BIN) return null;
     const pts = [];
-    const collect = (from, to, sign) => {
+    const collect = (from, to, sign, index) => {
       from.forEach(t => {
         const g = Number(t.row[ei]);
         if (!isFinite(g)) return;
-        let best = Infinity;
-        to.forEach(q => {
-          const d = Math.hypot(t.row[xi] - q.row[xi], t.row[yi] - q.row[yi]);
-          if (d < best) best = d;
-        });
+        const hit=OrebitSpatial.nearest(index,t.row[xi],t.row[yi])[0];
+        const best=hit?Math.sqrt(hit.distanceSquared):Infinity;
         if (isFinite(best)) pts.push({ d: sign * best, g });
       });
     };
-    collect(inA, inB, -1);
-    collect(inB, inA, 1);
+    collect(inA, inB, -1, domainIndexes.get(bDom));
+    collect(inB, inA, 1, domainIndexes.get(a));
     if (!pts.length) return null;
 
     const bins = new Map();
@@ -11430,12 +11477,12 @@ function renderDomainValidation() {
 
   const cpSel = document.getElementById('contactPairSelect');
   const cpKey = (cpSel && cpSel.value) ? cpSel.value
-              : (contactPairs.length ? contactPairs[0].a + '\u0000' + contactPairs[0].b : null);
+              : (controls.pair || (contactPairs.length ? contactPairs[0].a + '\u0000' + contactPairs[0].b : null));
   const cpPair = contactPairs.find(p => (p.a + '\u0000' + p.b) === cpKey) || contactPairs[0] || null;
 
   const cpBinEl = document.getElementById('contactBinWidth');
   const cpBinW = (() => {
-    const v = cpBinEl ? parseFloat(cpBinEl.value) : NaN;
+    const v = parseFloat(cpBinEl ? cpBinEl.value : controls.bin);
     if (isFinite(v) && v > 0) return v;
     // Default to the drill spacing: a contact can look hard at sample scale and soft at
     // the scale blocks are actually estimated on, so the bin width is a real parameter.
@@ -11547,7 +11594,7 @@ function renderDomainValidation() {
     '</div>';
 
   // Spatial plot
-  Plotly.newPlot('domainValSpatial', domainTraces, {
+  _queuePlot('domainValSpatial', domainTraces, {
     ...plotTheme(),
     xaxis: { title: t('asy.ax.easting'), gridcolor: 'rgba(128,128,128,0.2)' },
     yaxis: { title: t('asy.ax.northing'), gridcolor: 'rgba(128,128,128,0.2)', scaleanchor: 'x' },
@@ -11564,7 +11611,7 @@ function renderDomainValidation() {
       boxpoints: 'outliers'
     };
   });
-  Plotly.newPlot('domainValBox', boxTraces, {
+  _queuePlot('domainValBox', boxTraces, {
     ...plotTheme(),
     yaxis: { title: meta.label + ' (' + meta.unit + ')', gridcolor: 'rgba(128,128,128,0.2)' },
     height: 300,
@@ -11594,7 +11641,7 @@ function renderDomainValidation() {
       y0: cpProfile.farA, y1: cpProfile.farA, line: { color: '#2563eb', dash: 'dot', width: 1 } });
     if (cpProfile.farB !== null) shapes.push({ type: 'line', xref: 'paper', x0: 0.52, x1: 1,
       y0: cpProfile.farB, y1: cpProfile.farB, line: { color: '#dc2626', dash: 'dot', width: 1 } });
-    Plotly.newPlot('contactProfile', traces, {
+    _queuePlot('contactProfile', traces, {
       ...plotTheme(),
       xaxis: { title: t('asy.dm.cpAxisDist'), gridcolor: 'rgba(128,128,128,0.2)', zeroline: false },
       yaxis: { title: meta.label + ' (' + meta.unit + ')', gridcolor: 'rgba(128,128,128,0.2)' },
@@ -12037,7 +12084,7 @@ function renderDomain() {
       if (rx) planLayout.xaxis.range = [rx.lo, rx.hi];
       if (ry) planLayout.yaxis.range = [ry.lo, ry.hi];
     }
-    Plotly.newPlot('domainPlan', traces, planLayout,
+    _queuePlot('domainPlan', traces, planLayout,
       { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false });
     const planNote = document.getElementById('domainPlanRangeNote');
     if (planNote) {
@@ -12070,7 +12117,7 @@ function renderDomain() {
         if (rxz) xzLayout.xaxis.range = [rxz.lo, rxz.hi];
         if (rz) xzLayout.yaxis.range = [rz.lo, rz.hi];
       }
-      Plotly.newPlot('domainXZ', xzTraces, xzLayout,
+      _queuePlot('domainXZ', xzTraces, xzLayout,
         { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false });
       const xzNote = document.getElementById('domainXZRangeNote');
       if (xzNote) {
@@ -12112,6 +12159,7 @@ function renderDomain() {
     // Stamp domain labels onto tagged rows via the references captured above
     tagged.forEach(t => { t.row[di] = domainLabel(t.domain); });
   }
+  scheduleDomainValidation();
 }
 
 // B3 — geologist switches the domaining basis; re-render reflects the new tagging.

@@ -56,6 +56,10 @@ def main():
         core.goto(f"{BASE}/Core.html", wait_until="load", timeout=60000)
         ready(core)
         core.wait_for_function("() => STATE.assay.length > 8000", timeout=60000)
+        # The default intentionally has unresolved linkage faults. A numerical
+        # handoff must first load the original synthetic sources through CSV import.
+        core.evaluate("""async () => {showTab(2);const files=['collar','survey','assay','geology'].map(name=>new File([sampleTablesCSV(SAMPLE_SOURCE_DATA[name])],name+'.csv',{type:'text/csv'}));await handleUpload({target:{files}});} """)
+        core.wait_for_function("() => STATE.collar.length===350 && !_p1RunValidationChecks().some(c=>c.severity==='fail')")
         time.sleep(1.5)
         expected = core.evaluate("(() => { const f = OrebitHandoff.capture(exportMasterCSV); return f && f.text; })()")
         exp_rows = rows_of(expected)

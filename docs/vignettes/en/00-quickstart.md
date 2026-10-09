@@ -1,15 +1,16 @@
 # Quickstart: GeoSuite in 10 minutes
 
-**Check the build first.** This walkthrough targets the build with a **350-hole synthetic nickel laterite** sample. Published source, Windows releases and the hosted web modules can come from different revisions. Earlier builds use a Thalanga sample; installation alone does not replace it. Check the sample name and hole count before following the numbers below. If your build shows Thalanga, use the [Thalanga tutorial](01-thalanga-vms.md), which imports its own public dataset, or wait for the matching product build to be published.
+**Check the build first.** This walkthrough targets the build with a **synthetic nickel laterite** sample. Published source, Windows releases and the hosted web modules can come from different revisions. Earlier builds use a Thalanga sample; installation alone does not replace it. Check the sample name and hole count before following the numbers below. If your build shows Thalanga, use the [Thalanga tutorial](01-thalanga-vms.md), which imports its own public dataset, or wait for the matching product build to be published.
 
-Every module opens with the same sample dataset already loaded: 350 drillholes through a nickel laterite deposit (synthetic, CC BY 4.0, credit Orebit.id). You need no account and no files of your own. Follow the four steps below and you will have seen the whole workflow, from raw drillholes to a grade-tonnage curve.
+Each module opens with synthetic nickel laterite data (CC BY 4.0, credit Orebit.id). Core starts with 349 collars and deliberate source-link faults; Assay/Resource open prepared LIM/SAP intervals from the complete 350-hole sources. No separate exercise mode is needed. You can review the prepared Assay/Resource examples independently or correct Core before continuing through all three modules.
 
 ## 1. Core: check the drillholes (3 minutes)
 
 [Open Orebit Core](https://geosuite.orebit.id/try/Core.html). Use **Start review** for the main path. **Advanced tools** in the sidebar opens the detailed table and section views directly.
 
-- **Dashboard** shows 350 drillholes, 8,896 assay intervals and 8.8 km of drilling, with overburden, limonite, saprolite and bedrock logged; 10 holes stop before bedrock.
+- **Dashboard** shows 349 collars (one original collar is missing), 8,896 assay intervals and 8.8 km of drilling, with overburden, limonite, saprolite and bedrock logged; 10 holes stop before bedrock.
 - **Validation** checks every hole for missing surveys, overlapping or gapped intervals and holes without a geology log, and lists each finding with the reason.
+- **Fix the sample:** in Validation, inspect orphan records, the missing geology log and mismatched ID. Click **Download source CSVs**, unzip, import all four originals and revalidate. This corrects synthetic source links; never use example sources to repair field data. Desurvey remains blocked until failures are resolved.
 - **Section** draws the holes on a cross-section with grades and lithology.
 - **Desurvey** turns collar and survey into 3D hole traces.
 
@@ -50,3 +51,5 @@ Windows users can also download the three separate executables from [GitHub Rele
 Export projects as backups. Browser storage belongs to the browser profile and site origin; clearing it can remove saved work. Save the exported files outside the browser. To build from source, follow the [repository installation guide](https://github.com/ghoziankarami/geosuite#build-from-source).
 
 The collar programme follows an irregular strike-oriented prospect with selective infill. Core retains all raw horizons; the initial Assay/Resource example selects LIM/SAP. Measured density is retained in handoffs. For validation practice, use the [missing-data and interval validation exercises](https://github.com/ghoziankarami/orebit-datasets/tree/main/exercises); inspect and correct them before export.
+
+On phones/tablets, **Steps / Alur** opens the main stages and **Advanced / Lanjutan** opens optional tools. The tour follows the same stage controls in each module.

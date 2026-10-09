@@ -55,7 +55,7 @@ Hasilnya sebaran 5.488 × 3.449 m, yang masuk akal untuk satu endapan.
 
 Keterkaitan tabel bersih: tidak ada lubang yatim, tidak ada collar ganda, tidak ada gap atau overlap. Dua catatan:
 
-- **Collar tanpa kedalaman akhir (EOH).** Pemeriksaan kelengkapan collar gagal (80 %) karena kolom `depth` tidak ada. Core sekarang memanjangkan jejak lubang sampai interval terdalam yang tercatat.
+- **Collar tanpa kedalaman akhir (EOH).** 399 kedalaman akhir yang hilang dilaporkan sebagai peringatan; kelengkapan bidang geometri wajib tetap 100 %. Core memakai arah stasiun survey terakhir untuk mencapai interval terdalam yang tercatat, tanpa mengisi atau mengubah `collar.depth`. Ekstrapolasi ini merupakan asumsi arah, bukan pengukuran kedalaman akhir.
 - **Dua lubang hanya punya satu stasiun survey** (di kedalaman 0).
 
 Kombinasi keduanya membuka sebuah **bug nyata** di GeoSuite. Jejak lubang dulu hanya dipanjangkan sampai `collar.depth`. Tanpa kolom itu, setiap sampel di bawah stasiun survey terakhir ditumpuk *di titik stasiun itu*. Pada lubang satu-stasiun, seluruh sampelnya menumpuk di collar: di Babbitt ada 97 sampel. Contoh B1-001 (−60° ke 327°): titik tengah interval terdalamnya (kedalaman ±129 m di sepanjang lubang) seharusnya berada di elevasi **382,53 m**, bukan di elevasi collar 494,05 m. Nilai 382,53 dihitung ulang dengan trigonometri di runner dan dicocokkan dengan ekspor Core.

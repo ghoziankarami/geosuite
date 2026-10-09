@@ -166,8 +166,8 @@
       },
       {
         "name": "collar required-field completeness",
-        "value": "80.0%",
-        "severity": "fail"
+        "value": "100.0%",
+        "severity": "ok"
       },
       {
         "name": "survey required-field completeness",
@@ -177,6 +177,31 @@
       {
         "name": "assay required-field completeness",
         "value": "100.0%",
+        "severity": "ok"
+      },
+      {
+        "name": "Collar without final measured depth",
+        "value": "399 hole",
+        "severity": "warn"
+      },
+      {
+        "name": "collar invalid structural measurements",
+        "value": "0 row",
+        "severity": "ok"
+      },
+      {
+        "name": "survey invalid structural measurements",
+        "value": "0 row",
+        "severity": "ok"
+      },
+      {
+        "name": "assay invalid structural measurements",
+        "value": "0 row",
+        "severity": "ok"
+      },
+      {
+        "name": "geology invalid structural measurements",
+        "value": "0 row",
         "severity": "ok"
       },
       {
@@ -560,5 +585,5 @@
     "img_gt": "babbitt-12-resource-grade-tonnage.png",
     "page_errors": []
   },
-  "runtime_s": 138
+  "runtime_s": 119
 }

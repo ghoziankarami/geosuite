@@ -135,6 +135,31 @@
         "severity": "warn"
       },
       {
+        "name": "Collar without final measured depth",
+        "value": "0 hole",
+        "severity": "ok"
+      },
+      {
+        "name": "collar invalid structural measurements",
+        "value": "0 row",
+        "severity": "ok"
+      },
+      {
+        "name": "survey invalid structural measurements",
+        "value": "1 row",
+        "severity": "fail"
+      },
+      {
+        "name": "assay invalid structural measurements",
+        "value": "0 row",
+        "severity": "ok"
+      },
+      {
+        "name": "geology invalid structural measurements",
+        "value": "0 row",
+        "severity": "ok"
+      },
+      {
         "name": "Assay interval gaps",
         "value": "208 gap",
         "severity": "warn"
@@ -261,6 +286,31 @@
         "severity": "warn"
       },
       {
+        "name": "Collar without final measured depth",
+        "value": "0 hole",
+        "severity": "ok"
+      },
+      {
+        "name": "collar invalid structural measurements",
+        "value": "0 row",
+        "severity": "ok"
+      },
+      {
+        "name": "survey invalid structural measurements",
+        "value": "1 row",
+        "severity": "fail"
+      },
+      {
+        "name": "assay invalid structural measurements",
+        "value": "0 row",
+        "severity": "ok"
+      },
+      {
+        "name": "geology invalid structural measurements",
+        "value": "0 row",
+        "severity": "ok"
+      },
+      {
         "name": "Assay interval gaps",
         "value": "206 gap",
         "severity": "warn"
@@ -294,7 +344,7 @@
     "desurvey": {
       "convention": "positive_down",
       "holes": 711,
-      "bad_survey": 0,
+      "bad_survey": 1,
       "TH5_end": {
         "depth": 395.9,
         "x": 371662.0355341647,
@@ -886,5 +936,5 @@
     ],
     "tonnes_Mt_at_3_6": 4.702
   },
-  "runtime_s": 90
+  "runtime_s": 91
 }

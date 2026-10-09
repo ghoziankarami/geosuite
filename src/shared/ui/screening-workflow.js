@@ -11,6 +11,8 @@
   const moved=new Map();
   const dirty=new Map();
   let pending=null;
+  let failedAttempt=null;
+  const failureSignature = n => JSON.stringify({calculation:resourceCalculationSignature(),inputs:Array.from(document.querySelectorAll('#tab'+n+' input,#tab'+n+' select')).map(el=>[el.id,el.value,el.checked])});
   const calculation = n => resource()&&[4,5,6,7].includes(n);
   const result = n => ({4:variogramState.model,5:blockState.blocks,6:estimState.results,7:crossvalState.metrics})[n];
   function canContinue(n) {
@@ -27,6 +29,7 @@
     const needsRun=!ready(n)||dirty.has(n);
     if(!needsRun){navigate(target);return;}
     const controls=Array.from(document.querySelectorAll('#tab'+n+' input,#tab'+n+' select')).map(el=>[el,el.disabled]);
+    failedAttempt=null;
     pending={stage:n};controls.forEach(([el])=>el.disabled=true);sync();
     try {
       // Existing owners read the current visible/custom parameters and retain
@@ -37,12 +40,14 @@
       if(DATA.rows===rows && current===n){
         if(result(n)!==before && ready(n)){dirty.delete(n);navigate(target);}
         else {
+          failedAttempt={stage:n,rows,signature:failureSignature(n)};
           const status=document.querySelector('#tab'+n+' .workflow-gate');
           if(status){status.hidden=false;status.textContent=tr('notAdvanced');}
         }
       }
     } catch(error) {
       console.error('Guided calculation failed',error);
+      failedAttempt={stage:n,rows,signature:failureSignature(n)};
       if(current===n){const status=document.querySelector('#tab'+n+' .workflow-gate');if(status){status.hidden=false;status.textContent=tr('notAdvanced');}}
     } finally {controls.forEach(([el,disabled])=>el.disabled=disabled);pending=null;sync();}
   }
@@ -81,12 +86,6 @@
     }
     row.hidden=!tools.length&&!origin;
     return row;
-  }
-  function training(panel,n) {
-    if(resource()||![1,7].includes(n)||(!STATE.usingSample&&!isCoreTrainingExample()))return;
-    const box=node('aside',null,'workflow-training');box.append(node('strong',tr('trainingTitle')),node('p',tr(isCoreTrainingExample()?'trainingFixHint':'trainingHint')));
-    box.append(button(tr(isCoreTrainingExample()?'trainingRestore':'trainingTry'),'inspect',()=>isCoreTrainingExample()?restoreTrainingExample():loadTrainingExercise('missing-collar-and-geology')));
-    panel.querySelector('.assay-workflow-card').after(box);
   }
   function dashboard(panel, insight, purpose, first) {
     panel.querySelector('.assay-workflow-card')?.remove();
@@ -142,7 +141,8 @@
     if(calculation(current)&&dirty.has(current)&&result(current)!==dirty.get(current))dirty.delete(current);
     const gate=card.querySelector('.workflow-gate');if(gate){
       if(pending?.stage===current){gate.hidden=false;gate.textContent=tr('calculating');}
-      else if(gate.textContent!==tr('notAdvanced')){gate.hidden=canContinue(current);gate.textContent=tr(!resource()&&[7,10].includes(current)?'blockedGeometry':'blocked');}
+      else if(resource()&&failedAttempt?.stage===current&&failedAttempt.rows===DATA.rows&&failedAttempt.signature===failureSignature(current)){gate.hidden=false;gate.textContent=tr('notAdvanced');}
+      else {gate.hidden=canContinue(current);gate.textContent=tr(!resource()&&[7,10].includes(current)?'blockedGeometry':'blocked');}
     }
     const onward=card.querySelector('[data-workflow-next]');if(onward){onward.disabled=!canContinue(current);if(calculation(current))onward.textContent=tr(!ready(current)||dirty.has(current)?'computeNext':'next',{stage:label(next(current))});}
     const inspect=card.querySelector('[data-workflow-inspect]');if(inspect&&resource()&&[4,6,7].includes(current))inspect.disabled=!ready(current);
@@ -162,19 +162,22 @@
   function refresh(n=current) {
     if(!initialized)return;restoreActions();current=n;navigation(n);const panel=document.getElementById('tab'+n);if(!panel)return;
     if(!resource()&&n===7)validation=_p1RunValidationChecks();
-    panel.querySelector('.assay-workflow-card')?.remove();panel.querySelector('.workflow-training')?.remove();
-    if(n===1){const loaded=resource()?!!DATA?.rows?.length:!!STATE.collar.length&&!!STATE.assay.length;dashboard(panel,facts(n),tr('purpose1'),loaded?(resource()?3:7):2);training(panel,n);return;}
+    panel.querySelector('.assay-workflow-card')?.remove();
+    if(n===1){const loaded=resource()?!!DATA?.rows?.length:!!STATE.collar.length&&!!STATE.assay.length;dashboard(panel,facts(n),tr('purpose1'),loaded?(resource()?3:7):2);return;}
     const card=node('section',null,'assay-workflow-card');card.setAttribute('aria-label',tr('guide'));
-    const stages=main(),i=stages.indexOf(n);card.append(node('p',i<0?tr('optional'):tr('step',{n:i+1,total:stages.length}),'workflow-eyebrow'),node('h2',label(n)));
+    const stages=main(),i=stages.indexOf(n);card.classList.toggle('workflow-optional',i<0);card.append(node('p',i<0?tr('optional'):tr('step',{n:i+1,total:stages.length}),'workflow-eyebrow'),node('h2',label(n)));
     const purpose=window.__t('flow.purpose'+n);if(purpose!=='flow.purpose'+n)card.append(node('p',purpose,'workflow-purpose'));
     card.append(links(stages,n));
     const summary=node('div',null,'workflow-insight');summary.append(node('strong',tr('quickInsight')),node('p',facts(n)));card.append(summary);
     const actions=node('div',null,'workflow-actions');
     if(n===2)actions.append(button(tr('import'),'apply',()=>document.getElementById('fileInput').click()));
     const target=next(n);if(target&&!(resource()&&n===3)){const onward=button(tr('next',{stage:label(target)}),'next',()=>continueStage(n,target));onward.dataset.workflowNext='true';onward.disabled=!canContinue(n);actions.append(onward);}
+    if(!resource() && n===7 && !ready(n)){
+      const repair=button(window.__t('core.repair.title'),'next',()=>{const el=document.getElementById('coreValidationRemedies');el?.scrollIntoView({block:'start',behavior:'smooth'});el?.querySelector('button')?.focus({preventScroll:true});});repair.dataset.workflowRepair='true';actions.prepend(repair);
+    }
     if(n!==2){
       const inspect=button(tr('inspect'),'inspect',()=>{
-        const id=resource()?({3:'resourceSetupQuickInsight',4:'varPlot',5:blockState.blocks?.length?'blockGridSummary':'blockPreview',6:'estimResults',7:'cvResults'})[n]:({7:'validationPanel',10:'desurveyPanel',11:'mergePanel'})[n];
+        const id=resource()?({3:'resourceSetupQuickInsight',4:'varPlot',5:blockState.blocks?.length?'blockGridSummary':'blockPreview',6:'estimResults',7:'cvResults',11:'d3Plot'})[n]:({7:'coreValidationRemedies',10:'desurveyPanel',11:'mergePanel'})[n];
         const result=(id&&document.getElementById(id))||panel.querySelector('.plot-container,.card');
         if(result){let parent=result.parentElement;while(parent&&parent!==panel){if(parent.tagName==='DETAILS')parent.open=true;parent=parent.parentElement;}result.scrollIntoView({block:'start',behavior:'smooth'});result.setAttribute('tabindex','-1');result.focus({preventScroll:true});}
       });
@@ -186,21 +189,35 @@
       const handoff=button(window.__t('handoff.toAssay'),'next',()=>OrebitHandoff.send('Assay',exportMasterCSV));
       handoff.disabled=!STATE.merged?.length||!coreGeometryReady()||_p1RunValidationChecks().some(row=>row.severity==='fail');actions.append(handoff);
     }
+    if(!resource()&&[2,7].includes(n)&&STATE.usingSample)actions.append(button(window.__t('core.source.download'),'inspect',downloadSampleSources));
     actions.append(button(tr('custom'),'custom',()=>customize(panel)));card.append(actions);
     const key=node('div',null,'action-key');for(const role of ['next','inspect','custom','advanced'])key.append(node('span',window.__t('ux.action.'+role),'action-key-'+role));card.append(key);
     if(target){const gate=node('p',null,'workflow-gate');gate.setAttribute('role','status');card.append(gate);}
     card.append(related(resource()?'resource':'core',n,navigate));
-    panel.prepend(card);training(panel,n);sync();
+    panel.prepend(card);sync();
   }
   function boot() {
     if(assay()||typeof showTab!=='function'||initialized)return;initialized=true;
     const original=window.showTab;window.showTab=function(n){restoreActions();const result=original.apply(this,arguments);refresh(n);return result;};
+    window.__i18nBeforeRenderHooks=window.__i18nBeforeRenderHooks||[];
+    window.__i18nBeforeRenderHooks.push(()=>{
+      if(!resource()||!calculation(current))return;
+      const stage=current,rows=DATA.rows;
+      const drafts=Array.from(document.querySelectorAll('#tab'+stage+' input[id],#tab'+stage+' select[id]')).filter(el=>!['file','hidden','button','submit'].includes(el.type)).map(el=>({id:el.id,type:el.type,value:el.value,checked:el.checked}));
+      return ()=>{
+        if(current!==stage||DATA.rows!==rows)return;
+        drafts.forEach(draft=>{const el=document.getElementById(draft.id);if(!el||el.type!==draft.type)return;if(el.tagName==='SELECT'&&!Array.from(el.options).some(option=>option.value===draft.value))return;el.value=draft.value;el.checked=draft.checked;});
+        if(stage===5&&typeof updateBlockPreview==='function')updateBlockPreview();
+        sync();
+      };
+    });
     window.__i18nPostApplyHooks=window.__i18nPostApplyHooks||[];window.__i18nPostApplyHooks.push(()=>refresh(current));
     document.addEventListener('click',ev=>{
       if(pending&&ev.target.closest('#varComputeBtn,#bmGenBtn,#resourceRunEstimate,#resourceRunCrossval')){ev.preventDefault();ev.stopImmediatePropagation();}
     },true);
     document.addEventListener('input',ev=>{
       if(!resource()||!calculation(current))return;
+      failedAttempt=null;
       const id=ev.target.id;
       const inputs={4:/^var(Dir|Lag|N|Tol|MaxH)$/,5:/^bm/,6:/^(sr|s)(Maj|Semi|Min|Az|Dip|MinN|MaxN|Octant|MaxHole|SecondPass|PassFactor|PassMin|DomainBound)$/,7:/^cvLimit$/};
       if(inputs[current].test(id)&&!dirty.has(current))dirty.set(current,result(current));
@@ -211,6 +228,6 @@
     // Only update view state: no calculations, parameter changes or approval marks.
     setInterval(sync,1000);refresh(typeof currentTab==='number'?currentTab:1);
   }
-  window.OrebitScreeningWorkflow={dashboard,links,related,refresh};
+  window.OrebitScreeningWorkflow={dashboard,links,related,refresh,reset:()=>{failedAttempt=null;}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else setTimeout(boot,0);
 })();

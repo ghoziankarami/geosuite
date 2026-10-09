@@ -44,7 +44,7 @@ zero. Keep backups of CSVs and project exports between modules.
 
 For the easiest training run, use the [10-minute quickstart](docs/vignettes/en/00-quickstart.md)
 ([Bahasa Indonesia](docs/vignettes/00-quickstart.md)) **when your build shows the
-350-hole synthetic nickel sample**. For real uploaded data and detailed decisions,
+synthetic nickel sample**. Core starts with 349 collars and documented missing/mismatched source links; use Validation → Download source CSVs → Import to correct them. Assay/Resource open prepared LIM/SAP intervals from the complete 350-hole sources. For real uploaded data and detailed decisions,
 use [Thalanga](docs/vignettes/en/01-thalanga-vms.md)
 ([Bahasa Indonesia](docs/vignettes/01-thalanga-vms.md)) or
 [Babbitt](docs/vignettes/en/02-babbitt-cuni.md)

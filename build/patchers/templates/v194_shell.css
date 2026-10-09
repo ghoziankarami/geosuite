@@ -260,6 +260,7 @@ header.orebit-header .orebit-link:hover {{
 
 /* === Sidebar footer: relocated Undo + Glossary === */
 .orebit-rail-foot {{
+  order:999 !important;
   margin-top: auto !important;
   padding: 12px 4px 4px !important;
   border-top: 1px solid var(--border-sub, var(--border)) !important;
@@ -664,7 +665,7 @@ button, .tab, .glossary-trigger {{ touch-action: manipulation; }}
    pure text notifications with nothing clickable inside, so disabling
    pointer events costs nothing; the inner rule keeps any future
    button/link inside a toast usable. */
-#toast, .toast, .toast-container, [role="status"]:not(.btn) {{
+#toast, .toast, .toast-container {{
   pointer-events: none;
 }}
 #toast a, #toast button, .toast a, .toast button,
@@ -835,18 +836,19 @@ body.dark .orebit-quickstart p {{ color: #cbd5e1; }}
   .orebit-quickstart-cta {{ width: 100%; padding: 12px; font-size: 14px; }}
 }}
 
-/* === MOBILE BOTTOM TAB BAR (< 768px) === */
-@media (max-width: 767px) {{
+/* The bottom navigation replaces the rail at the same 1080px breakpoint. */
+.mobile-bottom-nav, .mobile-nav-hamburger, .mobile-nav-drawer, .mobile-nav-drawer-backdrop {{display:none!important}}
+@media (max-width: 1079px) {{
   body .wrap {{
-    padding-bottom: 64px !important;
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
   }}
   /* Hide sidebar tabs entirely — mobile-bottom-nav replaces them */
   body .wrap > nav.tabs {{ display: none !important; }}
 
   /* ─── Mobile Bottom Nav ─── */
-  .mobile-bottom-nav {{ display:none !important;position:fixed;bottom:0;left:0;right:0;background:var(--bg-card);border-top:1px solid var(--border);z-index:1000;padding:6px 0 8px;box-shadow:0 -2px 12px rgba(0,0,0,0.08) }}
+  .mobile-bottom-nav {{ display:block !important;position:fixed;bottom:0;left:0;right:0;background:var(--bg-card);border-top:1px solid var(--border);z-index:1000;padding:6px 0 calc(8px + env(safe-area-inset-bottom, 0px));box-shadow:0 -2px 12px rgba(0,0,0,0.08) }}
   .mobile-bottom-nav .nav-items {{ display:flex;justify-content:space-around;align-items:center;max-width:500px;margin:0 auto }}
-  .mobile-bottom-nav .nav-item {{ display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border:none;background:none;color:var(--fg-mute);font-size:10px;font-weight:500;cursor:pointer;border-radius:8px;transition:all .2s;font-family:inherit;-webkit-tap-highlight-color:transparent;min-width:56px }}
+  .mobile-bottom-nav .nav-item {{ display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;flex:1;min-height:44px;border:none;background:none;color:var(--fg-mute);font-size:10px;font-weight:500;cursor:pointer;border-radius:8px;transition:all .2s;font-family:inherit;-webkit-tap-highlight-color:transparent;min-width:0;overflow-wrap:anywhere }}
   .mobile-bottom-nav .nav-item svg {{ width:22px;height:22px;stroke-width:1.8 }}
   .mobile-bottom-nav .nav-item.active {{ color:var(--accent) }}
   .mobile-bottom-nav .nav-item:active {{ transform:scale(0.92) }}
@@ -872,8 +874,8 @@ body.dark .orebit-quickstart p {{ color: #cbd5e1; }}
         >=320px). Pinning it to left/right instead removes the whole class of
         problem -- it can no longer be wider than the screen. A stylesheet
         `!important` outranks a non-important inline style, so no JS change
-        is needed. Desktop (>768px) keeps the original centred 320-560px box. ─── */
-  #toast, .toast, [role="status"]:not(.btn) {{
+        is needed. Desktop (>=1080px) keeps the original centred 320-560px box. ─── */
+  #toast, .toast {{
     bottom: calc(16px + 72px + env(safe-area-inset-bottom, 0px)) !important;
   }}
   #computeOverlay {{
@@ -899,18 +901,18 @@ body.dark .orebit-quickstart p {{ color: #cbd5e1; }}
     border-radius:8px; background:var(--bg-card); color:var(--fg-body);
     cursor:pointer; -webkit-tap-highlight-color:transparent;
   }}
-  .mobile-nav-hamburger.show {{ display:inline-flex !important; }}
+  .mobile-nav-hamburger.show {{ display:inline-flex !important;width:44px;height:44px; }}
   .mobile-nav-hamburger svg {{ width:20px; height:20px; stroke-width:2; }}
   .mobile-nav-drawer-backdrop {{
-    display:none; position:fixed; inset:0; background:rgba(15,23,42,0.35);
+    display:none!important; position:fixed; inset:0; background:rgba(15,23,42,0.35);
     z-index:1001; opacity:0; transition:opacity .2s ease;
   }}
-  .mobile-nav-drawer-backdrop.show {{ display:block; opacity:1; }}
+  .mobile-nav-drawer-backdrop.show {{ display:block!important; opacity:1; }}
   .mobile-nav-drawer {{
     position:fixed; top:0; bottom:0; left:0; width:min(78vw, 300px);
     background:var(--bg-card); z-index:1002; box-shadow:2px 0 16px rgba(0,0,0,0.18);
     transform:translateX(-100%); transition:transform .22s ease;
-    display:flex; flex-direction:column; padding:16px 10px;
+    display:flex!important; flex-direction:column; padding:16px 10px;
     padding-top:calc(16px + env(safe-area-inset-top, 0px));
     overflow-y:auto; box-sizing:border-box;
   }}
@@ -1130,4 +1132,9 @@ details.hint .hint-more-count {{
 }}
 details.hint .hint-more-count::before {{ content: '\25be '; }}
 details.hint[open] .hint-more-count::before {{ content: '\25b4 '; }}
+@media(max-width:1079px) {{
+ .mobile-nav-drawer .drawer-heading {{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 10px 12px}}
+ .mobile-nav-drawer .drawer-close {{min-width:44px;min-height:44px;background:var(--bg-card);color:var(--fg-body);border:1px solid var(--border);border-radius:8px;font-size:24px}}
+ .orebit-help-bubble {{bottom:calc(88px + env(safe-area-inset-bottom,0px))!important}}
+}}
 </style>

@@ -2608,7 +2608,7 @@ input[type="checkbox"], input[type="radio"] {
   <!-- Workflow guide &amp; reference — Core drillhole preparation (collapsed by default) -->
   <details class="card" style="margin-top:16px;">
     <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">
-<svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;vertical-align:-2px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> <span data-i18n="core.wf.title">Workflow guide — 5 steps</span></summary>
+<svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;vertical-align:-2px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> <span data-i18n="core.wf.title">All tools reference</span></summary>
   <div style="margin-top:10px;font-size:13px;color:var(--fg-body);line-height:1.6;">
   <ol style="margin:8px 0 8px 20px;">
     <li><strong><span data-i18n="core.wf.s1">1. Import</span></strong> — <span data-i18n="core.wf.d1">Drag-drop 4 CSV — Collar, Survey, Assay, Geology.</span> <em style="color:var(--fg-mute);"><span data-i18n="core.wf.g1">Gate: KCMI Ch1 sampling protocol</span></em></li>
@@ -3331,7 +3331,7 @@ function orebitConfirm(message, opts) {
     ok.className = 'btn small';
     ok.textContent = opts.okText || (t('core.orebitConfirm.continue'));
     function done(val) { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(val); }
-    function onKey(e) { if (e.key === 'Escape') done(false); else if (e.key === 'Enter') done(true); }
+    function onKey(e) { if (e.key === 'Escape') done(false); }
     cancel.onclick = function() { done(false); };
     ok.onclick = function() { done(true); };
     overlay.onclick = function(e) { if (e.target === overlay) done(false); };
@@ -3340,7 +3340,7 @@ function orebitConfirm(message, opts) {
     box.appendChild(msg); box.appendChild(btnRow);
     overlay.appendChild(box);
     document.body.appendChild(overlay);
-    ok.focus();
+    openModalDialog(box, {overlay, label:message, close:()=>done(false), initialFocus:ok});
   });
 }
 
@@ -3594,99 +3594,9 @@ function plotTheme() {
   };
 }
 
-// ============= PNG EXPORT: FORCE WHITE, PUBLICATION-READY BACKGROUND =============
-// plotTheme() always renders charts with a fully TRANSPARENT paper/plot
-// background (rgba(0,0,0,0)) so they blend into the app's light or dark theme
-// on screen. Plotly.toImage() captures the graph div exactly as it is, so a
-// raw "Export PNG" inherited that transparency -- and a transparent PNG opened
-// outside a browser (Windows Photos, pasted into a slide/report, etc.) renders
-// as solid BLACK instead of see-through, which read to users as "the export
-// has a black background". Force the LIGHT theme's colors (white bg, dark
-// text/gridlines, on every x/y axis a chart has) just for the capture, then
-// put back whatever the live chart actually had -- exported PNGs always look
-// the same, readable on white, regardless of which theme the app is in.
-async function plotlyToImageWhiteBg(gd, opts) {
-  if (!gd || !window.Plotly) return Plotly.toImage(gd, opts);
-  const layout = gd.layout || (gd._fullLayout) || {};
-  const full = gd._fullLayout || layout;
-  const axisKeys = Object.keys(layout).filter(k => /^[xy]axis\d*$/.test(k));
-  const prev = { paper_bgcolor: layout.paper_bgcolor, plot_bgcolor: layout.plot_bgcolor, 'font.color': layout.font && layout.font.color };
-  const upd = { paper_bgcolor: '#ffffff', plot_bgcolor: '#ffffff', 'font.color': '#0f172a' };
-  axisKeys.forEach(k => {
-    const ax = layout[k] || {};
-    prev[k + '.gridcolor'] = ax.gridcolor;
-    prev[k + '.zerolinecolor'] = ax.zerolinecolor;
-    prev[k + '.linecolor'] = ax.linecolor;
-    upd[k + '.gridcolor'] = '#f1f5f9';
-    upd[k + '.zerolinecolor'] = '#cbd5e1';
-    if (ax.linecolor) upd[k + '.linecolor'] = '#cbd5e1';
-  });
-
-  // ── Typography must grow with the export canvas ──
-  // Plotly.toImage re-renders at opts.width (1400-1600px) but leaves every font
-  // at its on-screen size. Measured 2026-09-02: a chart shown 514px wide exports
-  // at 1400px -- 2.72x bigger -- while its labels stay 12.5px, so axis titles and
-  // ticks land at ~37% of the on-screen prominence and read as unreadable. Scale
-  // every text size AND the margins by the same factor the canvas grew, so the
-  // PNG is the on-screen chart enlarged rather than a differently-proportioned
-  // one. Effective sizes come from _fullLayout (Plotly's resolved defaults live
-  // there, not in .layout), and those same values are restored afterwards so the
-  // live chart is identical to before the export.
-  const onW = gd.getBoundingClientRect().width || full.width || 800;
-  const exW = (opts && opts.width) || onW;
-  const fontK = Math.min(2.5, Math.max(1, exW / onW));
-  if (fontK > 1.05) {
-    const sc = (v, d) => Math.round((typeof v === 'number' ? v : d) * fontK * 10) / 10;
-    prev['font.size'] = (full.font && full.font.size) || 12.5;
-    upd['font.size'] = sc(prev['font.size'], 12.5);
-    if (full.title && full.title.font) {
-      prev['title.font.size'] = full.title.font.size || 17;
-      upd['title.font.size'] = sc(prev['title.font.size'], 17);
-    }
-    if (full.legend && full.legend.font) {
-      prev['legend.font.size'] = full.legend.font.size || 12.5;
-      upd['legend.font.size'] = sc(prev['legend.font.size'], 12.5);
-    }
-    axisKeys.forEach(axk => {
-      const fa = full[axk] || {};
-      // Tick labels are the DENSE text: charts using tickmode:'array' (e.g. the
-      // CDF's 0/0.25/0.5/0.75/0.9/0.95/0.99/1) pin every label, and Plotly
-      // cannot thin an explicit tick array, so scaling ticks as hard as titles
-      // makes the crowded end of such an axis collide. Titles/labels -- the
-      // things actually reported unreadable -- still scale fully; ticks scale
-      // more gently so they gain readability without overlapping.
-      const tickK = Math.min(fontK, 1.8);
-      const scTick = (v, d) => Math.round((typeof v === 'number' ? v : d) * tickK * 10) / 10;
-      prev[axk + '.tickfont.size'] = (fa.tickfont && fa.tickfont.size) || 11;
-      upd[axk + '.tickfont.size'] = scTick(prev[axk + '.tickfont.size'], 11);
-      if (fa.title && fa.title.font) {
-        prev[axk + '.title.font.size'] = fa.title.font.size || 15;
-        upd[axk + '.title.font.size'] = sc(prev[axk + '.title.font.size'], 15);
-      }
-    });
-    (full.annotations || []).forEach((an, i) => {
-      const sz = (an.font && an.font.size) || (full.font && full.font.size) || 12.5;
-      prev['annotations[' + i + '].font.size'] = sz;
-      upd['annotations[' + i + '].font.size'] = sc(sz, 12.5);
-    });
-    ['l', 'r', 't', 'b'].forEach(side => {
-      const m = full.margin && full.margin[side];
-      if (typeof m === 'number') {
-        prev['margin.' + side] = m;
-        upd['margin.' + side] = Math.round(m * fontK);
-      }
-    });
-  }
-
-  try { await Plotly.relayout(gd, upd); } catch (e) { console.warn('plotlyToImageWhiteBg relayout failed', e); }
-  try {
-    return await Plotly.toImage(gd, opts);
-  } finally {
-    const restore = {};
-    Object.keys(prev).forEach(k => { if (prev[k] !== undefined) restore[k] = prev[k]; });
-    if (Object.keys(restore).length) { try { await Plotly.relayout(gd, restore); } catch (e) {} }
-  }
-}
+// Shared PNG export makes a light-theme snapshot and scales its text without
+// changing the active graph, camera, filters or analytical data.
+/* @orebit-inline: shared/plots/png-export.js */
 
 // ============= THEME TOGGLE (shared across P1/P2/P3) =============
 // Toggles dark/light theme, saves preference, calls phase-specific re-render.
@@ -4842,7 +4752,7 @@ function renderRichDashboard() {
     ct: missingSurvey > 0 ? (missingSurvey + (t('core.renderRichDashboard.missing'))) : (survey.length + ' ok') });
   // assay overlaps (rough): same hole, overlapping from/to
   let overlaps = 0;
-  const byHole = {};
+  const byHole = Object.create(null);
   assay.forEach(r => { const h = _field(r, holeKey); if (!h) return; (byHole[h] = byHole[h] || []).push(r); });
   Object.values(byHole).forEach(rows => {
     rows.sort((a, b) => (_numField(a, ['from_m','from','sampfrom']) || 0) - (_numField(b, ['from_m','from','sampfrom']) || 0));
@@ -6921,7 +6831,7 @@ function buildHoleStatusData() {
   const surveyIds = new Set(STATE.survey.map(r => r.hole_id).filter(Boolean));
   const assayIds = new Set(STATE.assay.map(r => r.hole_id).filter(Boolean));
   const geoIds = new Set(STATE.geology.map(r => r.hole_id).filter(Boolean));
-  const collarMap = {};
+  const collarMap = Object.create(null);
   STATE.collar.forEach(c => { if (c.hole_id) collarMap[c.hole_id] = c; });
   return [...collarIds].map(hid => {
     const c = collarMap[hid] || {};
@@ -7108,7 +7018,7 @@ function renderColumnMapping(container) {
         ? `<div style="margin-top:4px;">
             <p style="font-size:12px;color:var(--fg-mute);margin:0 0 4px;">${t('core.cm.otherColumns')}</p>
             <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              ${leftovers.map(c => `<button class="btn small secondary" onclick="markAsGradeColumn('${escapeHtml(c)}'); return false;" style="font-family:monospace;font-size:11px;">+ ${escapeHtml(c)}</button>`).join('')}
+              ${leftovers.map(c => `<button class="btn small secondary" data-column="${escapeHtml(c)}" onclick="markAsGradeColumn(this.dataset.column); return false;" style="font-family:monospace;font-size:11px;">+ ${escapeHtml(c)}</button>`).join('')}
             </div>
           </div>`
         : '';
@@ -7294,7 +7204,7 @@ function renderValidation() {
   });
 
   // Gap/overlap on assay
-  const assayByHole = {};
+  const assayByHole = Object.create(null);
   STATE.assay.forEach(r => {
     if (!r.hole_id) return;
     (assayByHole[r.hole_id] = assayByHole[r.hole_id] || []).push(r);
@@ -7865,7 +7775,7 @@ function renderValidation() {
     }
 
     // Build assay-count lookup
-    const assayCount = {};
+    const assayCount = Object.create(null);
     STATE.assay.forEach(r => { if (r.hole_id) assayCount[r.hole_id] = (assayCount[r.hole_id] || 0) + 1; });
 
     // Filter + classify — collapse audit categories: complete | noGeo | orphan
@@ -7959,7 +7869,7 @@ function renderValidation() {
     if (STATE.mapUI.colorBy === 'prospect') {
       // Group by prospect with distinct palette
       const palette = ['#2D7A8E','#E87722','#1D3557','#6C3DC8','#16a34a','#dc2626','#eab308','#ec4899','#0ea5e9','#84cc16','#f97316','#a855f7'];
-      const byProspect = {};
+      const byProspect = Object.create(null);
       points.forEach(p => { (byProspect[p.prospect] = byProspect[p.prospect] || []).push(p); });
       Object.entries(byProspect).forEach(([prospect, pts], i) => {
         const color = palette[i % palette.length];
@@ -8028,7 +7938,7 @@ function renderValidation() {
         const unit = meta.unit || '';
 
         // Per-hole average (BDL/negative excluded)
-        const holeAvg = {};
+        const holeAvg = Object.create(null);
         STATE.assay.forEach(r => {
           if (!r.hole_id) return;
           const v = Number(r[activeCol]);
@@ -8494,7 +8404,7 @@ function renderStripLog() {
         const bg = active ? '#2D7A8E' : 'transparent';
         const fg = active ? '#fff' : 'var(--fg)';
         const bd = active ? '#2D7A8E' : 'var(--border, rgba(0,0,0,0.2))';
-        return `<span onclick="stripLogToggleExtra('${escapeHtml(spec)}')" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;border:1px solid ${bd};background:${bg};color:${fg};font-size:11px;user-select:none;" title="${escapeHtml(table)}.${escapeHtml(col)}"><strong>${escapeHtml(col)}</strong> <span style="opacity:0.65;font-size:10px;">${escapeHtml(table)}</span></span>`;
+        return `<span data-extra="${escapeHtml(spec)}" onclick="stripLogToggleExtra(this.dataset.extra)" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;border:1px solid ${bd};background:${bg};color:${fg};font-size:11px;user-select:none;" title="${escapeHtml(table)}.${escapeHtml(col)}"><strong>${escapeHtml(col)}</strong> <span style="opacity:0.65;font-size:10px;">${escapeHtml(table)}</span></span>`;
       }).join('')
     : '<span style="color:var(--fg-mute);font-size:12px;">no extra columns available</span>';
 
@@ -8955,7 +8865,7 @@ function renderSection() {
   }
 
   // Default origin: pick prospect with most holes, use its centroid (more useful than global median)
-  const prospectGroups = {};
+  const prospectGroups = Object.create(null);
   STATE.collar.forEach(c => {
     if (c.x == null || c.y == null) return;
     const key = c.prospect || '__none__';
@@ -9474,7 +9384,7 @@ function computeDesurvey() {
     : (dip) => Math.PI / 180 * (90 + dip);  // dip=-90 vertical → inc=0
 
   // For each hole, walk survey points and compute (X,Y,Z) at any depth via min curvature.
-  const holes = {};
+  const holes = Object.create(null);
   source.collar.forEach(c => {
     if (!c.hole_id) return;
     holes[c.hole_id] = { collar: c, surveys: [] };
@@ -9536,7 +9446,7 @@ function computeDesurvey() {
   // sample below the last station stacked on that one point: a single-station
   // hole put all its samples at the collar. Assay's own merge already uses
   // max(to) the same way. Found 2026-09-25 building the Babbitt vignette.
-  const maxTo = {};
+  const maxTo = Object.create(null);
   ['assay', 'geology'].forEach(tbl => (source[tbl] || []).forEach(r => {
     const to = strictNum(r.to_m);
     if (r.hole_id && isFinite(to) && !(to <= (maxTo[r.hole_id] || 0))) maxTo[r.hole_id] = to;
@@ -9867,7 +9777,7 @@ function render3DTraces() {
     // draws the holes as dotted lines, because the dropped intervals leave
     // real gaps in a line that should be continuous. Measured on 200 holes /
     // 20,000 intervals: merging gives ~800 segments and solid holes.
-    const byHole = {};
+    const byHole = Object.create(null);
     rows.forEach(g => { (byHole[g.hole_id] = byHole[g.hole_id] || []).push(g); });
     // Build every run first, decide what to draw second. Merging usually does
     // all the work, but it cannot help a hole whose lithology alternates on
@@ -9892,7 +9802,7 @@ function render3DTraces() {
     const runStep = Math.max(1, Math.ceil(allRuns.length / D3_SEGMENT_BUDGET));
     if (runStep > 1) dropped = allRuns.length - Math.ceil(allRuns.length / runStep);
 
-    const byLith = {};
+    const byLith = Object.create(null);
     allRuns.forEach((r, idx) => {
       if (idx % runStep) return;
       const a = getXYZAtDepth(r.hid, r.from);
@@ -10169,7 +10079,7 @@ function computeMerge() {
   const source = _coreAnalysisSource();
   if (!window._coreUseProvidedXYZ && !STATE.desurvey) computeDesurvey();
   // Build geology lookup by hole + depth range
-  const geoByHole = {};
+  const geoByHole = Object.create(null);
   source.geology.forEach(g => {
     if (!g.hole_id) return;
     (geoByHole[g.hole_id] = geoByHole[g.hole_id] || []).push(g);
@@ -10420,7 +10330,7 @@ function computeComposites(compLen, selectedGradeCols) {
   const results = [];
 
   // Group by hole_id
-  const byHole = {};
+  const byHole = Object.create(null);
   m.forEach(r => {
     if (!r.hole_id) return;
     (byHole[r.hole_id] = byHole[r.hole_id] || []).push(r);
@@ -11185,7 +11095,7 @@ function renderSpatialMap() {
   const gd = document.getElementById('cropSpatialMap');
   if (!gd || typeof Plotly === 'undefined') return;
   if (!STATE.merged) { try { computeMerge(); } catch (e) {} }
-  const holes = {};
+  const holes = Object.create(null);
   (STATE.merged || []).forEach(r => {
     const x = Number(r.midx), y = Number(r.midy);
     if (!isFinite(x) || !isFinite(y)) return;
@@ -11765,7 +11675,7 @@ function _p1RunValidationChecks(source = STATE) {
   if(directionIssues.length)checks.push({code:'directions',table:'survey',records:source.survey.flatMap((r,i)=>directionKeys.get(r.hole_id)?.has(Number(r.depth))?[ref('survey',i,['depth','dip','azimuth'])]:[]),name:'Survey conflicting or opposite directions',value:directionIssues.length+' station',severity:'fail'});
 
   // Assay gap/overlap
-  const assayByHole = {};
+  const assayByHole = Object.create(null);
   source.assay.forEach(r => {
     if (!r.hole_id) return;
     (assayByHole[r.hole_id] = assayByHole[r.hole_id] || []).push(r);
@@ -12086,12 +11996,12 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
       : '—';
 
     // Counts of intervals per hole
-    const assayPerHole = {}, geoPerHole = {};
+    const assayPerHole = Object.create(null), geoPerHole = Object.create(null);
     STATE.assay.forEach(r => { if (r.hole_id) assayPerHole[r.hole_id] = (assayPerHole[r.hole_id]||0) + 1; });
     STATE.geology.forEach(r => { if (r.hole_id) geoPerHole[r.hole_id] = (geoPerHole[r.hole_id]||0) + 1; });
 
     // First-survey azimuth/dip per hole (top-of-hole orientation)
-    const firstSurveyByHole = {};
+    const firstSurveyByHole = Object.create(null);
     [...STATE.survey].sort((a,b) => Number(a.depth) - Number(b.depth)).forEach(r => {
       if (r.hole_id && firstSurveyByHole[r.hole_id] === undefined) firstSurveyByHole[r.hole_id] = r;
     });
@@ -13040,7 +12950,7 @@ document.addEventListener('keydown', (e) => {
   }
 
   /* ---- Project Manager Modal ---- */
-  async function openProjectManager() {
+  async function openProjectManager(opener = document.activeElement) {
     // Not otherwise guaranteed idempotent: the modal's own "refresh" path below
     // (save -> overlay.remove() -> openProjectManager()) leaves a freshly-opened
     // instance in the DOM, so a second call (e.g. saving a second project without
@@ -13081,12 +12991,12 @@ document.addEventListener('keydown', (e) => {
     overlay.innerHTML = `
       <div class="orebit-modal">
         <div class="modal-header">
-          <h3><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Project Manager</h3>
-          <button class="modal-close" id="pmClose">&times;</button>
+          <h3 id="projectManagerTitle"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> ${t('core.projectManager.title')}</h3>
+          <button class="modal-close" id="pmClose" aria-label="${t('a11y.close')}">&times;</button>
         </div>
         <div class="modal-body">
           <div class="pm-new-project">
-            <input type="text" id="pmNewName" placeholder="New project name…" class="input-field" />
+            <input type="text" id="pmNewName" aria-label="${t('core.projectManager.newName')}" placeholder="${t('core.projectManager.newNamePlaceholder')}" class="input-field" />
             <button class="btn" id="pmCreateNew"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Create</button>
           </div>
           <div class="pm-list">${projectRows}</div>
@@ -13094,6 +13004,7 @@ document.addEventListener('keydown', (e) => {
       </div>`;
 
     document.body.appendChild(overlay);
+    openModalDialog(overlay.querySelector('.orebit-modal'), {overlay, opener, labelledby:'projectManagerTitle', close:()=>overlay.remove(), initialFocus:overlay.querySelector('#pmNewName')});
 
     // Close
     overlay.querySelector('#pmClose').addEventListener('click', () => overlay.remove());
@@ -13106,7 +13017,7 @@ document.addEventListener('keydown', (e) => {
       if (!name) { toast(t('core.importBundle.enterProjectName'), 'warn'); return; }
       await save(name);
       overlay.remove();
-      openProjectManager(); // refresh
+      openProjectManager(opener); // refresh, retaining the visible entry control
     });
 
     // Action buttons
@@ -13130,7 +13041,7 @@ document.addEventListener('keydown', (e) => {
               updateProjectNameDisplay();
             }
             overlay.remove();
-            openProjectManager(); // refresh
+            openProjectManager(opener); // refresh, retaining the visible entry control
           }
         }
       });

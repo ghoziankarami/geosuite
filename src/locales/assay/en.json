@@ -148,7 +148,7 @@
   "asy.lm.geoControl": "Geological Control — Boxplot per Lithology · {e} (page {p}/{t})",
   "asy.kcmiFillHint": "Section 1 commentary is auto-generated from the dataset. The reporting standards table below must be filled in with project-specific knowledge.",
   "asy.biplotDegenerate": "Arrow labels are hidden for {vars}: their loading vectors are effectively zero-length (no variance in this dataset), so the labels would stack on the origin. The variables are still included in the PCA.",
-  "asy.wf.title": "Workflow guide — 11 steps",
+  "asy.wf.title": "All tools reference",
   "asy.wf.s1": "1. Import Data",
   "asy.wf.g1": "Gate: Parsed CSV + column mapping",
   "asy.wf.s2": "2. Visual Inspection",

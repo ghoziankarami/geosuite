@@ -2358,7 +2358,7 @@ body.assay-guided.assay-advanced-open nav.tabs .tab[data-workflow-advanced="true
   <details class="card" style="margin-top:16px;">
     <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">
 <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;vertical-align:-2px;">
-<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> <span data-i18n="asy.wf.title">Workflow guide — 11 steps</span></summary>
+<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> <span data-i18n="asy.wf.title">All tools reference</span></summary>
   <div style="margin-top:10px;font-size:13px;color:var(--fg-body);line-height:1.6;">
   <ol style="margin:8px 0 8px 20px;">
     <li><strong><span data-i18n="asy.wf.s1">1. Import Data</span></strong> — <span data-i18n="asy.tabUpload">Upload</span>. <em style="color:var(--fg-mute);"><span data-i18n="asy.wf.g1">Gate: Parsed CSV + column mapping</span></em></li>
@@ -3065,7 +3065,7 @@ function orebitConfirm(message, opts) {
     ok.className = 'btn small';
     ok.textContent = opts.okText || (t('asy.orebitConfirm.continue'));
     function done(val) { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(val); }
-    function onKey(e) { if (e.key === 'Escape') done(false); else if (e.key === 'Enter') done(true); }
+    function onKey(e) { if (e.key === 'Escape') done(false); }
     cancel.onclick = function() { done(false); };
     ok.onclick = function() { done(true); };
     overlay.onclick = function(e) { if (e.target === overlay) done(false); };
@@ -3074,7 +3074,7 @@ function orebitConfirm(message, opts) {
     box.appendChild(msg); box.appendChild(btnRow);
     overlay.appendChild(box);
     document.body.appendChild(overlay);
-    ok.focus();
+    openModalDialog(box, {overlay, label:message, close:()=>done(false), initialFocus:ok});
   });
 }
 
@@ -3305,99 +3305,9 @@ function plotTheme() {
   };
 }
 
-// ============= PNG EXPORT: FORCE WHITE, PUBLICATION-READY BACKGROUND =============
-// plotTheme() always renders charts with a fully TRANSPARENT paper/plot
-// background (rgba(0,0,0,0)) so they blend into the app's light or dark theme
-// on screen. Plotly.toImage() captures the graph div exactly as it is, so a
-// raw "Export PNG" inherited that transparency -- and a transparent PNG opened
-// outside a browser (Windows Photos, pasted into a slide/report, etc.) renders
-// as solid BLACK instead of see-through, which read to users as "the export
-// has a black background". Force the LIGHT theme's colors (white bg, dark
-// text/gridlines, on every x/y axis a chart has) just for the capture, then
-// put back whatever the live chart actually had -- exported PNGs always look
-// the same, readable on white, regardless of which theme the app is in.
-async function plotlyToImageWhiteBg(gd, opts) {
-  if (!gd || !window.Plotly) return Plotly.toImage(gd, opts);
-  const layout = gd.layout || (gd._fullLayout) || {};
-  const full = gd._fullLayout || layout;
-  const axisKeys = Object.keys(layout).filter(k => /^[xy]axis\d*$/.test(k));
-  const prev = { paper_bgcolor: layout.paper_bgcolor, plot_bgcolor: layout.plot_bgcolor, 'font.color': layout.font && layout.font.color };
-  const upd = { paper_bgcolor: '#ffffff', plot_bgcolor: '#ffffff', 'font.color': '#0f172a' };
-  axisKeys.forEach(k => {
-    const ax = layout[k] || {};
-    prev[k + '.gridcolor'] = ax.gridcolor;
-    prev[k + '.zerolinecolor'] = ax.zerolinecolor;
-    prev[k + '.linecolor'] = ax.linecolor;
-    upd[k + '.gridcolor'] = '#f1f5f9';
-    upd[k + '.zerolinecolor'] = '#cbd5e1';
-    if (ax.linecolor) upd[k + '.linecolor'] = '#cbd5e1';
-  });
-
-  // ── Typography must grow with the export canvas ──
-  // Plotly.toImage re-renders at opts.width (1400-1600px) but leaves every font
-  // at its on-screen size. Measured 2026-09-02: a chart shown 514px wide exports
-  // at 1400px -- 2.72x bigger -- while its labels stay 12.5px, so axis titles and
-  // ticks land at ~37% of the on-screen prominence and read as unreadable. Scale
-  // every text size AND the margins by the same factor the canvas grew, so the
-  // PNG is the on-screen chart enlarged rather than a differently-proportioned
-  // one. Effective sizes come from _fullLayout (Plotly's resolved defaults live
-  // there, not in .layout), and those same values are restored afterwards so the
-  // live chart is identical to before the export.
-  const onW = gd.getBoundingClientRect().width || full.width || 800;
-  const exW = (opts && opts.width) || onW;
-  const fontK = Math.min(2.5, Math.max(1, exW / onW));
-  if (fontK > 1.05) {
-    const sc = (v, d) => Math.round((typeof v === 'number' ? v : d) * fontK * 10) / 10;
-    prev['font.size'] = (full.font && full.font.size) || 12.5;
-    upd['font.size'] = sc(prev['font.size'], 12.5);
-    if (full.title && full.title.font) {
-      prev['title.font.size'] = full.title.font.size || 17;
-      upd['title.font.size'] = sc(prev['title.font.size'], 17);
-    }
-    if (full.legend && full.legend.font) {
-      prev['legend.font.size'] = full.legend.font.size || 12.5;
-      upd['legend.font.size'] = sc(prev['legend.font.size'], 12.5);
-    }
-    axisKeys.forEach(axk => {
-      const fa = full[axk] || {};
-      // Tick labels are the DENSE text: charts using tickmode:'array' (e.g. the
-      // CDF's 0/0.25/0.5/0.75/0.9/0.95/0.99/1) pin every label, and Plotly
-      // cannot thin an explicit tick array, so scaling ticks as hard as titles
-      // makes the crowded end of such an axis collide. Titles/labels -- the
-      // things actually reported unreadable -- still scale fully; ticks scale
-      // more gently so they gain readability without overlapping.
-      const tickK = Math.min(fontK, 1.8);
-      const scTick = (v, d) => Math.round((typeof v === 'number' ? v : d) * tickK * 10) / 10;
-      prev[axk + '.tickfont.size'] = (fa.tickfont && fa.tickfont.size) || 11;
-      upd[axk + '.tickfont.size'] = scTick(prev[axk + '.tickfont.size'], 11);
-      if (fa.title && fa.title.font) {
-        prev[axk + '.title.font.size'] = fa.title.font.size || 15;
-        upd[axk + '.title.font.size'] = sc(prev[axk + '.title.font.size'], 15);
-      }
-    });
-    (full.annotations || []).forEach((an, i) => {
-      const sz = (an.font && an.font.size) || (full.font && full.font.size) || 12.5;
-      prev['annotations[' + i + '].font.size'] = sz;
-      upd['annotations[' + i + '].font.size'] = sc(sz, 12.5);
-    });
-    ['l', 'r', 't', 'b'].forEach(side => {
-      const m = full.margin && full.margin[side];
-      if (typeof m === 'number') {
-        prev['margin.' + side] = m;
-        upd['margin.' + side] = Math.round(m * fontK);
-      }
-    });
-  }
-
-  try { await Plotly.relayout(gd, upd); } catch (e) { console.warn('plotlyToImageWhiteBg relayout failed', e); }
-  try {
-    return await Plotly.toImage(gd, opts);
-  } finally {
-    const restore = {};
-    Object.keys(prev).forEach(k => { if (prev[k] !== undefined) restore[k] = prev[k]; });
-    if (Object.keys(restore).length) { try { await Plotly.relayout(gd, restore); } catch (e) {} }
-  }
-}
+// Shared PNG export makes a light-theme snapshot and scales its text without
+// changing the active graph, camera, filters or analytical data.
+/* @orebit-inline: shared/plots/png-export.js */
 
 // ============= THEME TOGGLE (shared across P1/P2/P3) =============
 // Toggles dark/light theme, saves preference, calls phase-specific re-render.
@@ -3901,7 +3811,7 @@ if (!DATA || !DATA.rows || !DATA.rows.length) { toast(t('asy.applyBundle.noDataS
   if (bar) { bar.style.display = 'flex'; updateP2ProjectDisplay(); }
 }
 
-async function openProjectManager() {
+async function openProjectManager(opener = document.activeElement) {
   const projects = await dbGetAll();
   const existing = document.getElementById('projectManagerModal');
   if (existing) existing.remove();
@@ -3933,8 +3843,8 @@ async function openProjectManager() {
   modal.innerHTML = `
     <div style="background:var(--bg);border-radius:12px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-        <h2 style="margin:0;">${t('asy.applyBundle.projectManager')}</h2>
-        <button onclick="document.getElementById('projectManagerModal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
+        <h2 id="projectManagerTitle" style="margin:0;">${t('asy.applyBundle.projectManager')}</h2>
+        <button aria-label="${t('aria.close')}" onclick="document.getElementById('projectManagerModal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
       </div>
       <div style="margin-bottom:20px;display:flex;gap:8px;">
         <button class="btn primary" onclick="importBundle()">${t('asy.applyBundle.importOrebit')}</button>
@@ -3944,6 +3854,7 @@ async function openProjectManager() {
     </div>
   `;
   document.body.appendChild(modal);
+  openModalDialog(modal.firstElementChild, {overlay:modal, opener, labelledby:'projectManagerTitle', close:()=>modal.remove()});
 }
 
 async function loadProjectFromDB(name) {
@@ -3974,7 +3885,7 @@ async function deleteProjectFromDB(name) {
     if (nameEl) nameEl.textContent = '(no project)';
   }
   const modal = document.getElementById('projectManagerModal');
-  if (modal) { modal.remove(); openProjectManager(); }
+  if (modal) { const opener=modal.__dialogOpener; modal.remove(); openProjectManager(opener); }
 }
 
 // ============= PROJECT HISTORY (Improvement 3) =============
@@ -6236,9 +6147,24 @@ function toggleLithoLegend(litho) {
 // ============= VALIDATION =============
 // Validation tab is currently dead code and has been removed (see line 4052-4070 showTab()).
 
+// Per-call grouping preserves input order and strict hole-key matching.
+// NaN never matched the former === filter; retain it only in the hole inventory.
+function _assayHoleRows(rows, holeIndex) {
+  const holes = new Set(), byHole = new Map();
+  for (const row of rows) {
+    const hole = row[holeIndex];
+    holes.add(hole);
+    if (hole !== hole) continue;
+    if (!byHole.has(hole)) byHole.set(hole, []);
+    byHole.get(hole).push(row);
+  }
+  return { holes: [...holes], byHole };
+}
+
 function runValidationChecks() {
   const checks = [];
-  const holes = [...new Set(DATA.rows.map(r => r[colIdx('hole_id')]))].filter(Boolean);
+  const grouped = _assayHoleRows(DATA.rows, colIdx('hole_id'));
+  const holes = grouped.holes.filter(Boolean);
 
   // Critical fields completeness
   const critical = ['hole_id','from_m','to_m'];
@@ -6308,7 +6234,7 @@ function runValidationChecks() {
   const fi = colIdx('from_m'), ti = colIdx('to_m');
   let gaps = 0, overlaps = 0, invertedDepths = 0;
   holes.forEach(h => {
-    const intervals = DATA.rows.filter(r => r[colIdx('hole_id')] === h).map(r => ({ from: r[fi], to: r[ti] })).sort((a,b) => a.from - b.from);
+    const intervals = (grouped.byHole.get(h) || []).map(r => ({ from: r[fi], to: r[ti] })).sort((a,b) => a.from - b.from);
     for (let k = 0; k < intervals.length; k++) {
       if (intervals[k].to <= intervals[k].from) invertedDepths++;
       if (k > 0) {
@@ -7637,7 +7563,8 @@ function computeComposites(length = 1.0, minLength = 0.5, breakAtLitho = false, 
   const densIdx = colIdx('density');
 
   const composites = [];
-  const holes = [...new Set(DATA.rows.map(r => r[colIdx('hole_id')]))];
+  const grouped = _assayHoleRows(DATA.rows, colIdx('hole_id'));
+  const holes = grouped.holes;
   let droppedTailLength = 0, gapLength = 0, overlapCount = 0;
   // I1 (docs/PLAN-domain-aware-dan-dokumentasi.md): a hole whose only raw
   // interval(s) fall entirely below minLength -- typically one short interval
@@ -7650,8 +7577,8 @@ function computeComposites(length = 1.0, minLength = 0.5, breakAtLitho = false, 
   // short are both caught the same way.
   const holesWithComposites = new Set();
   holes.forEach(h => {
-    const intervals = DATA.rows
-      .filter(r => r[colIdx('hole_id')] === h && typeof r[fi] === 'number' && typeof r[ti] === 'number')
+    const intervals = (grouped.byHole.get(h) || [])
+      .filter(r => typeof r[fi] === 'number' && typeof r[ti] === 'number')
       .sort((a,b) => a[fi] - b[fi]);
     if (!intervals.length) return;
 
@@ -9460,7 +9387,7 @@ function dataTreatmentLog() {
     if (!v.length) return null;
     const mean = v.reduce((a, b) => a + b, 0) / v.length;
     const sd = Math.sqrt(v.reduce((a, x) => a + (x - mean) ** 2, 0) / Math.max(1, v.length - 1));
-    return { n: v.length, mean, cv: mean > 0 ? sd / mean : 0, max: Math.max(...v) };
+    return { n: v.length, mean, cv: mean > 0 ? sd / mean : 0, max: v.reduce((maximum, value) => Math.max(maximum, value), -Infinity) };
   };
 
   // Changes are read straight off the pipeline, in the order they were applied, and each
@@ -11858,8 +11785,8 @@ function renderDomain() {
     if (xi < 0 || yi < 0) return null;
     const dims = zi >= 0 ? [xi, yi, zi] : [xi, yi];
     const pts = domainRows.map(r => dims.map(d => r[d])).filter(p => p.every(v => typeof v === 'number' && isFinite(v)));
-    const mins = dims.map((_, j) => Math.min(...pts.map(p => p[j])));
-    const maxs = dims.map((_, j) => Math.max(...pts.map(p => p[j])));
+    const mins = dims.map((_, j) => pts.reduce((minimum, p) => Math.min(minimum, p[j]), Infinity));
+    const maxs = dims.map((_, j) => pts.reduce((maximum, p) => Math.max(maximum, p[j]), -Infinity));
     const norm = pts.map(p => p.map((v, j) => (maxs[j] - mins[j]) ? (v - mins[j]) / (maxs[j] - mins[j]) : 0));
     const k = Math.min(4, norm.length);
     if (k < 2) return norm.map(() => 'S1');
@@ -11907,9 +11834,9 @@ function renderDomain() {
   // domains (S1, G3-High, etc.) into auditable geological labels ("Main Sulphide
   // Lode", "Oxide Cap") that flow into plots, stats, CSV, and the JORC/KCMI report.
   // Names are keyed per-method so switching method keeps each method's own labels.
-  window._domainNames = window._domainNames || {};
+  window._domainNames = window._domainNames || Object.create(null);
   const _nameKey = domainMethod;
-  window._domainNames[_nameKey] = window._domainNames[_nameKey] || {};
+  window._domainNames[_nameKey] = Object.assign(Object.create(null), window._domainNames[_nameKey] || {});
   const _nameMap = window._domainNames[_nameKey];
   // domainLabel(raw) → custom name if set, else the raw machine label.
   const domainLabel = (d) => (_nameMap[d] && String(_nameMap[d]).trim()) ? _nameMap[d] : d;
@@ -12030,7 +11957,7 @@ function renderDomain() {
         <tr><th>Domain</th><th data-i18n="asy.customName">Custom name</th><th>n</th><th>${t('asy.stat.mean')}</th><th>Median</th><th>SD</th><th>${abbr('CV','CV')}</th></tr>
         ${domainStats.map(d => `<tr>
           <td><span style="color:${dcolor(d.d)}">●</span> ${escapeHtml(d.d)}</td>
-          <td><input type="text" value="${escapeHtml(domainLabel(d.d) === d.d ? '' : domainLabel(d.d))}" placeholder="${escapeHtml(d.d)}" onchange="setDomainName('${escapeHtml(_nameKey)}','${escapeHtml(d.d)}',this.value)" style="width:160px;padding:3px 8px;font-size:12px;" title="Custom geological name for this domain"></td>
+          <td><input type="text" value="${escapeHtml(domainLabel(d.d) === d.d ? '' : domainLabel(d.d))}" placeholder="${escapeHtml(d.d)}" data-method="${escapeHtml(_nameKey)}" data-domain="${escapeHtml(d.d)}" onchange="setDomainName(this.dataset.method,this.dataset.domain,this.value)" style="width:160px;padding:3px 8px;font-size:12px;" title="Custom geological name for this domain"></td>
           <td>${(d.n||0).toLocaleString('en-US')}</td>
           <td>${(d.mean||0).toFixed(3)}</td>
           <td>${(d.p50||0).toFixed(3)}</td>
@@ -12238,8 +12165,8 @@ function setDomainMethod(method) {
 // Keyed per method so each method keeps its own naming. Re-render so the new
 // label flows into plots, stats, the domain column, and exports immediately.
 function setDomainName(methodKey, rawDomain, name) {
-  window._domainNames = window._domainNames || {};
-  window._domainNames[methodKey] = window._domainNames[methodKey] || {};
+  window._domainNames = window._domainNames || Object.create(null);
+  window._domainNames[methodKey] = Object.assign(Object.create(null), window._domainNames[methodKey] || {});
   window._domainNames[methodKey][rawDomain] = name;
   if (typeof renderDomain === 'function') renderDomain();
 }
@@ -12864,8 +12791,12 @@ function _qaqcHardStats(pairs) {
 function _qaqcDetectionLimit(elemCol) {
   const ei = colIdx(elemCol);
   if (ei < 0 || !DATA) return null;
-  const positives = DATA.rows.map(r => Number(r[ei])).filter(v => isFinite(v) && v > 0);
-  return positives.length ? Math.min(...positives) : null;
+  let minimum = Infinity;
+  for (const row of DATA.rows) {
+    const value = Number(row[ei]);
+    if (isFinite(value) && value > 0 && value < minimum) minimum = value;
+  }
+  return minimum === Infinity ? null : minimum;
 }
 
 function _qaqcBlankAnalysis(classified, elemCol) {
@@ -13422,7 +13353,7 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
 
     // Validation summary preview
     yDist += 12;
-    const passCount = checks.filter(c => c.severity === 'ok').length;
+    const passCount = checks.filter(c => c.severity === 'pass').length;
     const warnCount = checks.filter(c => c.severity === 'warn').length;
     const failCount = checks.filter(c => c.severity === 'fail').length;
     pdf.setFont('helvetica','bold'); pdf.setFontSize(10);

@@ -28,6 +28,7 @@
     const rows=DATA.rows,before=result(n);
     const needsRun=!ready(n)||dirty.has(n);
     if(!needsRun){navigate(target);return;}
+    const navigationOpener=document.activeElement;
     const controls=Array.from(document.querySelectorAll('#tab'+n+' input,#tab'+n+' select')).map(el=>[el,el.disabled]);
     failedAttempt=null;
     pending={stage:n};controls.forEach(([el])=>el.disabled=true);sync();
@@ -38,7 +39,7 @@
       while(estimState._running||estimState._confirming||crossvalState._running)
         await new Promise(resolve=>setTimeout(resolve,100));
       if(DATA.rows===rows && current===n){
-        if(result(n)!==before && ready(n)){dirty.delete(n);navigate(target);}
+        if(result(n)!==before && ready(n)){dirty.delete(n);navigate(target);_focusWorkflowDestination(target,navigationOpener);}
         else {
           failedAttempt={stage:n,rows,signature:failureSignature(n)};
           const status=document.querySelector('#tab'+n+' .workflow-gate');
@@ -62,6 +63,20 @@
   function links(stages,n) {
     const row=node('nav',null,'workflow-step-links');row.setAttribute('aria-label',tr('workflow'));
     for(const [i,stage] of stages.entries()){const b=button(label(stage),'inspect',()=>navigate(stage));if(stage===n)b.setAttribute('aria-current','step');row.append(b);}
+    row.addEventListener('focusin',event=>{
+      const focused=event.target;
+      if(focused.parentElement!==row||focused.tagName!=='BUTTON')return;
+      // Native reverse tabbing can leave a button behind the overflow clip.
+      // Wait for the browser's focus scroll, then move only this stage strip.
+      requestAnimationFrame(()=>{
+        if(document.activeElement!==focused||focused.parentElement!==row||!_visibleFocusTarget(focused)||
+          !row.closest('.panel.active')||row.scrollWidth<=row.clientWidth)return;
+        const bounds=row.getBoundingClientRect(),target=focused.getBoundingClientRect();
+        const left=bounds.left+row.clientLeft,right=left+row.clientWidth;
+        if(target.left<left)row.scrollLeft+=target.left-left;
+        else if(target.right>right)row.scrollLeft+=target.right-right;
+      });
+    });
     return row;
   }
   // One inventory serves every module. Links reveal existing owners; they never apply a treatment.

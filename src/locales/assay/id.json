@@ -148,7 +148,7 @@
   "asy.tc.reviewP99Only": "Tinjau P99 hanya jika outlier geologi membenarkan",
   "asy.kcmiFillHint": "Komentar Bagian 1 dibuat otomatis dari dataset. Tabel standar pelaporan di bawah harus diisi sesuai pengetahuan proyek.",
   "asy.biplotDegenerate": "Label panah disembunyikan untuk {vars}: vektor loading-nya nyaris nol panjang (tidak ada variance pada dataset ini), sehingga labelnya akan menumpuk di titik nol. Variabelnya tetap ikut dalam PCA.",
-  "asy.wf.title": "Panduan alur kerja — 11 langkah",
+  "asy.wf.title": "Referensi semua alat",
   "asy.wf.s1": "1. Impor Data",
   "asy.wf.g1": "Syarat: CSV terbaca + pemetaan kolom",
   "asy.wf.s2": "2. Pemeriksaan Visual",

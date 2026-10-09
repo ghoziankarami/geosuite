@@ -10,15 +10,15 @@
 //
 // Strategy:
 //   install  — precache the app shell: all three modules, their vendor
-//              libraries, the manifest and icons. Tolerant of a missing file
-//              (one 404 must not leave the app with no offline copy at all).
+//              libraries, the manifest and icons. An incomplete download
+//              rejects installation, keeping the previous worker and shell.
 //   module pages / navigations — network first (a new release reaches you the
 //              next time you are online), cached copy when offline.
 //   vendor, icons, manifest — stale-while-revalidate.
 // Bump CACHE_VERSION only to force every client to re-download the shell.
 
 const SCOPE_PATH = new URL(self.registration.scope).pathname;
-const CACHE_VERSION = 'geosuite-app-v4:' + SCOPE_PATH;
+const CACHE_VERSION = 'geosuite-app-v5:' + SCOPE_PATH;
 const inScope = url => url.pathname.startsWith(SCOPE_PATH);
 const shellURL = rel => new URL(rel, self.registration.scope).href;
 const APP_SHELL = [
@@ -37,13 +37,19 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_VERSION).then(cache => Promise.all(
-      APP_SHELL.map(rel => { const url = shellURL(rel); return fetch(url, { cache: 'reload' })
-        .then(async res => (await cacheable(url,res) ? cache.put(url, res) : null))
-        .catch(() => null); })
-    )).then(() => self.skipWaiting())
-  );
+  event.waitUntil((async () => {
+    // Validate every download before opening/writing the next cache. A failed
+    // vendor update must not activate a partial shell and retire the old one.
+    const downloads = await Promise.all(APP_SHELL.map(async rel => {
+      const url = shellURL(rel);
+      const response = await fetch(url, { cache: 'reload' });
+      if (!await cacheable(url, response)) throw new Error('Invalid app shell: ' + rel);
+      return { url, response };
+    }));
+    const cache = await caches.open(CACHE_VERSION);
+    await Promise.all(downloads.map(({ url, response }) => cache.put(url, response)));
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', event => {

@@ -55,6 +55,7 @@ python3 tests/test_lab_conventions.py
 python3 tests/test_grade_units.py
 python3 tests/test_core_validation_resolution.py
 python3 tests/test_estimation_inputs.py
+python3 tests/test_native_png_export.py
 python3 tests/test_module_handoff.py
 python3 tests/test_pwa_install.py
 python3 tests/test_pwa_subpath.py
@@ -66,6 +67,62 @@ python3 tests/test_vignettes.py
 Stop the background servers afterward. `test_vignettes.py` drives tutorial workflows and may take longer or require access to the public tutorial datasets. The public [CI workflow](../.github/workflows/ci.yml) is the reference for the complete tested command sequence and environment.
 
 For a numeric fix, add a small known-answer case with an independently calculated expected value. A test that calls the same calculation twice will not catch a wrong formula. For a UI or import fix, exercise the user path that was broken, including file upload when the bug only appears after upload.
+
+## Repeatable workflow measurements
+
+The optional benchmark uses a sibling checkout of the public
+[orebit-datasets](https://github.com/ghoziankarami/orebit-datasets). It creates and
+removes its own CSVs, server and fresh browser contexts. Build first, then run:
+
+```bash
+python3 tests/benchmark_workflow_performance.py --datasets ../orebit-datasets \
+  --output ../workflow-observations.json --repeats 3 \
+  --device-label "my-device-browser" --contention "describe other running work"
+```
+
+It checks complete populations, supplied columns, units, coordinate bounds and
+renderer errors while measuring actual Core → Assay → Resource actions. Chromium
+also provides heap snapshots at action boundaries; these include instrumentation
+and are not peak process memory. Latency has no default pass threshold. Record
+hardware/browser/load before comparing results; the benchmark does not certify
+native Windows, Safari/Dock, GPU rendering, estimation or production stability.
+`--browser webkit` selects Playwright's WebKit, not installed Safari.
+
+Native PNG export is shared in `src/shared/plots/png-export.js`. The actual PNG
+and ZIP regression checks title/scene boundaries, dark-theme ink, failure retry
+and unchanged live plots/data. Export uses an isolated Plotly snapshot; model,
+filter and camera controls remain editable in the app.
+
+## Windows desktop dependency inputs
+
+Windows CI and releases use CPython 3.11 x64 and two SHA256 input files. In a fresh
+Windows environment, install the source-build tools first, then the runtime inputs:
+
+```powershell
+py -3.11 -m pip install --require-hashes --only-binary=:all: -r desktop/requirements-windows-build.lock
+py -3.11 -m pip install --require-hashes --no-build-isolation --no-cache-dir --only-binary=:all: --no-binary=proxy-tools -r desktop/requirements-windows.lock
+py -3.11 -m pip check
+py -3.11 desktop/build_exe.py Core Assay Resource
+```
+
+The runtime file retains the 14 resolved package versions recorded with v3.1.0
+and adds the explicit `setuptools` dependency required by PyInstaller. The build
+file pins `setuptools`, `wheel` and wheel's `packaging` dependency; shared entries
+have identical versions/hashes. Together they cover 16 distinct package inputs.
+Hashes come from the published PyPI artifacts compatible with Windows x64 and
+CPython 3.11. `proxy-tools` 0.1.0 is published only as source, so its verified source
+archive is the single exception to wheel-only installation. `--no-build-isolation`
+uses the already locked tools instead of fetching an independent build backend.
+`--no-cache-dir` prevents reuse of a source-built wheel from an older backend.
+
+An update requires reviewing PyPI release metadata, advisories, every compatible
+artifact hash and dependency markers/constraints, then running Windows CI. Do not
+replace a hash merely to accept modified bytes. Cross-platform wheel downloads
+and an offline source build help verify inputs; they do not certify a Windows
+install, native GUI or byte-for-byte EXE reproducibility. These files do not lock
+CPython, pip, Windows, WebView2 or OS DLLs. `PYTHON-DEPENDENCIES.txt` remains a record
+of the actual release environment. Mac/Linux keep `desktop/requirements.txt` and
+the existing local web/PWA workflow.
 
 ## Desktop storage and module handoff
 
@@ -128,3 +185,30 @@ The test also checks missing grades, tiny values, no estimate and preservation
 of the actual cutoff, confidence filter and existing grade-tonnage curve.
 
 The Core validation-resolution test uses fresh desktop/phone sessions and normal UI actions: known-source confirmation/cancellation, four-CSV upload, exact row/cell links, verified record Add/Apply, ID and measurement correction, Desurvey/Merge, native PDF/project export and actual project reopen. The swallowed-render detector has a live canary. `OREBIT_TEST_DIST` replays an immutable prior artifact for regression controls; it does not bypass app actions.
+
+## Browser safety and release verification
+
+Browser libraries are bundled for offline operation. `build/vendor-lock.json`
+records the reviewed versions, byte hashes and upstream npm archive integrity.
+The build verifies all four files before creating output; a same-size modified
+asset is rejected. An upgrade requires authoritative upstream verification,
+licence/advisory review and native PDF/PNG/offline regressions. Do not edit the
+lock merely to accept damaged bytes. Installed-app shell updates keep the prior
+working worker until all replacement assets validate; project storage is retained.
+
+The shared UI owner controls dialog and stage focus. Enter activates the focused
+choice, including Cancel; undisclosed Advanced tools do not receive arrow-key
+focus. Imported names remain analytical values and render as plain text.
+Relevant browser regressions are `test_accessibility_keyboard.py`,
+`test_resource_input_security.py`, `test_resource_large_extent.py` and
+`test_pwa_install.py` under `tests/`; they use temporary servers and synthetic
+inputs. Run the build first and use the documented Playwright installation.
+The large-upload regression verifies the actual150k-row Assay export→Resource
+import/grid path, full data retention, units and independent bounds.
+
+Release-only `build/verify-release-source.py --tag vX.Y.Z` requires GitHub
+repository/read authentication supplied by the workflow. Before Windows build
+or publication it verifies tag/package version, exact commit, reviewed main
+ancestry and successful trusted CI for that commit. Local source-ZIP development
+and ordinary builds do not require release authentication. Existing release
+assets remain immutable; publish changed tested code under a deliberate new tag.

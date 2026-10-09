@@ -1011,5 +1011,8 @@
   "core.scope.regional": "Full regional population; no validation exclusions",
   "core.scope.clear": "Return to full-data validation",
   "core.scope.limited": "Showing the first 200 source records. Download the full exclusions CSV; the complete scope is saved in the project.",
-  "core.scope.download": "Download all excluded records"
+  "core.scope.download": "Download all excluded records",
+  "core.projectManager.title": "Project Manager",
+  "core.projectManager.newName": "New project name",
+  "core.projectManager.newNamePlaceholder": "New project name…"
 }

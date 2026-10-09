@@ -13081,12 +13081,12 @@ document.addEventListener('keydown', (e) => {
     overlay.innerHTML = `
       <div class="orebit-modal">
         <div class="modal-header">
-          <h3 id="projectManagerTitle"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> ${document.documentElement.lang==='id'?'Manajer Proyek':'Project Manager'}</h3>
+          <h3 id="projectManagerTitle"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> ${t('core.projectManager.title')}</h3>
           <button class="modal-close" id="pmClose" aria-label="${t('a11y.close')}">&times;</button>
         </div>
         <div class="modal-body">
           <div class="pm-new-project">
-            <input type="text" id="pmNewName" aria-label="${document.documentElement.lang==='id'?'Nama proyek baru':'New project name'}" placeholder="${document.documentElement.lang==='id'?'Nama proyek baru…':'New project name…'}" class="input-field" />
+            <input type="text" id="pmNewName" aria-label="${t('core.projectManager.newName')}" placeholder="${t('core.projectManager.newNamePlaceholder')}" class="input-field" />
             <button class="btn" id="pmCreateNew"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Create</button>
           </div>
           <div class="pm-list">${projectRows}</div>

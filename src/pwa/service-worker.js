@@ -87,7 +87,14 @@ async function networkFirst(request) {
   const controller=new AbortController();
   const timer=hit?setTimeout(()=>controller.abort(),8000):null;
   try {
-    const res = await fetch(request,{signal:controller.signal});
+    // Revalidate the HTTP cache as well as our offline cache. A still-fresh
+    // legacy 200 otherwise hides a new module/route until its cache expires.
+    const res = await fetch(request,{signal:controller.signal,cache:'no-cache'});
+    // fetch follows redirects before respondWith. Return a navigation redirect
+    // so an old /try/ URL adopts the root scope instead of retaining that path.
+    if (request.mode === 'navigate' && res.redirected && res.url &&
+        new URL(res.url).origin === new URL(request.url).origin)
+      return Response.redirect(res.url, 307);
     if (await cacheable(request,res)) await cache.put(request, res.clone());
     // Keep authentication/authorization responses visible. Only transient server failure uses cache.
     if((res.status>=500||res.status===408)&&hit)return hit;

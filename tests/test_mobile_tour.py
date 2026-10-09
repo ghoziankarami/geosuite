@@ -212,9 +212,16 @@ try:
                 if width == 1440:
                     rail = page.locator("nav.tabs .tab:visible").all()
                     positions = sorted([b.bounding_box()["y"] for b in rail])
+                    heading = page.locator(".workflow-nav-heading")
+                    group = heading.bounding_box()
                     check(
-                        all(b - a < 70 for a, b in zip(positions, positions[1:])),
-                        name + " fresh main-stage sidebar has no utility gap",
+                        heading.count() == 1 and positions[0] < group["y"] < positions[1],
+                        name + " groups review stages directly below Dashboard",
+                    )
+                    check(
+                        positions[1] - positions[0] - group["height"] < 70
+                        and all(b - a < 70 for a, b in zip(positions[1:], positions[2:])),
+                        name + " fresh main-stage sidebar has no utility gap beyond its labelled group",
                     )
                     foot = page.locator(".orebit-rail-foot")
                     if foot.count():

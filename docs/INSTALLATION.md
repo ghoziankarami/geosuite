@@ -5,7 +5,7 @@
 
 | Choose this route | What you need | Start here |
 | --- | --- | --- |
-| Web or installed web app | A current browser; internet for initial loading | [Open Core](https://geosuite.orebit.id/try/Core.html) |
+| Web or installed web app | A current browser; internet for initial loading | [Open Core](https://geosuite.orebit.id/Core.html) |
 | Windows executable | Windows 10/11; no Node or Python | [Public releases](https://github.com/ghoziankarami/geosuite/releases/latest) |
 | Local source build | Node.js 18+ and Python 3.9+; Windows, macOS or Linux | Commands below |
 

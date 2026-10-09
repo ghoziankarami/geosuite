@@ -142,6 +142,7 @@
     if(!toggle){toggle=button('',()=>{document.body.classList.toggle('assay-advanced-open');decorateNavigation(current);},true);toggle.dataset.actionRole='advanced';toggle.id='assayAdvancedToggle';toggle.style.order='90';nav.append(toggle);}
     if(n!==1&&!MAIN.includes(n))document.body.classList.add('assay-advanced-open');
     const open=document.body.classList.contains('assay-advanced-open');toggle.textContent=text(open?'hideAdvanced':'advanced');toggle.setAttribute('aria-expanded',String(open));
+    OrebitScreeningWorkflow.sidebar(MAIN,n,toggle,open);
   }
   function refresh(n=current) {
     if(!initialized)return;current=n;decorateNavigation(n);

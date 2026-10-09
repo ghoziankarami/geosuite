@@ -133,6 +133,25 @@
     if(!toggle){toggle=button('', 'advanced',()=>{document.body.classList.toggle('screening-advanced-open');navigation(current);});toggle.classList.add('screening-advanced-toggle');toggle.style.order='90';nav.append(toggle);}
     if(n!==1&&!stages.includes(n))document.body.classList.add('screening-advanced-open');
     const open=document.body.classList.contains('screening-advanced-open');toggle.textContent=tr(open?'hideAdvanced':'advanced');toggle.setAttribute('aria-expanded',String(open));
+    sidebar(stages,n,toggle,open);
+  }
+  // One rail hierarchy for all three apps. Numbers denote sequence, not approval.
+  function sidebar(stages,n,toggle,open) {
+    const nav=document.querySelector('nav.tabs');if(!nav)return;
+    let heading=nav.querySelector('.workflow-nav-heading');
+    if(!heading){heading=node('div',null,'workflow-nav-heading');heading.style.order='0';nav.append(heading);}
+    heading.textContent=tr('workflow');
+    const count=node('span',String(stages.length),'workflow-nav-count');count.setAttribute('aria-hidden','true');heading.append(count);
+    const controls=[];
+    nav.querySelectorAll('.tab').forEach((el,i)=>{
+      const stage=i+1,index=stages.indexOf(stage);
+      if(index>=0)el.dataset.workflowStep=String(index+1);else delete el.dataset.workflowStep;
+      el.setAttribute('aria-label',el.textContent.trim());
+      if(stage===n)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');
+      if(el.dataset.workflowAdvanced==='true'){el.id=el.id||'workflow-nav-tab-'+stage;controls.push(el.id);}
+    });
+    toggle.setAttribute('aria-controls',controls.join(' '));
+    toggle.classList.add('workflow-nav-disclosure');toggle.dataset.open=String(open);
   }
   function sync() {
     if(resource())validateResourceCalculationContext();
@@ -236,6 +255,6 @@
     // Only update view state: no calculations, parameter changes or approval marks.
     setInterval(sync,1000);refresh(typeof currentTab==='number'?currentTab:1);
   }
-  window.OrebitScreeningWorkflow={dashboard,links,related,refresh,reset:()=>{failedAttempt=null;}};
+  window.OrebitScreeningWorkflow={dashboard,links,related,sidebar,refresh,reset:()=>{failedAttempt=null;}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else setTimeout(boot,0);
 })();

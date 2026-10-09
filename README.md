@@ -11,7 +11,7 @@ No account, licence key, or paid feature is required.
 
 | Your goal / Tujuan | Route / Langkah |
 | --- | --- |
-| Use the app now | [Open Core](https://geosuite.orebit.id/try/Core.html). You do not need to install Node or Python. |
+| Use the app now | [Open Core](https://geosuite.orebit.id/Core.html). You do not need to install Node or Python. |
 | Use Windows executables | [Download Core, Assay and Resource from Releases](https://github.com/ghoziankarami/geosuite/releases/latest), then follow [Windows installation](docs/INSTALLATION.md#windows-executables). |
 | Run or modify the open-source code | Follow the [source installation](#run-from-source) below. Windows, macOS and Linux are supported for the local web build. |
 | Learn the workflow | Start with the [tutorial chooser](docs/vignettes/README.md); import the tutorial's own files for reproducible results. |

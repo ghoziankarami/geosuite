@@ -2377,7 +2377,7 @@ input[type="checkbox"], input[type="radio"] {
   <!-- Workflow guide + reference (collapsed — keeps dashboard clean) -->
   <details class="card" style="margin-top:16px;">
     <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">
-<svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;vertical-align:-2px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> <span data-i18n="res.wf.title">Workflow guide — 12 steps</span></summary>
+<svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;vertical-align:-2px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> <span data-i18n="res.wf.title">All tools reference</span></summary>
   <div style="margin-top:10px;font-size:13px;color:var(--fg-body);line-height:1.6;">
   <ol style="margin:8px 0 8px 20px;">
     <li><strong><span data-i18n="res.wf.s1">1. Dashboard</span></strong> — <span data-i18n="res.wf.d1">Pipeline overview, completeness checklist.</span> <em style="color:var(--fg-mute);"><span data-i18n="res.wf.g1">Gate: workflow guide</span></em></li>
@@ -3079,7 +3079,7 @@ function orebitConfirm(message, opts) {
       alt.textContent = opts.altText;
     }
     function done(val) { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(val); }
-    function onKey(e) { if (e.key === 'Escape') done(false); else if (e.key === 'Enter') done(alt ? 'alt' : true); }
+    function onKey(e) { if (e.key === 'Escape') done(false); }
     cancel.onclick = function() { done(false); };
     ok.onclick = function() { done(true); };
     if (alt) alt.onclick = function() { done('alt'); };
@@ -3091,9 +3091,8 @@ function orebitConfirm(message, opts) {
     box.appendChild(msg); box.appendChild(btnRow);
     overlay.appendChild(box);
     document.body.appendChild(overlay);
-    // Default focus (and Enter) go to the safe choice: the coarser-model
-    // alternative when one is offered, otherwise plain Continue.
-    (alt || ok).focus();
+    // Native Enter activates the focused choice, including Cancel.
+    openModalDialog(box, {overlay, label:message, close:()=>done(false), initialFocus:alt || ok});
   });
 }
 
@@ -3794,7 +3793,7 @@ function loadBundle(bundle) {
   // project loaded
 }
 
-async function openProjectManager() {
+async function openProjectManager(opener = document.activeElement) {
   // Show project manager modal — supports loading from Stage 02 (Assay) and Stage 03 (Resource).
   const projects = await dbGetAll();
   const _id = document.documentElement.lang === 'id';
@@ -3853,8 +3852,8 @@ async function openProjectManager() {
   modal.innerHTML = `
     <div class="orebit-modal">
       <div class="modal-header">
-        <h3><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> ${_id ? 'Manajer Proyek' : 'Project Manager'}</h3>
-        <button class="modal-close" onclick="this.closest('#projectManagerModal').remove()">&times;</button>
+        <h3 id="projectManagerTitle"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> ${_id ? 'Manajer Proyek' : 'Project Manager'}</h3>
+        <button class="modal-close" aria-label="${t('a11y.close')}" onclick="this.closest('#projectManagerModal').remove()">&times;</button>
       </div>
       <div class="modal-body">
       ${projectList}
@@ -3867,6 +3866,7 @@ async function openProjectManager() {
   `;
 
   document.body.appendChild(modal);
+  openModalDialog(modal.firstElementChild, {overlay:modal, opener, labelledby:'projectManagerTitle', close:()=>modal.remove()});
 }
 
 async function loadProjectFromDB(name) {
@@ -3894,7 +3894,8 @@ async function deleteProjectFromDB(name) {
       if (statusEl) statusEl.textContent = '';
     }
     // Refresh the modal
-    openProjectManager();
+    const opener = document.getElementById('projectManagerModal')?.__dialogOpener || document.activeElement;
+    openProjectManager(opener);
   } catch (e) {
     console.error('Failed to delete project:', e);
     toast(t('res.deleteProjectFromDB.failed').replace('{msg}', e.message), 'bad');
@@ -4967,7 +4968,7 @@ function renderDataPreview() {
 
  // domain stats
  const doms = uniqueDomains();
- const domCount = {};
+ const domCount = Object.create(null);
  for (const r of DATA.rows) {
  const d = rowVal(r, 'domain');
  if (d!== null && d!== '') domCount[d] = (domCount[d] || 0) + 1;
@@ -4991,7 +4992,7 @@ function renderDataPreview() {
  <div class="metric-grid" style="margin-bottom:14px;">
  <div class="metric-tile"><div class="label">${t('res.up.composites')}</div><div class="value">${DATA.rows.length.toLocaleString('en-US')}</div><div class="sub">${t('res.up.intervals')}</div></div>
  <div class="metric-tile"><div class="label" data-i18n="res.dash.drillholes">Drillholes</div><div class="value">${new Set(DATA.rows.map(r => rowVal(r, 'hole_id'))).size}</div><div class="sub">${t('res.up.uniqueHoleId')}</div></div>
- <div class="metric-tile"><div class="label">${t('res.dash.domains')}</div><div class="value">${doms.length}</div><div class="sub">${doms.map(d => `D${d}=${domCount[d] || 0}`).join(' · ')}</div></div>
+ <div class="metric-tile"><div class="label">${t('res.dash.domains')}</div><div class="value">${doms.length}</div><div class="sub">${doms.map(d => `D${escapeHtml(d)}=${domCount[d] || 0}`).join(' · ')}</div></div>
  <div class="metric-tile"><div class="label" data-i18n="res.dash.elements">Elements</div><div class="value">${elStats.length}</div><div class="sub">${ELEMENTS.filter(e => DATA.cols.includes(e)).join(' · ')}</div></div>
  </div>
  <h4 data-i18n="res.elementSummary">Element summary</h4>
@@ -5122,7 +5123,6 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
  <div class="resource-setup-actions">
  <button class="btn" id="resourceSetupNext" type="button" data-action-role="next" onclick="showTab(4)">${t('res.guide.next')}</button>
  </div>
- <div class="action-key"><span class="action-key-next">${t('ux.action.next')}</span><span class="action-key-inspect">${t('ux.action.inspect')}</span><span class="action-key-custom">${t('ux.action.custom')}</span><span class="action-key-advanced">${t('ux.action.advanced')}</span></div>
  <details class="resource-disclosure resource-inspect" id="resourceSetupInspect" ${inspectOpen?'open':''}>
  <summary>${t('res.guide.inspect')}</summary>
  <p class="resource-setup-help">${t('res.guide.inspectHint')}</p>
@@ -5364,7 +5364,7 @@ function renderElementSummary() {
  if(next)next.disabled=false;
  if(quick)quick.innerHTML=`<div><span>${t('res.guide.grades')}</span><strong>${n.toLocaleString('en-US')}</strong></div><div><span>${t('res.guide.mean')}</span><strong>${mean.toFixed(2)} ${escapeHtml(gradeUnitFor(setupState.element))}</strong></div><div><span>${t('res.guide.variability')}</span><strong>${Number.isFinite(cv)?cv.toFixed(2):'—'}</strong></div>`;
  div.innerHTML = `
- <h4><span data-i18n="res.st.statsPrefix">Stats:</span> ${escapeHtml(ELEMENT_LABEL[setupState.element] || setupState.element)}${setupState.domain!== 'all'? ` · Domain ${setupState.domain}` : ''}</h4>
+ <h4><span data-i18n="res.st.statsPrefix">Stats:</span> ${escapeHtml(ELEMENT_LABEL[setupState.element] || setupState.element)}${setupState.domain!== 'all'? ` · Domain ${escapeHtml(setupState.domain)}` : ''}</h4>
  <div class="metric-grid">
  <div class="metric-tile"><div class="label">n</div><div class="value" style="font-size:18px;">${n.toLocaleString('en-US')}</div></div>
  <div class="metric-tile"><div class="label" data-i18n="res.stat.mean">Mean</div><div class="value" style="font-size:18px;">${mean.toFixed(2)}</div></div>
@@ -7416,8 +7416,16 @@ function betweenHoleStats(samples, holeIdx) {
  TAB 5: BLOCK MODEL
  ============================================================ */
 function _resourceExtents(samples) {
- const axes = ['x','y','z'].map(k => samples.map(s => Number(s[k])).filter(Number.isFinite));
- const base = axes.map(a => [Math.min(...a), Math.max(...a)]);
+ // Keep the full population without expanding it into function arguments.
+ const base = ['x','y','z'].map(k => {
+  let min=Infinity,max=-Infinity;
+  for (const sample of samples) {
+   const value=Number(sample[k]);
+   if (!Number.isFinite(value)) continue;
+   min=Math.min(min,value);max=Math.max(max,value);
+  }
+  return [min,max];
+ });
  const mode = window._resourceExtentMode || 'sample';
  const buffer = Math.max(0, Number(window._resourceExtentBuffer) || 0);
  if (mode === 'buffered') return base.map(a => [a[0]-buffer, a[1]+buffer]);
@@ -10785,7 +10793,7 @@ function renderKCMIReport() {
 ${t('res.renderKCMIReport.resourceStatement')} — ${escapeHtml(DATA.name)}
 
 Komoditas: ${escapeHtml(elLab)}
-${t('res.renderKCMIReport.estimationDomain')}: ${setupState.domain === 'all'? (t('res.renderKCMIReport.all')) : 'Domain ' + setupState.domain}
+${t('res.renderKCMIReport.estimationDomain')}: ${setupState.domain === 'all'? (t('res.renderKCMIReport.all')) : 'Domain ' + escapeHtml(setupState.domain)}
 ${t('res.renderKCMIReport.effectiveDate')}: ${new Date().toLocaleDateString('id-ID')}
 
 ${t('res.renderKCMIReport.estimationMethod')}

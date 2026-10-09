@@ -128,3 +128,30 @@ The test also checks missing grades, tiny values, no estimate and preservation
 of the actual cutoff, confidence filter and existing grade-tonnage curve.
 
 The Core validation-resolution test uses fresh desktop/phone sessions and normal UI actions: known-source confirmation/cancellation, four-CSV upload, exact row/cell links, verified record Add/Apply, ID and measurement correction, Desurvey/Merge, native PDF/project export and actual project reopen. The swallowed-render detector has a live canary. `OREBIT_TEST_DIST` replays an immutable prior artifact for regression controls; it does not bypass app actions.
+
+## Browser safety and release verification
+
+Browser libraries are bundled for offline operation. `build/vendor-lock.json`
+records the reviewed versions, byte hashes and upstream npm archive integrity.
+The build verifies all four files before creating output; a same-size modified
+asset is rejected. An upgrade requires authoritative upstream verification,
+licence/advisory review and native PDF/PNG/offline regressions. Do not edit the
+lock merely to accept damaged bytes. Installed-app shell updates keep the prior
+working worker until all replacement assets validate; project storage is retained.
+
+The shared UI owner controls dialog and stage focus. Enter activates the focused
+choice, including Cancel; undisclosed Advanced tools do not receive arrow-key
+focus. Imported names remain analytical values and render as plain text.
+Relevant browser regressions are `test_accessibility_keyboard.py`,
+`test_resource_input_security.py`, `test_resource_large_extent.py` and
+`test_pwa_install.py` under `tests/`; they use temporary servers and synthetic
+inputs. Run the build first and use the documented Playwright installation.
+The large-upload regression verifies the actual150k-row Assay export→Resource
+import/grid path, full data retention, units and independent bounds.
+
+Release-only `build/verify-release-source.py --tag vX.Y.Z` requires GitHub
+repository/read authentication supplied by the workflow. Before Windows build
+or publication it verifies tag/package version, exact commit, reviewed main
+ancestry and successful trusted CI for that commit. Local source-ZIP development
+and ordinary builds do not require release authentication. Existing release
+assets remain immutable; publish changed tested code under a deliberate new tag.

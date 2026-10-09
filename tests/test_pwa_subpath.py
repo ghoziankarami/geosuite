@@ -49,12 +49,13 @@ def main():
                     "Assay.html",
                     "Resource.html",
                     "vendor/plotly.min.js",
+                    "vendor/jspdf.umd.min.js",
                     "manifest.webmanifest",
                     "pwa/icon-192.png",
                 ]
                 page.wait_for_function(
                     """async (items) => {
-                    const cache = await caches.open('geosuite-app-v4:/geosuite/');
+                    const cache = await caches.open('geosuite-app-v5:/geosuite/');
                     return (await Promise.all(items.map(x => cache.match('/geosuite/' + x))))
                       .every(Boolean);
                 }""",
@@ -71,6 +72,7 @@ def main():
                     timeout=60000,
                 )
                 assert assay.evaluate("typeof Plotly !== 'undefined'")
+                assert assay.evaluate("window.jspdf?.jsPDF.version === '4.2.1'")
                 browser.close()
         finally:
             server.shutdown()

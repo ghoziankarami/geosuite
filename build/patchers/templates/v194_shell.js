@@ -592,10 +592,11 @@
           return '<div class="orebit-profile-upgrade" style="margin:8px 12px 4px;padding:12px;border-radius:8px;background:#ecfdf5;border:1px solid #a7f3d0;text-align:center;">'
             + '<div style="font-size:13px;font-weight:600;color:#065f46;margin-bottom:4px;">' + titleLbl + '</div>'
             + '<div style="font-size:11px;color:#047857;margin-bottom:8px;">' + bodyLbl + '</div>'
-            + '<a href="{SUPPORT_URL}" target="_blank" style="display:inline-block;padding:6px 16px;border-radius:6px;background:#0d9488;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">💚 ' + supportLbl + '</a>'
+            + '<a href="{SUPPORT_URL}" target="_blank" style="display:inline-block;padding:6px 16px;border-radius:6px;background:#087e82;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">💚 ' + supportLbl + '</a>'
             + '</div>';
         }})()
         + '<div class="orebit-profile-sec" style="padding:6px 0;">'
+          + '<button class="orebit-profile-act" data-act="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>' + esc(L.openProject) + '</span></button>'
           + '<button class="orebit-profile-act" data-act="import"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>' + esc(L.importBundle) + '</span></button>'
           + '<button class="orebit-profile-act" data-act="export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>' + esc(L.exportBundle) + '</span></button>'
           + '<button class="orebit-profile-act" data-act="theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><span>' + esc(L.theme) + '</span></button>'

@@ -24,6 +24,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, readd
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { resolvePython } from "./python-launcher.mjs";
+import { verifyVendorAssets } from "./vendor-integrity.mjs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -38,6 +39,8 @@ const DIST_DIR = path.join(ROOT, "dist");
 // @orebit-inline marker paths are relative to src/, matching where the
 // extracted assets actually live (src/assets/fonts/...).
 const ASSETS_ROOT = path.join(ROOT, "src");
+const VENDOR_DIR = firstDirWith("plotly.min.js", path.join(ROOT, "vendor"), path.join(ROOT, "exe-wrapper", "pywebview", "vendor"));
+verifyVendorAssets(VENDOR_DIR, path.join(HERE, "vendor-lock.json"));
 
 const ALL_PHASES = ["Core", "Assay", "Resource"];
 const requested = process.argv.slice(2);
@@ -181,7 +184,6 @@ if (existsSync(PWA_DIR)) {
   }
 }
 
-const VENDOR_DIR = firstDirWith("plotly.min.js", path.join(ROOT, "vendor"), path.join(ROOT, "exe-wrapper", "pywebview", "vendor"));
 if (!existsSync(VENDOR_DIR)) throw new Error(`Bundled vendor directory missing: ${VENDOR_DIR}`);
 cpSync(VENDOR_DIR, path.join(DIST_DIR, "vendor"), { recursive: true, force: true });
 

@@ -219,6 +219,7 @@ header.orebit-header .orebit-link:hover {{
   cursor: pointer !important; text-align: left !important; transition: background 0.12s !important;
 }}
 .orebit-profile-act:hover {{ background: var(--bg-alt) !important; color: var(--fg) !important; }}
+.orebit-profile-upgrade a:hover,.orebit-profile-upgrade a:focus-visible {{background:#06686b!important;color:#fff!important}}
 .orebit-profile-act svg {{ width: 16px !important; height: 16px !important; color: var(--fg-mute, var(--fg-body)) !important; flex: none !important; }}
 .orebit-profile-backdrop {{
   position: fixed !important; inset: 0 !important; z-index: 1199 !important;

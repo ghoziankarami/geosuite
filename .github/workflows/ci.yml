@@ -25,6 +25,12 @@ jobs:
       - name: Desktop origin and handoff contract
         run: python tests/test_desktop_bridge.py
 
+      - name: Release source gates reject unreviewed or failed builds
+        run: python tests/test_release_source.py
+
+      - name: Offline vendor assets reject unreviewed replacements
+        run: node tests/test_vendor_integrity.mjs
+
       - name: Build all three modules
         run: npm run build
 
@@ -62,6 +68,9 @@ jobs:
           python tests/test_core_training.py
           python tests/test_core_validation_resolution.py
           python tests/test_mobile_tour.py
+          python tests/test_accessibility_keyboard.py
+          python tests/test_resource_input_security.py
+          python tests/test_resource_large_extent.py
 
       - name: CSV import matches committed parser snapshots
         run: python tests/known-answer/csv-parser-characterization.py

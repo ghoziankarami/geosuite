@@ -2358,7 +2358,7 @@ body.assay-guided.assay-advanced-open nav.tabs .tab[data-workflow-advanced="true
   <details class="card" style="margin-top:16px;">
     <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">
 <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;vertical-align:-2px;">
-<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> <span data-i18n="asy.wf.title">Workflow guide — 11 steps</span></summary>
+<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> <span data-i18n="asy.wf.title">All tools reference</span></summary>
   <div style="margin-top:10px;font-size:13px;color:var(--fg-body);line-height:1.6;">
   <ol style="margin:8px 0 8px 20px;">
     <li><strong><span data-i18n="asy.wf.s1">1. Import Data</span></strong> — <span data-i18n="asy.tabUpload">Upload</span>. <em style="color:var(--fg-mute);"><span data-i18n="asy.wf.g1">Gate: Parsed CSV + column mapping</span></em></li>
@@ -3065,7 +3065,7 @@ function orebitConfirm(message, opts) {
     ok.className = 'btn small';
     ok.textContent = opts.okText || (t('asy.orebitConfirm.continue'));
     function done(val) { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(val); }
-    function onKey(e) { if (e.key === 'Escape') done(false); else if (e.key === 'Enter') done(true); }
+    function onKey(e) { if (e.key === 'Escape') done(false); }
     cancel.onclick = function() { done(false); };
     ok.onclick = function() { done(true); };
     overlay.onclick = function(e) { if (e.target === overlay) done(false); };
@@ -3074,7 +3074,7 @@ function orebitConfirm(message, opts) {
     box.appendChild(msg); box.appendChild(btnRow);
     overlay.appendChild(box);
     document.body.appendChild(overlay);
-    ok.focus();
+    openModalDialog(box, {overlay, label:message, close:()=>done(false), initialFocus:ok});
   });
 }
 
@@ -3901,7 +3901,7 @@ if (!DATA || !DATA.rows || !DATA.rows.length) { toast(t('asy.applyBundle.noDataS
   if (bar) { bar.style.display = 'flex'; updateP2ProjectDisplay(); }
 }
 
-async function openProjectManager() {
+async function openProjectManager(opener = document.activeElement) {
   const projects = await dbGetAll();
   const existing = document.getElementById('projectManagerModal');
   if (existing) existing.remove();
@@ -3933,8 +3933,8 @@ async function openProjectManager() {
   modal.innerHTML = `
     <div style="background:var(--bg);border-radius:12px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-        <h2 style="margin:0;">${t('asy.applyBundle.projectManager')}</h2>
-        <button onclick="document.getElementById('projectManagerModal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
+        <h2 id="projectManagerTitle" style="margin:0;">${t('asy.applyBundle.projectManager')}</h2>
+        <button aria-label="${t('aria.close')}" onclick="document.getElementById('projectManagerModal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
       </div>
       <div style="margin-bottom:20px;display:flex;gap:8px;">
         <button class="btn primary" onclick="importBundle()">${t('asy.applyBundle.importOrebit')}</button>
@@ -3944,6 +3944,7 @@ async function openProjectManager() {
     </div>
   `;
   document.body.appendChild(modal);
+  openModalDialog(modal.firstElementChild, {overlay:modal, opener, labelledby:'projectManagerTitle', close:()=>modal.remove()});
 }
 
 async function loadProjectFromDB(name) {
@@ -3974,7 +3975,7 @@ async function deleteProjectFromDB(name) {
     if (nameEl) nameEl.textContent = '(no project)';
   }
   const modal = document.getElementById('projectManagerModal');
-  if (modal) { modal.remove(); openProjectManager(); }
+  if (modal) { const opener=modal.__dialogOpener; modal.remove(); openProjectManager(opener); }
 }
 
 // ============= PROJECT HISTORY (Improvement 3) =============

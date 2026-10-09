@@ -35,14 +35,34 @@ add verified source records, edit values and click **Apply changes**, then
 prefilled only to identify the record you chose to add. Mapping/unit controls
 remain available under the secondary details.
 
+Editor field-format checks do not certify links between tables. A focused
+unresolved finding stays visible even when its field types pass. Field-error
+counts cover the whole table, including records outside the focused view.
+
 For the untouched built-in sample, **Repair from bundled original source** uses
 its supplied original collar/geology records after confirmation; grades and
 measured surveys are preserved. Uploaded or edited projects cannot use that
 sample restoration. Otherwise import corrected CSVs or use the normal table
 editor. Added, removed and edited values are recorded in the project and PDF.
 The PDF includes the latest200 cell changes with an explicit limit; the project
-retains the complete audit. Unresolved structural findings block continuation;
+retains the complete audit. Unresolved structural findings block the full-data route;
 missing final measured depth or a geology log can remain recorded warnings.
+
+**Skip for now…** previews a separate screening scope: entire affected holes are
+excluded, not repaired or marked valid. Inspect or download the excluded source
+rows and supply a reason before continuing. Only independently validated holes
+enter Desurvey/Merge and the master handoff. All raw rows and regional findings
+remain in the project; PDF, CSV and stage banners state the actual scope. The source scope also travels
+through Assay composites into Resource project/block-export/PDF provenance. The
+PDF and preview show at most200 exclusions; the project and exclusions CSV
+retain all. Source edits/imports, mapping or geometry/unit changes retire the
+scope and derived results. Reopening a project revalidates its saved selection.
+Industry/raw exports still require full regional validation. **Return to full-data
+validation** clears scoped results without deleting source data.
+
+On phones the header keeps separate44px menu, install, language and profile
+controls. Install is an accessible icon; desktop downloads remain in the profile
+menu. Core, Assay and Resource share this shell and the real tour controls.
 
 Resource's route is Setup → Variography → Block Model → Estimation → validation
 → Grade-Tonnage → Report. Compute & fit produces the experimental curve and

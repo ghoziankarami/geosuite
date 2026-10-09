@@ -425,6 +425,8 @@ header.orebit-header .orebit-link:hover {{
 
 /* === MOBILE / TABLET (<1080px) === */
 @media (max-width: 1079px) {{
+  /* Header install and navigation remain usable on touch tablets too. */
+  header.orebit-header .toolbar [data-install-app] {{ min-height:44px !important;display:inline-flex;align-items:center; }}
   /* iPad / tablet: hide sidebar, use full-width content */
   body .wrap {{ grid-template-columns: 1fr !important; }}
   body .wrap > nav.tabs {{ display: none !important; }}
@@ -447,6 +449,14 @@ header.orebit-header .orebit-link:hover {{
      ("Orebit Core" truncated to "O..", next item clipped). Title returns on
      wide screens via the desktop media query. */
   header.orebit-header .brand .title-block {{ display: none !important; }}
+  /* Reserve real space for navigation. Install must never shrink the brand
+     until the hamburger overlaps the toolbar. Desktop download stays in the
+     profile menu; the phone header prioritises workflow and app install. */
+  header.orebit-header .brand {{ flex: 0 0 auto !important; }}
+  header.orebit-header .toolbar a[data-desktop-cta] {{ display:none !important; }}
+  header.orebit-header .toolbar [data-install-app] {{ width:44px !important; flex:0 0 44px !important; padding:8px !important; }}
+  header.orebit-header .toolbar [data-install-app] span {{ display:none !important; }}
+  header.orebit-header .toolbar [data-install-app] svg {{ width:20px;height:20px;flex:none; }}
 
   /* Icon-only controls on mobile: hide text labels (Tema / EN) — icons suffice */
   header.orebit-header .toolbar #themeToggle span,

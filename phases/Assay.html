@@ -4717,6 +4717,8 @@ function _renderSchemaBanner() {
   const parts = [];
   if (meta) {
     parts.push(`<strong>${ICONS.clipboard} Schema detected:</strong> <code>${escapeHtml(meta.schema || '?')}</code>${meta.source ? ` from <code>${escapeHtml(meta.source)}</code>` : ''}`);
+    const sourceScope=OrebitScreeningReport.sourceScope(meta).summary;
+    if(sourceScope)parts.push('<p>'+escapeHtml(sourceScope)+'</p>');
     if (meta.notes) parts.push(`<div style="font-size:11px;color:var(--fg-mute);margin-top:2px;">${escapeHtml(meta.notes)}</div>`);
   }
   if (conv.length) {
@@ -12628,6 +12630,7 @@ function exportMasterForEstimation(opts) {
     `# orebit-schema=v1 source=phase2-eda composite=${compositeLen}m`,
     unitsLine,
     '# notes: composited length-weighted; domain inherited from raw interval at midpoint; midx/midy/midz interpolated along the hole at the composite mid-depth',
+    ...OrebitScreeningReport.sourceScope(DATA?.schemaMeta).lines,
     ...coverageLines,
     ...(capLines.length ? capLines : ['# topcut: none active']),
     outCols.join(',')
@@ -13300,7 +13303,9 @@ if (!DATA) { toast(t('asy.maybeShowSupportMoment.noDataLoaded'), 'warn'); return
         interpretation:briefText('noGrades'),attention:briefText('fix'),next:briefText('fixNext')
       });
       pdf.deletePage(pdf.internal.getNumberOfPages());
-      OrebitScreeningReport.append(pdf,'Assay',[
+      const upstreamScope=OrebitScreeningReport.sourceScope(DATA?.schemaMeta).summary;
+    if(upstreamScope)OrebitScreeningReport.append(pdf,'Assay',[['Core source scope',upstreamScope]]);
+    OrebitScreeningReport.append(pdf,'Assay',[
         ['Grade statistics population',`Finite nonnegative current values including zeros: n=0; loaded rows ${DATA.rows.length}`],
         ['Actual treatment record',_treatmentCsvHeader()],
         ['Method justification',methodBasis],

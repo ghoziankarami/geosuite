@@ -4223,7 +4223,7 @@ function resetToSample(options = {}) {
     STATE.deletedIdx[t].clear();
     STATE.page[t] = 0;
   });
-  STATE.desurvey = null;
+  window.OrebitCoreScope?.reset(); STATE.desurvey = null;
   STATE.merged = null;
   STATE.usingSample = true;
   // Sprint F: auto-apply BDL with default mode (half) so demo data is immediately
@@ -4512,11 +4512,11 @@ function p1IsTabReady(n) {
     case 4: return STATE.survey.length > 0;
     case 5: return STATE.assay.length > 0;
     case 6: return STATE.geology && STATE.geology.length > 0;
-    case 7: return STATE.collar.length > 0 && STATE.assay.length > 0 && coreGeometryReady() && !_p1RunValidationChecks().some(c => c.severity === 'fail');
+    case 7: return _coreAnalysisReady();
     case 8: return STATE.collar.length > 0 && STATE.assay.length > 0;
     case 9: return STATE.collar.length > 0 && STATE.assay.length > 0;
-    case 10: return coreGeometryReady() && Object.values(STATE.desurvey?.holes || {}).some(h => h.trace?.length > 0) && !(STATE.desurvey?.invalidHoleIds || []).length;
-    case 11: return !!STATE.merged?.length && coreGeometryReady();
+    case 10: return _coreAnalysisReady() && Object.values(STATE.desurvey?.holes || {}).some(h => h.trace?.length > 0) && !(STATE.desurvey?.invalidHoleIds || []).length;
+    case 11: return !!STATE.merged?.length && _coreAnalysisReady();
     case 12: return !!(STATE.merged && STATE.merged.length > 0);
     case 13: return !!(STATE.merged && STATE.merged.length > 0);
     default: return false;
@@ -5236,7 +5236,9 @@ function renderEditableTable(tableName, containerId) {
         ${sortCfg ? `<button class="btn small secondary" onclick="clearSort('${tableName}')">⤫ clear sort</button>` : ''}
         <span class="filter-info">${t('core.tbl.clickHeaderSort')}</span>
       </div>
-      ${issues.summary.length === 0 ? `<div class="hint good">${t('core.tbl.noIssues')}</div>`
+      ${issues.summary.length === 0 ? (window.OrebitCoreRepair?.pendingFinding(tableName)
+        ? `<div class="hint warn" data-core-linked-finding>${t('core.repair.linkedFinding')}</div>`
+        : `<div class="hint good">${t('core.tbl.noIssues')}</div>`)
         : issues.summary.length === 1 ? `
         <div class="hint ${issues.severity}">
           <div>${issues.summary[0]}</div>
@@ -5592,7 +5594,7 @@ function applyChanges(tableName) {
   STATE.edits[tableName].clear();
   STATE.newRows[tableName] = [];
   STATE.deletedIdx[tableName].clear();
-  STATE.desurvey = null;
+  window.OrebitCoreScope?.reset(); STATE.desurvey = null;
   STATE.merged = null;
 
   STATE.composite = null;
@@ -5929,7 +5931,7 @@ function _lengthTag() {
 function _coreLoadTable(cls, mapped, headers, rows, opts = {}) {
   window.OrebitCoreRepair?.reset();
   window.OrebitCoreDomain?.reset();
-  STATE.desurvey = null; STATE.merged = null; STATE.mergeAudit = null; STATE.composite = null;
+  window.OrebitCoreScope?.reset(); STATE.desurvey = null; STATE.merged = null; STATE.mergeAudit = null; STATE.composite = null;
   // Undo entries refer to row indices in the replaced source table.
   UNDO.stack = UNDO.stack.filter(action => action.table !== cls && action.type !== 'validation-repair');
   UNDO._updateBadge();
@@ -5999,7 +6001,7 @@ function applyCoreGateMapping(pfIdx) {
   _coreLoadTable(cls, gate.mapped, headers2, rows2, {schemaMeta:pf.schemaMeta});
   pf.assignedTo = cls; pf.gateFor = null;
   ['collar', 'survey', 'assay', 'geology'].forEach(t => { if (t !== cls && STATE.isSample[t]) { STATE[t] = []; STATE.rawHeaders[t] = []; } });
-  STATE.desurvey = null;
+  window.OrebitCoreScope?.reset(); STATE.desurvey = null;
   STATE.merged = null;
   STATE.usingSample = Object.keys(STATE.isSample).some(k => STATE.isSample[k] && STATE[k] && STATE[k].length > 0);
   if (host) host.innerHTML = `✓ <strong>${escapeHtml(pf.name)}</strong> → <code>${cls}</code> (${gate.mapped.length} rows)` + renderImportReportHtml(gate.report, { tr: _coreImportTr });
@@ -6100,7 +6102,7 @@ function handleUpload(evt) {
       });
     }
 
-    STATE.desurvey = null;
+    window.OrebitCoreScope?.reset(); STATE.desurvey = null;
     STATE.merged = null;
 
     // Build slot checklist (4 expected tables)
@@ -6429,7 +6431,7 @@ function assignManual(idx) {
   const checklist = ['collar','survey','assay','geology'].map(t => `<li>${slotIcon(t)} ${slotLabel(t)}</li>`).join('');
   status.innerHTML = `<div class="hint good">✓ Manual assignment successful</div><ul>${checklist}</ul>`;
 
-  STATE.desurvey = null;
+  window.OrebitCoreScope?.reset(); STATE.desurvey = null;
   STATE.merged = null;
   rerenderAll();
 
@@ -7216,7 +7218,7 @@ function applyColumnMapping(tableName) {
   });
 
   STATE[tableName] = sourceRows === STATE.rawRows[tableName] ? _coreApplyLengthUnit(tableName, remapped, STATE.lengthUnitSource) : remapped;
-  STATE.desurvey = null; STATE.merged = null; STATE.mergeAudit = null; STATE.composite = null;
+  window.OrebitCoreScope?.reset(); STATE.desurvey = null; STATE.merged = null; STATE.mergeAudit = null; STATE.composite = null;
   // Record what the user actually chose so the Column Mapping badge reports the
   // mapping in effect. rawHeaders must stay the TRUE file headers — overwriting
   // them with canonical names (as this did before 2026-08-22) left the dropdowns
@@ -9460,8 +9462,11 @@ function detectDipConvention(surveys) {
   return median > 0 ? 'positive_down' : 'negative_down';
 }
 
+function _coreAnalysisSource() { return window.OrebitCoreScope?.source() || STATE; }
+function _coreAnalysisReady() { return window.OrebitCoreScope?.ready() ?? (coreGeometryReady() && !_p1RunValidationChecks().some(c=>c.severity==='fail')); }
 function computeDesurvey() {
-  const dipConv = detectDipConvention(STATE.survey);
+  const source = _coreAnalysisSource();
+  const dipConv = detectDipConvention(source.survey);
   STATE.dipConvention = dipConv;
   // Normalize fn: returns inclination from vertical (rad). Vertical down → 0, horizontal → π/2.
   const incFromVert = dipConv === 'positive_down'
@@ -9470,7 +9475,7 @@ function computeDesurvey() {
 
   // For each hole, walk survey points and compute (X,Y,Z) at any depth via min curvature.
   const holes = {};
-  STATE.collar.forEach(c => {
+  source.collar.forEach(c => {
     if (!c.hole_id) return;
     holes[c.hole_id] = { collar: c, surveys: [] };
   });
@@ -9491,7 +9496,7 @@ function computeDesurvey() {
     return isFinite(n) ? n : NaN;
   };
 
-  STATE.survey.forEach(s => {
+  source.survey.forEach(s => {
     if (!s.hole_id || !holes[s.hole_id]) return;
     const dip = strictNum(s.dip);
     const az = strictNum(s.azimuth);
@@ -9510,7 +9515,7 @@ function computeDesurvey() {
     });
   });
 
-  OrebitMinimumCurvature.issues(STATE.survey,incFromVert).filter(row=>row.code!=='INVALID_MEASUREMENT').forEach(row=>{
+  OrebitMinimumCurvature.issues(source.survey,incFromVert).filter(row=>row.code!=='INVALID_MEASUREMENT').forEach(row=>{
     if(!holes[row.hole_id])return;
     invalidHoleIds.add(row.hole_id);badSurvey.push({...row,field:'curvature'});
   });
@@ -9532,7 +9537,7 @@ function computeDesurvey() {
   // hole put all its samples at the collar. Assay's own merge already uses
   // max(to) the same way. Found 2026-09-25 building the Babbitt vignette.
   const maxTo = {};
-  ['assay', 'geology'].forEach(tbl => (STATE[tbl] || []).forEach(r => {
+  ['assay', 'geology'].forEach(tbl => (source[tbl] || []).forEach(r => {
     const to = strictNum(r.to_m);
     if (r.hole_id && isFinite(to) && !(to <= (maxTo[r.hole_id] || 0))) maxTo[r.hole_id] = to;
   }));
@@ -10154,16 +10159,18 @@ function coreGeometryReady(source = STATE) {
       _coreDirectionIssues(source).length===0;
 }
 function setCoreProvidedXYZ(enabled) {
+  window.OrebitCoreScope?.reset();
   window.OrebitCoreDomain?.invalidate('Coordinate source mode changed');
   window._coreUseProvidedXYZ = !!enabled;
   const toggle = document.getElementById('coreProvidedXYZ'); if (toggle) toggle.checked = !!enabled;
   STATE.merged = null; STATE.mergeAudit = null; STATE.composite = null;
 }
 function computeMerge() {
+  const source = _coreAnalysisSource();
   if (!window._coreUseProvidedXYZ && !STATE.desurvey) computeDesurvey();
   // Build geology lookup by hole + depth range
   const geoByHole = {};
-  STATE.geology.forEach(g => {
+  source.geology.forEach(g => {
     if (!g.hole_id) return;
     (geoByHole[g.hole_id] = geoByHole[g.hole_id] || []).push(g);
   });
@@ -10172,10 +10179,10 @@ function computeMerge() {
   const merged = [];
   const assayHoles = new Set();
   const geologyHoles = new Set(Object.keys(geoByHole));
-  const surveyHoles = new Set(STATE.survey.filter(s => s.hole_id).map(s => s.hole_id));
+  const surveyHoles = new Set(source.survey.filter(s => s.hole_id).map(s => s.hole_id));
   let intervalsWithoutXYZ = 0;
   let intervalsWithoutGeology = 0;
-  STATE.assay.forEach(a => {
+  source.assay.forEach(a => {
     if (!a.hole_id || a.from_m == null || a.to_m == null) return;
     assayHoles.add(a.hole_id);
     const f = Number(a.from_m), t = Number(a.to_m);
@@ -10224,7 +10231,7 @@ function computeMerge() {
     merged.push(mergedRow);
   });
   STATE.merged = merged;
-  const collarHoles = new Set(STATE.collar.filter(c => c.hole_id).map(c => c.hole_id));
+  const collarHoles = new Set(source.collar.filter(c => c.hole_id).map(c => c.hole_id));
   STATE.mergeAudit = {
     assayHoles: assayHoles.size,
     collarHoles: collarHoles.size,
@@ -11339,7 +11346,7 @@ function renderCropPanel() {
   if (!CROP.polys.length) {
     el.innerHTML = `
       <div class="card">
-        <h3>${ICONS.upload} ${t('core.cr.title')} <span style="font-size:11px;font-weight:600;color:#06b6d4;border:1px solid #06b6d4;border-radius:4px;padding:1px 6px;margin-left:6px;">FREE</span></h3>
+        <h3>${ICONS.upload} ${t('core.cr.title')} </h3>
         <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;">${t('core.cr.hint')} ${t('core.cr.formatsMore')}</p>
         <input type="file" id="constraintFile" accept=".shp,.geojson,.json,.kml,.dxf" onchange="handleConstraintFile(this)" aria-label="Upload constraint boundary file" data-i18n-attr="aria-label:a11y.uploadConstraint">
         <div id="cropStatus" style="margin-top:8px;"></div>
@@ -11374,7 +11381,7 @@ function renderCropPanel() {
   const bb = CROP.bbox;
   el.innerHTML = `
     <div class="card">
-      <h3>${ICONS.upload} ${t('core.cr.title')} <span style="font-size:11px;font-weight:600;color:#06b6d4;border:1px solid #06b6d4;border-radius:4px;padding:1px 6px;margin-left:6px;">FREE</span></h3>
+      <h3>${ICONS.upload} ${t('core.cr.title')} </h3>
       <div class="hint good" style="font-size:13px;"><strong>${escapeHtml(CROP.fileName)}</strong> loaded — ${CROP.polys.length} ring${CROP.polys.length!==1?'s':''}, source <code>.${escapeHtml(CROP.source)}</code>.</div>
       <p style="font-size:12px;color:var(--fg-mute);margin:6px 0;">Boundary bbox: X [${bb.minx.toFixed(1)} … ${bb.maxx.toFixed(1)}] · Y [${bb.miny.toFixed(1)} … ${bb.maxy.toFixed(1)}]</p>
       <div class="stat-grid">
@@ -11511,7 +11518,7 @@ function renderExport() {
   // Opening Export (including the tour) must not create geometry from source
   // records that Validation rejects or describe an unfinished project as complete.
   if (!STATE.merged) {
-    const validated=coreGeometryReady() && !_p1RunValidationChecks().some(row=>row.severity==='fail');
+    const validated=_coreAnalysisReady();
     container.replaceChildren();
     const notice=document.createElement('div');notice.className='hint warn';notice.textContent=t(validated?'core.ex.mergeFirst':'flow.blockedGeometry');
     const review=document.createElement('button');review.className='btn secondary';review.type='button';review.textContent=t(validated?'tab.merge':'tab.validation');review.onclick=()=>showTab(validated?11:7);
@@ -11577,7 +11584,7 @@ function renderExport() {
 // match downstream EDA + Resource modules. Schema header line lets P2 detect
 // provenance and emit a "✓ P1 export detected" badge instead of guessing.
 function exportMasterCSV() {
-  if (!coreGeometryReady() || _p1RunValidationChecks().some(c => c.severity === 'fail')) {
+  if (!_coreAnalysisReady()) {
     toast(t('core.repair.exportBlocked'), 'warn'); showTab(7); return false;
   }
   if (!STATE.merged) computeMerge();
@@ -11595,6 +11602,7 @@ function exportMasterCSV() {
     _lengthTag(),
     '# notes: BDL applied per STATE.bdlMode. Grade columns dynamically detected from input.',
     '# coordinates: ' + (STATE.mergeAudit && STATE.mergeAudit.coordinateSource || 'minimum-curvature-survey'),
+    window.OrebitCoreScope.csv(),
     outCols.join(',')
   ];
 
@@ -12496,9 +12504,9 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
     const findings=checks.filter(c=>c.severity==='fail'||c.severity==='warn');
     const briefText=(key,values={})=>Object.entries(values).reduce((out,[k,v])=>out.replaceAll('{'+k+'}',String(v)),t(['core.reportSummary.brief',key].join('.')));
     const failures=checks.filter(c=>c.severity==='fail').length,warnings=checks.filter(c=>c.severity==='warn').length;
-    const handoffReady=coreGeometryReady()&&!!STATE.merged?.length&&failures===0;
+    const handoffReady=_coreAnalysisReady()&&!!STATE.merged?.length;
     const executiveBrief={
-      scope:[briefText(window._coreUseProvidedXYZ?'sourceXYZ':'sourceSurvey'),briefText('crs',{crs:STATE.crs||briefText('noCRS')}),_lengthTag().replace(/^#\s*/,'')].join(' | '),
+      scope:[window.OrebitCoreScope.describe(),briefText(window._coreUseProvidedXYZ?'sourceXYZ':'sourceSurvey'),briefText('crs',{crs:STATE.crs||briefText('noCRS')}),_lengthTag().replace(/^#\s*/,'')].join(' | '),
       metrics:[
         {label:briefText('holes'),value:OrebitScreeningReport.quantity(collar.length,0),detail:briefText('original')},
         {label:briefText('assays'),value:OrebitScreeningReport.quantity(STATE.assay.length,0),detail:briefText('original')},
@@ -12512,16 +12520,18 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
     };
     OrebitScreeningReport.prepend(pdf,'Core',[
       [t('core.reportSummary.result'),insightText('result',{holes:collar.length,assays:STATE.assay.length,merged:STATE.merged?.length||0,failed:checks.filter(c=>c.severity==='fail').length,warns:checks.filter(c=>c.severity==='warn').length})],
-      [t('core.reportSummary.meaning'),insightText(coreGeometryReady()?'ready':'notReady')],
+      [t('core.reportSummary.meaning'),insightText(_coreAnalysisReady()?'ready':'notReady')],
       [t('core.reportSummary.checks'),findings.slice(0,4).map(c=>c.name+': '+c.value).join('. ')||'No failed or warning checks in this validation.'],
       [t('core.reportSummary.scope'),insightText('coordinates',{source:window._coreUseProvidedXYZ?'supplied interval midpoint XYZ':'minimum-curvature survey',crs:STATE.crs||'not declared',missing:STATE.mergeAudit?.intervalsWithoutXYZ??'merge not run'})],
       [t('core.reportSummary.next'),insightText('next')],
       [t('core.reportSummary.evidence'),insightText('evidence')]
     ],executiveBrief);
     OrebitScreeningReport.append(pdf,'Core',[
+      ['Validation analysis scope',window.OrebitCoreScope.describe()],
       ['Purpose','Initial data-preparation and geometry screening. This report does not verify geological Resource accuracy.'],
       ['Coordinate source',window._coreUseProvidedXYZ?'Supplied assay interval midpoint XYZ; directional survey not reconstructed or independently verified':'Minimum-curvature survey; inspect measured dip/azimuth and collar control'],
-      ['Geometry readiness',coreGeometryReady()?'READY for the selected coordinate workflow':'FIX REQUIRED: missing or invalid geometry'],
+      ['Analysis geometry readiness',_coreAnalysisReady()?'READY for the explicitly recorded analysis population':'FIX REQUIRED: missing or invalid geometry'],
+      ['Regional validation findings',failures+' failed checks retained across all raw source records'],
       ['CRS',STATE.crs || 'Not declared; verify projected CRS before spatial estimation'],
       ['Length units',_lengthTag()],
       ['Geometry algorithm',STATE.desurvey?.algorithm||'Not computed'],
@@ -12531,6 +12541,12 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
       ['Grade statistics population','Finite nonnegative grades including valid zero values; missing and negative BDL placeholders excluded'],
       ['Further evidence needed','Assay certificates, QA/QC controls, survey verification, geological interpretation and measured density require independent project evidence'],
       ['Next step','Export the merged master, inspect coordinate/source notes, then review treatment and compositing in Assay before Resource estimation']
+    ]);
+    const scopeRecord=window.OrebitCoreScope.record();
+    if(scopeRecord)OrebitScreeningReport.append(pdf,'Core',[
+      [t('core.scope.title'),window.OrebitCoreScope.describe()],
+      [t('core.scope.policy'),t('core.scope.excluded')+' (first 200; complete record in project metadata)'],
+      ...scopeRecord.excluded.slice(0,200).map(row=>[row.table+' · '+t('core.scope.row').replace('{n}',row.row)+' · '+(row.hole_id||'—'),row.reason])
     ]);
     const _pdfName = `Orebit-Core-Report-${today}.pdf`;
     await OrebitScreeningReport.save(pdf,'Core',_pdfName);
@@ -12608,7 +12624,7 @@ document.addEventListener('keydown', (e) => {
     // P2-ready merged data: assay joined with desurveyed XYZ + geology (lithology/weathering).
     // This is the canonical handoff payload — Assay imports merged_csv, NOT raw assay rows.
     let merged_csv = '';
-    if (coreGeometryReady() && !_p1RunValidationChecks().some(c => c.severity === 'fail')) try {
+    if (_coreAnalysisReady()) try {
       if (!STATE.merged) computeMerge();
       const { gradeCols, outCols } = buildMasterExportCols(STATE.merged);
       console.log('[buildBundle] grade columns detected:', gradeCols.length, gradeCols);
@@ -12619,6 +12635,7 @@ document.addEventListener('keydown', (e) => {
         _lengthTag(),
         '# notes: BDL applied per STATE.bdlMode. Grade columns dynamically detected from input.',
         '# coordinates: ' + (STATE.mergeAudit && STATE.mergeAudit.coordinateSource || 'minimum-curvature-survey'),
+    window.OrebitCoreScope.csv(),
         outCols.join(',')
       ];
       const lines = header.slice();
@@ -12690,7 +12707,7 @@ document.addEventListener('keydown', (e) => {
         bdl_mode:      STATE.bdlMode,
         units:         STATE.units || {},
         units_locked:  STATE.unitsLocked || {},
-        audit: {schemaVersion:1, changes:STATE.CHANGE_LOG || [], pipeline:window._pipelineLog || []},
+        audit: {schemaVersion:1, changes:STATE.CHANGE_LOG || [], pipeline:window._pipelineLog || [], validationScope:window.OrebitCoreScope.record()},
       },
     };
   }
@@ -12763,7 +12780,7 @@ document.addEventListener('keydown', (e) => {
       STATE.page[t] = 0;
     });
 
-    STATE.desurvey = null;
+    window.OrebitCoreScope?.reset(); STATE.desurvey = null;
     STATE.merged   = null;
     window.OrebitCoreDomain?.reset();
     STATE.usingSample = Object.keys(STATE.isSample).some(k => STATE.isSample[k] && STATE[k] && STATE[k].length > 0);
@@ -12785,6 +12802,7 @@ document.addEventListener('keydown', (e) => {
       toast(t('core.domain.invalidState'), 'warn');
     });
 
+    window.OrebitCoreScope.restore(audit?.validationScope);
     refreshDemoBanner();
     updateDataTag();
     rerenderAll();

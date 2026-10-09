@@ -17,7 +17,7 @@
     logPipeline(action, detail);
   }
   function refresh() {
-    STATE.desurvey = null; STATE.merged = null; STATE.composite = null;
+    window.OrebitCoreScope?.reset(); STATE.desurvey = null; STATE.merged = null; STATE.composite = null;
     updateDataTag(); rerenderAll();
     if (typeof AutoSave !== 'undefined') AutoSave.schedule();
     window.OrebitScreeningWorkflow?.refresh();
@@ -207,5 +207,85 @@
       if(undo&&undo.after===snapshot())host.append(button(tr('undo'),()=>undoLast()));
     }
   }
-  window.OrebitCoreRepair={render,applySource,undoSource,candidate,findings,locate,renderContext,cellFocused,rowVisible,activeTable:()=>currentContext()?.table||null,columnsFor:table=>currentContext()?.table===table?context.columns:[],applied:table=>{const c=currentContext();if(c?.table===table)c.applied=true;},returnToResults,reset:()=>{undo=null;context=null;}};
+  window.OrebitCoreRepair={render,applySource,undoSource,candidate,findings,locate,renderContext,cellFocused,rowVisible,activeTable:()=>currentContext()?.table||null,pendingFinding:table=>{const c=currentContext();return !!c&&c.table===table&&!c.applied;},columnsFor:table=>currentContext()?.table===table?context.columns:[],applied:table=>{const c=currentContext();if(c?.table===table)c.applied=true;},returnToResults,reset:()=>{undo=null;context=null;}};
+})();
+
+/* An explicit, conservative screening scope. Raw tables are never rewritten.
+   Exclude entire affected holes so an invalid station/interval cannot alter a
+   retained trace. A scoped result is not a clean regional validation. */
+(function () {
+  'use strict';
+  const names=['collar','survey','assay','geology'];
+  const tr=(key,values={})=>Object.entries(values).reduce((out,[k,v])=>out.replaceAll('{'+k+'}',String(v)),window.__t('core.scope.'+key));
+  const node=(tag,text)=>{const e=document.createElement(tag);if(text!=null)e.textContent=text;return e;};
+  let active=null;
+  const context=()=>JSON.stringify([STATE.crs,STATE.lengthUnitSource,window._coreLengthUnit,window._coreUseProvidedXYZ,STATE.bdlMode]);
+  const refs=()=>names.map(name=>STATE[name]);
+  const snapshot=()=>JSON.stringify([context(),...names.map(name=>STATE[name])]);
+  function selected(ids) {const keep=new Set(ids);return Object.fromEntries(names.map(name=>[name,STATE[name].filter(row=>keep.has(row.hole_id))]));}
+  function prepare() {
+    const groups=new Map();
+    for(const name of names)for(const row of STATE[name]){
+      if(!row.hole_id)continue;
+      if(!groups.has(row.hole_id))groups.set(row.hole_id,Object.fromEntries(names.map(k=>[k,[]])));
+      groups.get(row.hole_id)[name].push(row);
+    }
+    const included=[],reasons=new Map();
+    for(const [id,source] of groups){
+      const failed=_p1RunValidationChecks(source).filter(check=>check.severity==='fail');
+      if(source.assay.length&&coreGeometryReady(source)&&!failed.length)included.push(id);
+      else reasons.set(id,failed.map(check=>check.name+': '+check.value).join('; ')||'No usable assay population');
+    }
+    const combined=_p1RunValidationChecks(selected(included)).filter(check=>check.severity==='fail');
+    if(combined.length){for(const id of included)reasons.set(id,combined.map(check=>check.name+': '+check.value).join('; '));included.length=0;}
+    const keep=new Set(included);
+    const excluded=names.flatMap(table=>STATE[table].flatMap((row,idx)=>keep.has(row.hole_id)?[]:[{table,row:idx+1,hole_id:row.hole_id||null,reason:reasons.get(row.hole_id)||'Missing hole ID'}]));
+    return {included,excluded,assays:selected(included).assay.length};
+  }
+  function reset() {if(!active)return;active=null;STATE.desurvey=null;STATE.merged=null;STATE.composite=null;}
+  function source() {
+    if(active&&(context()!==active.context||!active.refs.every((rows,i)=>rows===STATE[names[i]])))reset();
+    return active?active.source:STATE;
+  }
+  function record(){source();return active?JSON.parse(JSON.stringify(active.record)):null;}
+  function ready(){const s=source();return !!s.assay.length&&coreGeometryReady(s)&&!_p1RunValidationChecks(s).some(check=>check.severity==='fail');}
+  function clear(){reset();STATE.desurvey=null;STATE.merged=null;STATE.composite=null;logPipeline('Screening scope cleared','Regional validation applies again; derived geometry and merged results cleared.');rerenderAll();AutoSave.schedule();}
+  function activate(plan,note,at=new Date().toISOString()) {
+    const s=selected(plan.included);
+    if(!s.assay.length||!coreGeometryReady(s)||_p1RunValidationChecks(s).some(check=>check.severity==='fail'))return false;
+    active={refs:refs(),context:context(),source:s,record:{schema:'orebit-core-validation-scope',version:1,at,note,policy:'exclude-whole-hole',included:plan.included,excluded:plan.excluded,assays:plan.assays}};
+    STATE.desurvey=null;STATE.merged=null;STATE.composite=null;
+    return true;
+  }
+  function restore(saved){
+    reset();if(saved?.schema!=='orebit-core-validation-scope'||saved.version!==1||typeof saved.note!=='string'||!saved.note.trim()||!Array.isArray(saved.included)||!Array.isArray(saved.excluded))return;
+    const plan=prepare();
+    if(JSON.stringify(plan.included)!==JSON.stringify(saved.included)||JSON.stringify(plan.excluded)!==JSON.stringify(saved.excluded))return;
+    activate(plan,saved.note.slice(0,2000),saved.at);
+  }
+  function describe(){const r=record();return r?tr('active',{holes:r.included.length,assays:r.assays,excluded:r.excluded.length})+' '+tr('reason')+': '+r.note:tr('regional');}
+  function csv(){const r=record();return '# validation-scope: '+(r?JSON.stringify(r):'full regional population; no validation exclusions');}
+  function preview(host,onward){
+    host.querySelector('[data-core-scope-preview]')?.remove();
+    const plan=prepare(),before=snapshot(),section=node('section');section.dataset.coreScopePreview='';section.className='core-repair-context';
+    section.append(node('h3',tr('title')),node('p',tr('preview',{holes:plan.included.length,assays:plan.assays,excluded:plan.excluded.length})),node('p',tr('policy')));
+    const details=node('details'),summary=node('summary',tr('excluded'));details.append(summary);
+    for(const row of plan.excluded.slice(0,200)){details.append(node('p',row.table+' · '+tr('row',{n:row.row})+' · '+(row.hole_id||'—')+' · '+row.reason));}section.append(details);
+    if(plan.excluded.length>200)section.append(node('p',tr('limited')));
+    const download=node('button',tr('download'));download.type='button';download.className='btn secondary';download.onclick=()=>downloadFile('validation-excluded.csv',['table,source_row,hole_id,reason',...plan.excluded.map(row=>[row.table,row.row,row.hole_id,row.reason].map(csvEscape).join(','))].join('\n'),'text/csv');section.append(download);
+    const label=node('label',tr('reason')),note=node('textarea');note.id='coreScopeNote';note.maxLength=2000;note.required=true;label.htmlFor=note.id;section.append(label,note);
+    const status=node('p');status.setAttribute('role','status');section.append(status);
+    const actions=node('div');actions.className='workflow-actions';
+    const apply=node('button',tr('continue'));apply.type='button';apply.className='btn';apply.dataset.actionRole='next';apply.disabled=!plan.assays;
+    apply.onclick=()=>{
+      if(!note.value.trim()){note.reportValidity();note.focus();return;}
+      if(snapshot()!==before){status.textContent=tr('changed');apply.disabled=true;return;}
+      if(!activate(plan,note.value.trim())){status.textContent=tr('none');return;}
+      logPipeline('Validation deferred — scoped screening',describe()+' '+plan.excluded.slice(0,200).map(row=>row.table+' row '+row.row+' ['+(row.hole_id||'no ID')+']: '+row.reason).join('; '));
+      STATE.CHANGE_LOG.push({table:'validation',timestamp:active.record.at,summary:describe(),diffs:[],scope:record()});
+      AutoSave.schedule();showTab(onward);
+    };
+    const cancel=node('button',tr('cancel'));cancel.type='button';cancel.className='btn secondary';cancel.onclick=()=>section.remove();actions.append(apply,cancel);section.append(actions);host.append(section);note.focus();
+  }
+  window.OrebitCoreScope={source,record,ready,prepare,reset,restore,describe,csv,preview,clear};
 })();

@@ -44,10 +44,14 @@
     btn.href = '#';
     btn.className = 'orebit-link';
     btn.setAttribute('data-install-app', '');
-    btn.setAttribute('data-i18n', 'app.install');
-    btn.setAttribute('data-i18n-attr', 'title:app.installTitle');
+    btn.setAttribute('data-i18n-attr', 'title:app.installTitle,aria-label:app.install');
+    btn.setAttribute('aria-label', text('app.install', 'Install app'));
     btn.title = text('app.installTitle', 'Install GeoSuite as an app on this computer (Mac, Windows, Linux). Works offline.');
-    btn.textContent = text('app.install', 'Install app');
+    btn.innerHTML = '<svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5"/></svg>' ;
+    var label = document.createElement('span');
+    label.setAttribute('data-i18n', 'app.install');
+    label.textContent = text('app.install', 'Install app');
+    btn.appendChild(label);
     btn.addEventListener('click', function (ev) {
       ev.preventDefault();
       if (deferredPrompt) {

@@ -137,6 +137,9 @@ def main():
                 raw_grades = page.evaluate('()=>JSON.stringify(STATE.assay)')
                 check(page.locator('#coreRepairSource').count() == 0, 'Uploaded project cannot restore bundled sample')
                 check(page.locator('#tab7 [data-workflow-next]').is_disabled(), 'Structural errors block actual continuation')
+                page.locator('[data-core-skip]').click()
+                check(page.locator('[data-core-scope-preview] [data-action-role="next"]').is_disabled(), 'Skip is unavailable when no independently validated population remains')
+                page.locator('[data-core-scope-preview] button').filter(has_text='Cancel').click()
                 check(page.evaluate('()=>!document.getElementById("linkageMap").data.some(d=>Array.from(d.x||[]).length)'), 'Missing X never appears at an invented zero location in the validation map')
                 check(page.evaluate('async()=>await _p1RenderCollarMapForPDF()') is None, 'Native PDF map excludes collars without measured XY')
                 check(page.evaluate('()=>STATE.collar[0].x===null&&STATE.collar[0].y===2000'), 'Map filtering preserves missing raw coordinates')
@@ -147,6 +150,7 @@ def main():
                 check(page.evaluate('()=>STATE.newRows.collar[0].hole_id==="FIX-002"&&["x","y","z","depth"].every(k=>STATE.newRows.collar[0][k]===null)'), 'Add prefills only identifier, never coordinates or depth')
                 check(page.locator('#collarPanel [data-repair-apply]').get_attribute('data-action-role') == 'apply' and page.locator('#collarPanel [data-repair-apply]').evaluate('(el)=>getComputedStyle(el).backgroundColor') == 'rgb(8, 126, 130)', 'Applying source corrections uses the shared prominent primary action')
                 check(page.locator('#collarPanel [data-repair-apply]').is_visible() and 'draft' in page.locator('#collarPanel .core-repair-context').inner_text(), 'New collar clearly identifies its draft and Apply/revalidate action')
+                check('entire table' in page.locator('#collarPanel .hint').last.inner_text(), 'Field-error counts explicitly describe the whole table during a focused correction')
                 check(page.locator('#tab3 [data-workflow-next]').count() == 0, 'Focused correction removes unrelated advance-to-Survey action')
                 # Hold the real compact editor through its one-second UI sync.
                 page.wait_for_timeout(1100)
@@ -165,6 +169,7 @@ def main():
                 page.locator('#collarPanel [data-repair-source="geology"]').click()
                 check(page.locator('#geologyPanel .editable-table tbody tr').count() == 1, 'ID comparison opens only the exact affected geology record')
                 check(page.locator('#geologyPanel td.cell-validation-focus[data-col="hole_id"]').count() == 1 and page.locator('#geologyPanel td.cell-validation-focus[data-col="hole_id"]').inner_text() == 'FIX-002-WRONG', 'Actual wrong ID is highlighted')
+                check(page.locator('#geologyPanel [data-core-linked-finding]').is_visible() and page.locator('#geologyPanel .hint.good').count() == 0, 'Unresolved cross-table ID never displays an overall green no-issues message')
                 edit(page, 'geology', 1, 'hole_id', 'FIX-002')
                 apply(page, 'geology')
                 revalidate(page, 'geology')
@@ -294,6 +299,113 @@ def main():
                 assert not errors and not render_errors, {'page_errors': errors, 'renderer_errors': render_errors}
                 check(True, 'Complete correction journey has no renderer or page errors')
                 check(page.evaluate('()=>document.documentElement.scrollWidth<=innerWidth+1'), 'Phone/desktop correction journey fits the viewport')
+                context.close()
+                context=browser.new_context(viewport=viewport,accept_downloads=True)
+                page=ready(context,base)
+                errors=[]
+                page.on('pageerror',lambda e:errors.append(str(e)))
+                tables={
+                    'collar':'hole_id,x,y,z,depth\nFIX-001,1000,2000,300,10\nFIX-002,1100,2100,301,10\n',
+                    'survey':'hole_id,depth,dip,azimuth\nFIX-001,0,-90,0\nFIX-002,0,-120,0\n',
+                    'assay':'hole_id,from_m,to_m,ni_pct\nFIX-001,0,10,1.1\nFIX-002,0,5,1.4\nFIX-002,5,10,1.5\n',
+                    'geology':'hole_id,from_m,to_m,lith1\nFIX-001,0,10,SAP\nFIX-002,0,10,SAP\n'
+                }
+                for name,text in tables.items():
+                    (folder/(name+'.csv')).write_text(text)
+                upload(page,paths)
+                raw=page.evaluate('JSON.stringify([STATE.collar,STATE.survey,STATE.assay,STATE.geology])')
+                page.locator('[data-core-skip]').click()
+                preview=page.locator('[data-core-scope-preview]')
+                check('1 holes / 1 assay intervals' in preview.inner_text() and '5 source records' in preview.inner_text(),'Skip previews independently validated whole-hole exclusions')
+                preview.locator('[data-action-role="next"]').click()
+                check(page.locator('#tab7').evaluate('e=>e.classList.contains("active")') and page.locator('#coreScopeNote').evaluate('e=>!e.validity.valid'),'Skip cannot proceed without a recorded reason')
+                page.locator('#coreScopeNote').fill('Survey orientation awaits source verification.')
+                preview.locator('[data-action-role="next"]').click()
+                page.wait_for_function('()=>document.getElementById("tab10").classList.contains("active")')
+                check(page.evaluate('JSON.stringify([STATE.collar,STATE.survey,STATE.assay,STATE.geology])')==raw,'Skip keeps all original source records and measurements')
+                check(page.evaluate('Object.keys(STATE.desurvey.holes).join()')=='FIX-001','Scoped desurvey never calculates the excluded invalid trace')
+                check('5 source records excluded' in page.locator('[data-core-analysis-scope]').inner_text(),'Main stages visibly disclose the scoped population')
+                page.locator('#tab10 [data-workflow-next]').click()
+                page.wait_for_function('()=>document.getElementById("tab11").classList.contains("active")')
+                check(page.evaluate('JSON.stringify(STATE.merged.map(r=>[r.hole_id,r.ni_pct,r.midx,r.midy,r.midz]))')=='[["FIX-001",1.1,1000,2000,295]]','Scoped merge agrees with independent vertical geometry and untouched grade')
+                page.locator('#tab11 [data-workflow-next]').click()
+                page.wait_for_function('()=>document.getElementById("tab13").classList.contains("active")')
+                with page.expect_download() as result:
+                    page.locator('button[onclick="exportMasterCSV()"]').click()
+                result.value.save_as(str(folder/'scoped-master.csv'))
+                master=(folder/'scoped-master.csv').read_text()
+                records=[line for line in master.splitlines() if line and not line.startswith('#')]
+                check(len(records)==2 and 'FIX-001' in records[1] and 'FIX-002' not in records[1] and '# validation-scope:' in master,'Actual CSV handoff contains only validated analysis rows and records scope')
+                assay=context.new_page()
+                assay.goto(base+'/Assay.html')
+                assay.wait_for_function('()=>window.__i18nBooted===true')
+                if assay.locator('.lang-picker-overlay').count():
+                    assay.locator('.lang-picker-overlay [data-pick="en"]').click()
+                assay.locator('#tab1 .workflow-actions [data-action-role="inspect"]').click()
+                assay.locator('#fileInput').set_input_files(str(folder/'scoped-master.csv'))
+                assay.wait_for_function('()=>DATA?.rows?.length===1')
+                check('5 source records excluded' in assay.evaluate('OrebitScreeningReport.sourceScope(DATA.schemaMeta).summary'),'Actual Assay CSV import discloses upstream Core exclusions')
+                # Primary stage links reach the existing composite/report owner.
+                assay.locator('.panel.active .workflow-step-links button').filter(has_text='Compos').click()
+                assay.locator('#compLength').fill('2')
+                assay.locator('#compLength').press('Tab')
+                assay.locator('.panel.active .workflow-step-links button').filter(has_text='Report').click()
+                with assay.expect_download() as result:
+                    assay.locator('#tab13 button[onclick="exportMasterForEstimation()"]').click()
+                composites=folder/'scoped-composites.csv'
+                result.value.save_as(str(composites))
+                check('# validation-scope:' in composites.read_text() and 'Survey orientation awaits source verification' in composites.read_text(),'Actual Assay composite export preserves Core exclusion rationale')
+                resource=context.new_page()
+                resource.goto(base+'/Resource.html')
+                resource.wait_for_function('()=>window.__i18nBooted===true')
+                if resource.locator('.lang-picker-overlay').count():
+                    resource.locator('.lang-picker-overlay [data-pick="en"]').click()
+                resource.locator('#tab1 .workflow-actions [data-action-role="inspect"]').click()
+                resource.locator('#fileInput').set_input_files(str(composites))
+                resource.wait_for_function('()=>DATA?.rows?.length===5')
+                check('5 source records excluded' in resource.evaluate('OrebitScreeningReport.sourceScope(_lastSchemaMeta).summary'),'Actual Resource import retains Core source scope through Assay compositing')
+                check('validation-scope:' in resource.evaluate('_provHeader(true).join("\\n")') and resource.evaluate('!!buildBundle("scoped-resource").schemaMeta.raw.some(line=>line.startsWith("validation-scope:"))'),'Resource block export and project owners retain source scope')
+                assay.close()
+                resource.close()
+                with page.expect_download() as result:
+                    page.locator('#pdf-export-btn').click()
+                report=folder/'scoped-core.pdf'
+                result.value.save_as(str(report))
+                with fitz.open(report) as doc:
+                    text='\n'.join(p.get_text() for p in doc)
+                check('Scoped screening' in text and 'Survey orientation awaits source verification' in text and 'FIX-002' in text,'Native scoped PDF preserves unresolved evidence, scope and user rationale')
+                if page.locator('#orebit-support-moment .support-close-btn').is_visible():
+                    page.locator('#orebit-support-moment .support-close-btn').click()
+                page.once('dialog',lambda dialog:dialog.accept('scoped.orebit'))
+                with page.expect_download() as result:
+                    page.locator('#btnExportBundle').click()
+                project=folder/'scoped.orebit'
+                result.value.save_as(str(project))
+                saved=json.loads(project.read_text())
+                scope=saved['metadata']['audit']['validationScope']
+                check(scope['included']==['FIX-001'] and len(scope['excluded'])==5 and scope['note']=='Survey orientation awaits source verification.','Native project stores explicit whole-hole scope and complete excluded rows')
+                check('FIX-002' in saved['phase1']['assay_csv'] and len([line for line in saved['phase1']['merged_csv'].splitlines() if line and not line.startswith('#')])==2,'Project preserves full raw sources separately from its scoped handoff')
+                stage(page,2)
+                with page.expect_file_chooser() as choice:
+                    page.locator('#btnImportBundle').click()
+                choice.value.set_files(str(project))
+                page.wait_for_function('()=>window.OrebitCoreScope.record()?.note==="Survey orientation awaits source verification."')
+                stage(page,7)
+                check(page.locator('#tab7 [data-workflow-next]').is_enabled() and page.evaluate('_p1RunValidationChecks().some(c=>c.severity==="fail")'),'Reopen revalidates the selected scope while retaining regional failures')
+                page.locator('.panel.active [data-core-analysis-scope] button').click()
+                check(page.locator('#tab7 [data-workflow-next]').is_disabled() and page.evaluate('STATE.merged===null&&STATE.desurvey===null&&OrebitCoreScope.record()===null'),'Returning to full validation clears scoped results and restores the true regional gate')
+                check(page.evaluate('JSON.stringify([STATE.collar,STATE.survey,STATE.assay,STATE.geology])')==raw,'Clearing scope does not alter raw data')
+                page.locator('[data-core-skip]').click()
+                page.locator('#coreScopeNote').fill('Pending orientation')
+                page.locator('[data-core-scope-preview] [data-action-role="next"]').click()
+                # Same-name corrected import must retire every scoped derived result.
+                page.locator('#tab10 .workflow-step-links button').filter(has_text='Import').click()
+                (folder/'survey.csv').write_text(tables['survey'].replace('-120','-90'))
+                page.locator('#fileInput').set_input_files(str(folder/'survey.csv'))
+                page.wait_for_function('()=>STATE.survey[1].dip===-90')
+                stage(page,7)
+                check(page.evaluate('OrebitCoreScope.record()===null&&STATE.desurvey===null&&STATE.merged===null') and page.locator('#tab7 [data-workflow-next]').is_enabled(),'Corrected source import retires scope and enables the full valid population')
+                check(not errors and not page.evaluate('__repairErrors.length'),'Scoped continuation has no page or swallowed-render errors')
                 context.close()
             browser.close()
     finally:

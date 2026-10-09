@@ -115,7 +115,7 @@
   }
   function ready(n) {
     if(resource())return n===2?!!DATA?.rows?.length:n===3?!!DATA?.rows?.length&&!!setupState.element:n===5?!!blockState.blocks?.length:isTabDone(n);
-    if(n===7)return !!STATE.collar.length&&validation&&!validation.some(c=>c.severity==='fail')&&coreGeometryReady();
+    if(n===7)return _coreAnalysisReady();
     return p1IsTabReady(n);
   }
   function customize(panel) {
@@ -177,6 +177,7 @@
     const target=next(n);if(target&&!(resource()&&n===3)){const onward=button(tr('next',{stage:label(target)}),'next',()=>continueStage(n,target));onward.dataset.workflowNext='true';onward.disabled=!canContinue(n);actions.append(onward);}
     if(!resource() && n===7 && !ready(n)){
       const repair=button(window.__t('core.repair.openFindings'),'next',()=>{const el=document.getElementById('coreValidationResults');el?.scrollIntoView({block:'start',behavior:'smooth'});el?.querySelector('button')?.focus({preventScroll:true});});repair.dataset.workflowRepair='true';actions.prepend(repair);
+      const skip=button(window.__t('core.scope.skip'),'inspect',()=>window.OrebitCoreScope.preview(card,target));skip.dataset.coreSkip='';actions.append(skip);
     }
     if(n!==2){
       const inspect=button(tr('inspect'),'inspect',()=>{
@@ -190,7 +191,7 @@
     }
     if(!resource()&&n===13&&typeof OrebitHandoff!=='undefined'&&OrebitHandoff.available()){
       const handoff=button(window.__t('handoff.toAssay'),'next',()=>OrebitHandoff.send('Assay',exportMasterCSV));
-      handoff.disabled=!STATE.merged?.length||!coreGeometryReady()||_p1RunValidationChecks().some(row=>row.severity==='fail');actions.append(handoff);
+      handoff.disabled=!STATE.merged?.length||!_coreAnalysisReady();actions.append(handoff);
     }
     if(!resource()&&[2,7].includes(n)&&STATE.usingSample)actions.append(button(window.__t('core.source.download'),'inspect',downloadSampleSources));
     actions.append(button(tr('custom'),'custom',()=>customize(panel)));card.append(actions);
@@ -200,6 +201,7 @@
     if(!resource()&&n===7){
       for(const id of ['coreValidationResults','coreValidationRemedies']){const element=document.getElementById(id);if(element){const marker=document.createComment('validation result location');element.before(marker);moved.set(id,{element,marker});card.insertBefore(element,actions);}}
     }
+    if(!resource()&&window.OrebitCoreScope.record()){const scope=node('section',null,'workflow-insight');scope.dataset.coreAnalysisScope='';scope.append(node('p',window.OrebitCoreScope.describe()),button(window.__t('core.scope.clear'),'inspect',()=>{window.OrebitCoreScope.clear();navigate(7);}));card.append(scope);}
     panel.prepend(card);sync();
   }
   function boot() {

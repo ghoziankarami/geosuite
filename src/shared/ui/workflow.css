@@ -88,3 +88,5 @@ body.screening-guided.screening-advanced-open nav.tabs .tab[data-workflow-advanc
 @media(max-width:600px){.core-repair-record{align-items:stretch;flex-direction:column}.core-repair-record .btn{align-self:start}.core-repair-context{padding:12px}.core-repair-heading{gap:6px}.core-repair-issue .workflow-actions .btn,.core-repair-context .workflow-actions .btn{min-height:44px;max-width:100%;white-space:normal;text-align:left}}
 
 .core-correction-guide{padding:14px;margin-bottom:14px}.core-correction-guide .workflow-eyebrow{margin-bottom:8px}
+
+[data-core-scope-preview] textarea{display:block;width:100%;box-sizing:border-box;min-height:88px;margin:8px 0;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg)}

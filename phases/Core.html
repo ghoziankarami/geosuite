@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <!-- OREBIT_BUILD_START
-Orebit Core — GeoSuite v3.1.0
+Orebit Core — GeoSuite v3.1.1
 Copyright (c) 2026 Orebit (Ghozian Islam Karami). GPL-3.0-only.
-Build: core-v3.1.0-source
+Build: core-v3.1.1-source
 Terms: https://geosuite.orebit.id/terms
 -- OREBIT_BUILD_END -->
-<script>window.OREBIT_BUILD_ID="core-v3.1.0-source";</script>
+<script>window.OREBIT_BUILD_ID="core-v3.1.1-source";</script>
+
 
 
 
@@ -22,7 +23,7 @@ Terms: https://geosuite.orebit.id/terms
 
 <head>
 <meta charset="UTF-8">
-<meta name="product-version" content="v3.1.0"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
+<meta name="product-version" content="v3.1.1"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
 <meta name="product-name" content="Orebit Core">
 <meta name="product-stage" content="Core">
 <!-- CSP: data remains local; optional online services and release checks use explicit origins. -->
@@ -36,2382 +37,7 @@ Terms: https://geosuite.orebit.id/terms
 <meta name="apple-mobile-web-app-title" content="GeoSuite">
 <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABfGlDQ1BJQ0MgUHJvZmlsZQAAeJx1kbtLA0EQh78kBkXjA7SwUAwSrVRihKCNRYJGQS1iBF9NcuYh5HHcJUiwFWwDCqKNr0L/Am0Fa0FQFEGsxVLRRuWcM4EEMbPMzre/3Rl2Z8EaSiopvcYNqXRWCwZ8zvmFRWftC3Y6acJJV1jR1enZ8RBV7eMOixlv+s1a1c/9aw0rUV0BS53wqKJqWeEJ4am1rGrytnCbkgivCJ8K92lyQeFbU48U+dnkeJG/TNZCQT9YW4Sd8QqOVLCS0FLC8nJcqWROKd3HfIkjmp6bldgt3oFOkAA+6cUkY/jxMsiIzF768TAgK6rku3/zZ8hIriKzSh6NVeIkyNInak6qRyXGRI/KSJI3+/+3r3psyFOs7vCB/ckw3nqgdgu+C4bxeWgY30dge4SLdDk/cwDD76IXypprH5o34OyyrEV24HwT2h/UsBb+lWzi1lgMXk+gcQFar6F+qdiz0j7H9xBal6+6gt096JXzzcs/kVRn+TnG2uEAAAkiSURBVHjarVdrcFXVFf7W3vvcR25CSEMSAuRCYkASCQ/zkpe3qFRA+6fO7Uw7bR2njo86Dm3tTFv/XPnT6fShUTrjjP+cobbkjlbHKjSKGIvFBFpDrICICCGYJyE33Oc5e+/VHzdPJGo73b/unHPPenzrW99am/DVDiESkejs1ABQvaa1wip8j4ncvvff2wtAALAAgFhMYM8eu3h3Rx2cwPfZS7Mh/sNo284BMBOIeLZh8aWOo1EJgNHZqcNbtpTU1K75hXHoOBznd0LIZ8LrW34GwCISUQCAkzcRAFjm1eQP/pJ8wccBVAIAHvynQuywApimHKgvCYARj5uySLSwcOCjB+yV7E9y6+uXZWuWoOCtLk2egXDUb5etaznb39n5Mmp3+HH17wCiYCICEQAC4OStPdfkfT7D+TIHULtjh8/7dOg+KPGYqamqTa9biezKsA7+65Qs7DhKHPAzAcxA2oA3X3q/q3fKwKIfH6hUqmCTcTNwyX8o8fS28YrdB75OweIylZs41P/UjjGASc0Du0B7u3XXNP0VK5bckWpcjVx4sQEgRCarfGcvIp8diK1lkrJQWH45vK7lSUiVs9Y909+2sxPAi3NNizZZuGhdLp3aCuAIonHx+QCiUYF43ITXNj8gFhTdcXnnRtcWhZRIZSSkhEhloIYugx2Vz51IsDFMRNVCyr1CSXiufA3gdxB9wgFuMmiPWhAxCB/a1OUikE3OR0KBeJwrtm8vF67+VWZVleXCAiWSGQEQ2FFQl4YhUllAzvqUiISUYJ7FHRBjGBb1UcYTIMRiYqjYd2+J72LdSNs3TgBMaI/auQhEIgKdndo/OP5rLllQmq2rNuRqCSkAawECfOcH8gyZ3UzMGav1K8zQEPCxUMcAoGJdy0+Refd+eDlm3vjJcNu2XScBYM8M09Qs6CXicV3Vunm7SObuy1ZVGL14kRTJNGAsOOCDHB2HujQ0Az9giUgweKyvp/s713KbSZVJ5V/JbAFPi/wLRsVjHQWseT9JtVDMgt4sadpaRTm9jx3Fvo/OU+GbXQAzbGEQIplG0YF3IdJZQFxbObKTejGJiBVTP5gNmC0YMFOlyeq0Q8p3lyyq2KwmWU8Yrldq/MB+IVV5YtcmowYvy9Dbx+Gc60c60ojgsQ8hLyegF5dCjo7nOcCgSSQKl5+51CDWtA5kVM6qjd82/cAYICZg9TAbAwAjiLZLRKMoOno055rEwzoxGKRJ6E14Xeuz0vJDidubtdtQq2AsnEvDCB0+Bnk5AXI1Urc1wVtajuL9HWCfg2nWEQHWGhAyYMqRlBZW73a2PvHSiL5SIFWJcXzSDP3+ztS1TacQj5tlGzbeJy0/lGxard36GkWpLMAWbvVSqIERhA4dQ3btSmRurgNpA11RCjU8NsOFyXYEEAI4QETKsqg6u3dXDkBuylnZowc3kT9YJrykSxnTOVBZ5Ipw49ZKob2nva8Vcab5JjlZOrDfB6dvAAVHeuAtK0dqWzPI02CfgrsyDBgzR0dJCBJSkZBKCakmZxNTfTTqQyymACYS/JQMFL3MJF+xwl+IPdu0gNX1pFSRHBzFwj//jZz+IXAoCAAIHT4OdhSSOzfnIbcWpA3cmmXggiBg7FQngK3pttp71li9V2v3SQJ3AMQn43Gdj4YYgIbVAOABeS1SMpmu81Ys4UzDDTb43gey+IWDyLSuATsKzmfDmPjW7TClxaCMm2e/Z2BKiuCGF8N/+jxswLFCCMGWf9PX0/XidaTdzggefWJ1rhTABDlBRrRdKmttgykrocz61XCrl8L3yUUEuz+EGhpDKnIz3NoqUCoLCJppcWa4q5bD/3FfvhMAECMzS9AUyh/h8qULXiVfqAaJ9Pmh2OG7h/ds+8Gc3QGAgpL13uJSiEyWwIxswyp44UosfP5VyPGrgJ5baxCBPA2vqgKmuBBiIgmWEpb5tuUbmq8wU6Kvs/MUYm8TjXfcKJS/xuTSAQycoWlEIjFVsWHTrZaET7Aj17EgZp9DkBJyIglbFEKurhr+k+cgR8dnKx9gGRzwIdD7McREElBSsjEQUj4GyH8AondZY+Ma7CELtn5IBQJPLgRMYKaSW7aEwNyhggsPCAh5qvDwcQq92cXkerChIGAMcvU3AAACJ88BUua13zI46Ifv9AUUvNsz8xwAWwtmhhAkGaoAsZiwbO7n3MQ9THwvKj8zADGIWIykLAOnbTYxQOGWlmq4dFy43kK9oJCyzfWUW10NWxBAcXsH1MAoxu+9G+w4+Wk4dBkL/nI4P5yEmEGGOcMgN78m8Ka+nu6T17Kx9tHX/QBwdu9Ot+xHb4dsyMn/ffn6W75LjvqjzWY1aaP00nKkbm0EGYPiFw4geVsLMrc0QI2Oo+iltyCTKbCaLguDiMB6u4vACas9MXzPjpHyxJYV5BNB63m5kdSFC3juQa9i98F3mCgw3HZny8z8j0TUhZ73XrCuu1/4/YoDPqMGRlHc3gH/qU+hSxcicPIcxNU0Qm8chUxcncsJ5OeBMLg42HNkZPjfXUO1Y60OsX2D4O8Vll7Kww8AGALz4PT2DCaa6tFww5ZiSN1LREsZlsEQ5Hp5ASKCWVAIOTYOqDnOZ44xN/R9cPwcAKp99HXfhJAfi4LiKptOnB5++s66+bbefE9Go9T3wZErzPaHICJYtgDAft9UfSHHEvM5ZxCBhWpa0tRUNb0MECfZ6DSmJG+eJTivUPG4QSSiLp7o7jDWtAnHpxjsgmd5U/L6mU+WgIj3K+OcCW9o3nZ27y7XeNk7HE+sIoW75gT7BWs5IRoVtVevKnfwyjtSOS3WaFhrNRHJL1jhp2xrEkqx0Xf3neh+7SveuOYspYx43J49eDCXcQO3G6N/DsZnUjmKiAjM+noZzMqMSAhgSpJjMYVYTICZvvjqdf1nDACVjY2LHOM8AsIjQsgyawyYr0GE2RAJSVLAaPuMy+nHh3p7M5M2+MsvnV/hMhpubKyEcXYDeFgoucAaA1hrAbCQSlq2SVh+uO9E1z78l0fO++bCBTsZiEocPTqRGOx/s6Sy6k/WGgaonqQMCimEZXuMrfnmxRPdhxCJqMnv/u+Hpm+/AFY0bLpx+YbWfeENrc9XrF0bmh7B/8P5D1rtbE7P+DSXAAAAAElFTkSuQmCC" type="image/png">
 <style>
-/* === SHARED OREBIT TOKENS === */
-/* ═══ INTER FONT (base64 embedded for CSP font-src 'self' data:) ═══ */
-/* @orebit-inline: assets/fonts/inter-400.face.css */
-/* @orebit-inline: assets/fonts/inter-500.face.css */
-/* @orebit-inline: assets/fonts/inter-600.face.css */
-/* @orebit-inline: assets/fonts/inter-700.face.css */
-
-/* ═══════════════════════════════════════════════════════════════════════
- * OREBIT DESIGN TOKENS — Single Source of Truth
- * Used by: GeoSuite Core, GeoSuite Assay, GeoSuite Resource
- * Reference: orebit.id frontend/public/css/main.css
- * ═══════════════════════════════════════════════════════════════════════ */
-
-:root {
-  /* ── BRAND PALETTE (orebit.id canonical) ────────────────────────────── */
-  --orebit-cream: #ffffff;       /* page background (orebit.id white) */
-  --orebit-dark-blue: #0f172a;   /* primary heading, footer (orebit.id --text-primary) */
-  --orebit-teal: #0d9488;        /* primary accent, primary CTA (orebit.id --accent-teal) */
-  --orebit-teal-h: #0f766e;      /* teal hover (darker teal) */
-  --orebit-orange: #E87722;      /* CTA highlight only */
-  --orebit-orange-h: #d46610;    /* orange hover */
-  --orebit-gray: #475569;        /* body text (orebit.id --text-secondary) */
-
-  /* ── SEMANTIC TOKENS (derived) ──────────────────────────────────────── */
-  --bg: #ffffff;                 /* card background */
-  --bg-page: var(--orebit-cream);
-  --bg-alt: #f8fafc;             /* table stripe, hover */
-  --bg-card: #ffffff;
-  --bg-hero: rgba(255,255,255,0.92);
-
-  --fg: var(--orebit-dark-blue); /* primary text */
-  --fg-body: var(--orebit-gray); /* body text */
-  --fg-mute: #94a3b8;            /* mute / placeholder */
-  --fg-on-dark: #ffffff;
-
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
-
-  --accent: var(--orebit-teal);
-  --accent-h: var(--orebit-teal-h);
-  --accent-soft: #f0fdfa;        /* teal-tinted soft fill (lighter) */
-
-  --good: #22a344;               /* matches orebit.id .do-column h4 */
-  --good-soft: #e7f6ec;
-  --warn: #d97706;
-  --warn-soft: #fef3c7;
-  --bad: #d32f2f;                /* matches orebit.id .dont-column h4 */
-  --bad-soft: #fde8e8;
-  --info: var(--orebit-teal);
-  --info-soft: #f0f9f9;
-
-  /* ── ROW HIGHLIGHT (data tables) ────────────────────────────────────── */
-  --row-edit: #fef9c3;
-  --row-new: #dcfce7;
-  --row-del: #fee2e2;
-
-  /* ── TYPOGRAPHY ─────────────────────────────────────────────────────── */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", monospace;
-
-  /* ── LAYOUT ─────────────────────────────────────────────────────────── */
-  --content-max: 1600px;
-  --radius: 8px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-pill: 999px;
-  --shadow-sm: 0 1px 2px rgba(15,23,42,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(15,23,42,0.08), 0 2px 4px -2px rgba(15,23,42,0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(15,23,42,0.1), 0 4px 6px -4px rgba(15,23,42,0.06);
-  --shadow-xl: 0 20px 25px -5px rgba(15,23,42,0.12), 0 8px 10px -6px rgba(15,23,42,0.06);
-
-  /* Motion tokens */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --duration-fast: 150ms;
-  --duration-base: 200ms;
-  --duration-slow: 300ms;
-}
-
-[data-theme="dark"], body.dark {
-  --bg: #0f172a;
-  --bg-page: #0a0e14;
-  --bg-soft: #11161e;
-  --bg-alt: #1e293b;
-  --bg-card: #1e293b;
-  --bg-hero: rgba(255,255,255,0.92);
-
-  --fg: #e6edf3;
-  --fg-body: #c9d1d9;
-  --fg-mute: #8b949e;
-
-  --border: #21262d;
-  --border-strong: #30363d;
-
-  --accent: #2dd4bf;
-  --accent-h: #5eead4;
-  --accent-soft: rgba(45, 212, 191, 0.1);
-
-  --orebit-teal: #2dd4bf;
-
-  --good-soft: rgba(34, 163, 68, 0.15);
-  --warn-soft: rgba(217, 119, 6, 0.15);
-  --bad-soft: rgba(211, 47, 47, 0.15);
-  --info-soft: rgba(45, 122, 142, 0.15);
-
-  --row-edit: #422006;
-  --row-new: #052e16;
-  --row-del: #450a0a;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
- * BASE RESETS & TYPOGRAPHY
- * ═══════════════════════════════════════════════════════════════════════ */
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { min-height: 100%; }
-html, body { overflow-x: hidden; max-width: 100vw; }
-body {
-  font-family: var(--font-sans);
-  font-feature-settings: "tnum" 1, "cv11" 1, "ss01" 1;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: var(--bg-page);
-  color: var(--fg-body);
-  font-size: 16px;
-  line-height: 1.65;
-  transition: background 0.3s, color 0.3s;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-h1, h2, h3, h4, h5, h6 { color: var(--fg); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; }
-h1 { font-size: 28px; }
-h2 { font-size: 22px; }
-h3 { font-size: 18px; }
-h4 { font-size: 16px; }
-
-a { color: var(--accent); text-decoration: none; }
-a:hover { color: var(--accent-h); text-decoration: underline; }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * MOBILE UX FIXES (2026-06-02)
- * Hide sidebar, fix font sizes, prevent overflow on phones/tablets
- * ═══════════════════════════════════════════════════════════════════════ */
-@media (max-width: 1024px) {
-  nav.tabs {
-    overflow-x: auto !important;
-    scrollbar-width: none !important;
-  }
-  nav.tabs::-webkit-scrollbar { display: none !important; }
-}
-@media (max-width: 768px) {
-  /* Hide sidebar entirely — mobile-bottom-nav is the replacement */
-  nav.tabs { display: none !important; }
-  .panel { margin-left: 0 !important; }
-
-  /* Ensure minimum readable font sizes */
-  body { font-size: 14px !important; }
-  .tab { font-size: 14px !important; }
-  .section-label { font-size: 12px !important; }
-  .mobile-bottom-nav { font-size: 12px !important; }
-  .mobile-bottom-nav .nav-item span { font-size: 11px !important; }
-
-  /* Prevent horizontal overflow */
-  .wrap { overflow-x: hidden !important; max-width: 100vw !important; }
-  .card { overflow-x: auto; }
-  /* Keep toasts above the mobile bottom nav */
-  [data-orebit-toast] { bottom: 150px !important; }
-}
-
-
-
-/* ═══ PAGE LOADING STATE ═══ */
-.page-loader {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: var(--bg, #ffffff);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  transition: opacity 0.3s ease;
-}
-.page-loader.fade-out {
-  opacity: 0;
-  pointer-events: none;
-}
-.page-loader .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--border, #e2e8f0);
-  border-top-color: var(--accent, #0d9488);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-.page-loader .loader-text {
-  margin-top: 16px;
-  font-size: 14px;
-  color: var(--fg-mute, #94a3b8);
-  font-family: var(--font-sans, sans-serif);
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-/* ═══════════════════════════════════════════════════════════════════════
-* OREBIT BRANDED HEADER (with logo + hero gradient)
-* ═══════════════════════════════════════════════════════════════════════ */
-.orebit-header {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, var(--accent) 100%);
-  color: #ffffff;
-  padding: 32px 28px 28px;
-  margin: -14px -22px 24px;
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-.orebit-header .brand {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  flex: 1;
-  min-width: 280px;
-}
-.orebit-header .logo {
-  width: 72px;
-  height: 72px;
-  flex-shrink: 0;
-  background: rgba(255,255,255,0.95);
-  border-radius: var(--radius);
-  padding: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-.orebit-header .logo img { width: 100%; height: 100%; object-fit: contain; }
-/* Per-app SVG logo (flat color container, white stroke glyph) */
-.orebit-header .logo.orebit-app-logo {
-  background: var(--accent);
-  padding: 0;
-  display: grid;
-  place-items: center;
-}
-.orebit-header .logo.orebit-app-logo svg {
-  width: 60%;
-  height: 60%;
-  stroke: #ffffff;
-  stroke-width: 1.9;
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.orebit-header .title-block { flex: 1; }
-.orebit-header h1 {
-  color: #ffffff;
-  font-size: 24px;
-  margin: 0 0 4px 0;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-.orebit-header .subtitle {
-  color: rgba(255,255,255,0.92);
-  font-size: 14px;
-  margin: 0 0 10px 0;
-  line-height: 1.5;
-}
-.orebit-header .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.orebit-header .tag {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 11px;
-  background: rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.95);
-  font-size: 11px;
-  border: 1px solid rgba(255,255,255,0.2);
-  backdrop-filter: blur(4px);
-}
-.orebit-header .toolbar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.orebit-header #themeToggle {
-  background: rgba(255,255,255,0.15);
-  color: #ffffff;
-  border: 1px solid rgba(255,255,255,0.25);
-  border-radius: var(--radius-sm);
-  padding: 8px 14px;
-  cursor: pointer;
-  font-size: 14px;
-  font-family: inherit;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-.orebit-header #themeToggle:hover {
-  background: rgba(255,255,255,0.25);
-  border-color: rgba(255,255,255,0.4);
-}
-.orebit-header #lang-switch,
-.orebit-header .lang-toggle {
-  background: rgba(255,255,255,0.15);
-  color: #ffffff;
-  border: 1px solid rgba(255,255,255,0.25);
-  border-radius: var(--radius-sm);
-  height: 32px;
-  min-width: 44px;
-  padding: 0 10px;
-  cursor: pointer;
-  font-size: 12px;
-  font-family: inherit;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  transition: all 0.2s;
-}
-.orebit-header #lang-switch:hover,
-.orebit-header .lang-toggle:hover {
-  background: rgba(255,255,255,0.28);
-  border-color: rgba(255,255,255,0.45);
-}
-.orebit-header .orebit-link {
-  color: rgba(255,255,255,0.85);
-  font-size: 12px;
-  text-decoration: none;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  transition: all 0.2s;
-}
-.orebit-header .orebit-link:hover {
-  background: rgba(255,255,255,0.1);
-  color: #ffffff;
-  text-decoration: none;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
- * LAYOUT
- * ═══════════════════════════════════════════════════════════════════════ */
-.wrap {
-  max-width: var(--content-max);
-  margin: 0 auto;
-  padding: 14px 22px 56px;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
- * TABS (matching orebit.id minimalism)
- * ═══════════════════════════════════════════════════════════════════════ */
-nav.tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  border-bottom: 2px solid var(--border);
-  margin-bottom: 20px;
-  overflow-x: auto;
-  background: var(--bg);
-  padding: 4px 4px 0;
-  border-radius: var(--radius) var(--radius) 0 0;
-}
-nav.tabs .tab {
-  padding: 10px 16px;
-  background: transparent;
-  color: var(--fg-body);
-  border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 500;
-  white-space: nowrap;
-  font-family: inherit;
-  transition: all 0.2s;
-}
-nav.tabs .tab:hover {
-  color: var(--accent);
-  background: var(--bg-alt);
-}
-nav.tabs .tab.active {
-  color: var(--accent);
-  border-bottom: 3px solid var(--accent);
-  font-weight: 600;
-  background: var(--accent-soft);
-  margin-bottom: -2px;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
- * PANELS / CARDS
- * ═══════════════════════════════════════════════════════════════════════ */
-.panel { display: none; }
-.panel.active { display: block; animation: fadeIn 0.3s ease-out; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-
-.card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  margin-bottom: 16px;
-  /* CHANGED 2026-07-28: visual polish — shadow-sm → shadow-md for more depth */
-  box-shadow: var(--shadow-md);
-  transition: box-shadow 0.2s ease;
-}
-.card:hover {
-  box-shadow: var(--shadow-lg);
-}
-
-/* ═══ CANONICAL KPI / STAT CARD (geosuite-ui-standard §2) ═════════════════ */
-/* ONE spec, identical across all 3 modules. Covers every legacy class name:  */
-/* Core uses .stat-grid/.stat-box, Resource uses .metric-grid/.metric-tile.   */
-/* New code should use .kpi-grid/.kpi-tile. All three resolve here so the      */
-/* paying user never sees three different KPI sizes between modules.          */
-.kpi-grid, .stat-grid, .metric-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin: 14px 0;
-}
-.kpi-tile, .stat-box, .metric-tile {
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: var(--radius-sm);
-  padding: 16px;
-  min-height: 88px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  box-sizing: border-box;
-}
-.kpi-tile .label, .stat-box .label, .metric-tile .label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--fg-mute);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  line-height: 1.2;
-}
-.kpi-tile .value, .stat-box .value, .metric-tile .value {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--fg);
-  margin-top: 4px;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-.kpi-tile .sub, .stat-box .sub, .metric-tile .sub {
-  font-size: 11px;
-  color: var(--fg-mute);
-  margin-top: 3px;
-  line-height: 1.25;
-}
-
-/* ═══ STANDARD PER-TAB HELP BLOCK (geosuite-ui-standard §3) ═══════════════ */
-/* One component, identical on every tab across all 3 modules. */
-.tab-help {
-  background: var(--accent-soft);
-  border-left: 3px solid var(--accent);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  margin-bottom: 16px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--fg-body);
-}
-.tab-help strong { display: block; color: var(--fg); font-weight: 600; margin-bottom: 2px; }
-.tab-help span { color: var(--fg-mute); }
-
-/* ═══ GUIDED NEXT-STEP STRIP (cross-phase UX) ═══════════════════════════ */
-.ux-next-step {
-  display:flex; align-items:center; justify-content:space-between; gap:16px;
-  margin:12px 0 16px; padding:12px 14px;
-  background:var(--bg-alt); border:1px solid var(--border); border-left:3px solid var(--accent);
-  border-radius:var(--radius-md);
-}
-.ux-next-step .ux-step-copy { display:flex; flex-direction:column; gap:2px; min-width:0; }
-.ux-next-step .ux-eyebrow { color:var(--accent); font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
-.ux-next-step strong { color:var(--fg); font-size:14px; }
-.ux-next-step .ux-step-detail { color:var(--fg-mute); font-size:12px; line-height:1.4; }
-.ux-next-step .btn { flex:0 0 auto; white-space:nowrap; }
-@media (max-width:768px) {
-  .ux-next-step { align-items:flex-start; flex-direction:column; gap:10px; }
-  .ux-next-step .btn { width:100%; }
-}
-
-/* ═══ INSIGHT STRIP (geosuite-ui-standard §4) — headline finding above plots ═ */
-.insight-strip {
-  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-  margin-bottom: 12px;
-}
-.insight-strip .chip {
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  padding: 4px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--fg);
-  font-feature-settings: "tnum" 1;
-}
-.insight-strip .chip.accent { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-h); }
-.insight-strip .chip.warn { background: rgba(217,119,6,0.12); border-color: var(--warn); color: var(--warn); }
-.insight-strip .chip strong { color: var(--fg); font-weight: 600; }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * BUTTONS (orebit.id style)
- * ═══════════════════════════════════════════════════════════════════════ */
-.btn, button.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 18px;
-  border-radius: var(--radius-sm);
-  text-decoration: none;
-  font-weight: 600;
-  font-family: inherit;
-  font-size: 13px;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-  background: var(--bg-alt);
-  color: var(--fg);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  flex-shrink: 0;
-}
-.btn:hover { background: var(--border); }
-.btn-primary { background: var(--accent); color: var(--fg-on-dark); }
-.btn-primary:hover { background: var(--accent-h); color: var(--fg-on-dark); }
-.btn-cta { background: var(--orebit-orange); color: var(--fg-on-dark); padding: 12px 24px; }
-.btn-cta:hover { background: var(--orebit-orange-h); color: var(--fg-on-dark); }
-.btn-ghost { background: transparent; border: 1px solid var(--border-strong); color: var(--fg); }
-.btn-ghost:hover { background: var(--bg-alt); border-color: var(--accent); color: var(--accent); }
-.btn-success { background: var(--good); color: var(--fg-on-dark); }
-.btn-danger { background: var(--bad); color: var(--fg-on-dark); }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * FORMS
- * ═══════════════════════════════════════════════════════════════════════ */
-input, select, textarea {
-  font-family: inherit;
-  font-size: 14px;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
-  color: var(--fg);
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
-}
-label { font-size: 13px; font-weight: 500; color: var(--fg); display: block; margin-bottom: 4px; }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * TABLES
- * ═══════════════════════════════════════════════════════════════════════ */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-  background: var(--bg);
-}
-th {
-  background: var(--bg-alt);
-  text-align: left;
-  padding: 10px 12px;
-  font-weight: 600;
-  color: var(--fg);
-  border-bottom: 2px solid var(--border);
-}
-td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--fg-body); }
-tr:hover td { background: var(--bg-alt); }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * BADGES & ALERTS
- * ═══════════════════════════════════════════════════════════════════════ */
-.badge {
-  display: inline-block;
-  padding: 2px 9px;
-  border-radius: 11px;
-  font-size: 11px;
-  font-weight: 500;
-  background: var(--accent-soft);
-  color: var(--accent);
-  border: 1px solid var(--accent);
-}
-.badge-good { background: var(--good-soft); color: var(--good); border-color: var(--good); }
-.badge-warn { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
-.badge-bad { background: var(--bad-soft); color: var(--bad); border-color: var(--bad); }
-
-.alert {
-  padding: 14px 18px;
-  border-radius: var(--radius-sm);
-  margin: 12px 0;
-  border-left: 4px solid var(--accent);
-  background: var(--info-soft);
-}
-.alert-good { border-left-color: var(--good); background: var(--good-soft); }
-.alert-warn { border-left-color: var(--warn); background: var(--warn-soft); }
-.alert-bad { border-left-color: var(--bad); background: var(--bad-soft); }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * GRID HELPERS
- * ═══════════════════════════════════════════════════════════════════════ */
-.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; }
-.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
-.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * TRUST CARDS (orebit.id pattern — Privacy Statement)
- * ═══════════════════════════════════════════════════════════════════════ */
-.trust-card {
-  background: var(--bg-card);
-  padding: 24px;
-  border-radius: var(--radius);
-  border-left: 4px solid var(--accent);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.trust-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-}
-.trust-card .icon { font-size: 32px; margin-bottom: 10px; }
-.trust-card h3 { color: var(--fg); margin-bottom: 8px; font-size: 16px; }
-.trust-card p { color: var(--fg-body); font-size: 13px; line-height: 1.6; }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * FOOTER
- * ═══════════════════════════════════════════════════════════════════════ */
-.orebit-footer {
-  background: var(--orebit-dark-blue);
-  color: rgba(255,255,255,0.85);
-  text-align: center;
-  padding: 24px 28px;
-  /* No horizontal negative margin — was causing 22px overflow on desktop
-     viewports because parent .wrap has no horizontal padding to compensate.
-     Bottom -56px kept to flush footer against page edge. */
-  margin: 32px 0 -56px;
-  font-size: 12px;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-}
-.orebit-footer a { color: #87ceeb; text-decoration: none; }
-.orebit-footer a:hover { text-decoration: underline; }
-.orebit-footer .divider { margin: 0 8px; opacity: 0.5; }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * RESPONSIVE
- * ═══════════════════════════════════════════════════════════════════════ */
-@media (max-width: 768px) {
-  .orebit-header { padding: 20px; }
-  .orebit-header h1 { font-size: 18px; }
-  .orebit-header .logo { width: 56px; height: 56px; }
-  .orebit-header .toolbar { width: 100%; justify-content: flex-start; }
-  .wrap { padding: 12px 16px 40px; }
-
-  /* Tabs: horizontal scroll instead of wrap → preserves tab order, easier thumb scan */
-  nav.tabs {
-    flex-wrap: nowrap;
-    gap: 2px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-  }
-  nav.tabs .tab {
-    padding: 12px 14px;       /* 44px effective touch target */
-    font-size: 13px;
-    min-height: 44px;
-    flex-shrink: 0;
-  }
-
-  /* Buttons: ensure 44px touch target on small screens (Apple HIG / Material) */
-  .btn, button.btn {
-    min-height: 44px;
-    padding: 12px 18px;
-  }
-
-  /* Plot containers: shrink min-height for mobile screens */
-  .plot-container { min-height: 280px !important; }
-
-  /* CHANGED 2026-07-28: mobile responsive dashboard grid — stack columns */
-  .dash-rich-grid { grid-template-columns: 1fr !important; }
-  .grid-2 { grid-template-columns: 1fr !important; }
-  .grid-3 { grid-template-columns: 1fr !important; }
-  .grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
-  /* KPI tiles: 2 columns on mobile (was auto-fit 200px → 1 col on narrow) */
-  .kpi-grid, .stat-grid, .metric-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
-  /* Tables: horizontal scroll wrapper */
-  .card { overflow-x: auto; }
-  table.thin { min-width: max-content; font-size: 11px; }
-  table.thin td, table.thin th { padding: 4px 6px; }
-  /* Section headings: smaller on mobile, allow word wrap */
-  .panel h2 { font-size: 16px; }
-  .panel h3 { font-size: 14px; word-break: break-word; overflow-wrap: break-word; }
-  .panel h3 span { white-space: normal !important; overflow-wrap: break-word; }
-  /* Dashboard card headers with flex+icon — allow wrap */
-  #dashCollarTitle, #dashLithTitle { white-space: normal !important; word-break: break-word; }
-  #d3Plot, [id*="3d"], [id$="Plot3d"] { min-height: 360px !important; }
-  /* 3D view: reclaim the .card's own padding for the plot — every pixel of
-     width matters for both readability and drag-gesture precision on a phone. */
-  #d3Plot { margin-left: -20px; margin-right: -20px; width: calc(100% + 40px); }
-  #d3Controls { flex-direction: column; align-items: stretch; gap: 10px; }
-  #d3Controls #d3ColorWrap,
-  #d3Controls #d3ExagWrap,
-  #d3Controls #d3LabelWrap { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; }
-  #d3Controls #d3ColorBy { flex: 1; min-width: 0; min-height: 36px; }
-  #d3Controls #d3Exag { flex: 1; width: auto; }
-  #d3Controls #d3ToggleBtn { width: 100%; }
-
-  /* Tables: horizontal scroll wrapper to prevent layout overflow */
-  .card { overflow-x: auto; }
-  table.thin { min-width: max-content; font-size: 12px; }
-
-  /* Stack inline form controls vertically on small screens */
-  .row-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .row-controls > label,
-  .row-controls > input,
-  .row-controls > select { width: 100% !important; }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
- * UTILITY
- * ═══════════════════════════════════════════════════════════════════════ */
-.text-muted { color: var(--fg-mute); }
-.text-accent { color: var(--accent); }
-.mono { font-family: var(--font-mono); font-size: 12.5px; }
-.hidden { display: none !important; }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * WCAG 2.5.8 TOUCH TARGETS (44×44px minimum)
- * All interactive elements must meet the WCAG AA minimum target size.
- * ═══════════════════════════════════════════════════════════════════════ */
-button,
-.tab,
-.btn,
-[role="tab"],
-[role="button"],
-a.nav-link,
-.sub-tab,
-input[type="button"],
-input[type="submit"],
-.glossary-trigger,
-.close-btn,
-.scope-toggle,
-.scope-dismiss,
-.help-close,
-.lang-toggle,
-#lang-switch,
-#themeToggle,
-.mobile-menu-toggle {
-  min-height: 44px;
-  min-width: 44px;
-}
-
-/* Override for inline decorative badges that aren't interactive targets */
-.badge {
-  min-height: auto;
-  min-width: auto;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
- * SKELETON LOADING PLACEHOLDERS
- * Shown while lazy-loaded vendor scripts (Plotly, jsPDF, html2canvas)
- * are downloading. Apply class="skeleton" to placeholder divs.
- * ═══════════════════════════════════════════════════════════════════════ */
-.skeleton {
-  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-alt, #f1f5f9) 50%, var(--bg-card) 75%);
-  background-size: 200% 100%;
-  animation: skeleton-pulse 1.5s ease-in-out infinite;
-  border-radius: var(--radius, 8px);
-}
-@keyframes skeleton-pulse {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-.vendor-loading .plot-container {
-  min-height: 300px;
-}
-.vendor-loading .skeleton-plot {
-  min-height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--fg-mute);
-  font-size: 13px;
-}
-.vendor-loading .skeleton-plot::after {
-  content: "Loading chart…";
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
- * TOOLTIPS (abbr-based, accessible, no JS needed)
- * Usage: <abbr title="Coefficient of Variation = SD/Mean">CV</abbr>
- * ═══════════════════════════════════════════════════════════════════════ */
-abbr[title] {
-  text-decoration: underline dotted var(--orebit-teal);
-  text-underline-offset: 2px;
-  cursor: help;
-  border-bottom: none;
-}
-abbr[title]:hover {
-  color: var(--orebit-teal);
-  background: rgba(45, 122, 142, 0.06);
-  border-radius: 2px;
-  padding: 0 2px;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
- * DEMO DATA BANNER (sticky, dismissable)
- * ═══════════════════════════════════════════════════════════════════════ */
-.demo-banner {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%);
-  color: #78350f;
-  padding: 8px 16px;
-  font-size: 13px;
-  text-align: center;
-  border-bottom: 1px solid #f59e0b;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-}
-.demo-banner strong { color: #78350f; }
-.demo-banner button {
-  background: transparent;
-  border: 1px solid #92400e;
-  color: #78350f;
-  padding: 2px 8px;
-  font-size: 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 600;
-}
-.demo-banner button:hover { background: rgba(146, 64, 14, 0.1); }
-.demo-banner.hidden { display: none !important; }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * SCOPE BANNER (honest "what this tool does / does NOT do")
- * Dismissable, persisted in localStorage
- * ═══════════════════════════════════════════════════════════════════════ */
-.scope-banner {
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--accent);
-  border-radius: 6px;
-  padding: 12px 16px;
-  margin: 12px 0 18px 0;
-  font-size: 13px;
-  color: var(--fg-body);
-  line-height: 1.55;
-  position: relative;
-}
-.scope-banner h4 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  color: var(--accent);
-  font-weight: 700;
-}
-.scope-banner .scope-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-top: 6px;
-}
-@media (max-width: 700px) {
-  .scope-banner .scope-grid { grid-template-columns: 1fr; }
-}
-
-/* Scope banner — collapsed-by-default with toggle (UX simplification 2026-05-29) */
-.scope-banner.collapsed { padding-top: 8px; padding-bottom: 8px; }
-.scope-banner.collapsed h4 { margin-bottom: 0; font-size: 13px; }
-.scope-banner.collapsed .scope-grid,
-.scope-banner.collapsed .scope-footnote { display: none; }
-.scope-banner .scope-toggle {
-  float: right; cursor: pointer; user-select: none;
-  font-size: 12px; color: var(--accent, #2D7A8E);
-  font-weight: 600; padding: 2px 8px; border-radius: 4px;
-  background: rgba(45,122,142,0.08); margin-left: 8px;
-  transition: background 0.15s;
-}
-.scope-banner .scope-toggle:hover { background: rgba(45,122,142,0.16); }
-.scope-banner .scope-col strong { display: block; margin-bottom: 4px; font-size: 12px; }
-.scope-banner .scope-col.does strong { color: var(--good); }
-.scope-banner .scope-col.does-not strong { color: var(--warn); }
-.scope-banner ul {
-  margin: 0; padding-left: 18px;
-  font-size: 12.5px;
-}
-.scope-banner ul li { margin-bottom: 2px; }
-.scope-banner .scope-footnote {
-  margin-top: 10px; padding-top: 8px;
-  border-top: 1px dashed var(--border);
-  font-size: 12px; color: var(--fg-body);
-}
-.scope-banner .scope-footnote a { color: var(--accent); text-decoration: underline; }
-.scope-banner button.scope-dismiss {
-  position: absolute; top: 6px; right: 8px;
-  background: transparent; border: none;
-  color: #94a3b8; cursor: pointer;
-  font-size: 16px; padding: 2px 6px;
-  border-radius: 4px;
-}
-.scope-banner button.scope-dismiss:hover { background: #f1f5f9; color: #475569; }
-.scope-banner.hidden { display: none !important; }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * NEXT STEPS PANEL (free-tool handoff guide)
- * Used in P3 Export tab
- * ═══════════════════════════════════════════════════════════════════════ */
-.next-steps-panel {
-  background: var(--accent-soft);
-  border: 1px solid var(--accent);
-  border-radius: 8px;
-  padding: 16px 18px;
-  margin-top: 18px;
-}
-.next-steps-panel h3 {
-  margin: 0 0 10px 0;
-  font-size: 15px;
-  color: var(--accent);
-}
-.next-steps-panel .ns-intro {
-  font-size: 13px; color: var(--fg-body);
-  margin-bottom: 12px; line-height: 1.55;
-}
-.next-steps-panel table {
-  width: 100%; font-size: 12.5px;
-  border-collapse: collapse;
-}
-.next-steps-panel th {
-  text-align: left; padding: 6px 8px;
-  background: var(--accent-soft); color: var(--fg);
-  font-weight: 700; border: 1px solid var(--accent);
-}
-.next-steps-panel td {
-  padding: 6px 8px; border: 1px solid var(--border);
-  vertical-align: top;
-}
-.next-steps-panel td code {
-  background: var(--bg-alt); padding: 1px 6px;
-  border-radius: 3px; font-size: 11.5px;
-}
-.next-steps-panel .ns-tag {
-  display: inline-block; padding: 1px 6px;
-  border-radius: 3px; font-size: 11px; font-weight: 600;
-  margin-right: 4px;
-}
-.next-steps-panel .ns-tag.free { background: var(--good-soft); color: var(--good); }
-.next-steps-panel .ns-tag.paid { background: var(--warn-soft); color: var(--warn); }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * QUICK INSIGHT PANEL (auto-generated findings card)
- * ═══════════════════════════════════════════════════════════════════════ */
-.quick-insight {
-  background: linear-gradient(135deg, #f0fdfa 0%, #ecfeff 100%);
-  border: 1px solid #2D7A8E;
-  border-left: 4px solid #2D7A8E;
-  border-radius: 6px;
-  padding: 14px 18px;
-  margin: 12px 0 18px 0;
-}
-.quick-insight h4 {
-  margin: 0 0 10px 0;
-  color: var(--orebit-dark-blue);
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.quick-insight ul {
-  margin: 0;
-  padding-left: 22px;
-  list-style: none;
-}
-.quick-insight ul li {
-  margin: 6px 0;
-  font-size: 13.5px;
-  line-height: 1.5;
-  position: relative;
-  padding-left: 4px;
-}
-.quick-insight ul li::before {
-  content: "▸";
-  color: var(--orebit-teal);
-  font-weight: bold;
-  position: absolute;
-  left: -16px;
-}
-.quick-insight .verdict-good { color: #047857; font-weight: 600; }
-.quick-insight .verdict-warn { color: #b45309; font-weight: 600; }
-.quick-insight .verdict-bad  { color: #b91c1c; font-weight: 600; }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * STEP NAVIGATION (Back / Next workflow buttons)
- * ═══════════════════════════════════════════════════════════════════════ */
-.step-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 28px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  gap: 12px;
-}
-.step-nav .btn { min-width: 140px; }
-.step-nav .step-spacer { flex: 1; }
-
-/* ═══════════════════════════════════════════════════════════════════════
- * HELP MODAL (Fix 3)
- * ═══════════════════════════════════════════════════════════════════════ */
-.help-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(2px);
-  z-index: 9998;
-  align-items: center; justify-content: center;
-  padding: 20px;
-}
-.help-overlay.open { display: flex; }
-.help-modal {
-  background: var(--bg-card, #fff);
-  color: var(--fg, #1a1a1a);
-  max-width: 880px; width: 100%;
-  max-height: 86vh; overflow-y: auto;
-  border-radius: 14px;
-  padding: 28px 32px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-  position: relative;
-}
-[data-theme="dark"] .help-modal {
-  background: #1c2333; color: #e8eef7;
-}
-.help-modal h2 { margin: 0 0 6px; font-size: 22px; }
-.help-modal h3 { margin: 22px 0 8px; font-size: 17px; color: var(--accent, #2563eb); }
-.help-modal h4 { margin: 16px 0 6px; font-size: 15px; }
-.help-modal p, .help-modal li { font-size: 14px; line-height: 1.55; }
-.help-modal code {
-  background: rgba(99,102,241,0.12);
-  padding: 1px 6px; border-radius: 4px;
-  font-family: ui-monospace, monospace; font-size: 12.5px;
-}
-.help-modal .help-section { padding: 14px 16px; border-radius: 8px; background: rgba(99,102,241,0.06); margin-bottom: 12px; }
-.help-modal .help-section.dataset { background: rgba(34,197,94,0.08); }
-.help-modal .help-section.method { background: rgba(245,158,11,0.08); }
-.help-modal a { color: var(--accent, #2563eb); text-decoration: underline; }
-.help-modal .help-close {
-  position: absolute; top: 12px; right: 14px;
-  background: transparent; border: none; cursor: pointer;
-  font-size: 24px; color: var(--fg-mute, #666); line-height: 1;
-}
-.help-modal .help-close:hover { color: var(--fg, #000); }
-.help-modal .help-meta { font-size: 12px; color: var(--fg-mute, #888); margin-top: 4px; }
-.help-tab-summary { padding: 10px 14px; background: rgba(99,102,241,0.08); border-left: 3px solid var(--accent, #2563eb); border-radius: 4px; margin-bottom: 12px; font-size: 14px; }
-.help-tab-summary strong { color: var(--accent, #2563eb); }
-
-
-/* ═══════════════════════════════════════════════════════════════════════
- * UI AUDIT FIXES (2026-05-29) — Lucide icons, active rails, premium polish
- * ═══════════════════════════════════════════════════════════════════════ */
-
-/* Lucide stroke icons — replace emoji throughout */
-.lucide-icon {
-  display: inline-flex;
-  width: 16px;
-  height: 16px;
-  stroke-width: 1.75;
-  stroke: currentColor;
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  flex-shrink: 0;
-  vertical-align: middle;
-}
-.lucide-icon-sm { width: 14px; height: 14px; }
-.lucide-icon-lg { width: 20px; height: 20px; }
-
-/* Toolbar buttons in header — premium polish */
-.orebit-header .toolbar button,
-.orebit-header .toolbar a {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-sans);
-  font-weight: 500;
-  letter-spacing: -0.005em;
-}
-/* The rule above's own specificity beats the UA stylesheet's [hidden]{display:none},
-   so the desktop-EXE-only cross-phase switcher would stay visually visible despite
-   its hidden attribute being correctly set. This wins back display:none for it. */
-.orebit-header .toolbar a[hidden] {
-  display: none;
-}
-
-/* Active sidebar/tab teal rail — use box-shadow inset (DO NOT touch ::before, it holds step number) */
-nav.tabs .tab.active {
-  box-shadow: inset 3px 0 0 0 var(--orebit-teal);
-}
-
-/* Tab strip horizontal scroll fade (mobile) */
-@media (max-width: 768px) {
-  nav.tabs {
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent 100%);
-            mask-image: linear-gradient(to right, black calc(100% - 32px), transparent 100%);
-  }
-  nav.tabs::-webkit-scrollbar { display: none; }
-}
-
-/* Tabular numerals for step numbers, tables, axes */
-.tabular,
-.orebit-header .tag,
-nav.tabs .tab,
-table {
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-}
-
-/* Tighter heading tracking (Inter look) */
-.orebit-header h1,
-h1, h2 {
-  letter-spacing: -0.015em;
-}
-
-
-
-/* === TIER A/B POLISH === */
-
-/* Softer demo banner — neutral with thin teal accent bar (was cream/yellow loud) */
-.demo-banner {
-  background: var(--bg-soft, #f8fafc) !important;
-  border: 1px solid var(--border, #e2e8f0) !important;
-  border-left: 3px solid var(--orebit-teal) !important;
-  color: var(--fg, #0f172a) !important;
-}
-.demo-banner strong { color: var(--fg, #0f172a) !important; }
-.demo-banner button {
-  border: 1px solid var(--border, #e2e8f0) !important;
-  color: var(--orebit-teal) !important;
-  background: white !important;
-  font-weight: 500 !important;
-}
-.demo-banner button:hover {
-  background: var(--orebit-teal) !important;
-  color: white !important;
-}
-
-/* Table zebra striping + cleaner dividers (premium SaaS feel) */
-.panel table tbody tr:nth-child(even),
-.card table tbody tr:nth-child(even),
-table.data-table tbody tr:nth-child(even) {
-  background: rgba(15, 23, 42, 0.035);
-}
-.panel table tbody tr:hover,
-.card table tbody tr:hover,
-table.data-table tbody tr:hover {
-  background: rgba(13, 148, 136, 0.06);
-}
-.panel table th,
-.card table th,
-table.data-table th {
-  background: var(--bg-soft, #f8fafc);
-  border-bottom: 2px solid var(--border, #e2e8f0);
-  font-weight: 600;
-  letter-spacing: -0.005em;
-}
-
-/* Link styling consistency — underline on hover only, teal accent */
-.panel a:not(.btn):not(.tab):not(.lang-toggle),
-.card a:not(.btn):not(.tab):not(.lang-toggle) {
-  color: var(--orebit-teal);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.15s ease;
-}
-.panel a:not(.btn):not(.tab):not(.lang-toggle):hover,
-.card a:not(.btn):not(.tab):not(.lang-toggle):hover {
-  border-bottom-color: var(--orebit-teal);
-}
-
-/* Active rail width handled via box-shadow inset — see line ~828 */
-
-
-/* ═══════════════════════════════════════════════════════════════
-   TIER C–E PREMIUM POLISH (v6.5 → 9/10 push)
-   ═══════════════════════════════════════════════════════════════ */
-
-/* C1: Toast — proper float with elevation */
-#toast,
-.toast,
-.toast-container {
-  position: fixed !important;
-  bottom: 16px !important;
-  right: 16px !important;
-  left: auto !important;
-  max-width: min(420px, calc(100vw - 32px)) !important;
-  margin: 0 !important;
-  border-radius: var(--radius-md) !important;
-  box-shadow: var(--shadow-xl) !important;
-  z-index: 1000;
-  animation: toastSlide var(--duration-base) var(--ease-out);
-}
-@keyframes toastSlide {
-  from { transform: translateY(8px); opacity: 0; }
-  to   { transform: translateY(0); opacity: 1; }
-}
-@media (max-width: 600px) {
-  #toast, .toast {
-    bottom: 16px !important;
-    left: 16px !important;
-    right: 16px !important;
-    max-width: none !important;
-  }
-}
-
-/* C2: Sidebar active state — contain bleed via overflow + z-index */
-nav.tabs {
-  position: relative;
-  z-index: 1;
-}
-nav.tabs .tab.active {
-  position: relative;
-  z-index: 2;
-}
-/* Active ::before is reserved for step number (01, 02, ...) — do NOT override */
-
-/* C3: Scope card — seamless border join with sidebar */
-.scope-banner {
-  border-radius: var(--radius-md) !important;
-  margin-left: 0 !important;
-}
-
-/* C5: Apply unified radii everywhere */
-.demo-banner,
-.scope-banner,
-.card,
-.panel > .hint,
-.next-step,
-.next-steps-panel,
-table.data-table,
-.modal-content {
-  border-radius: var(--radius-md);
-}
-.btn,
-button:not(.tab):not(.lang-toggle) {
-  border-radius: var(--radius-sm);
-  transition: all var(--duration-fast) var(--ease-out);
-  white-space: nowrap;
-}
-.tag,
-.lang-toggle,
-[class*="badge"] {
-  border-radius: var(--radius-pill);
-}
-
-/* D9: Micro-interactions */
-.btn:not(:disabled):hover,
-button:not(.tab):not(:disabled):hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-.btn:not(:disabled):active,
-button:not(.tab):not(:disabled):active {
-  transform: translateY(0);
-  transition-duration: 50ms;
-}
-
-nav.tabs .tab {
-  transition: background var(--duration-fast) var(--ease-out),
-              color var(--duration-fast) var(--ease-out),
-              padding var(--duration-fast) var(--ease-out);
-}
-nav.tabs .tab:hover:not(.active) {
-  background: rgba(13, 148, 136, 0.04);
-}
-
-/* Subtle row hover on tables already exists; bump transition */
-.panel table tbody tr,
-.card table tbody tr {
-  transition: background var(--duration-fast) var(--ease-out);
-}
-
-/* Modal / dialog smooth open */
-.modal,
-[role="dialog"] {
-  animation: modalFade var(--duration-base) var(--ease-out);
-}
-@keyframes modalFade {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-/* D10: Custom scrollbars (Linear-style slim) */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: rgba(15,23,42,0.15);
-  border-radius: var(--radius-pill);
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(13, 148, 136, 0.35);
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-* { scrollbar-width: thin; scrollbar-color: rgba(15,23,42,0.15) transparent; }
-
-/* E14: Dark mode polish (when user toggles, classy not auto-invert) */
-[data-theme="dark"] .demo-banner {
-  background: var(--bg-soft) !important;
-  border-color: var(--border) !important;
-}
-[data-theme="dark"] ::-webkit-scrollbar-thumb {
-  background: rgba(230,237,243,0.15);
-}
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(45, 212, 191, 0.35);
-}
-
-/* Skeleton loaders (D7) */
-.skeleton {
-  background: linear-gradient(90deg,
-    rgba(15,23,42,0.04) 0%,
-    rgba(15,23,42,0.08) 50%,
-    rgba(15,23,42,0.04) 100%);
-  background-size: 200% 100%;
-  animation: skeletonShimmer 1.5s ease-in-out infinite;
-  border-radius: var(--radius-sm);
-  display: inline-block;
-}
-@keyframes skeletonShimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-.skeleton-line { height: 12px; width: 100%; margin: 4px 0; }
-.skeleton-row { height: 32px; width: 100%; margin: 6px 0; }
-
-/* Empty state illustrations container (D8) */
-.empty-state {
-  text-align: center;
-  padding: 48px 24px;
-  color: var(--fg-mute, #8b949e);
-}
-.empty-state svg {
-  width: 64px;
-  height: 64px;
-  opacity: 0.4;
-  margin-bottom: 16px;
-  stroke: var(--orebit-teal);
-}
-.empty-state h4 {
-  font-size: 16px;
-  color: var(--fg, #0f172a);
-  margin: 0 0 8px;
-  font-weight: 600;
-}
-.empty-state p {
-  font-size: 14px;
-  margin: 0;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
-  line-height: 1.5;
-}
-
-/* Mobile hamburger menu (E11) */
-@media (max-width: 768px) {
-  .orebit-header .mobile-menu-toggle {
-    display: inline-flex;
-    width: 36px;
-    height: 36px;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--border, #e2e8f0);
-    border-radius: var(--radius-sm);
-    background: white;
-    cursor: pointer;
-  }
-  .orebit-header .toolbar {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: min(280px, 80vw);
-    background: white;
-    flex-direction: column;
-    align-items: stretch;
-    padding: 16px;
-    gap: 4px;
-    transform: translateX(100%);
-    transition: transform var(--duration-base) var(--ease-out);
-    z-index: 1500;
-    box-shadow: -10px 0 25px rgba(15,23,42,0.15);
-  }
-  .orebit-header .toolbar.open {
-    transform: translateX(0);
-  }
-  .orebit-header .toolbar button,
-  .orebit-header .toolbar a {
-    width: 100%;
-    justify-content: flex-start !important;
-    padding: 12px !important;
-  }
-  .mobile-menu-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(15,23,42,0.4);
-    z-index: 1400;
-  }
-  .mobile-menu-backdrop.open { display: block; }
-}
-@media (min-width: 769px) {
-  .mobile-menu-toggle, .mobile-menu-backdrop { display: none !important; }
-}
-
-/* E12: Mobile table → card layout */
-@media (max-width: 600px) {
-  .panel table.responsive-cards,
-  .card table.responsive-cards {
-    display: block;
-  }
-  .panel table.responsive-cards thead,
-  .card table.responsive-cards thead {
-    display: none;
-  }
-  .panel table.responsive-cards tbody,
-  .card table.responsive-cards tbody {
-    display: block;
-  }
-  .panel table.responsive-cards tr,
-  .card table.responsive-cards tr {
-    display: block;
-    background: white;
-    border: 1px solid var(--border, #e2e8f0);
-    border-radius: var(--radius-md);
-    padding: 12px;
-    margin-bottom: 8px;
-    box-shadow: var(--shadow-sm);
-  }
-  .panel table.responsive-cards td,
-  .card table.responsive-cards td {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    border: none !important;
-    padding: 4px 0;
-    gap: 12px;
-  }
-  .panel table.responsive-cards td::before,
-  .card table.responsive-cards td::before {
-    content: attr(data-label);
-    font-weight: 500;
-    color: var(--fg-mute, #8b949e);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    flex-shrink: 0;
-    min-width: 80px;
-  }
-}
-
-/* E13: Keyboard shortcut hint pills */
-kbd, .kbd {
-  display: inline-block;
-  padding: 2px 6px;
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--fg, #0f172a);
-  background: var(--bg-soft, #f8fafc);
-  border: 1px solid var(--border, #e2e8f0);
-  border-radius: var(--radius-sm);
-  box-shadow: 0 1px 0 rgba(15,23,42,0.08);
-  vertical-align: middle;
-}
-
-/* Zebra: bump for clarity */
-.panel table tbody tr:nth-child(even),
-.card table tbody tr:nth-child(even),
-table.data-table tbody tr:nth-child(even) {
-  background: rgba(15, 23, 42, 0.04);
-}
-
-/* Focus visible — accessibility + premium feel */
-*:focus-visible {
-  outline: 2px solid var(--orebit-teal);
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
-}
-button:focus-visible,
-.btn:focus-visible {
-  outline-offset: 3px;
-}
-
-/* Mobile hamburger: HIDDEN at all widths. The toolbar is shown inline in the
-   header on mobile (see patcher @media max-width:768px), so the hamburger is
-   redundant and was overlapping the profile avatar in the top-right corner. */
-.orebit-header .mobile-menu-toggle,
-.orebit-header > .mobile-menu-toggle,
-body .wrap .orebit-header .mobile-menu-toggle,
-.mobile-menu-backdrop {
-  display: none !important;
-}
-
-
-/* === MODULE-SPECIFIC === */
-/* ═══════════════════════════════════════════════════════════════════════
- * Stage 01: GeoSuite Core — MODULE-SPECIFIC STYLES
- * Shared base tokens + components live in _meta/orebit-design-tokens.css
- * Only module-specific patterns belong here.
- * ═══════════════════════════════════════════════════════════════════════ */
-
-/* PANEL HEADINGS — canonical scale (geosuite-ui-standard §1, identical across 3 modules) */
-.panel h2 { font-size: 22px; margin: 0 0 12px 0; }
-.panel h3 { font-size: 18px; margin: 16px 0 8px 0; }
-.panel h4 { font-size: 14px; margin: 12px 0 6px 0; }
-/* Canonical table cell size (match SSOT, override any local 12px) */
-.card td, .panel td, table td { font-size: 13px; }
-
-/* CARD VARIANTS (extend shared .card) */
-.card.full { grid-column: 1 / -1; }
-.card.compact { padding: 10px 14px; margin-bottom: 10px; }
-
-/* HINT BOXES (callout pattern — used heavily in Tutorial tab) */
-.hint {
-  background: var(--info-soft);
-  border-left: 3px solid var(--info);
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  margin-bottom: 12px;
-  color: var(--fg-body);
-}
-.hint strong { color: var(--fg); }
-/* Data-source bar — one line, always on. Sized to be read and then ignored:
-   it must not compete with the tab bar it sits above, but must never be
-   mistaken for decoration either, since on sample data it is the only thing
-   standing between an example dataset and a screenshot presented as real work. */
-.data-source-bar {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  padding: 5px 12px; margin: 0 0 8px;
-  font-size: 12px; line-height: 1.4;
-  border-radius: var(--radius-sm); border: 1px solid var(--border);
-  background: var(--bg-hover); color: var(--fg-body);
-}
-.data-source-bar .dsb-dot {
-  width: 7px; height: 7px; border-radius: 50%; flex: none;
-  background: var(--good);
-}
-.data-source-bar.warn { background: var(--warn-soft); border-color: var(--warn); }
-.data-source-bar.warn .dsb-dot { background: var(--warn); }
-/* "How to read this" link into the embedded docs panel. The interpretive half
-   of these captions lives in the docs (see src/shared/ui/index.js) — this is
-   the way back to it. Deliberately quiet: it must not compete with the reading
-   of the plot it sits under. */
-a[data-docs], a[data-goto-tab] {
-  color: var(--accent);
-  text-decoration: none;
-  border-bottom: 1px dotted currentColor;
-  cursor: pointer;
-  white-space: nowrap;
-  font-weight: 500;
-}
-a[data-docs]:hover, a[data-docs]:focus-visible, a[data-goto-tab]:hover, a[data-goto-tab]:focus-visible { border-bottom-style: solid; }
-.hint.good { border-left-color: var(--good); background: var(--good-soft); }
-.hint.warn { border-left-color: var(--warn); background: var(--warn-soft); }
-.hint.bad { border-left-color: var(--bad); background: var(--bad-soft); }
-
-/* BTN VARIANTS (extend shared .btn) */
-.btn.secondary {
-  background: transparent;
-  color: var(--fg);
-  border: 1px solid var(--border-strong);
-}
-.btn.secondary:hover {
-  background: var(--bg-alt);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.btn.danger { background: var(--bad); color: var(--fg-on-dark); }
-.btn.danger:hover { background: #991b1b; }
-.btn.small { padding: 4px 10px; font-size: 12px; }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.row-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin: 8px 0;
-}
-
-/* EDITABLE TABLE — drillhole CRUD pattern */
-.editable-table-wrap {
-  max-height: 520px;
-  overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-card);
-}
-.editable-table { font-size: 13px; }
-.editable-table th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  font-size: 12.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-.editable-table td.editable { cursor: text; min-width: 60px; }
-.editable-table td.editable:hover { background: var(--bg-alt); }
-.editable-table td.editable.editing { padding: 0; background: var(--row-edit); }
-.editable-table td.editable.editing input {
-  width: 100%;
-  padding: 6px 10px;
-  border: 2px solid var(--accent);
-  outline: none;
-  font: inherit;
-  background: var(--bg);
-  color: var(--fg);
-}
-.editable-table tr.row-new { background: var(--row-new); }
-.editable-table tr.row-edit { background: var(--row-edit); }
-.editable-table tr.row-deleted {
-  background: var(--row-del);
-  opacity: 0.5;
-  text-decoration: line-through;
-}
-.editable-table tr.row-invalid { background: rgba(220,38,38,0.08); }
-.editable-table td.cell-invalid {
-  background: rgba(220,38,38,0.15);
-  position: relative;
-}
-.editable-table td.cell-invalid::after {
-  content: "!";
-  color: var(--bad);
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  font-size: 10px;
-}
-.editable-table td.cell-missing {
-  background: rgba(239,68,68,0.22) !important;
-  outline: 2px solid #dc2626 !important;
-  outline-offset: -2px;
-  position: relative;
-  animation: pulse-red 1.5s ease-in-out 3;
-}
-.editable-table td.cell-missing::after {
-  content: "\26A0";
-  color: #dc2626;
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  font-size: 10px;
-}
-@keyframes pulse-red { 0%,100%{background:rgba(239,68,68,0.22)} 50%{background:rgba(239,68,68,0.40)} }
-
-.row-actions { display: flex; gap: 4px; }
-.row-actions button { padding: 2px 6px; font-size: 11px; }
-
-/* DROPZONE — file import */
-.dropzone {
-  border: 2px dashed var(--border-strong);
-  border-radius: var(--radius);
-  padding: 32px;
-  text-align: center;
-  background: var(--bg-alt);
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-  color: var(--fg-body);
-}
-.dropzone:hover, .dropzone.drag-over {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-/* MODULE-LOCAL BADGES (legacy syntax: .badge.good, .badge.warn, .badge.bad, .badge.info) */
-.badge.good { background: var(--good-soft); color: var(--good); border-color: var(--good); }
-.badge.warn { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
-.badge.bad { background: var(--bad-soft); color: var(--bad); border-color: var(--bad); }
-.badge.info { background: var(--info-soft); color: var(--info); border-color: var(--info); }
-
-/* PAGINATION */
-.pagination {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--fg-body);
-}
-
-/* STATS GRID — canonical .stat-grid/.stat-box now defined in SSOT
-   (_meta/orebit-design-tokens.css §2 KPI card). Do NOT redefine sizes here. */
-
-/* SPRINT G — quick-insight, next-step, tab badges, glossary modal */
-
-/* QUICK INSIGHT PANEL — top-of-tab summary card */
-.quick-insight {
-  background: linear-gradient(135deg, var(--accent-soft), var(--info-soft));
-  border: 1px solid var(--accent);
-  border-left: 4px solid var(--accent);
-  border-radius: var(--radius);
-  padding: 14px 18px;
-  margin: 0 0 16px;
-}
-.quick-insight h3 {
-  margin: 0 0 8px;
-  font-size: 15px;
-  color: var(--accent);
-  text-transform: none;
-  letter-spacing: 0;
-}
-.quick-insight .qi-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 18px;
-  font-size: 13px;
-  line-height: 1.55;
-  color: var(--fg-body);
-  margin-bottom: 4px;
-}
-.quick-insight .qi-row > div { min-width: 0; }
-.quick-insight strong { color: var(--fg); }
-.quick-insight .qi-warn { color: var(--bad); font-weight: 600; }
-.quick-insight .qi-ok { color: var(--good); font-weight: 600; }
-.quick-insight .qi-mid { color: var(--warn); font-weight: 600; }
-.quick-insight ul {
-  margin: 0;
-  padding-left: 20px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--fg-body);
-}
-.quick-insight ul li { margin-bottom: 2px; }
-.quick-insight ul li strong { color: var(--fg); }
-
-/* TAB BADGES — done state */
-nav.tabs .tab.tab-done::after {
-  content: ' ✓';
-  color: var(--good);
-  font-weight: 700;
-  margin-left: 2px;
-}
-
-/* NEXT-STEP CTA */
-.next-step {
-  margin-top: 18px;
-  padding: 14px 16px;
-  background: var(--bg-alt);
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.next-step .next-step-text {
-  font-size: 13px;
-  color: var(--fg-body);
-}
-.next-step .next-step-text strong { color: var(--accent); }
-.next-step button {
-  background: var(--accent);
-  color: var(--fg-on-dark);
-  border: none;
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  white-space: nowrap;
-}
-.next-step button:hover { filter: brightness(1.1); }
-.next-step button:disabled {
-  background: var(--fg-mute);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* GLOSSARY MODAL — searchable terms */
-.glossary-trigger {
-  background: transparent;
-  border: 1px solid var(--border-strong);
-  color: var(--fg-body);
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 13px;
-}
-.glossary-trigger:hover { border-color: var(--accent); color: var(--accent); }
-.glossary-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.55);
-  z-index: 9998;
-  display: none;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 40px 16px;
-}
-.glossary-overlay.open { display: flex; }
-.glossary-modal {
-  background: var(--bg);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  width: 100%;
-  max-width: 720px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-}
-.glossary-modal header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
-}
-.glossary-modal header h2 {
-  margin: 0; font-size: 17px; color: var(--accent);
-}
-.glossary-modal header button {
-  background: transparent; border: none; color: var(--fg-mute);
-  font-size: 22px; cursor: pointer; padding: 0 6px;
-}
-.glossary-modal header button:hover { color: var(--bad); }
-.glossary-modal .glossary-search {
-  padding: 12px 18px 8px;
-  border-bottom: 1px solid var(--border);
-}
-.glossary-modal .glossary-search input {
-  width: 100%; padding: 8px 12px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  font-family: inherit; font-size: 13px;
-  background: var(--bg-alt); color: var(--fg);
-}
-.glossary-modal .glossary-list {
-  overflow-y: auto;
-  padding: 8px 18px 16px;
-  flex: 1;
-}
-.glossary-modal .glossary-item {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
-}
-.glossary-modal .glossary-item:last-child { border-bottom: none; }
-.glossary-modal .glossary-term {
-  font-weight: 700; color: var(--accent); font-size: 13px;
-}
-.glossary-modal .glossary-def {
-  font-size: 13px; color: var(--fg-body);
-  margin-top: 2px; line-height: 1.5;
-}
-.glossary-modal .glossary-empty {
-  text-align: center; padding: 30px;
-  color: var(--fg-mute); font-size: 13px;
-}
-
-/* SPRINT H — FIRST-RUN GUIDED TOUR */
-.tour-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.65);
-  z-index: 9997;
-  display: none;
-  pointer-events: auto;
-}
-.tour-overlay.open { display: block; }
-.tour-card {
-[data-theme="dark"] .tour-card { background: #1e293b; color: #e2e8f0; border-color: #334155; }
-  position: fixed;
-  background: var(--bg);
-  border: 2px solid var(--accent);
-  border-radius: var(--radius);
-  padding: 18px 22px;
-  max-width: 380px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  z-index: 9998;
-  font-size: 13px;
-  line-height: 1.55;
-}
-.tour-card h3 {
-  margin: 0 0 8px;
-  font-size: 16px;
-  color: var(--accent);
-}
-.tour-card p { margin: 0 0 12px; color: var(--fg-body); }
-.tour-card .tour-actions {
-  display: flex; justify-content: space-between; align-items: center;
-  gap: 10px; margin-top: 14px;
-}
-.tour-card .tour-step-info {
-  font-size: 11px; color: var(--fg-mute);
-  letter-spacing: 0.3px; text-transform: uppercase;
-}
-.tour-card button {
-  background: var(--accent); color: var(--fg-on-dark);
-  border: none; padding: 7px 14px; border-radius: var(--radius-sm);
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  font-family: inherit;
-}
-.tour-card button.tour-skip {
-  background: transparent; color: var(--fg-mute);
-  border: 1px solid var(--border-strong);
-}
-.tour-card button:hover { filter: brightness(1.1); }
-.tour-spotlight {
-  position: fixed;
-  border: 3px solid var(--accent);
-  border-radius: 6px;
-  pointer-events: none;
-  z-index: 9997;
-  box-shadow: 0 0 0 9999px rgba(0,0,0,0.6);
-  transition: all 0.25s ease;
-}
-
-/* DATA QUALITY SCORE BADGE */
-.dq-score {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 12px; font-weight: 600;
-  cursor: pointer;
-  border: 1px solid transparent;
-  font-family: inherit;
-  transition: filter 0.2s;
-}
-.dq-score:hover { filter: brightness(1.1); }
-.dq-score.dq-good { background: var(--good-soft); color: var(--good); border-color: var(--good); }
-.dq-score.dq-mid  { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
-.dq-score.dq-bad  { background: var(--bad-soft); color: var(--bad); border-color: var(--bad); }
-
-/* RESPONSIVE */
-@media (max-width: 760px) {
-  nav.tabs { font-size: 12px; }
-  nav.tabs { overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
-  .panel h2 { font-size: 16px; }
-  .stat-grid { grid-template-columns: repeat(2, 1fr); }
-  #holeStatusTableWrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  #holeStatusTableWrapper table { min-width: 600px; font-size: 11px; }
-  #holeStatusTableWrapper th,
-  #holeStatusTableWrapper td { padding: 4px 6px; white-space: nowrap; }
-  .card details table { font-size: 11px; }
-  .card details td, .card details th { padding: 3px 5px; }
-  .row-controls { flex-direction: column; gap: 6px !important; }
-  .row-controls label { width: 100%; }
-  .row-controls select, .row-controls input[type="text"] { width: 100%; box-sizing: border-box; }
-  .card { padding: 10px; }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
- * STRIP LOG + SECTION (Tabs 8 + 9)
- * ═══════════════════════════════════════════════════════════════════════ */
-
-.orphan-box {
-  font-size: 12px;
-}
-
-/* LITHOLOGY/WEATHERING LEGEND PANEL — used in Strip Log + Section */
-.orebit-license-badge { color: var(--accent); font-size: 11px; white-space: nowrap; }
-.litho-legend-footer {
-  margin: 0;
-  padding: 0 24px;
-  background: var(--bg-soft, var(--bg-alt));
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-}
-.litho-legend .legend-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--fg-mute);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
-}
-.litho-legend .chips {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 4px 8px;
-}
-.litho-legend .chip-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11.5px;
-  color: var(--fg-body);
-}
-/* Editable lithology swatch. A native colour input, sized and framed to read
-   as the plain swatch it replaced — the picker is the whole point (a project's
-   own codes can't be colour-mapped in advance), so it must not look like a
-   form control bolted into a legend. 2026-09-07. */
-.chip-swatch-input {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  padding: 0;
-  border: 1px solid rgba(0,0,0,0.35);
-  border-radius: 3px;
-  background: none;
-  cursor: pointer;
-  flex: none;
-}
-.chip-swatch-input::-webkit-color-swatch-wrapper { padding: 0; }
-.chip-swatch-input::-webkit-color-swatch { border: none; border-radius: 2px; }
-.chip-swatch-input::-moz-color-swatch { border: none; border-radius: 2px; }
-.chip-swatch-input:hover { outline: 2px solid var(--accent); outline-offset: 1px; }
-.litho-legend .litho-reset-btn { font-size: 11px; padding: 2px 8px; min-height: 0; }
-/* Validation cells are links to where the problem gets fixed — underline on
-   hover only, so a 700-row table doesn't turn into a wall of blue. */
-a.val-goto { color: inherit; text-decoration: none; cursor: pointer; }
-a.val-goto:hover, a.val-goto:focus-visible { text-decoration: underline; color: var(--accent); }
-.litho-legend .chip-swatch {
-  width: 14px; height: 14px;
-  border-radius: 3px;
-  border: 1px solid rgba(0,0,0,0.25);
-  flex-shrink: 0;
-}
-.litho-legend.collapsed .chips { max-height: 78px; overflow: hidden; }
-.litho-legend .toggle {
-  display: inline-block;
-  margin-top: 6px;
-  font-size: 11px;
-  color: var(--accent);
-  cursor: pointer;
-  user-select: none;
-}
-
-/* HOLE HEADER INFO CARD */
-.hole-header {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 8px 14px;
-  padding: 10px 14px;
-  background: var(--bg-soft, var(--bg-alt));
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  margin: 8px 0;
-}
-.hole-header .hh-id {
-  grid-column: 1 / -1;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--fg);
-  letter-spacing: 0.4px;
-}
-.hole-header .hh-cell .label {
-  font-size: 10.5px;
-  color: var(--fg-mute);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.hole-header .hh-cell .value {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--fg);
-  margin-top: 1px;
-}
-.hole-header .hh-warn {
-  grid-column: 1 / -1;
-  font-size: 12px;
-  color: var(--warn);
-  background: var(--warn-soft);
-  padding: 4px 8px;
-  border-radius: 3px;
-}
-
-/* ===== PROJECT MANAGER MODAL ===== */
-.orebit-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  backdrop-filter: blur(2px);
-}
-.orebit-modal {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  width: 90%;
-  max-width: 600px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-}
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
-}
-.modal-header h3 {
-  margin: 0;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: var(--fg-mute);
-  cursor: pointer;
-  padding: 0 4px;
-  line-height: 1;
-}
-.modal-close:hover { color: var(--fg); }
-.modal-body {
-  padding: 16px 20px;
-  overflow-y: auto;
-  flex: 1;
-}
-.pm-new-project {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-.pm-new-project .input-field {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
-  color: var(--fg);
-  font-size: 14px;
-}
-.pm-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.pm-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  transition: background 0.15s;
-}
-.pm-row:hover { background: var(--bg-alt); }
-.pm-row.active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-.pm-info { flex: 1; min-width: 0; }
-.pm-name {
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.pm-meta {
-  font-size: 12px;
-  color: var(--fg-mute);
-  margin-top: 2px;
-}
-.pm-actions {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-shrink: 0;
-}
-.pm-badge {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 600;
-}
-.pm-empty {
-  text-align: center;
-  color: var(--fg-mute);
-  font-size: 14px;
-  padding: 32px 16px;
-}
-.btn.danger {
-  background: #ef4444;
-  color: #fff;
-  border-color: #ef4444;
-}
-.btn.danger:hover { background: #dc2626; }
-
-/* ===== SAVE STATUS INDICATOR ===== */
-.save-status {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 2px 8px;
-  border-radius: 10px;
-  white-space: nowrap;
-  transition: all 0.2s;
-}
-.save-status.saving {
-  color: #f59e0b;
-  background: rgba(245, 158, 11, 0.1);
-}
-.save-status.saved {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.1);
-}
-.save-status.error {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
-}
-
-/* ===== PROJECT NAME DISPLAY ===== */
-.project-name {
-  font-size: 13px;
-  color: var(--fg-mute);
-  max-width: 200px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.project-name.active {
-  color: var(--fg);
-  font-weight: 500;
-}
-
-/* ===== SECTION LAYOUT — responsive grid for overview map + section plot ===== */
-.section-layout {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 12px;
-  align-items: start;
-}
-@media (max-width: 768px) {
-  .section-layout {
-    grid-template-columns: 1fr !important;
-  }
-  #sectionOverviewMap {
-    height: 180px !important;
-  }
-}
-
-/* Mobile responsive */
-@media (max-width: 480px) {
-  .stat-grid { grid-template-columns: 1fr; }
-  .card { padding: 8px; margin-bottom: 8px; }
-  .panel h2 { font-size: 14px; }
-  nav.tabs { font-size: 11px; gap: 2px; }
-}
-
-@media (max-width: 768px) {
-  .stat-grid { grid-template-columns: repeat(2, 1fr); }
-  .row-controls { flex-direction: column; gap: 6px; }
-  .row-controls label { width: 100%; }
-  .row-controls select, .row-controls input { width: 100%; box-sizing: border-box; }
-  nav.tabs { overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
-  .card { padding: 10px; }
-}
-
-/* Touch targets — WCAG 2.1 minimum 44x44px (buttons/tabs only) */
-button, .tab, select, input[type="file"] {
-  min-height: 44px;
-  min-width: 44px;
-}
-
-/* Checkboxes & radios — normal size, not oversized */
-input[type="checkbox"], input[type="radio"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--accent, #0d9488);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-
-/* ═══ TAB GROUPING — visual workflow sections ═══ */
-.tab-group-label {
-  display: block;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--fg-mute, #94a3b8);
-  padding: 12px 12px 4px;
-  margin-top: 4px;
-  border-top: 1px solid var(--border, #e2e8f0);
-  user-select: none;
-  pointer-events: none;
-}
-.tab-group-label:first-child { border-top: none; margin-top: 0; padding-top: 8px; }
-
-
-/* ═══ COMPOSITE PARAMETERS — clean form layout ═══ */
-.comp-controls {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-.comp-len-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--fg);
-}
-.comp-len-input {
-  width: 80px;
-  padding: 6px 10px;
-  font-size: 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
-  color: var(--fg);
-}
-.comp-grade-title {
-  margin-bottom: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--fg-mute);
-}
-.comp-grade-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.comp-grade-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  padding: 4px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-alt);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.comp-grade-label:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-.comp-grade-label input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
-}
-
-
-/* Smaller touch targets for secondary controls */
-.btn.small, .badge {
-  min-height: 32px;
-  min-width: 32px;
-}
-
-</style>
+/* @orebit-inline: ui/core/styles.css */</style>
 <style>
 /* @orebit-inline: shared/ui/action-roles.css */
 /* @orebit-inline: shared/ui/workflow.css */
@@ -2482,24 +108,24 @@ input[type="checkbox"], input[type="radio"] {
   <span class="dsb-dot" aria-hidden="true"></span>
   <span id="dataSourceText"></span>
 </div>
-<nav class="tabs" role="tablist">
-  <span class="tab-group-label" data-i18n="tabgroup.workspace">Workspace</span>
-  <button class="tab active" onclick="showTab(1)" role="tab" aria-selected="true" tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> <span data-i18n="tab.dashboard">Dashboard</span></button>
-  <button class="tab" onclick="showTab(2)" role="tab" aria-selected="false" tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> <span data-i18n="tab.import">Import</span></button>
-  <span class="tab-group-label" data-i18n="tabgroup.tables">Drillhole Tables</span>
-  <button class="tab" onclick="showTab(3)" role="tab" aria-selected="false" tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> <span data-i18n="tab.collar">Collar</span></button>
-  <button class="tab" onclick="showTab(4)" role="tab" aria-selected="false" tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg> <span data-i18n="tab.survey">Survey</span></button>
-  <button class="tab" onclick="showTab(5)" role="tab" aria-selected="false" tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v2l-1 1v5l5 9a2 2 0 0 1-2 3H7a2 2 0 0 1-2-3l5-9V6L9 5V3z"/><line x1="6" y1="14" x2="18" y2="14"/></svg> <span data-i18n="tab.assay">Assay</span></button>
-  <button class="tab" onclick="showTab(6)" role="tab" aria-selected="false" tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg> <span data-i18n="tab.geology">Geology</span></button>
-  <span class="tab-group-label" data-i18n="tabgroup.analysis">Analysis</span>
-  <button class="tab" onclick="showTab(7)" role="tab" aria-selected="false" tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> <span data-i18n="tab.validation">Validation</span></button>
-  <button class="tab" onclick="showTab(8)" role="tab" aria-selected="false" tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> <span data-i18n="tab.striplog">Strip Log</span></button>
-  <button class="tab" onclick="showTab(9)" role="tab" aria-selected="false" tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> <span data-i18n="tab.section">Section</span></button>
-  <button class="tab" onclick="showTab(10)" role="tab" aria-selected="false" tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.3 8.7L8.7 21.3a2.4 2.4 0 0 1-3.4 0l-2.6-2.6a2.4 2.4 0 0 1 0-3.4L15.3 2.7a2.4 2.4 0 0 1 3.4 0l2.6 2.6a2.4 2.4 0 0 1 0 3.4z"/><path d="M7.5 10.5l2 2"/><path d="M10.5 7.5l2 2"/><path d="M13.5 4.5l2 2"/><path d="M4.5 13.5l2 2"/></svg> <span data-i18n="tab.desurvey">Desurvey</span></button>
-  <span class="tab-group-label" data-i18n="tabgroup.output">Output</span>
-  <button class="tab" onclick="showTab(11)" role="tab" aria-selected="false" tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg> <span data-i18n="tab.merge">Merge</span></button>
-  <button class="tab" onclick="showTab(12)" role="tab" aria-selected="false" tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg> <span data-i18n="tab.composite">Composite</span></button>
-  <button class="tab" onclick="showTab(13)" role="tab" aria-selected="false" tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="tab.export">Export</span></button>
+<nav class="tabs" aria-label="GeoSuite workspace">
+  <span class="tab-group-label" role="presentation" data-i18n="tabgroup.workspace">Workspace</span>
+  <button class="tab active" onclick="showTab(1)" aria-current="page" tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> <span data-i18n="tab.dashboard">Dashboard</span></button>
+  <button class="tab" onclick="showTab(2)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> <span data-i18n="tab.import">Import</span></button>
+  <span class="tab-group-label" role="presentation" data-i18n="tabgroup.tables">Drillhole Tables</span>
+  <button class="tab" onclick="showTab(3)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> <span data-i18n="tab.collar">Collar</span></button>
+  <button class="tab" onclick="showTab(4)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg> <span data-i18n="tab.survey">Survey</span></button>
+  <button class="tab" onclick="showTab(5)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v2l-1 1v5l5 9a2 2 0 0 1-2 3H7a2 2 0 0 1-2-3l5-9V6L9 5V3z"/><line x1="6" y1="14" x2="18" y2="14"/></svg> <span data-i18n="tab.assay">Assay</span></button>
+  <button class="tab" onclick="showTab(6)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg> <span data-i18n="tab.geology">Geology</span></button>
+  <span class="tab-group-label" role="presentation" data-i18n="tabgroup.analysis">Analysis</span>
+  <button class="tab" onclick="showTab(7)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> <span data-i18n="tab.validation">Validation</span></button>
+  <button class="tab" onclick="showTab(8)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> <span data-i18n="tab.striplog">Strip Log</span></button>
+  <button class="tab" onclick="showTab(9)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> <span data-i18n="tab.section">Section</span></button>
+  <button class="tab" onclick="showTab(10)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.3 8.7L8.7 21.3a2.4 2.4 0 0 1-3.4 0l-2.6-2.6a2.4 2.4 0 0 1 0-3.4L15.3 2.7a2.4 2.4 0 0 1 3.4 0l2.6 2.6a2.4 2.4 0 0 1 0 3.4z"/><path d="M7.5 10.5l2 2"/><path d="M10.5 7.5l2 2"/><path d="M13.5 4.5l2 2"/><path d="M4.5 13.5l2 2"/></svg> <span data-i18n="tab.desurvey">Desurvey</span></button>
+  <span class="tab-group-label" role="presentation" data-i18n="tabgroup.output">Output</span>
+  <button class="tab" onclick="showTab(11)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg> <span data-i18n="tab.merge">Merge</span></button>
+  <button class="tab" onclick="showTab(12)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg> <span data-i18n="tab.composite">Composite</span></button>
+  <button class="tab" onclick="showTab(13)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="tab.export">Export</span></button>
 </nav>
 
 <!-- VERSION CHANGELOG BANNER v2.9.1 (dismissible, localStorage-gated) -->
@@ -2518,361 +144,43 @@ input[type="checkbox"], input[type="radio"] {
 
 <!-- TAB 1: DASHBOARD -->
 
-<div class="panel active" id="tab1" data-panel="dashboard" role="tabpanel">
-
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-    <p id="dashSubtitle" style="color:var(--fg-mute);font-size:13px;margin:-4px 0 4px;" data-i18n="panel.dashboard.subtitle">Demo dataset · Queensland geoscience demo</p>
-    <button class="btn png-export-hide" id="dashExportPngBtn" data-export-png="dashboard" aria-label="Export Dashboard as PNG" onclick="exportPanelPNG('dashboard', event)" style="flex-shrink:0;" title="Export a fixed-size PNG for marketing/docs, independent of your window size or screen" data-i18n-attr="title:btn.exportPngTitle" data-i18n="btn.exportPng">Export PNG</button>
-  </div>
-
-  <!-- Empty-state import CTA (shown only when no data loaded; project actions live in the profile/avatar menu) -->
-  <div class="card" id="dashEmptyCTA" style="display:none;text-align:center;padding:28px 20px;border-style:dashed;">
-    <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:34px;height:34px;color:var(--accent);margin-bottom:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-     <h3 style="margin:0 0 4px;" id="dashEmptyTitle" data-i18n="core.empty.title">No data loaded yet</h3>
-     <p style="font-size:13px;color:var(--fg-mute);margin:0 auto 14px;max-width:420px;" id="dashEmptyHint" data-i18n="core.empty.hint">Import your drillhole data (collar, survey, assay, geology) or a saved .orebit project to begin.</p>
-     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-       <button class="btn" onclick="importBundle()" id="dashEmptyImport"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> <span id="dashEmptyImportLbl" data-i18n="core.empty.importBtn">Import data</span></button>
-    </div>
-  </div>
-
-  <!-- hidden project name retained for compatibility (now surfaced in the profile menu) -->
-  <div style="display:none;"><span id="dashProjectName">—</span><span id="dashSaveStatus" aria-live="polite"></span></div>
-
-  <!-- Data Summary Cards (enriched KPIs) -->
-  <div class="kpi-grid">
-     <div class="kpi-tile">
-       <div class="label" data-i18n="core.kpi.drillholes">Drillholes</div>
-      <div class="value" id="dashCollarCount">0</div>
-      <div class="sub" id="dashCollarSub">—</div>
-    </div>
-    <div class="kpi-tile">
-      <div class="label"><span data-i18n="core.kpi.assaySamples">Assay samples</span></div>
-      <div class="value" id="dashAssayCount">0</div>
-      <div class="sub" id="dashAssaySub">—</div>
-    </div>
-    <div class="kpi-tile">
-      <div class="label"><span data-i18n="core.kpi.totalDepth">Total depth</span></div>
-      <div class="value" id="dashDepthVal">0</div>
-      <div class="sub" id="dashDepthSub">—</div>
-    </div>
-    <div class="kpi-tile">
-      <div class="label"><span data-i18n="core.kpi.dataQuality">Data quality</span></div>
-      <div class="value" id="dashQualityVal">—</div>
-      <div class="sub" id="dashQualitySub">—</div>
-    </div>
-  </div>
-  <!-- Explains why the dashboard, desurvey and export report different hole
-       counts. Filled by updateDashboard() via holeCountNote(); empty when the
-       counts agree. -->
-  <div id="dashHoleRecon"></div>
-  <!-- Itemised breakdown of the Data quality tile (and the header DQ badge),
-       filled by renderRichDashboard(). -->
-  <div id="dashQualityBreakdown"></div>
-  <div class="ux-next-step" id="uxNextStepCore" role="status">
-    <div class="ux-step-copy"><span class="ux-eyebrow" data-i18n="ux.next.eyebrow">Next step</span><strong data-i18n="ux.core.title">Import drillhole tables</strong><span class="ux-step-detail" data-i18n="ux.core.detail">Load collar, survey, assay and geology CSVs before validation.</span></div>
-    <button class="btn" type="button" onclick="showTab(2)" data-i18n="ux.core.action">Open Import</button>
-  </div>
-  <!-- hidden survey/geology counts retained for compatibility -->
-  <div style="display:none;"><span id="dashSurveyCount">0</span><span id="dashGeologyCount">0</span></div>
-
-  <!-- First-run dashboard: collar table + lithology + validation -->
-  <!-- CHANGED 2026-07-28: mobile responsive — stack columns on narrow screens -->
-  <div id="dashRichGrid" style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-top:16px;margin-bottom:16px;align-items:start;" class="dash-rich-grid">
-    <div class="card">
-      <h3 style="margin-top:0;display:flex;align-items:center;gap:8px;">
-        <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;color:var(--accent);"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span id="dashCollarTitle" data-i18n="dash.collarTitle">Recent collar entries</span>
-      </h3>
-      <div style="font-size:12px;color:var(--fg-mute);margin-bottom:10px;" id="dashCollarHint">—</div>
-      <div id="dashCollarTable"></div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:16px;">
-      <div class="card">
-        <h3 style="margin-top:0;display:flex;align-items:center;gap:8px;">
-          <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;color:var(--accent);"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-          <span id="dashLithTitle" data-i18n="dash.lithTitle">Lithology profile</span>
-        </h3>
-        <div style="font-size:12px;color:var(--fg-mute);margin-bottom:10px;" id="dashLithHint">—</div>
-        <div id="dashLithBars"></div>
-      </div>
-      <div class="card">
-        <h3 style="margin-top:0;display:flex;align-items:center;gap:8px;">
-          <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;color:var(--accent);"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14 9 11"/></svg>
-          <span id="dashValTitle" data-i18n="dash.valTitle">Validation status</span>
-        </h3>
-        <div id="dashValChecks"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Workflow guide &amp; reference — Core drillhole preparation (collapsed by default) -->
-  <details class="card" style="margin-top:16px;">
-    <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">
-<svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;vertical-align:-2px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> <span data-i18n="core.wf.title">Workflow guide — 5 steps</span></summary>
-  <div style="margin-top:10px;font-size:13px;color:var(--fg-body);line-height:1.6;">
-  <ol style="margin:8px 0 8px 20px;">
-    <li><strong><span data-i18n="core.wf.s1">1. Import</span></strong> — <span data-i18n="core.wf.d1">Drag-drop 4 CSV — Collar, Survey, Assay, Geology.</span> <em style="color:var(--fg-mute);"><span data-i18n="core.wf.g1">Gate: KCMI Ch1 sampling protocol</span></em></li>
-    <li><strong><span data-i18n="core.wf.s2">2. Review</span></strong> — <span data-i18n="core.wf.d2">Check Collar, Survey, Assay, Geology tabs.</span> <em style="color:var(--fg-mute);"><span data-i18n="core.wf.g2">Gate: auto-validation: duplicates, gaps, mismatches</span></em></li>
-    <li><strong><span data-i18n="core.wf.s3">3. Validate</span></strong> — <span data-i18n="core.wf.d3">Run validation and fix errors to zero issues.</span> <em style="color:var(--fg-mute);"><span data-i18n="core.wf.g3">Gate: JORC Table 1 §1 compliance</span></em></li>
-    <li><strong><span data-i18n="core.wf.s4">4. Desurvey</span></strong> — <span data-i18n="core.wf.d4">Minimum Curvature → real X/Y/Z per interval.</span> <em style="color:var(--fg-mute);"><span data-i18n="core.wf.g4">Gate: no gaps or overlaps (KCMI Ch1 §1)</span></em></li>
-    <li><strong><span data-i18n="core.wf.s5">5. Export</span></strong> — <span data-i18n="core.wf.d5">Download master interval CSV.</span> <em style="color:var(--fg-mute);"><span data-i18n="core.wf.g5">Gate: composite-ready CSV for Assay EDA</span></em></li>
-  </ol>
-  </div>
-</details>
-
-  
-
-  
-
-  <!-- Sample Data Info (collapsed — parity with Assay/Resource; drives refreshDemoBanner) -->
-  
-
-  <!-- Activity Panel (Session Log) -->
-  <div id="activityPanel" style="margin-top:16px;"></div>
-</div>
+/* @orebit-inline: ui/core/stage-01-dashboard.html */
 
 <!-- TAB 2: IMPORT -->
-<div class="panel" id="tab2" data-panel="import" role="tabpanel">
-  <h2 data-i18n="panel.import.title"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Import — 4 CSV Files (auto-classify)</h2>
-
-  <div class="hint">
-    <p><strong>Drop all 4 CSV files at once</strong> (Collar + Survey + Assay + Geology). The system auto-classifies by filename first (looks for <code>collar</code>/<code>survey</code>/<code>assay</code>/<code>geology|litho</code>), falling back to header signature.</p>
-    <p style="margin-top:6px;font-size:13px;">If you skip the upload, the system uses the embedded Thalanga VMS sample. If you upload only some files, the rest stay as sample data.</p>
-  </div>
-
-  <div class="card">
-    <h3 data-i18n="core.columnFormat">Column Format (auto-detected)</h3>
-    <table>
-      <tr><th data-i18n="core.cols.file">File</th><th data-i18n="core.required">Required</th><th data-i18n="core.optional">Optional</th></tr>
-      <tr><td><strong>Collar</strong></td><td><code>hole_id</code>, <code>x</code>/<code>easting</code>/<code>GDA94_E</code>, <code>y</code>/<code>northing</code>/<code>GDA94_N</code>, <code>z</code>/<code>RL</code>, <code>depth</code>/<code>final_depth</code></td><td>prospect, drill_type, comment</td></tr>
-      <tr><td><strong>Survey</strong></td><td><code>hole_id</code>, <code>depth</code>, <code>dip</code>, <code>azimuth</code></td><td>—</td></tr>
-      <tr><td><strong>Assay</strong></td><td><code>hole_id</code>, <code>from_m</code>/<code>from_depth</code>, <code>to_m</code>/<code>to_depth</code>, <span data-i18n="core.imp.gradeColumn">at least 1 grade column</span></td><td>sample_id, multi-element (Au, Cu, Pb, Zn, ...)</td></tr>
-      <tr><td><strong>Geology</strong></td><td><code>hole_id</code>, <code>from_m</code>, <code>to_m</code>, <code>lith</code>/<code>lith1</code>/<code>lithology</code></td><td>weathering, lith2, color, lith_desc</td></tr>
-    </table>
-  </div>
-
-  <div class="card">
-    <h3 data-i18n="core.uploadFiles">Upload Files</h3>
-    <div style="margin-bottom:12px; padding:10px; background:#fff3cd; border:1px solid #ffc107; border-radius:4px;">
-      <p style="margin:0 0 8px 0; font-size:13px; font-weight:600; color:#333;"><span data-i18n="core.imp.csvFormatTitle">📋 Required CSV format:</span></p>
-      <div style="font-size:12px; color:#555; line-height:1.6;">
-        <p style="margin:6px 0;"><strong><span data-i18n="core.imp.delimiterLabel">Delimiter:</span></strong> <span data-i18n="core.imp.delimiterPick">Choose below (usually</span> <code style="background:#f0f0f0; padding:2px 4px; border-radius:2px;">Semicolon (;)</code> <span data-i18n="core.imp.forEuroData">for data from Europe)</span></p>
-        <p style="margin:6px 0;"><strong><span data-i18n="core.imp.exampleLine">Example line:</span></strong><br><code style="background:#f0f0f0; padding:4px; border-radius:2px; display:block; overflow-x:auto; margin-top:2px;">APKL01;572720.46;9,841,220;-26</code></p>
-        <p style="margin:6px 0; color:#d9534f;"><strong><span data-i18n="core.imp.uploadFails">⚠️ If the upload fails:</span></strong> <span data-i18n="core.imp.uploadFailsHint">pick the correct delimiter below before uploading again</span></p>
-      </div>
-      <label style="font-size:13px; font-weight:600; display:block; margin-top:10px; margin-bottom:6px;"><span data-i18n="core.imp.selectDelimiter">Choose your delimiter:</span></label>
-      <div style="display:flex; gap:12px; flex-wrap:wrap;">
-        <label style="font-size:12px;"><input type="radio" name="csvDelim" value="auto" checked onchange="window._userDelim=this.value"> <span data-i18n="core.imp.autoDetect">Auto-detect</span></label>
-        <label style="font-size:12px;"><input type="radio" name="csvDelim" value=";" onchange="window._userDelim=this.value"> <strong>Semicolon (;)</strong> <span data-i18n="core.imp.euroFormat">— European format</span></label>
-        <label style="font-size:12px;"><input type="radio" name="csvDelim" value="," onchange="window._userDelim=this.value"> <span data-i18n="core.imp.usFormat">Comma (,) — US format</span></label>
-        <label style="font-size:12px;"><input type="radio" name="csvDelim" value="\t" onchange="window._userDelim=this.value"> Tab</label>
-      </div>
-    </div>
-    <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-      <p style="margin:0 0 8px 0;"><svg class="lucide-icon" viewBox="0 0 24 24" style="width:48px;height:48px" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></p>
-      <p><strong><span data-i18n="core.imp.dropzone">Click, or drag and drop 4 CSV files</span></strong></p>
-      <p style="font-size:12px;color:var(--fg-mute);margin-top:6px;">Collar.csv · Survey.csv · Assay.csv · Geology.csv</p>
-    </div>
-    <input type="file" id="fileInput" accept=".csv" multiple style="display:none" onchange="handleUpload(event)" aria-label="Upload CSV files" data-i18n-attr="aria-label:a11y.uploadCsv">
-    <div id="uploadStatus" style="margin-top:14px;" aria-live="polite"></div>
-  </div>
-
-  <div class="card">
-    <h3><svg class="lucide-icon" viewBox="0 0 24 24" style="width:18px;height:18px" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> <span data-i18n="core.imp.optionsTitle">Import Options</span></h3>
-    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:10px;"><span data-i18n="core.imp.optionsHint">Override how numbers are read, and declare your coordinate system. Both are auto-detected — change them only if the import looks wrong.</span></p>
-    <div class="row-controls" style="gap:16px;flex-wrap:wrap;">
-      <label style="font-size:13px;"><span data-i18n="core.imp.numberFormat">Number format:</span>
-        <select id="coreNumberFormat" onchange="applyNumberFormat(this.value)" style="margin-left:6px;padding:4px 8px;" aria-label="Number format override" data-i18n-attr="aria-label:a11y.numberFormat">
-          <option value="auto">Auto-detect</option>
-          <option value="dot">1,234.56 (dot decimal)</option>
-          <option value="comma">1.234,56 (comma decimal)</option>
-        </select>
-        <span id="coreDecimalDetected" style="font-size:12px;color:var(--fg-mute);margin-left:6px;"></span>
-      </label>
-      <label style="font-size:13px;"><span data-i18n="core.imp.csvDelimiter">CSV delimiter:</span>
-        <select id="coreDelimiter" onchange="applyDelimiterOverride(this.value)" style="margin-left:6px;padding:4px 8px;" aria-label="CSV delimiter override">
-          <option value="auto">Auto-detect</option>
-          <option value=",">Comma (,)</option>
-          <option value=";">Semicolon (;)</option>
-          <option value="\t">Tab (→)</option>
-        </select>
-        <span id="coreDelimiterDetected" style="font-size:12px;color:var(--fg-mute);margin-left:6px;"></span>
-      </label>
-      <label style="font-size:13px;"><span data-i18n="core.imp.lengthUnit">Length unit in the files:</span>
-        <select id="coreLengthUnit" onchange="applyLengthUnit(this.value)" style="margin-left:6px;padding:4px 8px;" aria-label="Length unit in the files" data-i18n-attr="aria-label:core.imp.lengthUnit">
-          <option value="m" data-i18n="core.imp.lengthM">Metres</option>
-          <option value="ft" data-i18n="core.imp.lengthFt">Feet (convert to metres)</option>
-        </select>
-      </label>
-      <label style="font-size:13px;"><span data-i18n="core.imp.crsLabel">Coordinate system / UTM zone:</span>
-        <input type="text" id="coreCRS" placeholder="e.g. WGS84 UTM 48S / EPSG:32748" oninput="setCRS(this.value)" style="margin-left:6px;padding:4px 8px;width:240px;" aria-label="Coordinate reference system" data-i18n-attr="aria-label:a11y.crs">
-      </label>
-    </div>
-    <p><label><input id="coreProvidedXYZ" type="checkbox" onchange="setCoreProvidedXYZ(this.checked)">
-      <span data-i18n="core.imp.providedXYZ">Use supplied assay interval midpoint XYZ</span></label></p>
-    <p class="hint" data-i18n="core.imp.providedXYZHint">Assign midpoint coordinates in Column Mapping when needed. This mode preserves supplied positions; it does not reconstruct or verify a directional survey. Empty coordinates remain missing.</p>
-    <p style="font-size:12px;color:var(--fg-mute);margin-top:8px;"><svg class="lucide-icon" viewBox="0 0 24 24" style="width:13px;height:13px;vertical-align:middle;" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> <span data-i18n="core.imp.crsHintFull">The coordinate system is recorded in your project metadata and written into exports (satisfying the KCMI 2017 / JORC 2012 requirement that the CRS be stated). It also enables the satellite basemap on the spatial map.</span></p>
-  </div>
-
-  <div class="card">
-    <h3><svg class="lucide-icon" viewBox="0 0 24 24" style="width:18px;height:18px" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> <span data-i18n="core.imp.gdriveTitle">Open from Google Drive</span></h3>
-    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;"><span data-i18n="core.imp.gdriveHint">Read CSV files from your Google Drive. The files stay in your browser — nothing is uploaded to any server.</span></p>
-    <button class="btn" onclick="GDRIVE.openPicker()"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> <span data-i18n="core.imp.gdriveTitle">Open from Google Drive</span></button>
-  </div>
-
-  <div class="card">
-    <h3 data-i18n="core.resetSample">Reset to Sample Data</h3>
-    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;"><span data-i18n="core.imp.resetHint">Go back to the built-in Thalanga VMS data (717 holes, Thalanga prospect).</span></p>
-    <button class="btn secondary" onclick="resetToSample()" data-i18n="btn.resetSample"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset to Thalanga sample</button>
-  </div>
-
-  <div class="card">
-    <h3 data-i18n="core.downloadSampleCsv">Download Sample CSV</h3>
-    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;"><span data-i18n="core.imp.templateHint">Use these as a template for uploading your own data.</span></p>
-    <div class="row-controls">
-      <button class="btn secondary" onclick="downloadEmbeddedTable('collar')"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="core.imp.collarTemplate">Collar template</span></button>
-      <button class="btn secondary" onclick="downloadEmbeddedTable('survey')"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="core.imp.surveyTemplate">Survey template</span></button>
-      <button class="btn secondary" onclick="downloadEmbeddedTable('assay')"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="core.imp.assayTemplate">Assay template</span></button>
-      <button class="btn secondary" onclick="downloadEmbeddedTable('geology')"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="core.imp.geologyTemplate">Geology template</span></button>
-    </div>
-  </div>
-
-
-  <div class="card">
-    <h3 data-i18n="core.projectFolder">Project Folder</h3>
-    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;"><span data-i18n="core.imp.openProjectHint">Open a project you saved earlier, or import a .orebit bundle file.</span></p>
-    <div class="row-controls">
-      <button class="btn" id="btnOpenProject"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> <span data-i18n="core.imp.openProject">Open Project</span></button>
-      <button class="btn secondary" id="btnImportBundle"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> <span data-i18n="core.imp.importBundle">Import Bundle (.orebit)</span></button>
-    </div>
-  </div>
-</div>
+/* @orebit-inline: ui/core/stage-02-import.html */
 
 <!-- TAB 3: COLLAR -->
-<div class="panel" id="tab3" data-panel="collar" role="tabpanel">
-  <h2 data-i18n="panel.collar.title">Collar — Drillhole Header Data</h2>
-  <div class="hint">
-    <p>The collar table contains one row per drillhole: <code>hole_id</code> (unique), collar coordinates (X, Y, Z), and total depth. Click a cell to edit, or "Add Row" to add a new hole.</p>
-    <p style="margin-top:6px;font-size:12px;color:var(--fg-mute);"><svg class="lucide-icon" viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:middle;" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> <strong>Standards:</strong> Collar positions must be surveyed (GPS or local grid) per KCMI 2017 Ch1 §1.1 and JORC 2012 §1.15. Coordinate system (e.g., GDA94, UTM zone) must be stated. Collar elevation (Z/RL) should be surveyed, not topographic-estimated.</p>
-  </div>
-  <div id="collarPanel"></div>
-</div>
+/* @orebit-inline: ui/core/stage-03-collar.html */
 
 <!-- TAB 4: SURVEY -->
-<div class="panel" id="tab4" data-panel="survey" role="tabpanel">
-  <h2 data-i18n="panel.survey.title">Survey — Downhole Deviation</h2>
-  <div class="hint">
-    <p>Survey records: dip and azimuth at given depths per hole. At least one survey per hole is required (otherwise vertical is assumed: dip=-90, az=0). Multi-survey per hole for inclined holes with deflection.</p>
-    <p style="margin-top:6px;font-size:12px;color:var(--fg-mute);"><svg class="lucide-icon" viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:middle;" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> <strong>Standards:</strong> Downhole surveys are required per JORC 2012 §1.16–1.17. Survey intervals should be regular (typically every 30 m for diamond drill, every 10 m for RC) per KCMI Ch1 §1.2. Minimum one survey per hole; multiple surveys for inclined/deflected holes. Survey method (single-shot, multi-shot, gyro) must be reported.</p>
-  </div>
-  <div id="surveyPanel"></div>
-</div>
+/* @orebit-inline: ui/core/stage-04-survey.html */
 
 <!-- TAB 5: ASSAY -->
-<div class="panel" id="tab5" data-panel="assay" role="tabpanel">
-  <h2 data-i18n="panel.assay.title"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v2l-1 1v5l5 9a2 2 0 0 1-2 3H7a2 2 0 0 1-2-3l5-9V6L9 5V3z"/><line x1="6" y1="14" x2="18" y2="14"/></svg> Assay — Geochemical Intervals</h2>
-  <div class="hint">
-    <p>Assay intervals with grade per element. Auto-validation: gap (intervals don't connect), overlap (intervals overlap each other), negative grade.</p>
-  </div>
-  <div id="assayPanel"></div>
-</div>
+/* @orebit-inline: ui/core/stage-05-assay.html */
 
 <!-- TAB 6: GEOLOGY -->
-<div class="panel" id="tab6" data-panel="geology" role="tabpanel">
-  <h2 data-i18n="panel.geology.title">Geology — Lithology Logging</h2>
-  <div class="hint">
-    <p>Geology intervals: primary &amp; secondary lithology, weathering, description. Validation: lithology dictionary, interval continuity.</p>
-  </div>
-  <div id="geologyPanel"></div>
-</div>
+/* @orebit-inline: ui/core/stage-06-geology.html */
 
 <!-- TAB 7: VALIDATION -->
-<div class="panel" id="tab7" data-panel="validation" role="tabpanel">
-  <h2 data-i18n="panel.validation.title">Cross-Table Validation</h2>
-  <div class="hint">
-    <p>Verify linkage across all 4 tables. Holes in assay but not in collar → flagged. Holes without survey → flagged. Completeness summary per critical column.</p>
-  </div>
-  <section id="coreValidationResults" class="card" aria-live="polite"></section>
-  <section id="coreValidationRemedies" class="card" hidden></section>
-  <div id="validationPanel"></div>
-</div>
+/* @orebit-inline: ui/core/stage-07-validation.html */
 
 <!-- TAB 8: STRIP LOG -->
-<div class="panel" id="tab8" data-panel="striplog" role="tabpanel">
-  <h2 data-i18n="panel.striplog.title">Strip Log — Well-Log Multi-Track Viewer</h2>
-  <div class="hint">
-    <p>Industry-standard well-log view: depth axis on the left, multi-track (lithology, weathering, grade curves) side-by-side for one selected hole.</p>
-    <p style="margin-top:6px;font-size:12px;color:var(--fg-mute);">Select a hole from the dropdown or use the prev/next buttons. Hover a track for interval details.</p>
-  </div>
-  <div id="stripLogPanel"></div>
-</div>
+/* @orebit-inline: ui/core/stage-08-striplog.html */
 
 <!-- TAB 9: SECTION -->
-<div class="panel" id="tab9" data-panel="section" role="tabpanel">
-  <h2 data-i18n="panel.section.title"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> Section — Multi-Hole Correlation</h2>
-  <div class="hint">
-    <p>Section view: pick azimuth + origin + corridor half-width, and the system projects holes inside the corridor onto the section line. Each hole is drawn as a vertical strip (or tilted by dip) with lithology fill.</p>
-    <p style="margin-top:6px;font-size:12px;color:var(--fg-mute);"><svg class="lucide-icon" viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:middle;" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> <strong>Limitation:</strong> Section uses orthogonal projection to the section plane, not true 3D intersection. For holes with dip &lt; 60° (highly inclined), positions may be inaccurate by up to 10% of deviation. For final interpretation, use commercial 3D modeling software.</p>
-  </div>
-  <div id="sectionPanel"></div>
-</div>
+/* @orebit-inline: ui/core/stage-09-section.html */
 
 <!-- TAB 10: DESURVEY -->
-<div class="panel" id="tab10" data-panel="desurvey" role="tabpanel">
-  <h2 data-i18n="panel.desurvey.title">Desurvey — Minimum Curvature</h2>
-  <div class="hint">
-    <p>Compute (X, Y, Z) per assay/geology interval midpoint using the <strong>Minimum Curvature</strong> method. Output: 3D trace per hole + interval coordinates ready for merge.</p>
-  </div>
-  <div id="desurveyPanel"></div>
-</div>
+/* @orebit-inline: ui/core/stage-10-desurvey.html */
 
 <!-- TAB 11: MERGE -->
-<div class="panel" id="tab11" data-panel="merge" role="tabpanel">
-  <h2 data-i18n="panel.merge.title">Merge — Master Drillhole Table</h2>
-  <div class="hint">
-    <p>Combine Assay × Geology × desurveyed coordinates into a single master table. Match by <code>hole_id</code> + depth overlap. Default: assay-driven (1 row per assay interval; geology &amp; XYZ pulled by depth).</p>
-  </div>
-  <div id="mergePanel"></div>
-</div>
+/* @orebit-inline: ui/core/stage-11-merge.html */
 
 <!-- TAB 12: COMPOSITE -->
-<div class="panel" id="tab12" data-panel="composite" role="tabpanel">
-  <h2 data-i18n="core.compositePreview">Composite Preview — Length-Weighted Intervals</h2>
-  <div class="hint">
-    <p>Optional preview only. Final length-weighted compositing and approval belong in <strong>Assay</strong> before Resource estimation.</p>
-  </div>
-  <div id="compositePanel"></div>
-</div>
+/* @orebit-inline: ui/core/stage-12-composite.html */
 
 <!-- TAB 13: EXPORT -->
-<div class="panel" id="tab13" data-panel="export" role="tabpanel">
-  <h2 data-i18n="panel.export.title">Export — drillhole-clean.csv</h2>
-  <div class="hint">
-    <p>Final output: master drillhole CSV ready for input into the <strong>EDA Suite (Assay)</strong> or commercial estimation software. Format compatible with commercial 3D mining software.</p>
-  </div>
-  <div id="exportPanel"></div>
-  <div class="card">
-    <h3 data-i18n="core.processingLog">Processing Log</h3>
-    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;"><span data-i18n="core.ex.transformLogFull">Every transform applied this session (BDL, compositing, crop). Embedded in the PDF report, so the exported numbers stay traceable.</span></p>
-    <div class="pipeline-badge" style="padding:10px 12px;background:var(--bg-soft,rgba(0,128,128,0.06));border:1px solid var(--border,rgba(0,128,128,0.2));border-radius:8px;"></div>
-  </div>
-  <div id="cropPanel"></div>
-  <div class="card">
-    <h3><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> <span data-i18n="core.pdfReport">PDF Report</span></h3>
-    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;" data-i18n="core.pdfReportHint">Single-file PDF (4 A4 pages): cover, validation results, hole inventory, per-element stats + KCMI Section 1 manual checklist. Embedded in this artifact, no connection required.</p>
-    <button class="btn" id="pdf-export-btn" onclick="exportPDF(event)" data-i18n="btn.downloadPdf">Download PDF Report</button>
-  </div>
-  <div class="card">
-    <h3 data-i18n="core.dataPreview">Data Preview</h3>
-    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;" data-i18n="core.dataPreviewHint">First 10 rows of the merged drillhole dataset that will be exported. Verify your data before downloading.</p>
-    <div id="dataPreview"></div>
-  </div>
-  <div class="card">
-    <h3 data-i18n="core.exportHistory">Export History</h3>
-    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;" data-i18n="core.exportHistoryHint">Audit trail of every download this session (max 20). Persists in your browser localStorage.</p>
-    <div id="exportHistory"></div>
-  </div>
-</div>
+/* @orebit-inline: ui/core/stage-13-export.html */
 
 </div><!-- /.wrap -->
 
@@ -3331,7 +639,7 @@ function orebitConfirm(message, opts) {
     ok.className = 'btn small';
     ok.textContent = opts.okText || (t('core.orebitConfirm.continue'));
     function done(val) { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(val); }
-    function onKey(e) { if (e.key === 'Escape') done(false); else if (e.key === 'Enter') done(true); }
+    function onKey(e) { if (e.key === 'Escape') done(false); }
     cancel.onclick = function() { done(false); };
     ok.onclick = function() { done(true); };
     overlay.onclick = function(e) { if (e.target === overlay) done(false); };
@@ -3340,7 +648,7 @@ function orebitConfirm(message, opts) {
     box.appendChild(msg); box.appendChild(btnRow);
     overlay.appendChild(box);
     document.body.appendChild(overlay);
-    ok.focus();
+    openModalDialog(box, {overlay, label:message, close:()=>done(false), initialFocus:ok});
   });
 }
 
@@ -3594,99 +902,9 @@ function plotTheme() {
   };
 }
 
-// ============= PNG EXPORT: FORCE WHITE, PUBLICATION-READY BACKGROUND =============
-// plotTheme() always renders charts with a fully TRANSPARENT paper/plot
-// background (rgba(0,0,0,0)) so they blend into the app's light or dark theme
-// on screen. Plotly.toImage() captures the graph div exactly as it is, so a
-// raw "Export PNG" inherited that transparency -- and a transparent PNG opened
-// outside a browser (Windows Photos, pasted into a slide/report, etc.) renders
-// as solid BLACK instead of see-through, which read to users as "the export
-// has a black background". Force the LIGHT theme's colors (white bg, dark
-// text/gridlines, on every x/y axis a chart has) just for the capture, then
-// put back whatever the live chart actually had -- exported PNGs always look
-// the same, readable on white, regardless of which theme the app is in.
-async function plotlyToImageWhiteBg(gd, opts) {
-  if (!gd || !window.Plotly) return Plotly.toImage(gd, opts);
-  const layout = gd.layout || (gd._fullLayout) || {};
-  const full = gd._fullLayout || layout;
-  const axisKeys = Object.keys(layout).filter(k => /^[xy]axis\d*$/.test(k));
-  const prev = { paper_bgcolor: layout.paper_bgcolor, plot_bgcolor: layout.plot_bgcolor, 'font.color': layout.font && layout.font.color };
-  const upd = { paper_bgcolor: '#ffffff', plot_bgcolor: '#ffffff', 'font.color': '#0f172a' };
-  axisKeys.forEach(k => {
-    const ax = layout[k] || {};
-    prev[k + '.gridcolor'] = ax.gridcolor;
-    prev[k + '.zerolinecolor'] = ax.zerolinecolor;
-    prev[k + '.linecolor'] = ax.linecolor;
-    upd[k + '.gridcolor'] = '#f1f5f9';
-    upd[k + '.zerolinecolor'] = '#cbd5e1';
-    if (ax.linecolor) upd[k + '.linecolor'] = '#cbd5e1';
-  });
-
-  // ── Typography must grow with the export canvas ──
-  // Plotly.toImage re-renders at opts.width (1400-1600px) but leaves every font
-  // at its on-screen size. Measured 2026-09-02: a chart shown 514px wide exports
-  // at 1400px -- 2.72x bigger -- while its labels stay 12.5px, so axis titles and
-  // ticks land at ~37% of the on-screen prominence and read as unreadable. Scale
-  // every text size AND the margins by the same factor the canvas grew, so the
-  // PNG is the on-screen chart enlarged rather than a differently-proportioned
-  // one. Effective sizes come from _fullLayout (Plotly's resolved defaults live
-  // there, not in .layout), and those same values are restored afterwards so the
-  // live chart is identical to before the export.
-  const onW = gd.getBoundingClientRect().width || full.width || 800;
-  const exW = (opts && opts.width) || onW;
-  const fontK = Math.min(2.5, Math.max(1, exW / onW));
-  if (fontK > 1.05) {
-    const sc = (v, d) => Math.round((typeof v === 'number' ? v : d) * fontK * 10) / 10;
-    prev['font.size'] = (full.font && full.font.size) || 12.5;
-    upd['font.size'] = sc(prev['font.size'], 12.5);
-    if (full.title && full.title.font) {
-      prev['title.font.size'] = full.title.font.size || 17;
-      upd['title.font.size'] = sc(prev['title.font.size'], 17);
-    }
-    if (full.legend && full.legend.font) {
-      prev['legend.font.size'] = full.legend.font.size || 12.5;
-      upd['legend.font.size'] = sc(prev['legend.font.size'], 12.5);
-    }
-    axisKeys.forEach(axk => {
-      const fa = full[axk] || {};
-      // Tick labels are the DENSE text: charts using tickmode:'array' (e.g. the
-      // CDF's 0/0.25/0.5/0.75/0.9/0.95/0.99/1) pin every label, and Plotly
-      // cannot thin an explicit tick array, so scaling ticks as hard as titles
-      // makes the crowded end of such an axis collide. Titles/labels -- the
-      // things actually reported unreadable -- still scale fully; ticks scale
-      // more gently so they gain readability without overlapping.
-      const tickK = Math.min(fontK, 1.8);
-      const scTick = (v, d) => Math.round((typeof v === 'number' ? v : d) * tickK * 10) / 10;
-      prev[axk + '.tickfont.size'] = (fa.tickfont && fa.tickfont.size) || 11;
-      upd[axk + '.tickfont.size'] = scTick(prev[axk + '.tickfont.size'], 11);
-      if (fa.title && fa.title.font) {
-        prev[axk + '.title.font.size'] = fa.title.font.size || 15;
-        upd[axk + '.title.font.size'] = sc(prev[axk + '.title.font.size'], 15);
-      }
-    });
-    (full.annotations || []).forEach((an, i) => {
-      const sz = (an.font && an.font.size) || (full.font && full.font.size) || 12.5;
-      prev['annotations[' + i + '].font.size'] = sz;
-      upd['annotations[' + i + '].font.size'] = sc(sz, 12.5);
-    });
-    ['l', 'r', 't', 'b'].forEach(side => {
-      const m = full.margin && full.margin[side];
-      if (typeof m === 'number') {
-        prev['margin.' + side] = m;
-        upd['margin.' + side] = Math.round(m * fontK);
-      }
-    });
-  }
-
-  try { await Plotly.relayout(gd, upd); } catch (e) { console.warn('plotlyToImageWhiteBg relayout failed', e); }
-  try {
-    return await Plotly.toImage(gd, opts);
-  } finally {
-    const restore = {};
-    Object.keys(prev).forEach(k => { if (prev[k] !== undefined) restore[k] = prev[k]; });
-    if (Object.keys(restore).length) { try { await Plotly.relayout(gd, restore); } catch (e) {} }
-  }
-}
+// Shared PNG export makes a light-theme snapshot and scales its text without
+// changing the active graph, camera, filters or analytical data.
+/* @orebit-inline: shared/plots/png-export.js */
 
 // ============= THEME TOGGLE (shared across P1/P2/P3) =============
 // Toggles dark/light theme, saves preference, calls phase-specific re-render.
@@ -4842,7 +2060,7 @@ function renderRichDashboard() {
     ct: missingSurvey > 0 ? (missingSurvey + (t('core.renderRichDashboard.missing'))) : (survey.length + ' ok') });
   // assay overlaps (rough): same hole, overlapping from/to
   let overlaps = 0;
-  const byHole = {};
+  const byHole = Object.create(null);
   assay.forEach(r => { const h = _field(r, holeKey); if (!h) return; (byHole[h] = byHole[h] || []).push(r); });
   Object.values(byHole).forEach(rows => {
     rows.sort((a, b) => (_numField(a, ['from_m','from','sampfrom']) || 0) - (_numField(b, ['from_m','from','sampfrom']) || 0));
@@ -4865,7 +2083,7 @@ function renderRichDashboard() {
     valEl.innerHTML = checks.map(c => {
       const cls = c.warn ? 'wn' : 'ok';
       const bg = c.warn ? 'rgba(217,119,6,.12)' : 'rgba(22,163,74,.12)';
-      const col = c.warn ? '#d97706' : '#16a34a';
+      const col = c.warn ? '#d97706' : '#15803d';
       return '<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;">'
         + '<span style="width:22px;height:22px;border-radius:50%;display:grid;place-items:center;flex:none;background:' + bg + ';color:' + col + ';">' + (c.warn ? warnIcon : okCheck) + '</span>'
         + '<span style="font-weight:500;">' + escapeHtml(c.nm) + '</span>'
@@ -4880,7 +2098,7 @@ function renderRichDashboard() {
   // The default is a synthetic validation case. Its findings are real
   // structural checks; display the same readiness colour as imported data.
   const sampleView = typeof window.__isSampleData === 'function' && window.__isSampleData() && warnCount > 0;
-  if (qVal) qVal.innerHTML = (collar.length ? '<span style="color:' + (qPct >= 90 ? '#16a34a' : '#d97706') + ';">' + qPct + '</span><span style="font-size:15px;color:var(--fg-mute);"> %</span>' : '—');
+  if (qVal) qVal.innerHTML = (collar.length ? '<span style="color:' + (qPct >= 90 ? '#15803d' : '#d97706') + ';">' + qPct + '</span><span style="font-size:15px;color:var(--fg-mute);"> %</span>' : '—');
   // The tile used to print a bare percentage. It is a checks-PASSED rate over
   // the validation checks listed on this same screen — not the DQ/100 score in
   // the header badge, which is a different formula entirely. Saying which
@@ -4951,7 +2169,7 @@ function renderRichDashboard() {
           + '</td><td style="text-align:right;font-variant-numeric:tabular-nums;">' + fmt(z)
           + '</td><td style="text-align:right;font-variant-numeric:tabular-nums;">' + fmt(d) + '</td></tr>';
       }).join('');
-      tEl.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+      tEl.innerHTML = '<table tabindex="0" aria-label="Recent collars" style="width:100%;border-collapse:collapse;font-size:13px;">'
         + '<thead><tr style="text-align:left;font-size:11px;text-transform:uppercase;color:var(--fg-mute);">'
         + '<th style="padding:6px 8px;" data-i18n="core.holeId">Hole ID</th><th style="padding:6px 8px;text-align:right;" data-i18n="core.collar.easting">East</th><th style="padding:6px 8px;text-align:right;" data-i18n="core.north">North</th><th style="padding:6px 8px;text-align:right;">RL</th><th style="padding:6px 8px;text-align:right;">' + (t('core.renderRichDashboard.depth')) + '</th>'
         + '</tr></thead><tbody>' + rows + '</tbody></table>';
@@ -6921,7 +4139,7 @@ function buildHoleStatusData() {
   const surveyIds = new Set(STATE.survey.map(r => r.hole_id).filter(Boolean));
   const assayIds = new Set(STATE.assay.map(r => r.hole_id).filter(Boolean));
   const geoIds = new Set(STATE.geology.map(r => r.hole_id).filter(Boolean));
-  const collarMap = {};
+  const collarMap = Object.create(null);
   STATE.collar.forEach(c => { if (c.hole_id) collarMap[c.hole_id] = c; });
   return [...collarIds].map(hid => {
     const c = collarMap[hid] || {};
@@ -7108,7 +4326,7 @@ function renderColumnMapping(container) {
         ? `<div style="margin-top:4px;">
             <p style="font-size:12px;color:var(--fg-mute);margin:0 0 4px;">${t('core.cm.otherColumns')}</p>
             <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              ${leftovers.map(c => `<button class="btn small secondary" onclick="markAsGradeColumn('${escapeHtml(c)}'); return false;" style="font-family:monospace;font-size:11px;">+ ${escapeHtml(c)}</button>`).join('')}
+              ${leftovers.map(c => `<button class="btn small secondary" data-column="${escapeHtml(c)}" onclick="markAsGradeColumn(this.dataset.column); return false;" style="font-family:monospace;font-size:11px;">+ ${escapeHtml(c)}</button>`).join('')}
             </div>
           </div>`
         : '';
@@ -7294,7 +4512,7 @@ function renderValidation() {
   });
 
   // Gap/overlap on assay
-  const assayByHole = {};
+  const assayByHole = Object.create(null);
   STATE.assay.forEach(r => {
     if (!r.hole_id) return;
     (assayByHole[r.hole_id] = assayByHole[r.hole_id] || []).push(r);
@@ -7865,7 +5083,7 @@ function renderValidation() {
     }
 
     // Build assay-count lookup
-    const assayCount = {};
+    const assayCount = Object.create(null);
     STATE.assay.forEach(r => { if (r.hole_id) assayCount[r.hole_id] = (assayCount[r.hole_id] || 0) + 1; });
 
     // Filter + classify — collapse audit categories: complete | noGeo | orphan
@@ -7959,7 +5177,7 @@ function renderValidation() {
     if (STATE.mapUI.colorBy === 'prospect') {
       // Group by prospect with distinct palette
       const palette = ['#2D7A8E','#E87722','#1D3557','#6C3DC8','#16a34a','#dc2626','#eab308','#ec4899','#0ea5e9','#84cc16','#f97316','#a855f7'];
-      const byProspect = {};
+      const byProspect = Object.create(null);
       points.forEach(p => { (byProspect[p.prospect] = byProspect[p.prospect] || []).push(p); });
       Object.entries(byProspect).forEach(([prospect, pts], i) => {
         const color = palette[i % palette.length];
@@ -8028,7 +5246,7 @@ function renderValidation() {
         const unit = meta.unit || '';
 
         // Per-hole average (BDL/negative excluded)
-        const holeAvg = {};
+        const holeAvg = Object.create(null);
         STATE.assay.forEach(r => {
           if (!r.hole_id) return;
           const v = Number(r[activeCol]);
@@ -8494,7 +5712,7 @@ function renderStripLog() {
         const bg = active ? '#2D7A8E' : 'transparent';
         const fg = active ? '#fff' : 'var(--fg)';
         const bd = active ? '#2D7A8E' : 'var(--border, rgba(0,0,0,0.2))';
-        return `<span onclick="stripLogToggleExtra('${escapeHtml(spec)}')" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;border:1px solid ${bd};background:${bg};color:${fg};font-size:11px;user-select:none;" title="${escapeHtml(table)}.${escapeHtml(col)}"><strong>${escapeHtml(col)}</strong> <span style="opacity:0.65;font-size:10px;">${escapeHtml(table)}</span></span>`;
+        return `<span data-extra="${escapeHtml(spec)}" onclick="stripLogToggleExtra(this.dataset.extra)" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;border:1px solid ${bd};background:${bg};color:${fg};font-size:11px;user-select:none;" title="${escapeHtml(table)}.${escapeHtml(col)}"><strong>${escapeHtml(col)}</strong> <span style="opacity:0.65;font-size:10px;">${escapeHtml(table)}</span></span>`;
       }).join('')
     : '<span style="color:var(--fg-mute);font-size:12px;">no extra columns available</span>';
 
@@ -8955,7 +6173,7 @@ function renderSection() {
   }
 
   // Default origin: pick prospect with most holes, use its centroid (more useful than global median)
-  const prospectGroups = {};
+  const prospectGroups = Object.create(null);
   STATE.collar.forEach(c => {
     if (c.x == null || c.y == null) return;
     const key = c.prospect || '__none__';
@@ -9474,7 +6692,7 @@ function computeDesurvey() {
     : (dip) => Math.PI / 180 * (90 + dip);  // dip=-90 vertical → inc=0
 
   // For each hole, walk survey points and compute (X,Y,Z) at any depth via min curvature.
-  const holes = {};
+  const holes = Object.create(null);
   source.collar.forEach(c => {
     if (!c.hole_id) return;
     holes[c.hole_id] = { collar: c, surveys: [] };
@@ -9536,7 +6754,7 @@ function computeDesurvey() {
   // sample below the last station stacked on that one point: a single-station
   // hole put all its samples at the collar. Assay's own merge already uses
   // max(to) the same way. Found 2026-09-25 building the Babbitt vignette.
-  const maxTo = {};
+  const maxTo = Object.create(null);
   ['assay', 'geology'].forEach(tbl => (source[tbl] || []).forEach(r => {
     const to = strictNum(r.to_m);
     if (r.hole_id && isFinite(to) && !(to <= (maxTo[r.hole_id] || 0))) maxTo[r.hole_id] = to;
@@ -9867,7 +7085,7 @@ function render3DTraces() {
     // draws the holes as dotted lines, because the dropped intervals leave
     // real gaps in a line that should be continuous. Measured on 200 holes /
     // 20,000 intervals: merging gives ~800 segments and solid holes.
-    const byHole = {};
+    const byHole = Object.create(null);
     rows.forEach(g => { (byHole[g.hole_id] = byHole[g.hole_id] || []).push(g); });
     // Build every run first, decide what to draw second. Merging usually does
     // all the work, but it cannot help a hole whose lithology alternates on
@@ -9892,7 +7110,7 @@ function render3DTraces() {
     const runStep = Math.max(1, Math.ceil(allRuns.length / D3_SEGMENT_BUDGET));
     if (runStep > 1) dropped = allRuns.length - Math.ceil(allRuns.length / runStep);
 
-    const byLith = {};
+    const byLith = Object.create(null);
     allRuns.forEach((r, idx) => {
       if (idx % runStep) return;
       const a = getXYZAtDepth(r.hid, r.from);
@@ -10169,7 +7387,7 @@ function computeMerge() {
   const source = _coreAnalysisSource();
   if (!window._coreUseProvidedXYZ && !STATE.desurvey) computeDesurvey();
   // Build geology lookup by hole + depth range
-  const geoByHole = {};
+  const geoByHole = Object.create(null);
   source.geology.forEach(g => {
     if (!g.hole_id) return;
     (geoByHole[g.hole_id] = geoByHole[g.hole_id] || []).push(g);
@@ -10420,7 +7638,7 @@ function computeComposites(compLen, selectedGradeCols) {
   const results = [];
 
   // Group by hole_id
-  const byHole = {};
+  const byHole = Object.create(null);
   m.forEach(r => {
     if (!r.hole_id) return;
     (byHole[r.hole_id] = byHole[r.hole_id] || []).push(r);
@@ -11185,7 +8403,7 @@ function renderSpatialMap() {
   const gd = document.getElementById('cropSpatialMap');
   if (!gd || typeof Plotly === 'undefined') return;
   if (!STATE.merged) { try { computeMerge(); } catch (e) {} }
-  const holes = {};
+  const holes = Object.create(null);
   (STATE.merged || []).forEach(r => {
     const x = Number(r.midx), y = Number(r.midy);
     if (!isFinite(x) || !isFinite(y)) return;
@@ -11765,7 +8983,7 @@ function _p1RunValidationChecks(source = STATE) {
   if(directionIssues.length)checks.push({code:'directions',table:'survey',records:source.survey.flatMap((r,i)=>directionKeys.get(r.hole_id)?.has(Number(r.depth))?[ref('survey',i,['depth','dip','azimuth'])]:[]),name:'Survey conflicting or opposite directions',value:directionIssues.length+' station',severity:'fail'});
 
   // Assay gap/overlap
-  const assayByHole = {};
+  const assayByHole = Object.create(null);
   source.assay.forEach(r => {
     if (!r.hole_id) return;
     (assayByHole[r.hole_id] = assayByHole[r.hole_id] || []).push(r);
@@ -12086,12 +9304,12 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
       : '—';
 
     // Counts of intervals per hole
-    const assayPerHole = {}, geoPerHole = {};
+    const assayPerHole = Object.create(null), geoPerHole = Object.create(null);
     STATE.assay.forEach(r => { if (r.hole_id) assayPerHole[r.hole_id] = (assayPerHole[r.hole_id]||0) + 1; });
     STATE.geology.forEach(r => { if (r.hole_id) geoPerHole[r.hole_id] = (geoPerHole[r.hole_id]||0) + 1; });
 
     // First-survey azimuth/dip per hole (top-of-hole orientation)
-    const firstSurveyByHole = {};
+    const firstSurveyByHole = Object.create(null);
     [...STATE.survey].sort((a,b) => Number(a.depth) - Number(b.depth)).forEach(r => {
       if (r.hole_id && firstSurveyByHole[r.hole_id] === undefined) firstSurveyByHole[r.hole_id] = r;
     });
@@ -13040,7 +10258,7 @@ document.addEventListener('keydown', (e) => {
   }
 
   /* ---- Project Manager Modal ---- */
-  async function openProjectManager() {
+  async function openProjectManager(opener = document.activeElement) {
     // Not otherwise guaranteed idempotent: the modal's own "refresh" path below
     // (save -> overlay.remove() -> openProjectManager()) leaves a freshly-opened
     // instance in the DOM, so a second call (e.g. saving a second project without
@@ -13081,12 +10299,12 @@ document.addEventListener('keydown', (e) => {
     overlay.innerHTML = `
       <div class="orebit-modal">
         <div class="modal-header">
-          <h3><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Project Manager</h3>
-          <button class="modal-close" id="pmClose">&times;</button>
+          <h3 id="projectManagerTitle"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> ${t('core.projectManager.title')}</h3>
+          <button class="modal-close" id="pmClose" aria-label="${t('a11y.close')}">&times;</button>
         </div>
         <div class="modal-body">
           <div class="pm-new-project">
-            <input type="text" id="pmNewName" placeholder="New project name…" class="input-field" />
+            <input type="text" id="pmNewName" aria-label="${t('core.projectManager.newName')}" placeholder="${t('core.projectManager.newNamePlaceholder')}" class="input-field" />
             <button class="btn" id="pmCreateNew"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Create</button>
           </div>
           <div class="pm-list">${projectRows}</div>
@@ -13094,6 +10312,7 @@ document.addEventListener('keydown', (e) => {
       </div>`;
 
     document.body.appendChild(overlay);
+    openModalDialog(overlay.querySelector('.orebit-modal'), {overlay, opener, labelledby:'projectManagerTitle', close:()=>overlay.remove(), initialFocus:overlay.querySelector('#pmNewName')});
 
     // Close
     overlay.querySelector('#pmClose').addEventListener('click', () => overlay.remove());
@@ -13106,7 +10325,7 @@ document.addEventListener('keydown', (e) => {
       if (!name) { toast(t('core.importBundle.enterProjectName'), 'warn'); return; }
       await save(name);
       overlay.remove();
-      openProjectManager(); // refresh
+      openProjectManager(opener); // refresh, retaining the visible entry control
     });
 
     // Action buttons
@@ -13130,7 +10349,7 @@ document.addEventListener('keydown', (e) => {
               updateProjectNameDisplay();
             }
             overlay.remove();
-            openProjectManager(); // refresh
+            openProjectManager(opener); // refresh, retaining the visible entry control
           }
         }
       });
@@ -13296,7 +10515,7 @@ window.toggleMobileMenu = function() {
 
 <footer class="orebit-footer">
   <p>
-    <strong>Orebit GeoSuite</strong> · Orebit Core · <span id="footerVersion">v3.1.0</span>
+    <strong>Orebit GeoSuite</strong> · Orebit Core · <span id="footerVersion">v3.1.1</span>
     <span class="divider">·</span>
      © 2026 Orebit · <a href="https://github.com/ghoziankarami/geosuite" target="_blank" rel="noopener" data-i18n="footer.sourceCode">GPL-3.0 Source Code</a>
     <span class="divider">·</span>

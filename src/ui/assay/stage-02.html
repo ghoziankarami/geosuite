@@ -1,0 +1,53 @@
+<div class="panel" id="tab2" role="tabpanel">
+  <h2><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> <span data-i18n="asy.up.title">Upload Data — Import CSV</span></h2>
+
+  <div class="hint">
+    <p><strong><span data-i18n="asy.up.formatLabel">Format:</span></strong> <span data-i18n="asy.up.formatBody">CSV with a header row. Columns are detected automatically and case-insensitively (<code>hole_id</code>, <code>HoleID</code> and <code>BHID</code> are all recognised).</span></p>
+    <p style="margin-top:6px;"><strong>Multi-file:</strong> Upload <code>collar.csv</code> + <code>assay.csv</code> + <code>litho.csv</code> together; the system auto-merges by <code>hole_id</code>.</p>
+    <p style="margin-top:6px;"><strong>Privacy:</strong> All processing runs client-side. Data is never sent to a server.</p>
+  </div>
+
+  <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+    <p style="margin-bottom:12px;"><svg class="lucide-icon" viewBox="0 0 24 24" style="width:48px;height:48px" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></p>
+    <p><strong data-i18n="asy.dropCsv">Click or drag & drop a CSV file here</strong></p>
+    <p style="font-size:12px;color:var(--fg-mute);margin-top:8px;"><span data-i18n="asy.up.multiFile">Multi-file support: collar.csv + assay.csv + litho.csv</span></p>
+  </div>
+  <input type="file" id="fileInput" accept=".csv,text/csv" multiple style="display:none" onchange="handleUpload(event)" aria-label="Upload CSV files" data-i18n-attr="aria-label:aria.uploadCsvFiles">
+
+  <div style="margin-top:16px;display:flex;gap:8px;align-items:center;">
+    <span style="font-size:13px;color:var(--fg-mute);">— or —</span>
+    <button class="btn secondary" onclick="importBundle()" id="btnImportOrebit" data-orebit-i18n="btn.importOrebit">
+      <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Import .orebit bundle
+    </button>
+  </div>
+  <div id="crossModuleHint" style="margin-top:10px;font-size:12px;color:var(--fg-mute);line-height:1.5;background:var(--bg-alt,#f1f5f9);padding:10px 12px;border-radius:8px;border:1px solid var(--border,#e2e8f0)">
+    💡 <strong data-i18n="asy.fromCore">Move data from Orebit Core:</strong> <span data-i18n="asy.fromCoreBody">in Core use <em>Project Manager → Export</em> to produce a <code>.orebit</code> file, then</span> <em data-i18n="asy.importBundle">Import .orebit bundle</em> <span data-i18n="asy.fromCoreTail">above. (Importing a CSV directly is also supported.)</span>
+  </div>
+
+  <div id="uploadStatus" style="margin-top:16px;" aria-live="polite"></div>
+  <div id="dataProvenancePanel"></div>
+  <div id="columnMapping" style="margin-top:16px;display:none;"></div>
+  <div id="uploadPreview" style="margin-top:16px;display:none;"></div>
+
+  <div class="card" style="margin-top:24px;">
+    <h3 data-i18n="asy.recognizedFormats">Recognized Column Formats</h3>
+    <table>
+      <tr><th data-i18n="asy.field">Field</th><th data-i18n="asy.aliases">Aliases (auto-detected)</th><th data-i18n="asy.required">Required?</th></tr>
+      <tr><td>hole_id</td><td>HoleID, BHID, DHID, HOLE, hole</td><td>✓</td></tr>
+      <tr><td>from_m</td><td>FROM, from, From, depth_from, fr</td><td>✓</td></tr>
+      <tr><td>to_m</td><td>TO, to, To, depth_to</td><td>✓</td></tr>
+      <tr><td>au_gpt</td><td>AU, Au, au_ppm, AU_GPT, gold</td><td><span data-i18n="asy.up.orPrimary">✓ (or the primary commodity)</span></td></tr>
+      <tr><td>cu_pct</td><td>CU, Cu, cu_ppm, copper</td><td><span data-i18n="asy.up.optional">optional</span></td></tr>
+      <tr><td>lithology</td><td>LITH, lith, rock_type, geology</td><td><span data-i18n="asy.up.optionalWarn">optional (warns if missing)</span></td></tr>
+      <tr><td>midx, midy, midz</td><td>x, y, z, easting, northing, rl, elevation</td><td><span data-i18n="asy.up.optionalSpatial">optional (for spatial plots)</span></td></tr>
+      <tr><td>density, recovery_pct, rqd_pct</td><td>SG, density_t/m3, rec, RQD</td><td><span data-i18n="asy.up.optionalQaqc">optional (QA/QC)</span></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 data-i18n="asy.reset">Reset</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;"><span data-i18n="asy.up.resetHint">Restore the built-in sample data (1,241 composites across 40 holes, Thalanga RGMWP).</span></p>
+    <button class="btn secondary" onclick="resetToSample()"><span data-i18n="asy.up.resetBtn">↺ Reset to sample data</span></button>
+  </div>
+</div>

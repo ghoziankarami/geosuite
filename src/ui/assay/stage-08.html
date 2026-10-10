@@ -1,0 +1,16 @@
+<div class="panel" id="tab8" role="tabpanel">
+  <h2><span data-i18n="asy.st.title">EDA Stats — Comprehensive Distribution Analysis</span></h2>
+  <div class="hint"><span data-i18n="asy.st.hint">A high CV (&gt;1.5) flags the need for a top-cut. Log-skewed distributions are candidates for a log-transform before kriging.</span></div>
+  <div id="st"></div>
+  <details class="assay-optional-tools" id="assayStatsAdvanced" ontoggle="if(this.open && DATA){safeRender(t('tab.stats'),()=>{renderGradeContribution();renderDecluster();});}">
+    <summary data-i18n="asy.workflow.statsAdvanced">Optional: treatment proposals, metal contribution and declustering</summary>
+  <div class="card">
+    <h3><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <span data-i18n="asy.st.autopilot">Auto-Pilot</span></h3>
+    <button class="btn" onclick="autoClean()"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <span data-i18n="asy.st.autoClean">Auto Clean &amp; Analyze</span></button>
+    <p style="font-size:12px;color:var(--fg-mute);margin-top:8px;"><span data-i18n="asy.st.autoCleanHint">Runs a P99 top-cut, K-Means clustering, and ANOVA validation in one go.</span></p>
+  </div>
+
+  <div id="gradeContrib"></div>
+  <div id="declusterPanel"></div>
+  </details>
+</div>

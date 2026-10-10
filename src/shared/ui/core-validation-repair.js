@@ -117,7 +117,10 @@
     requestAnimationFrame(()=>{
       const row=document.querySelector('#'+panels[table]+' tr[data-idx="'+idx+'"]');
       const cell=Array.from(row?.querySelectorAll('td[data-col]')||[]).find(td=>td.dataset.col===column);
-      if(cell){cell.tabIndex=0;cell.scrollIntoView({block:'center',inline:'nearest'});cell.focus({preventScroll:true});}
+      if(!cell)return;cell.tabIndex=0;
+      // The user may already be editing in this table; never pull focus out of an open cell editor.
+      if(cell.closest('#'+panels[table])?.contains(document.activeElement))return;
+      cell.scrollIntoView({block:'center',inline:'nearest'});cell.focus({preventScroll:true});
     });
   }
   function locate(id,record=null,sourceTable=null){

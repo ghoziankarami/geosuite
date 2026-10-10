@@ -1,0 +1,115 @@
+<div class="panel" id="tab2" data-panel="import" role="tabpanel">
+  <h2 data-i18n="panel.import.title"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Import — 4 CSV Files (auto-classify)</h2>
+
+  <div class="hint">
+    <p><strong>Drop all 4 CSV files at once</strong> (Collar + Survey + Assay + Geology). The system auto-classifies by filename first (looks for <code>collar</code>/<code>survey</code>/<code>assay</code>/<code>geology|litho</code>), falling back to header signature.</p>
+    <p style="margin-top:6px;font-size:13px;">If you skip the upload, the system uses the embedded Thalanga VMS sample. If you upload only some files, the rest stay as sample data.</p>
+  </div>
+
+  <div class="card">
+    <h3 data-i18n="core.columnFormat">Column Format (auto-detected)</h3>
+    <table>
+      <tr><th data-i18n="core.cols.file">File</th><th data-i18n="core.required">Required</th><th data-i18n="core.optional">Optional</th></tr>
+      <tr><td><strong>Collar</strong></td><td><code>hole_id</code>, <code>x</code>/<code>easting</code>/<code>GDA94_E</code>, <code>y</code>/<code>northing</code>/<code>GDA94_N</code>, <code>z</code>/<code>RL</code>, <code>depth</code>/<code>final_depth</code></td><td>prospect, drill_type, comment</td></tr>
+      <tr><td><strong>Survey</strong></td><td><code>hole_id</code>, <code>depth</code>, <code>dip</code>, <code>azimuth</code></td><td>—</td></tr>
+      <tr><td><strong>Assay</strong></td><td><code>hole_id</code>, <code>from_m</code>/<code>from_depth</code>, <code>to_m</code>/<code>to_depth</code>, <span data-i18n="core.imp.gradeColumn">at least 1 grade column</span></td><td>sample_id, multi-element (Au, Cu, Pb, Zn, ...)</td></tr>
+      <tr><td><strong>Geology</strong></td><td><code>hole_id</code>, <code>from_m</code>, <code>to_m</code>, <code>lith</code>/<code>lith1</code>/<code>lithology</code></td><td>weathering, lith2, color, lith_desc</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 data-i18n="core.uploadFiles">Upload Files</h3>
+    <div style="margin-bottom:12px; padding:10px; background:#fff3cd; border:1px solid #ffc107; border-radius:4px;">
+      <p style="margin:0 0 8px 0; font-size:13px; font-weight:600; color:#333;"><span data-i18n="core.imp.csvFormatTitle">📋 Required CSV format:</span></p>
+      <div style="font-size:12px; color:#555; line-height:1.6;">
+        <p style="margin:6px 0;"><strong><span data-i18n="core.imp.delimiterLabel">Delimiter:</span></strong> <span data-i18n="core.imp.delimiterPick">Choose below (usually</span> <code style="background:#f0f0f0; padding:2px 4px; border-radius:2px;">Semicolon (;)</code> <span data-i18n="core.imp.forEuroData">for data from Europe)</span></p>
+        <p style="margin:6px 0;"><strong><span data-i18n="core.imp.exampleLine">Example line:</span></strong><br><code style="background:#f0f0f0; padding:4px; border-radius:2px; display:block; overflow-x:auto; margin-top:2px;">APKL01;572720.46;9,841,220;-26</code></p>
+        <p style="margin:6px 0; color:#d9534f;"><strong><span data-i18n="core.imp.uploadFails">⚠️ If the upload fails:</span></strong> <span data-i18n="core.imp.uploadFailsHint">pick the correct delimiter below before uploading again</span></p>
+      </div>
+      <label style="font-size:13px; font-weight:600; display:block; margin-top:10px; margin-bottom:6px;"><span data-i18n="core.imp.selectDelimiter">Choose your delimiter:</span></label>
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <label style="font-size:12px;"><input type="radio" name="csvDelim" value="auto" checked onchange="window._userDelim=this.value"> <span data-i18n="core.imp.autoDetect">Auto-detect</span></label>
+        <label style="font-size:12px;"><input type="radio" name="csvDelim" value=";" onchange="window._userDelim=this.value"> <strong>Semicolon (;)</strong> <span data-i18n="core.imp.euroFormat">— European format</span></label>
+        <label style="font-size:12px;"><input type="radio" name="csvDelim" value="," onchange="window._userDelim=this.value"> <span data-i18n="core.imp.usFormat">Comma (,) — US format</span></label>
+        <label style="font-size:12px;"><input type="radio" name="csvDelim" value="\t" onchange="window._userDelim=this.value"> Tab</label>
+      </div>
+    </div>
+    <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+      <p style="margin:0 0 8px 0;"><svg class="lucide-icon" viewBox="0 0 24 24" style="width:48px;height:48px" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></p>
+      <p><strong><span data-i18n="core.imp.dropzone">Click, or drag and drop 4 CSV files</span></strong></p>
+      <p style="font-size:12px;color:var(--fg-mute);margin-top:6px;">Collar.csv · Survey.csv · Assay.csv · Geology.csv</p>
+    </div>
+    <input type="file" id="fileInput" accept=".csv" multiple style="display:none" onchange="handleUpload(event)" aria-label="Upload CSV files" data-i18n-attr="aria-label:a11y.uploadCsv">
+    <div id="uploadStatus" style="margin-top:14px;" aria-live="polite"></div>
+  </div>
+
+  <div class="card">
+    <h3><svg class="lucide-icon" viewBox="0 0 24 24" style="width:18px;height:18px" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> <span data-i18n="core.imp.optionsTitle">Import Options</span></h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:10px;"><span data-i18n="core.imp.optionsHint">Override how numbers are read, and declare your coordinate system. Both are auto-detected — change them only if the import looks wrong.</span></p>
+    <div class="row-controls" style="gap:16px;flex-wrap:wrap;">
+      <label style="font-size:13px;"><span data-i18n="core.imp.numberFormat">Number format:</span>
+        <select id="coreNumberFormat" onchange="applyNumberFormat(this.value)" style="margin-left:6px;padding:4px 8px;" aria-label="Number format override" data-i18n-attr="aria-label:a11y.numberFormat">
+          <option value="auto">Auto-detect</option>
+          <option value="dot">1,234.56 (dot decimal)</option>
+          <option value="comma">1.234,56 (comma decimal)</option>
+        </select>
+        <span id="coreDecimalDetected" style="font-size:12px;color:var(--fg-mute);margin-left:6px;"></span>
+      </label>
+      <label style="font-size:13px;"><span data-i18n="core.imp.csvDelimiter">CSV delimiter:</span>
+        <select id="coreDelimiter" onchange="applyDelimiterOverride(this.value)" style="margin-left:6px;padding:4px 8px;" aria-label="CSV delimiter override">
+          <option value="auto">Auto-detect</option>
+          <option value=",">Comma (,)</option>
+          <option value=";">Semicolon (;)</option>
+          <option value="\t">Tab (→)</option>
+        </select>
+        <span id="coreDelimiterDetected" style="font-size:12px;color:var(--fg-mute);margin-left:6px;"></span>
+      </label>
+      <label style="font-size:13px;"><span data-i18n="core.imp.lengthUnit">Length unit in the files:</span>
+        <select id="coreLengthUnit" onchange="applyLengthUnit(this.value)" style="margin-left:6px;padding:4px 8px;" aria-label="Length unit in the files" data-i18n-attr="aria-label:core.imp.lengthUnit">
+          <option value="m" data-i18n="core.imp.lengthM">Metres</option>
+          <option value="ft" data-i18n="core.imp.lengthFt">Feet (convert to metres)</option>
+        </select>
+      </label>
+      <label style="font-size:13px;"><span data-i18n="core.imp.crsLabel">Coordinate system / UTM zone:</span>
+        <input type="text" id="coreCRS" placeholder="e.g. WGS84 UTM 48S / EPSG:32748" oninput="setCRS(this.value)" style="margin-left:6px;padding:4px 8px;width:240px;" aria-label="Coordinate reference system" data-i18n-attr="aria-label:a11y.crs">
+      </label>
+    </div>
+    <p><label><input id="coreProvidedXYZ" type="checkbox" onchange="setCoreProvidedXYZ(this.checked)">
+      <span data-i18n="core.imp.providedXYZ">Use supplied assay interval midpoint XYZ</span></label></p>
+    <p class="hint" data-i18n="core.imp.providedXYZHint">Assign midpoint coordinates in Column Mapping when needed. This mode preserves supplied positions; it does not reconstruct or verify a directional survey. Empty coordinates remain missing.</p>
+    <p style="font-size:12px;color:var(--fg-mute);margin-top:8px;"><svg class="lucide-icon" viewBox="0 0 24 24" style="width:13px;height:13px;vertical-align:middle;" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> <span data-i18n="core.imp.crsHintFull">The coordinate system is recorded in your project metadata and written into exports (satisfying the KCMI 2017 / JORC 2012 requirement that the CRS be stated). It also enables the satellite basemap on the spatial map.</span></p>
+  </div>
+
+  <div class="card">
+    <h3><svg class="lucide-icon" viewBox="0 0 24 24" style="width:18px;height:18px" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> <span data-i18n="core.imp.gdriveTitle">Open from Google Drive</span></h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;"><span data-i18n="core.imp.gdriveHint">Read CSV files from your Google Drive. The files stay in your browser — nothing is uploaded to any server.</span></p>
+    <button class="btn" onclick="GDRIVE.openPicker()"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> <span data-i18n="core.imp.gdriveTitle">Open from Google Drive</span></button>
+  </div>
+
+  <div class="card">
+    <h3 data-i18n="core.resetSample">Reset to Sample Data</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;"><span data-i18n="core.imp.resetHint">Go back to the built-in Thalanga VMS data (717 holes, Thalanga prospect).</span></p>
+    <button class="btn secondary" onclick="resetToSample()" data-i18n="btn.resetSample"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset to Thalanga sample</button>
+  </div>
+
+  <div class="card">
+    <h3 data-i18n="core.downloadSampleCsv">Download Sample CSV</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;"><span data-i18n="core.imp.templateHint">Use these as a template for uploading your own data.</span></p>
+    <div class="row-controls">
+      <button class="btn secondary" onclick="downloadEmbeddedTable('collar')"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="core.imp.collarTemplate">Collar template</span></button>
+      <button class="btn secondary" onclick="downloadEmbeddedTable('survey')"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="core.imp.surveyTemplate">Survey template</span></button>
+      <button class="btn secondary" onclick="downloadEmbeddedTable('assay')"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="core.imp.assayTemplate">Assay template</span></button>
+      <button class="btn secondary" onclick="downloadEmbeddedTable('geology')"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="core.imp.geologyTemplate">Geology template</span></button>
+    </div>
+  </div>
+
+
+  <div class="card">
+    <h3 data-i18n="core.projectFolder">Project Folder</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;"><span data-i18n="core.imp.openProjectHint">Open a project you saved earlier, or import a .orebit bundle file.</span></p>
+    <div class="row-controls">
+      <button class="btn" id="btnOpenProject"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> <span data-i18n="core.imp.openProject">Open Project</span></button>
+      <button class="btn secondary" id="btnImportBundle"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> <span data-i18n="core.imp.importBundle">Import Bundle (.orebit)</span></button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,42 @@
+<div class="panel" id="tab3" role="tabpanel">
+  <h2><span data-i18n="asy.pt.data">Data — Well Log &amp; Samples</span></h2>
+  <div class="hint" id="dataHeader">Embedded dataset: <strong>1,241 composites · 40 holes · 16 columns</strong> · Thalanga VMS (RGMWP prospect, output of Core).</div>
+
+  <div class="card">
+    <h3 data-i18n="asy.welllogPanel">Welllog — Multi-element Trace</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;"><span data-i18n="asy.wl.hint">Per-hole multi-element subplot. Colour-coded bars are grades; side-by-side bars let you compare mineralization zoning across elements. The lithology colour overlay sits to the left of each track.</span></p>
+    <div class="row-controls">
+      <label><span data-i18n="asy.wl.hole">Hole:</span> <select id="holeSelector" onchange="renderWelllog()" aria-label="Select drillhole" data-i18n-attr="aria-label:aria.selectDrillhole"></select></label>
+      <label><span data-i18n="asy.wl.elements">Elements:</span>
+        <span id="elementCheckboxes" style="display:inline-flex;gap:10px;flex-wrap:wrap;margin-left:6px;"></span>
+      </label>
+      <label><input type="checkbox" id="welllogLogScale" onchange="renderWelllog()" aria-label="Toggle log scale" data-i18n-attr="aria-label:aria.toggleLogScale"> <span data-i18n="asy.wl.logScaleX">Log scale on the x-axis</span></label>
+      <label id="welllogYAxisWrap" style="display:none;"><span data-i18n="asy.wl.yAxis">Vertical axis:</span>
+        <select id="welllogYAxis" onchange="renderWelllog()" style="padding:3px 6px;font-size:12px;margin-left:4px;">
+          <option value="depth" data-i18n="asy.wl.yDepth">Depth from collar (m)</option>
+          <option value="elev" data-i18n="asy.wl.yElev">Elevation / mdpl (m)</option>
+        </select>
+      </label>
+    </div>
+    <div id="welllog" style="height:560px;"></div>
+    <div id="welllogLegend" style="margin-top:8px;font-size:12px;"></div>
+    <div id="welllogElementDesc" class="grid-2" style="margin-top:10px;"></div>
+  </div>
+
+  <div class="card">
+    <h3 data-i18n="asy.dataTable">Data Table</h3>
+    <div class="row-controls">
+      <input type="text" id="tableFilter" placeholder="Filter (hole_id, lithology...)" data-i18n-attr="placeholder:placeholder.filterTable,aria-label:aria.filterTableRows" oninput="filterTable()" aria-label="Filter table rows">
+      <span id="tableInfo" style="font-size:12px;color:var(--fg-mute);"></span>
+      <button class="btn secondary" onclick="exportTableCSV()" data-i18n="asy.exportCsv">Export CSV</button>
+    </div>
+    <div style="max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:6px;">
+      <table id="tbl"></table>
+    </div>
+    <div class="row-controls" style="margin-top:8px;">
+      <button class="btn secondary" onclick="prevPage()"><span data-i18n="asy.pg.prev">‹ Prev</span></button>
+      <span id="pageInfo" style="font-size:12px;"></span>
+      <button class="btn secondary" onclick="nextPage()" data-i18n="asy.nextChevron">Next ›</button>
+    </div>
+  </div>
+</div>

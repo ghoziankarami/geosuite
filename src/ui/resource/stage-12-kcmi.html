@@ -1,0 +1,42 @@
+<div class="panel" id="tab12" data-panel="kcmi" role="tabpanel">
+  <h2><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> <span data-i18n="panel.kcmi.title">Resource Handoff Report</span></h2>
+  <div class="hint">
+    <p>Handoff summary + variogram/validation evidence + preliminary confidence rationale. This is a KCMI-style working report, not a certified Mineral Resource statement.</p>
+  </div>
+  <div class="card" style="margin-top:10px;">
+      <h3 data-i18n="kcmi.checklistTitle"> Quick Insight / Handoff Checklist</h3>
+      <p style="font-size:13px;color:var(--fg-mute);" data-i18n="kcmi.checklistHint">Use this checklist before taking the estimate into specialist mining software.</p>
+      <label style="display:block;margin:6px 0;"><input type="checkbox" id="rpeDomainCheck"> <span data-i18n="kcmi.checkDomain">Geological domain geometry reviewed</span></label>
+      <label style="display:block;margin:6px 0;"><input type="checkbox" id="rpeCutoffCheck"> <span data-i18n="kcmi.checkCutoff">Cut-off and economic assumptions documented externally</span></label>
+      <label style="display:block;margin:6px 0;"><input type="checkbox" id="rpeMiningCheck"> <span data-i18n="kcmi.checkMining">Mining method / pit or underground constraint reviewed</span></label>
+      <label style="display:block;margin:6px 0;"><input type="checkbox" id="rpeMetCheck"> <span data-i18n="kcmi.checkMet">Metallurgy, recovery, dilution and density reviewed</span></label>
+      <p style="font-size:12px;color:var(--warn);margin-top:8px;" data-i18n="kcmi.checklistWarn">This checklist records handoff readiness only. It does not certify a JORC/KCMI Mineral Resource.</p>
+    </div>
+    <div class="card" style="margin-top:10px;">
+      <h3 data-i18n="kcmi.exportReportTitle"> Export Report</h3>
+      <label style="display:block;margin:8px 0;" for="reportCutoff" data-i18n="res.reportInsight.cutoffLabel">PDF headline cutoff (native grade unit)</label>
+      <input type="number" id="reportCutoff" min="0" step="any" style="width:140px;" aria-label="PDF headline cutoff" onchange="setReportCutoff(this.value)">
+      <p data-i18n="res.reportInsight.cutoffHint">Blank = all estimated blocks. Enter a comparison cutoff explicitly. The current grade-tonnage confidence filter also applies.</p>
+      <label for="reportCutoffNote" style="display:block;margin:8px 0;" data-i18n="res.reportInsight.noteLabel">Cutoff basis / comparison purpose (optional)</label>
+      <textarea id="reportCutoffNote" rows="2" maxlength="5000" style="width:100%;" onchange="setupState.reportCutoffNote=this.value;saveResourceSession()"></textarea>
+      <button class="btn" id="pdf-export-btn" onclick="exportPDF()" data-i18n="kcmi.exportPdfBtn">Generate Handoff PDF Report</button>
+      <button class="btn secondary" onclick="saveAllPlotsZip()" title="Download all rendered charts as a single ZIP file" data-i18n-attr="title:kcmi.savePlotsZipTitle" data-i18n="kcmi.savePlotsZipBtn">📦 Save All Plots (ZIP)</button>
+    <p style="font-size:12px;color:var(--fg-mute);margin-top:8px;" data-i18n="kcmi.pdfHint">8-page PDF: cover, variogram, block model, grade estimation, swath validation, classification, cut-off sensitivity, and KCMI commentary.</p>
+  </div>
+  <div class="card" style="margin-top:10px;">
+    <h3 data-i18n="kcmi.processingLogTitle">Processing Log</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;" data-i18n="kcmi.processingLogHint">Every estimation step applied this session (variography, block model, kriging, classification). Embedded in the PDF report so the reported numbers are always traceable.</p>
+    <div class="pipeline-badge" style="padding:10px 12px;background:var(--bg-soft,rgba(0,128,128,0.06));border:1px solid var(--border,rgba(0,128,128,0.2));border-radius:8px;"></div>
+  </div>
+  <div id="kcmiContent"></div>
+  <div class="card" style="margin-top:10px;">
+    <h3 data-i18n="kcmi.dataPreviewTitle">Data Preview</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;" data-i18n="kcmi.dataPreviewHint">First 10 rows of the block model / composite data that will be exported.</p>
+    <div id="dataPreview"></div>
+  </div>
+  <div class="card" style="margin-top:10px;">
+    <h3 data-i18n="kcmi.exportHistoryTitle">Export History</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;" data-i18n="kcmi.exportHistoryHint">Audit trail of every download this session (max 20). Persists in browser localStorage.</p>
+    <div id="exportHistory"></div>
+  </div>
+</div>

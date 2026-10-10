@@ -48,39 +48,80 @@ function toast(msg, kind = 'info', action) {
   setTimeout(() => div.remove(), dismissDelay);
 }
 
-function trapFocus(container) {
-  releaseFocus(); // release any previous trap
-  _focusTrapContainer = container;
-  const focusable = container.querySelectorAll(
-    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-  );
-  if (!focusable.length) return;
-  const first = focusable[0];
-  const last = focusable[focusable.length - 1];
-
-  _focusTrapHandler = function(e) {
+const _dialogFocusStack = [];
+function _visibleFocusTarget(el) {
+  return !!el?.isConnected && !el.disabled && !el.closest('[inert]') &&
+    el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+}
+function _dialogFocusables(container) {
+  return Array.from(container.querySelectorAll(
+    'button, [href], input, select, textarea, [tabindex]'
+  )).filter(el => el.tabIndex >= 0 && _visibleFocusTarget(el));
+}
+function _dialogOpener(el) {
+  // These menus close before opening their dialog. Return to their visible trigger.
+  if (el?.closest('.orebit-help-menu')) return document.querySelector('button.orebit-help-bubble');
+  if (el?.closest('.orebit-profile-menu')) return document.querySelector('button.orebit-avatar');
+  return el;
+}
+function trapFocus(container, options = {}) {
+  if (_dialogFocusStack.at(-1)?.container === container) releaseFocus(container, false);
+  if (_focusTrapHandler && _focusTrapContainer) _focusTrapContainer.removeEventListener('keydown', _focusTrapHandler);
+  const entry = {container, opener:_dialogOpener(options.opener || document.activeElement)};
+  entry.handler = function(e) {
+    if (e.key === 'Escape' && options.close) {
+      e.preventDefault(); e.stopPropagation(); options.close(); return;
+    }
     if (e.key !== 'Tab') return;
-    if (e.shiftKey) {
-      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
-    } else {
-      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    const controls = _dialogFocusables(container), first = controls[0], last = controls.at(-1);
+    if (!first) {e.preventDefault(); return;}
+    if (e.shiftKey && (document.activeElement === first || !container.contains(document.activeElement))) {
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && (document.activeElement === last || !container.contains(document.activeElement))) {
+      e.preventDefault(); first.focus();
     }
   };
-  container.addEventListener('keydown', _focusTrapHandler);
-  setTimeout(() => first.focus(), 50);
+  _dialogFocusStack.push(entry);
+  _focusTrapContainer = container; _focusTrapHandler = entry.handler;
+  container.addEventListener('keydown', entry.handler);
+  const first = _visibleFocusTarget(options.initialFocus) ? options.initialFocus : _dialogFocusables(container)[0];
+  first?.focus({preventScroll:true});
 }
 
-function releaseFocus() {
-  if (_focusTrapHandler && _focusTrapContainer) {
-    _focusTrapContainer.removeEventListener('keydown', _focusTrapHandler);
-    _focusTrapHandler = null;
-    _focusTrapContainer = null;
+function releaseFocus(container, restore = true) {
+  const index = container ? _dialogFocusStack.findIndex(entry => entry.container === container) : _dialogFocusStack.length - 1;
+  if (index < 0) return;
+  const [entry] = _dialogFocusStack.splice(index, 1);
+  entry.container.removeEventListener('keydown', entry.handler);
+  if (_focusTrapContainer !== entry.container) return;
+  const parent = _dialogFocusStack.at(-1);
+  _focusTrapContainer = parent?.container || null; _focusTrapHandler = parent?.handler || null;
+  if (parent) parent.container.addEventListener('keydown', parent.handler);
+  if (restore) {
+    const target = _visibleFocusTarget(entry.opener) && (!parent || parent.container.contains(entry.opener))
+      ? entry.opener : parent && _dialogFocusables(parent.container)[0];
+    target?.focus({preventScroll:true});
   }
+}
+
+// Owners retain their existing close/remove and confirmation callbacks. Observe
+// only the overlay's parent so owner refreshes/removals also release the trap.
+function openModalDialog(container, options = {}) {
+  container.setAttribute('role','dialog'); container.setAttribute('aria-modal','true');
+  if (options.labelledby) container.setAttribute('aria-labelledby',options.labelledby);
+  else if (options.label) container.setAttribute('aria-label',options.label);
+  const overlay = options.overlay || container;
+  overlay.__dialogOpener = _dialogOpener(options.opener || document.activeElement);
+  const observer = new MutationObserver(() => {
+    if (!overlay.isConnected) {observer.disconnect(); releaseFocus(container);}
+  });
+  observer.observe(overlay.parentNode, {childList:true});
+  trapFocus(container, {...options, opener:overlay.__dialogOpener});
 }
 
 function openHelp() {
   const ov = document.getElementById('helpOverlay');
-  if (ov) { ov.classList.add('open'); trapFocus(ov); }
+  if (ov) { ov.classList.add('open'); trapFocus(ov, {close:closeHelp}); }
 }
 
 function closeHelp() {
@@ -91,7 +132,7 @@ function closeHelp() {
 function openGlossary() {
   renderGlossaryList('');
   const ov = document.getElementById('glossaryOverlay');
-  if (ov) { ov.classList.add('open'); trapFocus(ov); }
+  if (ov) { ov.classList.add('open'); ov.querySelector('[role="dialog"]').setAttribute('aria-modal','true'); trapFocus(ov, {close:closeGlossary}); }
 }
 
 function closeGlossary() {
@@ -106,7 +147,7 @@ let _tourOpener = null;
 let _tourReturnTab = 1;
 function startTour() {
   if (window._tourActive) return;
-  _tourOpener = document.activeElement;
+  _tourOpener = _dialogOpener(document.activeElement);
   _tourReturnTab = Array.from(document.querySelectorAll('nav.tabs .tab')).findIndex(b=>b.classList.contains('active')) + 1;
   _tourIdx = 0;
   window._tourActive = true;
@@ -176,10 +217,27 @@ function tourSkip() {
   localStorage.setItem('orebit-tour-seen-' + (window.__tourPhaseId || 'x'), '1');
 }
 
+function _focusWorkflowDestination(n, previousFocus) {
+  const workflowNavigation = previousFocus?.matches('button') &&
+    previousFocus.closest('.assay-workflow-card') &&
+    previousFocus.closest('.workflow-actions,.workflow-step-links,.workflow-related');
+  // A continuation may disable its initiating button while its owner computes.
+  // Retain that exact origin; do not move focus if the user chose another control.
+  if (workflowNavigation) requestAnimationFrame(() => {
+    const panel = document.getElementById('tab' + n);
+    if (!_visibleFocusTarget(previousFocus) &&
+        (document.activeElement === previousFocus || document.activeElement === document.body) &&
+        panel?.isConnected && panel.classList.contains('active')) {
+      panel.setAttribute('tabindex','-1'); panel.focus({preventScroll:true});
+    }
+  });
+}
+
 function _activateTab(n) {
+  const previousFocus = document.activeElement;
   document.querySelectorAll('nav.tabs .tab').forEach((b, i) => {
     b.classList.toggle('active', i === n - 1);
-    b.setAttribute('aria-selected', i === n - 1 ? 'true' : 'false');
+    if (i === n - 1) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
   // Main-stage and related-tool actions call showTab directly, without a
   // sidebar click. Keep the header's current location in the same router.
@@ -192,9 +250,44 @@ function _activateTab(n) {
   document.querySelectorAll('.panel').forEach((p, i) => {
     p.classList.toggle('active', i === n - 1);
   });
+  _syncTabAccessibility();
+  // Workflow buttons can disappear or become hidden when their destination is
+  // rendered. Announce the existing named stage after the owner finishes, without
+  // adding a persistent tab stop or moving focus from an editable control.
+  _focusWorkflowDestination(n, previousFocus);
   window.__updateMobileNavigation?.();
   try { _injectTabHelp(n); } catch (e) { /* non-fatal */ }
   try { _collapseTabHelpOnTouch(); } catch (e) { /* non-fatal */ }
+}
+
+function _syncTabAccessibility() {
+  const rail = document.querySelector('nav.tabs');
+  if (!rail) return;
+  rail.setAttribute('aria-label', window.__t?.('flow.workflow') || 'Workflow');
+  rail.setAttribute('aria-orientation', innerWidth >= 1080 ? 'vertical' : 'horizontal');
+  rail.querySelectorAll('.tab').forEach((tab, i) => {
+    if (!tab.id) tab.id = 'orebit-tab-' + (i + 1);
+    const panel = document.getElementById('tab' + (i + 1));
+    if (panel) {tab.setAttribute('aria-controls', panel.id); panel.setAttribute('aria-labelledby', tab.id);}
+    tab.tabIndex = tab.classList.contains('active') ? 0 : -1;
+  });
+  if (rail.dataset.keyboardBound) return;
+  rail.dataset.keyboardBound = 'true';
+  // Capture before legacy phase handlers. The guided rail's visual order differs
+  // from source order, and undisclosed advanced tools must not receive focus.
+  rail.addEventListener('keydown', e => {
+    if (!['ArrowRight','ArrowDown','ArrowLeft','ArrowUp','Home','End'].includes(e.key)) return;
+    const origin = e.target.closest('.tab');
+    if (!origin) return;
+    const tabs = Array.from(rail.querySelectorAll('.tab')).filter(_visibleFocusTarget)
+      .sort((a,b) => (Number(getComputedStyle(a).order)||0) - (Number(getComputedStyle(b).order)||0));
+    const index = tabs.indexOf(origin);
+    if (index < 0 || !tabs.length) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    const target = e.key === 'Home' ? tabs[0] : e.key === 'End' ? tabs.at(-1) :
+      tabs[(index + (['ArrowLeft','ArrowUp'].includes(e.key) ? -1 : 1) + tabs.length) % tabs.length];
+    target.click(); target.focus({preventScroll:true});
+  }, true);
 }
 
 // Fold the per-tab help box down to its title on touch devices, measured

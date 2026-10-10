@@ -2,3 +2,4 @@
 # whatever core.autocrlf a contributor's clone uses.
 tests/fixtures/csv-corpus/** -text
 tests/known-answer/fixtures/bom-crlf.csv -text
+vendor/*.js -text

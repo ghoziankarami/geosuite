@@ -1,0 +1,47 @@
+<div class="panel" id="tab13" role="tabpanel">
+  <h2><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> <span data-i18n="asy.rp.title">Report &amp; Working Commentary</span></h2>
+  <div class="card">
+    <h3 data-i18n="asy.exportOptions">Export Options</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn" id="btnReportPdf" onclick="exportPDF(event)" data-i18n="btn.reportPdf">Download PDF Report</button>
+      <button class="btn secondary" id="btnReportSave" onclick="saveAssayProject()"><span data-i18n="asy.rp.saveToProject">💾 Save to Project</span></button>
+      <button class="btn secondary" id="btnReportExportBundle" onclick="exportBundle()"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="btn.exportBundleFile">Export Bundle (.orebit)</span></button>
+    </div>
+    <p style="font-size:12px;color:var(--fg-mute);margin-top:8px;"><span data-i18n="asy.rp.pdfHint">A multi-page PDF: summary, visualizations, and a standards-referenced working checklist.</span></p>
+    <label for="assayReportNote" data-i18n="asy.reportInsight.noteLabel">Method basis / interpretation notes (optional)</label>
+    <textarea id="assayReportNote" rows="2" maxlength="5000" style="width:100%;"></textarea>
+    <p class="hint" data-i18n="asy.reportInsight.noteHint">Explain your grouping, cap and composite choices. A domain cutoff groups samples; it does not establish an economic Resource cutoff. The PDF records the actual controls separately.</p>
+    <hr style="border:none;border-top:1px solid var(--border);margin:14px 0 10px;">
+    <h4 style="font-size:13px;margin:0 0 4px;" data-i18n="asy.rp.csvTitle">Data exports (CSV)</h4>
+    <p style="font-size:12px;color:var(--fg-mute);margin:0 0 8px;"><span data-i18n="asy.rp.csvHint">The three exports most people want, gathered here because this is where you come to export. Each also sits on the tab that produces it.</span></p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn secondary" onclick="exportMasterForEstimation()"><span data-i18n="asy.rp.csvMaster">Master CSV — composites for the estimation stage</span></button>
+      <button class="btn secondary" onclick="exportDomainCSV()"><span data-i18n="asy.rp.csvRaw">Raw intervals CSV — with domains and derived columns</span></button>
+      <button class="btn secondary" onclick="exportComposites()"><span data-i18n="asy.rp.csvComposite">Composite CSV</span></button>
+      <button class="btn secondary" onclick="export3DCompositeTraceStr()"><span data-i18n="asy.rp.trace3d">3D drill trace (.str)</span></button>
+      <button class="btn secondary" onclick="exportDomainSolidsDXF()"><span data-i18n="asy.rp.dxfSolids">Domain solids (DXF)</span></button>
+    </div>
+    <p style="font-size:11px;color:var(--fg-mute);margin-top:8px;"><span data-i18n="asy.rp.csvElsewhere">More on their own tabs: the litho × element matrix and per-lithology statistics (Litho), the top-cut candidate matrix (Top-Cut), the composite string and X,Y,Z files for 3D packages (Domain), and the compliance checklist below.</span></p>
+  </div>
+  <div id="reportSummary"></div>
+  <div class="hint warn">
+    <h4><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> <span data-i18n="asy.rp.cpiTitle">CPI Disclaimer</span></h4>
+    <p><span data-i18n="asy.rp.cpiBody">This output is not a final KCMI Table 1. The commentary must be reviewed and signed off by a CPI registered with PERHAPI/IAGI before it is published officially.</span></p>
+  </div>
+  <hr style="margin:24px 0;border-color:var(--border);">
+  <h2><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> <span data-i18n="asy.rp.commentaryTitle">Standards-Referenced Working Commentary</span></h2>
+  <div class="card">
+    <h3><span data-i18n="asy.rp.section1">Section 1: Sampling Techniques and Data</span></h3>
+    <div id="kcmi"></div>
+  </div>
+  <div class="card">
+    <h3 data-i18n="asy.dataPreview">Data Preview</h3>
+     <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;" data-i18n="asy.exportPreviewHint">First 10 rows of the composite dataset that will be exported to Resource.</p>
+    <div id="dataPreview"></div>
+  </div>
+  <div class="card">
+    <h3 data-i18n="asy.exportHistory">Export History</h3>
+     <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;" data-i18n="asy.exportHistoryHint">Audit trail of every download this session (max 20). Persists in browser localStorage.</p>
+    <div id="exportHistory"></div>
+  </div>
+</div>

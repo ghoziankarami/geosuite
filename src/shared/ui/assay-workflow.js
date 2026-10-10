@@ -109,8 +109,8 @@
     entries[n]={stage:n,title:label(n),context:context(n),reviewedAt:new Date().toISOString(),note,
       parameters:parameters(n),insight:insight(n)};
     if(typeof AutoSave!=='undefined')AutoSave.schedule();
-    refresh(n);
     if(advance&&NEXT[n])navigate(NEXT[n]);
+    else refresh(n);
   }
   function recommend(n) {
     if(n===2){document.getElementById('fileInput').click();return;}

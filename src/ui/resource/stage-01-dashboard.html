@@ -1,0 +1,106 @@
+<div class="panel active" id="tab1" data-panel="dashboard" role="tabpanel">
+  
+  
+
+  <!-- hidden project name retained for compatibility (now surfaced in the profile menu) -->
+  <div style="display:none;"><span id="dashProjectName">—</span><span id="dashSaveStatus" aria-live="polite"></span></div>
+
+  <!-- Empty-state import CTA (shown only when no data loaded; project actions
+       live in the profile/avatar menu). Matches Core/Assay's exact structure
+       and element IDs -- showTab(1) above already had the logic to drive this
+       (title/hint text, show/hide), it just had no markup to find until now,
+       so Resource's Dashboard showed a bare "0 / 0 / 0" stat grid with no
+       guidance when empty while Core and Assay both had a clear CTA. -->
+  <div class="card" id="dashEmptyCTA" style="display:none;text-align:center;padding:28px 20px;border-style:dashed;">
+    <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:34px;height:34px;color:var(--accent);margin-bottom:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <h3 style="margin:0 0 4px;" id="dashEmptyTitle">No data loaded yet</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin:0 auto 14px;max-width:420px;" id="dashEmptyHint">Import composites from Assay, upload a composite CSV, or a saved .orebit project to begin.</p>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn" onclick="importBundle()" id="dashEmptyImport"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> <span id="dashEmptyImportLbl">Import data</span></button>
+    </div>
+  </div>
+
+  <!-- Data Summary -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:16px;">
+    <div class="card" style="text-align:center;padding:16px;">
+      <div style="font-size:24px;font-weight:700;color:var(--accent);" id="dashRowCount">0</div>
+      <div style="font-size:12px;color:var(--fg-mute);margin-top:4px;">Composites</div>
+    </div>
+    <div class="card" style="text-align:center;padding:16px;">
+      <div style="font-size:24px;font-weight:700;color:var(--accent);" id="dashElementCount">0</div>
+      <div style="font-size:12px;color:var(--fg-mute);margin-top:4px;" data-i18n="res.dash.elements">Elements</div>
+    </div>
+    <div class="card" style="text-align:center;padding:16px;">
+      <div style="font-size:24px;font-weight:700;color:var(--accent);" id="dashDomainCount">0</div>
+      <div style="font-size:12px;color:var(--fg-mute);margin-top:4px;" data-i18n="res.dash.domains">Domains</div>
+    </div>
+    <div class="card" style="text-align:center;padding:16px;">
+      <div style="font-size:24px;font-weight:700;color:var(--accent);" id="dashBlockCount">0</div>
+      <div style="font-size:12px;color:var(--fg-mute);margin-top:4px;" data-i18n="res.dash.blocks">Blocks</div>
+    </div>
+  </div>
+  <div class="ux-next-step" id="uxNextStepResource" role="status">
+    <div class="ux-step-copy"><span class="ux-eyebrow" data-i18n="ux.next.eyebrow">Next step</span><strong data-i18n="ux.resource.title">Set up the resource estimate</strong><span class="ux-step-detail" data-i18n="ux.resource.detail">Choose the element and domain before variography and block modelling.</span></div>
+    <button class="btn" type="button" onclick="showTab(3)" data-i18n="ux.resource.action">Open Setup</button>
+  </div>
+
+  <div class="hint">
+    <p><strong>Goal:</strong> Generate a quick, transparent resource-estimation insight from Assay composites.</p>
+    <p style="margin-top:6px;"><strong>Flow:</strong> Approved domain-tagged composites → Variography → Block model → OK estimate → IDW/NN diagnostics → Cross-validation → Preliminary confidence screen → Grade-tonnage → KCMI-style handoff.</p>
+    <p style="margin-top:6px;color:var(--warn);"><strong>Scope:</strong> Screening and handoff tool—not a replacement for mine-planning/geological modelling software or a Competent Person report.</p>
+    <p style="margin-top:6px;color:var(--warn);"><strong>Before reporting:</strong> Validate domain geometry, top-cut, anisotropy, density, cut-off, mining method, metallurgy, economic assumptions and RPE in specialist software.</p>
+  </div>
+
+  <!-- First-run dashboard: Grade summary + Domain summary (data-bound) -->
+  <div id="dashRichGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;margin-bottom:32px;align-items:start;">
+    <div class="card">
+      <h3 style="margin-top:0;display:flex;align-items:center;gap:8px;">
+        <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;color:var(--accent);"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span id="dashGradeTitle" data-i18n="dash.gradeTitle">Composite grade summary</span>
+      </h3>
+      <div style="font-size:12px;color:var(--fg-mute);margin-bottom:10px;" id="dashGradeHint">—</div>
+      <div id="dashGradeTable"></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;">
+      <h3 style="margin-top:0;display:flex;align-items:center;gap:8px;">
+        <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;color:var(--accent);"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <span id="dashDomainTitle" data-i18n="dash.domainTitle">Domain summary</span>
+      </h3>
+      <div style="font-size:12px;color:var(--fg-mute);margin-bottom:10px;" id="dashDomainHint">—</div>
+      <div id="dashDomainTable" style="flex:1;display:flex;flex-direction:column;justify-content:center;"></div>
+    </div>
+  </div>
+
+  <!-- CHANGED 2026-07-31: Compute All Plots CTA --><div class="card" style="margin-top:16px;background:linear-gradient(135deg, var(--accent) 0%, #1d4ed8 100%);color:#fff;border:none;"><div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;"><div><h3 style="margin:0 0 6px 0;font-size:16px;color:#fff;" data-i18n="compute.title">Compute All Plots</h3><p style="margin:0;font-size:13px;opacity:0.9;line-height:1.4;" data-i18n="compute.desc">Pre-render variography, block model, estimation, cross-val, swath, classification, grade-tonnage, 3D view &amp; KCMI report. ~30-60s with progress indicator.</p></div><button id="btnComputeAll" class="btn" style="background:#fff;color:var(--accent);font-weight:700;padding:12px 24px;font-size:14px;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);white-space:nowrap;" onclick="startComputePipeline()" data-i18n="compute.btn">▶ Compute All Plots</button></div><div id="computeProgress" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.25);"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span id="computeStep" style="font-size:13px;font-weight:600;" data-i18n="compute.step1">Step 1/10 · Setup…</span><span id="computePct" style="font-size:12px;opacity:0.9;">0%</span></div><div style="height:6px;background:rgba(255,255,255,0.25);border-radius:3px;overflow:hidden;"><div id="computeBar" style="height:100%;background:#fff;border-radius:3px;width:0%;transition:width 0.3s ease;"></div></div><div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;opacity:0.85;"><span id="computeEta" data-i18n="compute.etaInitial">Est. ~45s remaining</span><button id="btnCancelCompute" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px;" onclick="cancelComputePipeline()" data-i18n="compute.cancel">Cancel</button></div></div></div>
+
+  <!-- Workflow guide + reference (collapsed — keeps dashboard clean) -->
+  <details class="card" style="margin-top:16px;">
+    <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">
+<svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;vertical-align:-2px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> <span data-i18n="res.wf.title">All tools reference</span></summary>
+  <div style="margin-top:10px;font-size:13px;color:var(--fg-body);line-height:1.6;">
+  <ol style="margin:8px 0 8px 20px;">
+    <li><strong><span data-i18n="res.wf.s1">1. Dashboard</span></strong> — <span data-i18n="res.wf.d1">Pipeline overview, completeness checklist.</span> <em style="color:var(--fg-mute);"><span data-i18n="res.wf.g1">Gate: workflow guide</span></em></li>
+    <li><strong><span data-i18n="res.wf.s2">2. Upload</span></strong> — <span data-i18n="res.wf.d2">Domain-tagged composite from Assay or custom CSV.</span> <em style="color:var(--fg-mute);"><span data-i18n="res.wf.g2">Gate: parsed CSV + column mapping</span></em></li>
+    <li><strong><span data-i18n="res.wf.s3">3. Setup</span></strong> — <span data-i18n="res.wf.d3">Select element, domain, coordinate system, declustering.</span> <em style="color:var(--fg-mute);"><span data-i18n="res.wf.g3">Gate: estimation config ready</span></em></li>
+    <li><strong><span data-i18n="res.wf.s4">4. Variography</span></strong> — <span data-i18n="res.wf.d4">Experimental + model fit (Spherical/Exponential/Gaussian).</span> <em style="color:var(--fg-mute);"><span data-i18n="res.wf.g4">Gate: variogram model per direction</span></em></li>
+    <li><strong><span data-i18n="res.wf.s5">5. Block Model</span></strong> — <span data-i18n="res.wf.d5">Extent + block size XYZ + grid generator.</span> <em style="color:var(--fg-mute);"><span data-i18n="res.wf.g5">Gate: 3D grid generated</span></em></li>
+    <li><strong><span data-i18n="res.wf.s6">6. Estimation</span></strong> — <span data-i18n="res.wf.d6">IDW + Ordinary Kriging + Nearest Neighbor in parallel.</span> <em style="color:var(--fg-mute);"><span data-i18n="res.wf.g6">Gate: block grade model</span></em></li>
+    <li><strong><span data-i18n="res.wf.s7">7. Cross-Val</span></strong> — <span data-i18n="res.wf.d7">Leave-one-out — MAE / RMSE / R² scatter.</span> <em style="color:var(--fg-mute);"><span data-i18n="res.wf.g7">Gate: unbiased estimate check</span></em></li>
+    <li><strong><span data-i18n="res.wf.s8">8. Swath</span></strong> — <span data-i18n="res.wf.d8">Mean grade per X/Y/Z slice for bias check.</span> <em style="color:var(--fg-mute);"><span data-i18n="res.wf.g8">Gate: swath plot</span></em></li>
+    <li><strong><span data-i18n="res.wf.s9">9. Preliminary confidence</span></strong> — <span data-i18n="res.wf.d9">Computational screen.</span> <em style="color:var(--fg-mute);"><span data-i18n="res.wf.g9">Gate: confidence classes (CP review final)</span></em></li>
+    <li><strong><span data-i18n="res.wf.s10">10. Grade-Tonnage</span></strong> — <span data-i18n="res.wf.d10">GT curve, cutoff sensitivity per domain.</span> <em style="color:var(--fg-mute);"><span data-i18n="res.wf.g10">Gate: grade-tonnage curve</span></em></li>
+    <li><strong><span data-i18n="res.wf.s11">11. 3D View</span></strong> — <span data-i18n="res.wf.d11">Plotly volume rendering, slice planes, drill traces.</span> <em style="color:var(--fg-mute);"><span data-i18n="res.wf.g11">Gate: 3D block model viewer</span></em></li>
+    <li><strong><span data-i18n="res.wf.s12">12. Handoff Report</span></strong> — <span data-i18n="res.wf.d12">Validation, estimation evidence, CP-review checklist.</span> <em style="color:var(--fg-mute);"><span data-i18n="res.wf.g12">Gate: KCMI/JORC handoff report</span></em></li>
+  </ol>
+  </div>
+</details>
+
+  <!-- Analysis Scope (collapsed) -->
+  
+
+  <!-- Quick Start Tutorial (collapsed by default) -->
+  
+
+  <!-- Sample Data Info (collapsed, bottom of dashboard — parity with Core) -->
+  
+</div>

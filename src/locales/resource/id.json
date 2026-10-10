@@ -70,7 +70,7 @@
   "res.unitVolumetric": "Kadar per volume → metal terkandung = volume × kadar, dikonversi ke ton; densitas tidak dipakai.",
   "res.unitMass": "Kadar per massa → contained metal = tonase × kadar (densitas dipakai di Block Model).",
   "res.directionalConfirm": "Konfirmasi kuantitatif arah yang sudah terlihat di variogram map.",
-  "res.wf.title": "Panduan alur kerja — 12 langkah",
+  "res.wf.title": "Referensi semua alat",
   "res.up.previewFirst": "Pratinjau (25 baris pertama)",
   "res.vg.type": "Tipe:",
   "res.vg.useStruct2": "Pakai Struct 2",

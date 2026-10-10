@@ -24,6 +24,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, readd
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { resolvePython } from "./python-launcher.mjs";
+import { verifyVendorAssets } from "./vendor-integrity.mjs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -38,6 +39,8 @@ const DIST_DIR = path.join(ROOT, "dist");
 // @orebit-inline marker paths are relative to src/, matching where the
 // extracted assets actually live (src/assets/fonts/...).
 const ASSETS_ROOT = path.join(ROOT, "src");
+const VENDOR_DIR = firstDirWith("plotly.min.js", path.join(ROOT, "vendor"), path.join(ROOT, "exe-wrapper", "pywebview", "vendor"));
+verifyVendorAssets(VENDOR_DIR, path.join(HERE, "vendor-lock.json"));
 
 const ALL_PHASES = ["Core", "Assay", "Resource"];
 const requested = process.argv.slice(2);
@@ -110,7 +113,10 @@ function patchToFixedPoint(dstPath, phaseName) {
 // bytes of the file at ROOT/<path>. Pure Buffer slicing throughout -- never
 // decodes the surrounding HTML to a string, so nothing about it can
 // normalize whitespace/newlines/encoding in content this isn't touching.
-function resolveInlineMarkers(buf, phaseName) {
+// Inlined files may carry markers of their own (src/ui/<phase>/styles.css
+// holds the font markers), so resolution recurses, bounded against cycles.
+function resolveInlineMarkers(buf, phaseName, depth = 0) {
+  if (depth > 4) throw new Error(`${phaseName}: @orebit-inline nesting deeper than 4 (cycle?)`);
   const chunks = [];
   let cursor = 0;
   while (true) {
@@ -128,7 +134,7 @@ function resolveInlineMarkers(buf, phaseName) {
     const assetAbsPath = path.join(ASSETS_ROOT, assetRelPath);
     const assetBytes = readFileSync(assetAbsPath); // Buffer
     chunks.push(buf.subarray(cursor, openAt));
-    chunks.push(assetBytes);
+    chunks.push(resolveInlineMarkers(assetBytes, phaseName, depth + 1));
     cursor = closeAt + MARKER_CLOSE.length;
   }
   return Buffer.concat(chunks);
@@ -181,7 +187,6 @@ if (existsSync(PWA_DIR)) {
   }
 }
 
-const VENDOR_DIR = firstDirWith("plotly.min.js", path.join(ROOT, "vendor"), path.join(ROOT, "exe-wrapper", "pywebview", "vendor"));
 if (!existsSync(VENDOR_DIR)) throw new Error(`Bundled vendor directory missing: ${VENDOR_DIR}`);
 cpSync(VENDOR_DIR, path.join(DIST_DIR, "vendor"), { recursive: true, force: true });
 

@@ -1,0 +1,101 @@
+<div class="panel active" id="tab1" role="tabpanel">
+  
+  
+
+  <!-- Empty-state import CTA (shown only when no data loaded; project actions live in the profile/avatar menu) -->
+  <div class="card" id="dashEmptyCTA" style="display:none;text-align:center;padding:28px 20px;border-style:dashed;">
+    <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:34px;height:34px;color:var(--accent);margin-bottom:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <h3 style="margin:0 0 4px;" id="dashEmptyTitle">No data loaded yet</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin:0 auto 14px;max-width:420px;" id="dashEmptyHint">Import composites from Core, upload an assay CSV, or a saved .orebit project to begin.</p>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn" onclick="importBundle()" id="dashEmptyImport"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> <span id="dashEmptyImportLbl">Import data</span></button>
+        <button class="btn secondary" onclick="saveAllPlotsZip()" title="Download all rendered charts as a single ZIP file" data-i18n-attr="title:title.saveAllPlotsZip">📦 Save All Plots (ZIP)</button>
+  </div>
+</div>
+
+  <!-- Data Summary -->
+  <div class="kpi-grid">
+    <div class="kpi-tile">
+      <div class="label" data-i18n="asy.dash.composites">Composites</div>
+      <div class="value" id="dashRowCount">0</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="label" data-i18n="asy.dash.elements">Elements</div>
+      <div class="value" id="dashElementCount">0</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="label" data-i18n="asy.dash.domains">Domains</div>
+      <div class="value" id="dashDomainCount">0</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="label" data-i18n="asy.dash.lithologies">Lithologies</div>
+      <div class="value" id="dashLithoCount">0</div>
+    </div>
+  </div>
+  <div class="ux-next-step" id="uxNextStepAssay" role="status">
+    <div class="ux-step-copy"><span class="ux-eyebrow" data-i18n="ux.next.eyebrow">Next step</span><strong data-i18n="ux.assay.title">Load or upload composites</strong><span class="ux-step-detail" data-i18n="ux.assay.detail">Confirm data quality before statistics, top-cut and compositing decisions.</span></div>
+    <button class="btn" type="button" onclick="showTab(2)" data-i18n="ux.assay.action">Open Upload</button>
+  </div>
+
+  <div class="hint">
+    <p><strong>Goal:</strong> Prepare a traceable drillhole composite dataset for professional EDA and Resource estimation screening.</p>
+    <p style="margin-top:6px;"><strong>Scope:</strong> data QA, support regularisation, distribution review, top-cut candidates, geological control, and domain handoff. Final interpretation remains with the Competent Person.</p>
+  </div>
+
+  <!-- First-run dashboard: Statistics summary + Domain summary (data-bound) -->
+  <div id="dashRichGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;margin-bottom:32px;align-items:start;">
+    <div class="card">
+      <h3 style="margin-top:0;display:flex;align-items:center;gap:8px;">
+        <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;color:var(--accent);"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span id="dashStatsTitle" data-i18n="dash.statsTitle">Statistics summary</span>
+      </h3>
+      <div style="font-size:12px;color:var(--fg-mute);margin-bottom:10px;" id="dashStatsHint">—</div>
+      <div id="dashStatsTable"></div>
+      <div id="dashPending" style="margin-top:14px;"></div>
+      <div id="dashTreatmentWrap" style="margin-top:16px;">
+        <div style="font-size:11px;text-transform:uppercase;color:var(--fg-mute);margin-bottom:6px;"
+             data-i18n="asy.hist.title">What has been done to this data</div>
+        <div id="dashTreatment"></div>
+      </div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;">
+      <h3 style="margin-top:0;display:flex;align-items:center;gap:8px;">
+        <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;color:var(--accent);"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <span id="dashDomainTitle" data-i18n="dash.domainTitle">Domain summary</span>
+      </h3>
+      <div style="font-size:12px;color:var(--fg-mute);margin-bottom:10px;" id="dashDomainHint">—</div>
+      <div id="dashDomainTable" style="flex:1;display:flex;flex-direction:column;justify-content:center;"></div>
+    </div>
+  </div>
+
+  <!-- Workflow guide + reference (collapsed — keeps dashboard clean) -->
+  <details class="card" style="margin-top:16px;">
+    <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">
+<svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;vertical-align:-2px;">
+<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> <span data-i18n="asy.wf.title">All tools reference</span></summary>
+  <div style="margin-top:10px;font-size:13px;color:var(--fg-body);line-height:1.6;">
+  <ol style="margin:8px 0 8px 20px;">
+    <li><strong><span data-i18n="asy.wf.s1">1. Import Data</span></strong> — <span data-i18n="asy.tabUpload">Upload</span>. <em style="color:var(--fg-mute);"><span data-i18n="asy.wf.g1">Gate: Parsed CSV + column mapping</span></em></li>
+    <li><strong><span data-i18n="asy.wf.s2">2. Visual Inspection</span></strong> — <span data-i18n="asy.tabData">Data</span>. <em style="color:var(--fg-mute);"><span data-i18n="asy.wf.g2">Gate: Welllog + sample table</span></em></li>
+    <li><strong><span data-i18n="asy.wf.s3">3. Bivariate EDA</span></strong> — <span data-i18n="asy.tabBivariate">Bivariate</span>. <em style="color:var(--fg-mute);"><span data-i18n="asy.wf.g3">Gate: Correlation heatmap + scatter matrix</span></em></li>
+    <li><strong><span data-i18n="asy.wf.s4">4. Multivariate EDA</span></strong> — <span data-i18n="asy.tabMultivariate">Multivariate</span>. <em style="color:var(--fg-mute);"><span data-i18n="asy.wf.g4">Gate: PCA biplot + domain boxplots</span></em></li>
+    <li><strong><span data-i18n="asy.wf.s5">5. Spacing</span></strong> — <span data-i18n="asy.tabSpacing">Spacing</span>. <em style="color:var(--fg-mute);"><span data-i18n="asy.wf.g5">Gate: NN distance distribution + density map</span></em></li>
+    <li><strong><span data-i18n="asy.wf.s6">6. Compositing</span></strong> — <span data-i18n="asy.tabComposite">Composite</span>. <em style="color:var(--fg-mute);"><span data-i18n="asy.wf.g6">Gate: 1m weighted-average composites</span></em></li>
+    <li><strong><span data-i18n="asy.wf.s7">7. EDA Statistics</span></strong> — <span data-i18n="asy.tabStats">Stats</span>. <em style="color:var(--fg-mute);"><span data-i18n="asy.wf.g7">Gate: n / mean / median / SD / CV / P10–P99</span></em></li>
+    <li><strong><span data-i18n="asy.wf.s8">8. Top-Cut decision</span></strong> — <span data-i18n="asy.tabTopcut">Top-Cut</span>. <em style="color:var(--fg-mute);"><span data-i18n="asy.wf.g8">Gate: CV-based P95/P98/P99 candidates + impact</span></em></li>
+    <li><strong><span data-i18n="asy.wf.s9">9. Grade by Litho</span></strong> — <span data-i18n="asy.tabLitho">Litho</span>. <em style="color:var(--fg-mute);"><span data-i18n="asy.wf.g9">Gate: Per-litho stats + boxplot ranking</span></em></li>
+    <li><strong><span data-i18n="asy.wf.s10">10. Domain Modeling</span></strong> — <span data-i18n="asy.tabDomain">Domain</span>. <em style="color:var(--fg-mute);"><span data-i18n="asy.wf.g10">Gate: Geological boundaries + grade continuity</span></em></li>
+    <li><strong><span data-i18n="asy.wf.s11">11. Report + Handoff</span></strong> — <span data-i18n="asy.tabReport">Report</span>. <em style="color:var(--fg-mute);"><span data-i18n="asy.wf.g11">Gate: Working summary + standards-referenced commentary</span></em></li>
+  </ol>
+  </div>
+</details>
+
+  <!-- Analysis Scope (collapsed) -->
+  
+
+  <!-- Quick Start Tutorial (collapsed by default) -->
+  
+
+  <!-- Sample Data Info (collapsed, bottom of dashboard — parity with Core) -->
+  
+</div>

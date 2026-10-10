@@ -1,0 +1,52 @@
+<div class="panel" id="tab2" data-panel="upload" role="tabpanel">
+  <h2><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> <span data-i18n="res.up.title">Upload Data — Import Composite CSV</span></h2>
+
+  <div class="hint">
+    <p><strong>Format:</strong> CSV with header row. Columns are auto-detected (case-insensitive). Requires <code>hole_id</code>, <code>from_m</code>, <code>to_m</code>, <code>midx</code>, <code>midy</code>, <code>midz</code>, and <code>domain</code> for estimation.</p>
+    <p style="margin-top:6px;"><strong>Source:</strong> Export Master CSV from Assay (Domain tab) after domain-tagging your composite intervals.</p>
+    <p style="margin-top:6px;"><strong>Privacy:</strong> All processing runs client-side. Data is never sent to a server.</p>
+  </div>
+
+  <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+    <p style="margin-bottom:12px;"><svg class="lucide-icon" viewBox="0 0 24 24" style="width:48px;height:48px" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></p>
+    <p><strong data-i18n="resource.upload.dropHint">Click or drag & drop a CSV file here</strong></p>
+    <p style="font-size:12px;color:var(--fg-mute);margin-top:8px;" data-i18n="resource.upload.acceptsHint">Accepts composite CSV from Assay (Orebit Assay)</p>
+  </div>
+  <input type="file" id="fileInput" accept=".csv,text/csv" style="display:none" onchange="handleUploadEvent(event)" aria-label="Upload CSV file" data-i18n-attr="aria-label:attr.uploadCsvFile">
+
+  <div style="margin-top:16px;display:flex;gap:8px;align-items:center;">
+    <span style="font-size:13px;color:var(--fg-mute);">— or —</span>
+    <button class="btn secondary" onclick="importBundle()">
+      <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span data-i18n="resource.upload.importBundleBtn">Import .orebit bundle</span>
+    </button>
+  </div>
+
+  <div id="uploadStatus" style="margin-top:16px;" aria-live="polite"></div>
+  <div id="dataProvenancePanel"></div>
+  <div id="columnMapping" style="margin-top:16px;display:none;"></div>
+  <div id="uploadPreview" style="margin-top:16px;display:none;"></div>
+
+  <div class="card" style="margin-top:24px;">
+    <h3 data-i18n="resource.upload.schemaTitle">Required Column Schema</h3>
+    <table>
+      <tr><th data-i18n="res.field">Field</th><th data-i18n="res.aliases">Aliases (auto-detected)</th><th data-i18n="res.required">Required?</th></tr>
+      <tr><td>hole_id</td><td>HoleID, BHID, DHID, HOLE, hole</td><td>✓</td></tr>
+      <tr><td>from_m</td><td>FROM, from, From, depth_from, comp_from</td><td>✓</td></tr>
+      <tr><td>to_m</td><td>TO, to, To, depth_to, comp_to</td><td>✓</td></tr>
+      <tr><td>midx, midy, midz</td><td>x, y, z, easting, northing, rl, elevation</td><td><span data-i18n="res.up.for3d">✓ (for 3D estimation)</span></td></tr>
+      <tr><td>domain</td><td>DOMAIN, zone, rock_type_code</td><td><span data-i18n="res.up.forVariography">✓ (for variography)</span></td></tr>
+      <tr><td>au_gpt</td><td>AU, Au, au_ppm, gold</td><td><span data-i18n="res.up.optional">optional</span></td></tr>
+      <tr><td>cu_pct, pb_pct, zn_pct, fe_pct</td><td>Cu, Pb, Zn, Fe, copper, lead, zinc, iron</td><td><span data-i18n="res.up.optional">optional</span></td></tr>
+      <tr><td>density</td><td>SG, density_t/m3</td><td><span data-i18n="res.up.optionalQaqc">optional (QA/QC)</span></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 data-i18n="resource.upload.resetTitle">Reset</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;" data-i18n="resource.upload.resetHint">Restore the embedded sample data (1,241 composites · Thalanga RGMWP with 3 K-Means domains).</p>
+    <button class="btn secondary" onclick="resetToSample()" data-i18n="resource.upload.resetBtn">↺ Reset to sample data</button>
+  </div>
+
+  <div id="dataPreview" style="margin-top:18px;"></div>
+</div>

@@ -149,7 +149,7 @@
   "core.lg.noGeology": "Tanpa Geologi",
   "core.lg.noAssay": "Tanpa Assay",
   "core.lg.noSurvey": "Tanpa Survey",
-  "core.wf.title": "Panduan alur kerja — 5 langkah",
+  "core.wf.title": "Referensi semua alat",
   "core.kpi.assaySamples": "Sampel assay",
   "core.kpi.totalDepth": "Kedalaman total",
   "core.kpi.dataQuality": "Pemeriksaan struktur",
@@ -1011,5 +1011,8 @@
   "core.scope.regional": "Seluruh populasi; tanpa pengecualian validasi",
   "core.scope.clear": "Kembali ke validasi seluruh data",
   "core.scope.limited": "Menampilkan 200 baris pertama. Unduh CSV pengecualian lengkap; seluruh lingkup tersimpan dalam proyek.",
-  "core.scope.download": "Unduh seluruh baris yang dikecualikan"
+  "core.scope.download": "Unduh seluruh baris yang dikecualikan",
+  "core.projectManager.title": "Manajer Proyek",
+  "core.projectManager.newName": "Nama proyek baru",
+  "core.projectManager.newNamePlaceholder": "Nama proyek baru…"
 }

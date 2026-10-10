@@ -70,7 +70,7 @@
   "res.unitVolumetric": "Grade per volume → contained metal = volume × grade, converted to tonnes; density is not used.",
   "res.unitMass": "Grade per mass → contained metal = tonnage × grade (density is applied in the Block Model).",
   "res.directionalConfirm": "A quantitative confirmation of the direction already visible in the variogram map.",
-  "res.wf.title": "Workflow guide — 12 steps",
+  "res.wf.title": "All tools reference",
   "res.up.previewFirst": "Preview (first 25 rows)",
   "res.vg.type": "Type:",
   "res.vg.useStruct2": "Use Struct 2",

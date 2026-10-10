@@ -1,0 +1,28 @@
+<div class="panel" id="tab13" data-panel="export" role="tabpanel">
+  <h2 data-i18n="panel.export.title">Export — drillhole-clean.csv</h2>
+  <div class="hint">
+    <p>Final output: master drillhole CSV ready for input into the <strong>EDA Suite (Assay)</strong> or commercial estimation software. Format compatible with commercial 3D mining software.</p>
+  </div>
+  <div id="exportPanel"></div>
+  <div class="card">
+    <h3 data-i18n="core.processingLog">Processing Log</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;"><span data-i18n="core.ex.transformLogFull">Every transform applied this session (BDL, compositing, crop). Embedded in the PDF report, so the exported numbers stay traceable.</span></p>
+    <div class="pipeline-badge" style="padding:10px 12px;background:var(--bg-soft,rgba(0,128,128,0.06));border:1px solid var(--border,rgba(0,128,128,0.2));border-radius:8px;"></div>
+  </div>
+  <div id="cropPanel"></div>
+  <div class="card">
+    <h3><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> <span data-i18n="core.pdfReport">PDF Report</span></h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;" data-i18n="core.pdfReportHint">Single-file PDF (4 A4 pages): cover, validation results, hole inventory, per-element stats + KCMI Section 1 manual checklist. Embedded in this artifact, no connection required.</p>
+    <button class="btn" id="pdf-export-btn" onclick="exportPDF(event)" data-i18n="btn.downloadPdf">Download PDF Report</button>
+  </div>
+  <div class="card">
+    <h3 data-i18n="core.dataPreview">Data Preview</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;" data-i18n="core.dataPreviewHint">First 10 rows of the merged drillhole dataset that will be exported. Verify your data before downloading.</p>
+    <div id="dataPreview"></div>
+  </div>
+  <div class="card">
+    <h3 data-i18n="core.exportHistory">Export History</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;" data-i18n="core.exportHistoryHint">Audit trail of every download this session (max 20). Persists in your browser localStorage.</p>
+    <div id="exportHistory"></div>
+  </div>
+</div>

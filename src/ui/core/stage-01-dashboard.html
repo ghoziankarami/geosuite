@@ -1,0 +1,112 @@
+<div class="panel active" id="tab1" data-panel="dashboard" role="tabpanel">
+
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+    <p id="dashSubtitle" style="color:var(--fg-mute);font-size:13px;margin:-4px 0 4px;" data-i18n="panel.dashboard.subtitle">Demo dataset · Queensland geoscience demo</p>
+    <button class="btn png-export-hide" id="dashExportPngBtn" data-export-png="dashboard" aria-label="Export Dashboard as PNG" onclick="exportPanelPNG('dashboard', event)" style="flex-shrink:0;" title="Export a fixed-size PNG for marketing/docs, independent of your window size or screen" data-i18n-attr="title:btn.exportPngTitle" data-i18n="btn.exportPng">Export PNG</button>
+  </div>
+
+  <!-- Empty-state import CTA (shown only when no data loaded; project actions live in the profile/avatar menu) -->
+  <div class="card" id="dashEmptyCTA" style="display:none;text-align:center;padding:28px 20px;border-style:dashed;">
+    <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:34px;height:34px;color:var(--accent);margin-bottom:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+     <h3 style="margin:0 0 4px;" id="dashEmptyTitle" data-i18n="core.empty.title">No data loaded yet</h3>
+     <p style="font-size:13px;color:var(--fg-mute);margin:0 auto 14px;max-width:420px;" id="dashEmptyHint" data-i18n="core.empty.hint">Import your drillhole data (collar, survey, assay, geology) or a saved .orebit project to begin.</p>
+     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+       <button class="btn" onclick="importBundle()" id="dashEmptyImport"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> <span id="dashEmptyImportLbl" data-i18n="core.empty.importBtn">Import data</span></button>
+    </div>
+  </div>
+
+  <!-- hidden project name retained for compatibility (now surfaced in the profile menu) -->
+  <div style="display:none;"><span id="dashProjectName">—</span><span id="dashSaveStatus" aria-live="polite"></span></div>
+
+  <!-- Data Summary Cards (enriched KPIs) -->
+  <div class="kpi-grid">
+     <div class="kpi-tile">
+       <div class="label" data-i18n="core.kpi.drillholes">Drillholes</div>
+      <div class="value" id="dashCollarCount">0</div>
+      <div class="sub" id="dashCollarSub">—</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="label"><span data-i18n="core.kpi.assaySamples">Assay samples</span></div>
+      <div class="value" id="dashAssayCount">0</div>
+      <div class="sub" id="dashAssaySub">—</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="label"><span data-i18n="core.kpi.totalDepth">Total depth</span></div>
+      <div class="value" id="dashDepthVal">0</div>
+      <div class="sub" id="dashDepthSub">—</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="label"><span data-i18n="core.kpi.dataQuality">Data quality</span></div>
+      <div class="value" id="dashQualityVal">—</div>
+      <div class="sub" id="dashQualitySub">—</div>
+    </div>
+  </div>
+  <!-- Explains why the dashboard, desurvey and export report different hole
+       counts. Filled by updateDashboard() via holeCountNote(); empty when the
+       counts agree. -->
+  <div id="dashHoleRecon"></div>
+  <!-- Itemised breakdown of the Data quality tile (and the header DQ badge),
+       filled by renderRichDashboard(). -->
+  <div id="dashQualityBreakdown"></div>
+  <div class="ux-next-step" id="uxNextStepCore" role="status">
+    <div class="ux-step-copy"><span class="ux-eyebrow" data-i18n="ux.next.eyebrow">Next step</span><strong data-i18n="ux.core.title">Import drillhole tables</strong><span class="ux-step-detail" data-i18n="ux.core.detail">Load collar, survey, assay and geology CSVs before validation.</span></div>
+    <button class="btn" type="button" onclick="showTab(2)" data-i18n="ux.core.action">Open Import</button>
+  </div>
+  <!-- hidden survey/geology counts retained for compatibility -->
+  <div style="display:none;"><span id="dashSurveyCount">0</span><span id="dashGeologyCount">0</span></div>
+
+  <!-- First-run dashboard: collar table + lithology + validation -->
+  <!-- CHANGED 2026-07-28: mobile responsive — stack columns on narrow screens -->
+  <div id="dashRichGrid" style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-top:16px;margin-bottom:16px;align-items:start;" class="dash-rich-grid">
+    <div class="card">
+      <h3 style="margin-top:0;display:flex;align-items:center;gap:8px;">
+        <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;color:var(--accent);"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span id="dashCollarTitle" data-i18n="dash.collarTitle">Recent collar entries</span>
+      </h3>
+      <div style="font-size:12px;color:var(--fg-mute);margin-bottom:10px;" id="dashCollarHint">—</div>
+      <div id="dashCollarTable"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="card">
+        <h3 style="margin-top:0;display:flex;align-items:center;gap:8px;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;color:var(--accent);"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          <span id="dashLithTitle" data-i18n="dash.lithTitle">Lithology profile</span>
+        </h3>
+        <div style="font-size:12px;color:var(--fg-mute);margin-bottom:10px;" id="dashLithHint">—</div>
+        <div id="dashLithBars"></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;display:flex;align-items:center;gap:8px;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;color:var(--accent);"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14 9 11"/></svg>
+          <span id="dashValTitle" data-i18n="dash.valTitle">Validation status</span>
+        </h3>
+        <div id="dashValChecks"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workflow guide &amp; reference — Core drillhole preparation (collapsed by default) -->
+  <details class="card" style="margin-top:16px;">
+    <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">
+<svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;vertical-align:-2px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> <span data-i18n="core.wf.title">All tools reference</span></summary>
+  <div style="margin-top:10px;font-size:13px;color:var(--fg-body);line-height:1.6;">
+  <ol style="margin:8px 0 8px 20px;">
+    <li><strong><span data-i18n="core.wf.s1">1. Import</span></strong> — <span data-i18n="core.wf.d1">Drag-drop 4 CSV — Collar, Survey, Assay, Geology.</span> <em style="color:var(--fg-mute);"><span data-i18n="core.wf.g1">Gate: KCMI Ch1 sampling protocol</span></em></li>
+    <li><strong><span data-i18n="core.wf.s2">2. Review</span></strong> — <span data-i18n="core.wf.d2">Check Collar, Survey, Assay, Geology tabs.</span> <em style="color:var(--fg-mute);"><span data-i18n="core.wf.g2">Gate: auto-validation: duplicates, gaps, mismatches</span></em></li>
+    <li><strong><span data-i18n="core.wf.s3">3. Validate</span></strong> — <span data-i18n="core.wf.d3">Run validation and fix errors to zero issues.</span> <em style="color:var(--fg-mute);"><span data-i18n="core.wf.g3">Gate: JORC Table 1 §1 compliance</span></em></li>
+    <li><strong><span data-i18n="core.wf.s4">4. Desurvey</span></strong> — <span data-i18n="core.wf.d4">Minimum Curvature → real X/Y/Z per interval.</span> <em style="color:var(--fg-mute);"><span data-i18n="core.wf.g4">Gate: no gaps or overlaps (KCMI Ch1 §1)</span></em></li>
+    <li><strong><span data-i18n="core.wf.s5">5. Export</span></strong> — <span data-i18n="core.wf.d5">Download master interval CSV.</span> <em style="color:var(--fg-mute);"><span data-i18n="core.wf.g5">Gate: composite-ready CSV for Assay EDA</span></em></li>
+  </ol>
+  </div>
+</details>
+
+  
+
+  
+
+  <!-- Sample Data Info (collapsed — parity with Assay/Resource; drives refreshDemoBanner) -->
+  
+
+  <!-- Activity Panel (Session Log) -->
+  <div id="activityPanel" style="margin-top:16px;"></div>
+</div>

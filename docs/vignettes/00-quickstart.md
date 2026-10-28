@@ -48,7 +48,7 @@ Versi web tidak memerlukan instalasi. Pada Chrome atau Edge, pilih **Install app
 
 Pengguna Windows juga bisa mengunduh tiga executable terpisah melalui [GitHub Releases](https://github.com/ghoziankarami/geosuite/releases/latest). Executable belum ditandatangani; bandingkan berkas dengan daftar checksum rilis.
 
-Ekspor proyek sebagai cadangan. Penyimpanan browser mengikuti profil browser dan origin situs; menghapusnya dapat menghilangkan pekerjaan tersimpan. Simpan file ekspor di luar browser. Untuk build dari source, ikuti [panduan instalasi repo](https://github.com/ghoziankarami/geosuite#build-from-source).
+Ekspor proyek sebagai cadangan. Penyimpanan browser mengikuti profil browser dan origin situs; menghapusnya dapat menghilangkan pekerjaan tersimpan. Simpan file ekspor di luar browser. Untuk build dari source, ikuti [panduan instalasi repo](https://github.com/ghoziankarami/geosuite#run-from-source).
 
 Pola bor mengikuti prospek berarah jurus dengan batas tidak beraturan dan infill terpilih. Core menyimpan semua horizon mentah; contoh awal Assay/Resource memilih LIM/SAP. Density terukur tetap dibawa saat handoff. Untuk latihan validasi, gunakan [kasus survey hilang dan assay overlap](https://github.com/ghoziankarami/orebit-datasets/tree/main/exercises); periksa dan perbaiki sebelum export.
 

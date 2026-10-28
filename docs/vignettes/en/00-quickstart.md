@@ -48,7 +48,7 @@ No installation is required for the web version. On Chrome or Edge, use **Instal
 
 Windows users can also download the three separate executables from [GitHub Releases](https://github.com/ghoziankarami/geosuite/releases/latest). The executables are unsigned; compare the files with the release checksum list.
 
-Export projects as backups. Browser storage belongs to the browser profile and site origin; clearing it can remove saved work. Save the exported files outside the browser. To build from source, follow the [repository installation guide](https://github.com/ghoziankarami/geosuite#build-from-source).
+Export projects as backups. Browser storage belongs to the browser profile and site origin; clearing it can remove saved work. Save the exported files outside the browser. To build from source, follow the [repository installation guide](https://github.com/ghoziankarami/geosuite#run-from-source).
 
 The collar programme follows an irregular strike-oriented prospect with selective infill. Core retains all raw horizons; the initial Assay/Resource example selects LIM/SAP. Measured density is retained in handoffs. For validation practice, use the [missing-data and interval validation exercises](https://github.com/ghoziankarami/orebit-datasets/tree/main/exercises); inspect and correct them before export.
 

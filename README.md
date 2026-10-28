@@ -7,6 +7,21 @@
 then estimate a preliminary block model. Free, open source, English and Bahasa Indonesia.
 No account, licence key, or paid feature is required.
 
+GeoSuite helps exploration and resource geologists inspect drillhole data,
+prepare assays and explore a preliminary estimation workflow in a browser.
+Use it for learning, screening and documented technical review; results need
+geological and professional review before any public resource declaration.
+
+**Bahasa Indonesia:** GeoSuite membantu geolog eksplorasi dan sumber daya
+memeriksa data bor, menyiapkan assay dan mengeksplorasi estimasi awal melalui
+browser. Hasilnya perlu ditinjau secara geologi dan profesional sebelum
+digunakan untuk pelaporan sumber daya publik.
+
+![GeoSuite Core dashboard with synthetic nickel example](docs/assets/core-dashboard-hosted-20261029.jpg)
+
+*Hosted Core dashboard captured on 29 October 2026 with synthetic data. The
+hosted application may differ from this repository revision.*
+
 ## Start here / Mulai di sini
 
 | Your goal / Tujuan | Route / Langkah |
@@ -143,3 +158,5 @@ under KCMI/JORC. Read [methodology and limitations](docs/METHODOLOGY.md).
 licences and credit in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 [CITATION.cff](CITATION.cff) provides citation metadata.
 Contact: <support@orebit.id>.
+
+If GeoSuite is useful to you, you can voluntarily star the repository on GitHub.

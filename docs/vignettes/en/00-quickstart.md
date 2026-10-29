@@ -14,6 +14,8 @@ Each module opens with synthetic nickel laterite data (CC BY 4.0, credit Orebit.
 - **Section** draws the holes on a cross-section with grades and lithology.
 - **Desurvey** turns collar and survey into 3D hole traces.
 
+For a longer interpretation exercise, open **Domain** in Core after checking the data and traces. Contact surfaces and section lofts are two ways to create a candidate solid; review the contacts, geometry, ground-surface checks and geological decision before accepting it. Repeated SAP intervals need correlation on logs and sections, not automatic joining. Follow the [Core Domain → Assay → Resource guide](https://geosuite.orebit.id/docs/#/ref/domain-workflow); availability depends on the build in use. This exercise is outside the 10-minute orientation.
+
 ## 2. Assay: understand the grades (3 minutes)
 
 [Open Orebit Assay](https://geosuite.orebit.id/Assay.html). It opens with nominal 1 m intervals from all 350 holes: Ni, Co, Fe, MgO, SiO2, Al2O3 and Cr2O3, split into a saprolite and a limonite domain.
@@ -51,6 +53,6 @@ Windows users can also download the three separate executables from [GitHub Rele
 
 Export projects as backups. Browser storage belongs to the browser profile and site origin; clearing it can remove saved work. Save the exported files outside the browser. To build from source, follow the [repository installation guide](https://github.com/ghoziankarami/geosuite#run-from-source).
 
-The collar programme follows an irregular strike-oriented prospect with selective infill. Core retains all raw horizons; the initial Assay/Resource example selects LIM/SAP. Measured density is retained in handoffs. For validation practice, use the [missing-data and interval validation exercises](https://github.com/ghoziankarami/orebit-datasets/tree/main/exercises); inspect and correct them before export.
+The collar programme follows an irregular strike-oriented prospect with selective infill. Core retains all raw horizons; the initial Assay/Resource example selects LIM/SAP. Measured density is retained in handoffs. Synthetic nickel laterite CSVs are also available in the [public dataset repository](https://github.com/ghoziankarami/orebit-datasets/tree/main/02-nikel-laterit); read its README and validate the tables before use.
 
 On phones/tablets, **Steps / Alur** opens the main stages and **Advanced / Lanjutan** opens optional tools. The tour follows the same stage controls in each module.

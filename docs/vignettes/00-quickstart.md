@@ -14,6 +14,8 @@ Setiap modul memuat data laterit nikel sintetis (CC BY 4.0, kredit Orebit.id). C
 - **Section** menggambar lubang bor pada penampang dengan kadar dan litologi.
 - **Desurvey** mengubah collar dan survey menjadi lintasan lubang 3D.
 
+Untuk latihan interpretasi lanjutan, buka **Domain** di Core setelah memeriksa data dan lintasan. Surface dari kontak dan loft dari penampang adalah dua cara membentuk kandidat solid; tinjau kontak, geometri, pemeriksaan permukaan tanah dan keputusan geolog sebelum menerima. SAP yang muncul berulang perlu dikorelasikan pada log dan penampang, bukan otomatis disambung. Ikuti [panduan Core Domain → Assay → Resource](https://geosuite.orebit.id/docs/#/ref/domain-workflow); ketersediaan langkah bergantung pada build yang digunakan. Latihan ini berada di luar orientasi 10 menit.
+
 ## 2. Assay: pahami kadarnya (3 menit)
 
 [Buka Orebit Assay](https://geosuite.orebit.id/Assay.html). Modul ini terbuka dengan interval nominal 1 m dari seluruh 350 lubang: Ni, Co, Fe, MgO, SiO2, Al2O3, dan Cr2O3, dibagi menjadi domain saprolit dan limonit.
@@ -51,6 +53,6 @@ Pengguna Windows juga bisa mengunduh tiga executable terpisah melalui [GitHub Re
 
 Ekspor proyek sebagai cadangan. Penyimpanan browser mengikuti profil browser dan origin situs; menghapusnya dapat menghilangkan pekerjaan tersimpan. Simpan file ekspor di luar browser. Untuk build dari source, ikuti [panduan instalasi repo](https://github.com/ghoziankarami/geosuite#run-from-source).
 
-Pola bor mengikuti prospek berarah jurus dengan batas tidak beraturan dan infill terpilih. Core menyimpan semua horizon mentah; contoh awal Assay/Resource memilih LIM/SAP. Density terukur tetap dibawa saat handoff. Untuk latihan validasi, gunakan [kasus survey hilang dan assay overlap](https://github.com/ghoziankarami/orebit-datasets/tree/main/exercises); periksa dan perbaiki sebelum export.
+Pola bor mengikuti prospek berarah jurus dengan batas tidak beraturan dan infill terpilih. Core menyimpan semua horizon mentah; contoh awal Assay/Resource memilih LIM/SAP. Density terukur tetap dibawa saat handoff. Dataset CSV laterit nikel sintetis juga tersedia di [repo dataset publik](https://github.com/ghoziankarami/orebit-datasets/tree/main/02-nikel-laterit); periksa README dan validasi tabel sebelum digunakan.
 
 Di ponsel/tablet, **Alur** membuka tahap utama dan **Lanjutan** membuka tools opsional. Tour mengikuti kontrol tahap yang sama di setiap modul.

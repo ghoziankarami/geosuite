@@ -4916,11 +4916,7 @@ function restoreResourceSession() {
  return restored ? p : null;
 }
 
-function clearResourceSession() {
- try { localStorage.removeItem(RESOURCE_SESSION_KEY); } catch (e) {}
-}
-
-// Visible, dismissible note that settings came from a previous session. The
+// Visible note that settings came from a previous session. The
 // block grid itself is NOT restored (it is far too large to store), so the
 // message says exactly what the user still has to redo.
 function noteSessionRecovered(p) {
@@ -4936,10 +4932,8 @@ function noteSessionRecovered(p) {
    <strong>${t('res.noteSessionRecovered.previousSessionRecovered')}</strong>${when ? ` <span style="color:var(--fg-mute);font-size:12px;">(${when})</span>` : ''}<br>
    <span class="resource-recovered-scope">${escapeHtml(t('res.noteSessionRecovered.scope').replace('{element}', setupState.element).replace('{domain}', setupState.domain === 'all' ? t('res.allDomains') : String(setupState.domain)).replace('{cell}', setupState.declusterCell ?? t('res.cls.notAvailable')))}</span><br>
    <span style="font-size:12.5px;">${t('res.noteSessionRecovered.summary').replace('{vg}', vg).replace('{size}', size)}</span>
-   <button class="btn-sm" onclick="clearResourceSession();this.closest('.hint').remove();" style="margin-left:8px;padding:3px 10px;font-size:11px;">${t('res.noteSessionRecovered.startClean')}</button>
  </div>`;
 }
-window.clearResourceSession = clearResourceSession;
 /* ---------- Sprint C: Variable Density Helper ---------- */
 // Returns per-block density if variable density table is active, else blockState.density.
 function getBlockDensity(blockIdx) {

@@ -169,6 +169,12 @@ with tempfile.TemporaryDirectory() as temp:
             nested={'type':'spherical','nugget':.45,'sill':1,'range':150,'azDeg':90,'aniso':{'rMaj':150,'rSemi':60,'rMin':40},'struct1':{'type':'spherical','psill':.35,'rangeMaj':10,'rangeMin':8,'rangeVert':15},'struct2':{'type':'spherical','psill':.2,'rangeMaj':150,'rangeMin':60,'rangeVert':40}}
             r.evaluate('(m)=>{variogramState.model=m;blockState.envelopeMode="xyz";blockState.envelopeRadius=25;saveResourceSession();variogramState.model=null;restoreResourceSession();}',nested)
             check(r.evaluate('variogramState.model')==nested,'session roundtrip preserves full nested model and anisotropy')
+            r.evaluate('() => noteSessionRecovered(JSON.parse(localStorage.getItem(RESOURCE_SESSION_KEY)))')
+            recovery=r.locator('#resourceRecoveryNote').inner_text()
+            check('Resource setup restored' in recovery and 'Recompute declustering' in recovery
+                  and 'Generate Grid' in recovery and 'Run Estimation' in recovery
+                  and r.locator('#resourceRecoveryNote button').count()==0,
+                  'Recovered setup notice explains pending calculations without a misleading clean-start button')
             r.evaluate("() => {const p=JSON.parse(localStorage.getItem(RESOURCE_SESSION_KEY));delete p.envelopeMode;delete p.envelopeRadius;delete p.search.maxPerHole;delete p.search.secondPass;localStorage.setItem(RESOURCE_SESSION_KEY,JSON.stringify(p));blockState.envelopeMode='xy';searchState.maxPerHole=0;searchState.secondPass=false;restoreResourceSession();}")
             check(r.evaluate("blockState.envelopeMode==='xy'&&!searchState.secondPass&&searchState.maxPerHole===0"),'legacy session without new fields still loads with original defaults')
             r.evaluate('blockState.envelopeMode="xyz";blockState.envelopeRadius=.01;blockState.envelopeRadiusUserSet=true');tab(r,5)

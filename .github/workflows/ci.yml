@@ -47,6 +47,21 @@ jobs:
           pip install playwright "PyMuPDF>=1.26,<2"
           python -m playwright install --with-deps chromium
 
+      - name: Prepare checksum-pinned public nickel upload fixtures
+        run: |
+          set -eu
+          base=https://raw.githubusercontent.com/ghoziankarami/orebit-datasets/6b93ac48df79264fda20e4ffc10716280bd2ee8a/02-nikel-laterit
+          dest=data/dataset-demo/repo/02-nikel-laterit
+          mkdir -p "$dest"
+          for file in collar assay litho; do
+            curl --fail --location --silent --show-error "$base/$file.csv" -o "$dest/$file.csv"
+          done
+          printf '%s  %s\n' \
+            2512dcd4a7c9581b408c33dd477e0d3db680ab56a43f2126d952d07b14549a22 "$dest/collar.csv" \
+            6943671481e0bec6db142762479a9e06bd86029bedf7b453503281abaad9e33a "$dest/assay.csv" \
+            449f27e865992935dbfd8de22d8025aa1ee093521c341a2a887ec93cb279c94b "$dest/litho.csv" \
+            | sha256sum --check
+
       - name: End-to-end known-answer test (Core -> Assay -> Resource)
         run: |
           python -m http.server 8767 -d dist >/dev/null 2>&1 &

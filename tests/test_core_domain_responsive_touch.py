@@ -23,6 +23,11 @@ passed=0
 DIAGNOSTICS=os.environ.get('OREBIT_DOMAIN_TOUCH_DIAGNOSTICS')
 active_diagnostic={}
 
+def source_hashes():
+    test_dir=Path(__file__).resolve().parent
+    paths=(ROOT/'src/shared/ui/core-domain-viewer.js',ROOT/'src/ui/core/styles.css',Path(__file__).resolve(),test_dir/'test_core_domain_positive_layout.py',test_dir/'domain_native_fixture.py')
+    return {path.relative_to(ROOT).as_posix():hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
+
 def capture_failure(condition,error):
     if not DIAGNOSTICS:return
     out=Path(DIAGNOSTICS);out.mkdir(parents=True,exist_ok=True)
@@ -68,7 +73,7 @@ def main():
             metrics['fixtures']={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
             browser=pw.chromium.launch()
             metrics['runtime']={'playwright':version('playwright'),'chromium':browser.version}
-            metrics['sourceSha256']={name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in ('src/shared/ui/core-domain-viewer.js','src/ui/core/styles.css','tests/geosuite/test_core_domain_responsive_touch.py','tests/geosuite/test_core_domain_positive_layout.py','tests/geosuite/domain_native_fixture.py')}
+            metrics['sourceSha256']=source_hashes()
             for method in ('contacts','loft'):
                 for lang in ('en','id'):
                     for width,height,touch in ((320,844,True),(844,390,True),(1024,768,False),(1280,900,False)):

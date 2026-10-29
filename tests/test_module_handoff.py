@@ -24,6 +24,7 @@ import statistics
 import sys
 import tempfile
 import time
+from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 from geological_review_fixture import reviewed_packet
@@ -484,8 +485,11 @@ def main():
 
         br.close()
 
-        spec = importlib.util.spec_from_file_location(
-            "orebit_wrapper_handoff_test", "exe-wrapper/pywebview/orebit_wrapper.py")
+        root = next(p for p in Path(__file__).resolve().parents if (p / "build/build.mjs").is_file())
+        wrapper_path = root / "exe-wrapper/pywebview/orebit_wrapper.py"
+        if not wrapper_path.is_file():
+            wrapper_path = root / "desktop/orebit_wrapper.py"
+        spec = importlib.util.spec_from_file_location("orebit_wrapper_handoff_test", wrapper_path)
         wrapper = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(wrapper)
         with tempfile.TemporaryDirectory(prefix="orebit-handoff-test-") as folder:

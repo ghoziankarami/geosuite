@@ -119,6 +119,8 @@ The Cu distribution departs from a single lognormal population from **0.72 % (P8
 
 1. **Domain:** a 0.2 % Cu grade shell. It holds 91.4 % of the metal in 62.5 % of the assayed length. The 0.2 % boundary sits near the lower edge of Duluth disseminated mineralisation and separates almost barren intrusive rock.
 
+   After reviewing the0.2% threshold, enter a reason and click **Apply reviewed population**. The statistical preview does not change labels until Apply; this is a screening population, not a geological solid.
+
    ![0.2 % Cu domain](../img/babbitt-06-assay-domain.png)
 
 2. **Top-cut at 3 % Cu**, applied to the raw assays before compositing:

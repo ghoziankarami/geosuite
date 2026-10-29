@@ -106,6 +106,15 @@ console.log('\ncreateDataset — accepts every real input shape');
   ok('non-array rows are copied as-is, not crashed on', flat.rows.length === 3 && flat.rows[0] === 1);
 }
 
+console.log('\ncreateDataset — explicit upload-row ownership transfer');
+{
+  const rows = [[1, 2], [3, 4]];
+  const cols = ['a', 'b'];
+  const ds = createDataset({ rows, cols }, { takeRows: true });
+  ok('takeRows transfers the existing row population without changing the default copy contract', ds.rows === rows);
+  ok('column metadata remains independently owned during row transfer', ds.cols !== cols && ds.cols.join(',') === 'a,b');
+}
+
 console.log('\nsource is a field, not an identity guess');
 {
   const asSample = createDataset({ rows: [[1]] }, { source: DATASET_SOURCE.SAMPLE });

@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Orebit GeoSuite documentation — task-based guides, parameter reference and troubleshooting for drillhole preparation, exploratory analysis and mineral resource estimation. Offline-capable single file.">
-<title>Orebit GeoSuite Docs · v3.1.1</title>
+<title>Orebit GeoSuite Docs · v3.2.0</title>
 <link rel="canonical" href="https://geosuite.orebit.id/docs/">
 <meta name="theme-color" content="#0d9488">
 <!-- version-sync-guard consumer: keep this meta as the single version anchor for this page -->
-<meta name="docs-version" content="v3.1.1">
+<meta name="docs-version" content="v3.2.0">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Orebit">
 <meta property="og:url" content="https://geosuite.orebit.id/docs/">
@@ -276,7 +276,7 @@ figure.shot figcaption{padding:8px 13px; font-size:12.5px; color:var(--muted); b
     <img src="/images/geosuite/og-share.png" alt="" width="24" height="24">
     <span>GeoSuite <span class="sub">Docs</span></span>
   </a>
-  <span class="ver-pill" id="verPill">v3.1.1</span>
+  <span class="ver-pill" id="verPill">v3.2.0</span>
   <span class="topbar-spacer"></span>
   <button class="searchbtn" id="searchBtn">
     <span aria-hidden="true">⌕</span>
@@ -324,7 +324,7 @@ figure.shot figcaption{padding:8px 13px; font-size:12.5px; color:var(--muted); b
       <a href="https://orebit.id">About</a>
       <a href="https://blog.orebit.id">Blog</a>
       <a href="https://github.com/ghoziankarami/geosuite">GitHub</a>
-      <a href="mailto:orebit.id@gmail.com">Contact</a>
+      <a href="mailto:contact@orebit.id">Contact</a>
     </div>
     <div><h5>Legal</h5>
       <a href="https://geosuite.orebit.id/privacy/">Privacy</a>
@@ -334,7 +334,7 @@ figure.shot figcaption{padding:8px 13px; font-size:12.5px; color:var(--muted); b
   </div>
   <div class="foot-bot">
     © Orebit.id 2026 · <span class="l-en">GPL-3.0 · Source available</span><span class="l-id">GPL-3.0 · Kode sumber tersedia</span> ·
-    <span style="color:var(--teal); font-weight:600;">v3.1.1</span>
+    <span style="color:var(--teal); font-weight:600;">v3.2.0</span>
   </div>
 </footer>
 
@@ -361,7 +361,7 @@ figure.shot figcaption{padding:8px 13px; font-size:12.5px; color:var(--muted); b
    A cell/label written as a plain string is language-neutral
    (parameter names, units, numbers) and is rendered as-is.
 ================================================================== */
-var VERSION = 'v3.1.1';
+var VERSION = 'v3.2.0';
 
 var DOCS = [
 /* ================================================================
@@ -380,11 +380,14 @@ var DOCS = [
     },
     blocks:[
       {t:'p',
-        en:'Orebit GeoSuite is three separate tools that share one data pipeline. Each runs entirely on your own laptop: your drillhole data is never uploaded anywhere, which is why the tools work with no internet connection at a site office or camp.',
-        id:'Orebit GeoSuite adalah tiga alat terpisah yang berbagi satu jalur data. Semuanya berjalan sepenuhnya di laptop Anda sendiri: data lubang bor Anda tidak pernah diunggah ke mana pun, dan itulah sebabnya alat ini tetap berfungsi tanpa koneksi internet di kantor lapangan atau camp.'},
+        en:'Orebit GeoSuite is three tools that share one data pipeline. CSV processing runs locally in your browser or desktop application. Optional Drive access, basemaps and update checks need a network connection; see the privacy policy for details.',
+        id:'Orebit GeoSuite adalah tiga alat yang berbagi satu alur data. Pemrosesan CSV berjalan lokal di browser atau aplikasi desktop. Akses Drive, peta dasar, dan pemeriksaan pembaruan yang opsional memerlukan koneksi; lihat kebijakan privasi untuk rinciannya.'},
       {t:'p',
-        en:'They are meant to be used in order. Core cleans and geometrically corrects the data; Assay tells you what the data is like and where the domains are; Resource turns it into blocks, grades and tonnes.',
-        id:'Ketiganya dirancang untuk dipakai berurutan. Core membersihkan dan mengoreksi geometri data; Assay memberi tahu karakter data dan di mana domainnya; Resource mengubahnya menjadi blok, kadar, dan tonase.'},
+        en:'Start in Core to validate and desurvey the drillholes, explore grades in Assay, then interpret geological domains in Core when required. Review the population and composites in Assay before importing the estimation data into Resource. Preserve exports and review the assumptions at every handoff.',
+        id:'Mulai di Core untuk validasi dan desurvey data bor, lalu eksplorasi kadar di Assay. Bila diperlukan, interpretasikan domain geologi di Core. Tinjau populasi dan komposit di Assay sebelum mengimpor data estimasi ke Resource. Simpan hasil ekspor dan tinjau asumsi pada setiap serah-terima.'},
+      {t:'note', k:'info',
+        en:'The hosted web app, documentation, public source and Windows downloads can be updated at different times. A version label alone does not prove that a newer web build and an older Windows EXE contain the same source. Check the build shown in each application and the <a href="https://github.com/ghoziankarami/geosuite/releases/latest">Windows release</a> before comparing results.',
+        id:'Aplikasi web, dokumentasi, source publik, dan unduhan Windows dapat diperbarui pada waktu berbeda. Nomor versi saja belum membuktikan build web terbaru dan EXE Windows lama berisi source yang sama. Periksa build di masing-masing aplikasi dan <a href="https://github.com/ghoziankarami/geosuite/releases/latest">rilis Windows</a> sebelum membandingkan hasil.'},
 
       {t:'table',
         head:[{en:'Tool',id:'Alat'},{en:'Use it when you need to…',id:'Pakai saat Anda perlu…'},{en:'You end up with',id:'Hasil akhirnya'}],
@@ -412,8 +415,8 @@ var DOCS = [
 
       {t:'h', en:'What GeoSuite is not', id:'Yang bukan GeoSuite'},
       {t:'p',
-        en:'It is not a replacement for commercial 3D mining software, and it does not claim to be. There is no implicit geological modelling, no wireframing, no mine design, no stope optimisation. GeoSuite covers the numeric spine of an early-stage estimate — the part that is usually done in a spreadsheet and is hardest to audit later.',
-        id:'Ini bukan pengganti perangkat lunak pertambangan 3D komersial, dan tidak mengklaim demikian. Tidak ada pemodelan geologi implisit, tidak ada wireframing, tidak ada rancangan tambang, tidak ada optimasi stope. GeoSuite menangani tulang punggung numerik dari estimasi tahap awal — bagian yang biasanya dikerjakan di spreadsheet dan paling sulit diaudit belakangan.'},
+        en:'Core provides explicit geological interpretation from contacts, surface pairs and digitized section lofts. Check geometry, source data and geological review before accepting a solid. Implicit modelling, mine design and stope optimisation are outside this workflow; a geological solid does not automatically make a Resource estimate a classified mineral resource.',
+        id:'Core menyediakan interpretasi geologi eksplisit dari kontak, pasangan surface, dan loft penampang hasil digitasi. Periksa geometri, data sumber, dan review geologi sebelum menerima solid. Pemodelan implisit, rancangan tambang, dan optimasi stope berada di luar alur ini; solid geologi tidak otomatis menjadikan hasil Resource sebagai sumber daya mineral terklasifikasi.'},
       {t:'note', k:'warn',
         en:'Nothing GeoSuite produces is a Mineral Resource statement. The confidence screen in Resource is a preliminary, reproducible filter — the classification decision belongs to a Competent Person. See “Preliminary confidence is not a classification”.',
         id:'Tidak ada keluaran GeoSuite yang merupakan pernyataan Sumber Daya Mineral. Penyaring keyakinan di Resource adalah filter awal yang dapat direproduksi — keputusan klasifikasi tetap milik Competent Person. Lihat “Preliminary confidence bukan klasifikasi”.'},
@@ -429,6 +432,8 @@ var DOCS = [
          den:'The exact columns each of the four tables needs.', did:'Kolom persis yang dibutuhkan tiap dari empat tabel.'},
         {to:'start/quickstart', en:'15-minute quickstart', id:'Mulai cepat 15 menit',
          den:'Raw CSV to a grade-tonnage curve, end to end.', did:'CSV mentah sampai kurva grade-tonnage, ujung ke ujung.'},
+        {to:'ref/domain-workflow', en:'Core Domain to Assay and Resource', id:'Core Domain ke Assay dan Resource',
+         den:'Follow contacts, surface pairs or section lofts through review and handoff.', did:'Ikuti kontak, pasangan surface atau loft penampang hingga review dan serah-terima.'},
         {to:'trouble/index', en:'Something is wrong', id:'Ada yang tidak beres',
          den:'Symptom-indexed troubleshooting.', did:'Pemecahan masalah berdasarkan gejala.'}
       ]}
@@ -1173,7 +1178,7 @@ var DOCS = [
       id:'Daftar tab lengkap untuk ketiga modul, sesuai urutan kemunculannya.'
     },
     blocks:[
-      {t:'h', en:'Orebit Core — 13 tabs', id:'Orebit Core — 13 tab'},
+      {t:'h', en:'Orebit Core — stages and tools', id:'Orebit Core — tahapan dan alat'},
       {t:'table',
         head:['#', {en:'Tab',id:'Tab'}, {en:'Purpose',id:'Fungsi'}],
         rows:[
@@ -1189,8 +1194,18 @@ var DOCS = [
           ['10','Desurvey',{en:'Minimum curvature desurvey producing X, Y, Z at every sample depth.',id:'Desurvey minimum curvature yang menghasilkan X, Y, Z pada tiap kedalaman sampel.'}],
           ['11','Merge',{en:'Joins collar, survey, coordinates, assay and geology into one table by hole and depth overlap.',id:'Menggabungkan collar, survey, koordinat, assay, dan geologi menjadi satu tabel berdasarkan lubang dan tumpang tindih kedalaman.'}],
           ['12','Composite',{en:'Length-weighted compositing to a fixed interval length.',id:'Compositing berbobot panjang ke panjang interval tetap.'}],
-          ['13','Export',{en:'Export the merged and composited table as CSV, plus a PDF summary report.',id:'Ekspor tabel gabungan dan terkomposit sebagai CSV, plus laporan ringkas PDF.'}]
+          ['13','Export',{en:'Export the merged and composited table as CSV, plus a PDF summary report.',id:'Ekspor tabel gabungan dan terkomposit sebagai CSV, plus laporan ringkas PDF.'}],
+          ['14','Domain',{en:'Interpret contacts, surface pairs and digitized section lofts; review geometry and handoff readiness.',id:'Interpretasi kontak, pasangan surface dan loft penampang; tinjau geometri dan kesiapan serah-terima.'}]
         ]},
+
+      {"t": "h", "en": "Core Domain — surfaces, sections and review", "id": "Core Domain — surface, penampang dan review"},
+      {"t": "p", "en": "Choose the interpretation method first. Geological groups are optional membership definitions: LIMSAP can include literal logged LIM and SAP without changing source logs. Save selects that group as Contact source; alternatively choose a logged lithology directly. A group is not a surface or an accepted solid.", "id": "Pilih metode interpretasi terlebih dahulu. Kelompok geologi adalah definisi anggota opsional: LIMSAP dapat menyertakan kode log LIM dan SAP tanpa mengubah log sumber. Simpan memilih kelompok itu sebagai Sumber kontak; litologi log juga dapat dipilih langsung. Kelompok belum merupakan surface atau solid yang diterima."},
+      {"t": "p", "en": "Top extracts the upper contact and Bottom/base the lower contact of one continuous occurrence per hole. Top(LIM) to Top(SAP) can bound a LIM body; Top(SAP) to Bottom(SAP) bounds SAP. Combining LIM+SAP needs Top(LIM) to Bottom(SAP), not Top(SAP). A lithology ending at the end of a hole has no demonstrated lower geological contact.", "id": "Top mengambil kontak atas dan Bottom/dasar kontak bawah satu kemunculan menerus per lubang. Top(LIM) ke Top(SAP) dapat membatasi tubuh LIM; Top(SAP) ke Bottom(SAP) membatasi SAP. Gabungan LIM+SAP memerlukan Top(LIM) ke Bottom(SAP), bukan Top(SAP). Litologi yang berakhir di ujung lubang belum membuktikan kontak bawah geologi."},
+      {"t": "p", "en": "Repeated SAP at1–4m and6–7m must not become an envelope from1–7m that includes intervening material or unknown data. Automatic contact surfaces are blocked for separated occurrences or internal gaps. Check logging and correlate distinct bodies in sections; keep raw SAP labels and use separate interpretation IDs where appropriate. Adjacent SAP1–4/4–7m is one continuous support. No automatic nth-occurrence or cross-hole geological correlation is implemented.", "id": "SAP berulang pada1–4m dan6–7m tidak boleh menjadi envelope1–7m yang memasukkan material lain atau data tak diketahui. Surface kontak otomatis ditahan untuk kemunculan terpisah atau gap internal. Periksa log dan korelasikan tubuh berbeda pada penampang; pertahankan kode raw SAP dan gunakan identitas interpretasi terpisah bila sesuai. SAP1–4/4–7m yang bersebelahan adalah satu support menerus. Pemilihan kemunculan ke-n atau korelasi geologi antarbor otomatis belum tersedia."},
+      {"t": "p", "en": "Two geological surfaces suffice to preview solid geometry. Ground is a separate acceptance check, not a third geological boundary. Collar elevations provide an approximate land-surface TIN; surveyed terrain must pass its own coverage/elevation checks. Without a ground check geometry may be inspected, but reviewer/tick actions cannot accept it or send it as a validated domain. Selecting another ground reference retires the previous unchecked preview and requires rebuilding. This does not imply full terrain clipping.", "id": "Dua surface geologi cukup untuk pratinjau geometri solid. Tanah merupakan pemeriksaan penerimaan terpisah, bukan batas geologi ketiga. Elevasi collar memberi TIN tanah perkiraan; terrain survei harus lulus pemeriksaan cakupan/elevasinya. Tanpa pemeriksaan tanah geometri dapat dilihat, tetapi reviewer/centang tidak dapat menerima atau mengirimnya sebagai domain tervalidasi. Mengganti acuan tanah membatalkan preview tanpa pemeriksaan dan memerlukan build ulang. Ini bukan klaim clipping terrain penuh."},
+      {"t": "p", "en": "The shared supported footprint must form a valid closed shell. A short interpolation limit may leave disconnected or point-touching patches; do not fill gaps or increase the limit automatically to force a valid body. Review contact coverage and geology, generate newly named boundaries if a different limit is justified, or interpret separate bodies. A topology failure leaves self-intersection untested; it is not a second demonstrated failure.", "id": "Footprint dukungan bersama harus membentuk shell tertutup yang valid. Batas interpolasi pendek dapat menyisakan bagian terpisah atau hanya bersentuhan pada titik; jangan mengisi celah atau menaikkan batas otomatis demi tubuh valid. Tinjau cakupan/geologi, buat batas bernama baru bila perubahan limit dibenarkan, atau interpretasikan tubuh terpisah. Kegagalan topologi membuat self-intersection belum diuji, bukan kegagalan kedua yang terbukti."},
+      {"t": "p", "en": "In Core Domain Plan, set a custom azimuth clockwise from North and click a numbered section line to open it; the selected list row and status identify the same plane. XS+00 is centred on the displayed data; signed steps are perpendicular to azimuth, with spacing2×half-width. These are view-family numbers, not hole or permanent body IDs. Saved rings keep their physical origin and azimuth when the view changes. Arbitrary origins/irregular section networks are not provided by these controls.", "id": "Pada Plan Core Domain, atur azimuth kustom searah jarum jam dari Utara dan klik garis bernomor untuk membuka penampang; baris daftar terpilih dan status menunjukkan bidang sama. XS+00 berpusat pada data tampilan; langkah bertanda tegak lurus azimuth, dengan jarak2×setengah-lebar. Ini nomor keluarga tampilan, bukan ID lubang atau tubuh permanen. Ring tersimpan mempertahankan origin dan azimuth fisiknya saat view berubah. Kontrol ini tidak menyediakan origin bebas/jaringan penampang tak beraturan."},
+      {"t": "p", "en": "For section loft, digitize and close one ring on each of at least two parallel sections for the same body. Loft orders rings by physical station, not click order. Open rings, invalid geometry and nonparallel planes must be resolved; review the end rule and ground check before acceptance. Multi-body branching, cavities and arbitrary multishell ownership are not implied. Assay separately reviews the estimation population; a geological solid is not automatic resource classification or professional sign-off.", "id": "Untuk section loft, digitasi dan tutup satu ring pada sedikitnya dua penampang sejajar untuk tubuh sama. Loft mengurutkan ring berdasarkan station fisik, bukan urutan klik. Ring terbuka, geometri tidak valid dan bidang tidak sejajar harus diselesaikan; tinjau aturan ujung dan ground sebelum penerimaan. Ini bukan dukungan otomatis branching, cavity atau kepemilikan multishell bebas. Assay meninjau populasi estimasi secara terpisah; solid geologi bukan klasifikasi sumber daya atau persetujuan profesional otomatis."},
 
       {t:'h', en:'Orebit Assay — 12 tabs', id:'Orebit Assay — 12 tab'},
       {t:'table',
@@ -1227,6 +1242,24 @@ var DOCS = [
           ['11','3D View',{en:'Interactive 3D block model, coloured by grade or by confidence class.',id:'Model blok 3D interaktif, diwarnai menurut kadar atau kelas keyakinan.'}],
           ['12',{en:'Handoff Report',id:'Handoff Report'},{en:'PDF report structured against KCMI 2017 Section 1 headings.',id:'Laporan PDF terstruktur mengikuti judul KCMI 2017 Bagian 1.'}]
         ]}
+    ]
+  },
+
+  {
+    id:'domain-workflow',
+    en:'Core Domain to Resource', id_:'Core Domain ke Resource',
+    lede:{en:'A practical sequence for an explicit geological interpretation and its downstream review.', id:'Urutan praktis untuk interpretasi geologi eksplisit dan tinjauan tahap berikutnya.'},
+    blocks:[
+      {t:'steps', items:[
+        {en:'In Core, import and validate the matching collar, survey, assay and geology tables. Resolve blocking findings, desurvey and inspect the logs and sections.', id:'Di Core, impor dan validasi tabel collar, survey, assay dan geologi yang sesuai. Selesaikan temuan yang menghambat, lakukan desurvey, lalu periksa log dan penampang.'},
+        {en:'Open Domain. Optionally define a geological group by selecting its logged lithology codes; a group describes membership and does not itself create a surface or solid.', id:'Buka Domain. Bila perlu buat kelompok geologi dengan memilih kode litologi log; kelompok menjelaskan keanggotaan dan belum membuat surface atau solid.'},
+        {en:'For a surface pair, choose the upper and lower geological contacts separately, build and save each surface, then select both in the solid builder. Top and Bottom refer to the selected continuous lithological occurrence, not an arbitrary ground surface.', id:'Untuk pasangan surface, pilih kontak geologi atas dan bawah secara terpisah, buat dan simpan masing-masing surface, lalu pilih keduanya pada pembuat solid. Top dan Bottom merujuk kemunculan litologi menerus yang dipilih, bukan surface tanah sembarang.'},
+        {en:'For an explicit loft, choose and inspect sections, digitize closed rings for the same interpreted body on multiple sections, select an end rule and build. Inspect the preview and correct the interpretation when checks fail.', id:'Untuk loft eksplisit, pilih dan periksa penampang, digitasi ring tertutup untuk tubuh interpretasi yang sama pada beberapa penampang, pilih aturan ujung dan buat solid. Tinjau preview dan perbaiki interpretasi jika pemeriksaan gagal.'},
+        {en:'Choose an appropriate ground reference and review the geometry against logs and sections. Enter the domain name, reviewer and rationale and acknowledge the review before accepting. A preview or an unchecked ground reference is not an accepted solid.', id:'Pilih referensi tanah yang sesuai dan tinjau geometri terhadap log dan penampang. Isi nama domain, reviewer, alasan dan konfirmasi review sebelum menerima solid. Preview atau referensi tanah yang belum diperiksa bukan solid yang diterima.'},
+        {en:'Send the reviewed domain through the available Core-to-Assay handoff. In Assay inspect the geological population, units and EDA, record treatment decisions and composite; then pass the reviewed estimation data to Resource for variography, block setup, estimation and reconciliation.', id:'Kirim domain yang sudah direview melalui serah-terima Core ke Assay yang tersedia. Di Assay periksa populasi geologi, satuan dan EDA, catat keputusan treatment dan buat komposit; lalu teruskan data estimasi yang ditinjau ke Resource untuk variografi, pengaturan blok, estimasi dan rekonsiliasi.'}
+      ]},
+      {t:'note', k:'warn', en:'Separated occurrences such as SAP at 1–4 m and 6–7 m do not demonstrate one continuous body. Interpret the intervening interval and correlate bodies on sections; do not automatically fill the gap. Collar elevations approximate ground and are not a surveyed terrain model.', id:'Kemunculan terpisah seperti SAP pada 1–4 m dan 6–7 m tidak membuktikan satu tubuh menerus. Interpretasikan interval di antaranya dan korelasikan tubuh pada penampang; jangan mengisi gap secara otomatis. Elevasi collar adalah pendekatan permukaan tanah, bukan model terrain hasil survei.'},
+      {t:'note', k:'info', en:'Resource outputs are screening estimates, not an automatic classified Mineral Resource. Check units, density, estimation support and report assumptions; professional geological review remains necessary.', id:'Keluaran Resource adalah estimasi screening, bukan Sumber Daya Mineral terklasifikasi secara otomatis. Periksa satuan, density, support estimasi dan asumsi laporan; review geologi profesional tetap diperlukan.'}
     ]
   },
 
@@ -2527,8 +2560,8 @@ var DOCS = [
        q:{en:'Something else — how do I get help?',
           id:'Hal lain — bagaimana cara mendapat bantuan?'},
        a:[
-        {t:'p',en:'Email <a href="mailto:orebit.id@gmail.com">orebit.id@gmail.com</a>, or open an issue on <a href="https://github.com/ghoziankarami/geosuite/issues">GitHub</a>.',
-                id:'Kirim surel ke <a href="mailto:orebit.id@gmail.com">orebit.id@gmail.com</a>, atau buka issue di <a href="https://github.com/ghoziankarami/geosuite/issues">GitHub</a>.'},
+        {t:'p',en:'Email <a href="mailto:contact@orebit.id">contact@orebit.id</a>, or open an issue on <a href="https://github.com/ghoziankarami/geosuite/issues">GitHub</a>.',
+                id:'Kirim surel ke <a href="mailto:contact@orebit.id">contact@orebit.id</a>, atau buka issue di <a href="https://github.com/ghoziankarami/geosuite/issues">GitHub</a>.'},
         {t:'p',en:'It helps enormously if you include the module and version, what you were doing, what you expected, and what happened instead. Never send your drillhole data — describe the shape of it instead: number of holes, number of samples, coordinate range and grade range.',
                 id:'Sangat membantu bila Anda menyertakan modul dan versinya, apa yang sedang Anda lakukan, apa yang Anda harapkan, dan apa yang terjadi. Jangan pernah mengirim data lubang bor Anda — jelaskan bentuknya saja: jumlah lubang, jumlah sampel, rentang koordinat, dan rentang kadar.'}
        ]}

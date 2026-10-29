@@ -8,11 +8,11 @@
     if (!Number.isInteger(maxFaces) || maxFaces<4 || maxFaces>10000 || !Number.isInteger(maxPairs) || maxPairs<1 || maxPairs>1000000 ||
         !Number.isFinite(tolerance) || tolerance<=0 || tolerance>1e-3) throw Error('DOMAIN_SOLID_OPTIONS');
     const report=topology.inspectMesh(mesh,{maxFaces,maxVertices:10000});
-    if(!report.closed || !(report.volume>0)) throw Error('DOMAIN_SOLID_TOPOLOGY');
+    if(!report.closed || !Number.isFinite(report.volume) || !(report.volume>0)) throw Error('DOMAIN_SOLID_TOPOLOGY');
     const origin=mesh.v[0].slice(),v=mesh.v.map(p=>g.sub(p,origin)),f=mesh.f.map(t=>t.slice());
     const eps=tolerance,triangles=f.map((ids,index)=>{
       const p=ids.map(i=>v[i]),normal=g.cross(g.sub(p[1],p[0]),g.sub(p[2],p[0])),norm=Math.hypot(...normal);
-      if (!(norm>eps*eps)) throw Error('DOMAIN_SOLID_DEGENERATE');
+      if (!Number.isFinite(norm) || !(norm>eps*eps)) throw Error('DOMAIN_SOLID_DEGENERATE');
       return {ids,index,p,n:g.mul(normal,1/norm),min:[0,1,2].map(k=>Math.min(...p.map(a=>a[k]))),max:[0,1,2].map(k=>Math.max(...p.map(a=>a[k])))};
     });
     const edgeFaces=new Map(),adj=f.map(()=>[]);
@@ -44,6 +44,17 @@
       return {min,max,left:tree(ordered.slice(0,mid)),right:tree(ordered.slice(mid))};
     }
     const index=tree(triangles);
+    function segmentCandidates(a,b) {
+      if(!Array.isArray(a)||!Array.isArray(b)||a.length!==3||b.length!==3||![...a,...b].every(Number.isFinite)) throw Error('DOMAIN_COORDINATE_INVALID');
+      const query={min:[0,1,2].map(k=>Math.min(a[k],b[k])),max:[0,1,2].map(k=>Math.max(a[k],b[k]))},found=[];
+      function collect(node) {
+        if(!intersectsBox(node,query)) return;
+        if(node.items) { for(const triangle of node.items) if(intersectsBox(triangle,query)) found.push(triangle); }
+        else {collect(node.left);collect(node.right);}
+      }
+      collect(index);
+      return found;
+    }
     const projected=(p,axis)=>p.filter((_,i)=>i!==axis);
     const orient=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
     function inTriangle(p,t) {
@@ -97,7 +108,7 @@
       if(node.items) for(const other of node.items) {
         if(other.index<=t.index || !intersectsBox(t,other)) continue;
         if(++candidatePairs>maxPairs) throw Error('DOMAIN_SOLID_PAIR_BUDGET');
-        if(collision(t,other)) throw Error('DOMAIN_SOLID_SELF_INTERSECTION');
+        if(collision(t,other)) {const error=Error('DOMAIN_SOLID_SELF_INTERSECTION');error.faces=[t.index,other.index];throw error;}
       }
       else {visit(node.left,t);visit(node.right,t);}
     }
@@ -108,13 +119,21 @@
       if([0,1,2].some(k=>p[k]<index.min[k]-eps || p[k]>index.max[k]+eps)) return 'outside';
       let angle=0;
       for(const t of triangles) {
-        if(Math.abs(g.dot(t.n,g.sub(p,t.p[0])))<=eps && inTriangle(p,t)) return 'boundary';
-        const [a,b,c]=t.p.map(q=>g.sub(q,p)),la=Math.hypot(...a),lb=Math.hypot(...b),lc=Math.hypot(...c);
-        angle+=2*Math.atan2(g.dot(a,g.cross(b,c)),la*lb*lc+g.dot(a,b)*lc+g.dot(b,c)*la+g.dot(c,a)*lb);
+        const a=t.p[0],b=t.p[1],c=t.p[2];
+        const ax=a[0]-p[0],ay=a[1]-p[1],az=a[2]-p[2],
+          bx=b[0]-p[0],by=b[1]-p[1],bz=b[2]-p[2],
+          cx=c[0]-p[0],cy=c[1]-p[1],cz=c[2]-p[2];
+        if(Math.abs(t.n[0]*-ax+t.n[1]*-ay+t.n[2]*-az)<=eps && inTriangle(p,t)) return 'boundary';
+        // The same oriented solid-angle sum, without allocating vector arrays
+        // for every face of every measured interval in a native handoff.
+        const la=Math.hypot(ax,ay,az),lb=Math.hypot(bx,by,bz),lc=Math.hypot(cx,cy,cz);
+        angle+=2*Math.atan2(ax*(by*cz-bz*cy)+ay*(bz*cx-bx*cz)+az*(bx*cy-by*cx),
+          la*lb*lc+(ax*bx+ay*by+az*bz)*lc+(bx*cx+by*cy+bz*cz)*la+(cx*ax+cy*ay+cz*az)*lb);
       }
       return Math.abs(angle)>2*Math.PI?'inside':'outside';
     }
-    return Object.freeze({volume:report.volume,tolerance:eps,candidatePairs,classify,
+    const membershipTriangles=Object.freeze(triangles.map(t=>Object.freeze({p:Object.freeze(t.p.map(p=>Object.freeze(p.slice())))})));
+    return Object.freeze({volume:report.volume,tolerance:eps,candidatePairs,classify,origin:Object.freeze(origin.slice()),triangles:membershipTriangles,segmentCandidates,
       scope:'One closed, positively oriented, non-self-intersecting shell; boundary is explicit. Geological honouring, topography and domain overlap are separate checks.'});
   }
   root.OrebitDomainSolid=Object.freeze({prepareSolid});

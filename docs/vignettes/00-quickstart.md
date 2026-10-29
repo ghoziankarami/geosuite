@@ -21,6 +21,7 @@ Setiap modul memuat data laterit nikel sintetis (CC BY 4.0, kredit Orebit.id). C
 - **Stats** memberi rata-rata, CV, dan persentil per unsur dan per domain.
 - **Top-Cut** menunjukkan di mana ekor atas distribusi mulai pecah dan menyarankan batas atasnya.
 - **Domain** membandingkan domain saprolit dan limonit serta mengelompokkan sampel berdasarkan cutoff; belum membentuk solid geologi.
+- Perubahan metode adalah pratinjau. Untuk memakai populasi tersebut, isi alasan dan klik **Terapkan populasi yang ditinjau**; Undo dan project menyimpan jejak keputusan.
 
 ## 3. Resource: estimasi dan laporan (4 menit)
 

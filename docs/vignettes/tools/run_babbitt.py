@@ -228,6 +228,9 @@ def core_stage(br, site, src, tmp, R):
     c["img_desurvey"] = shot(pg, "03-core-desurvey")
     pg.evaluate("showTab(11)")
     settle(pg, 3000)
+    if not pg.evaluate("() => STATE.merged?.length"):
+        pg.locator("#computeMergeBtn").click()
+        pg.wait_for_function("() => STATE.merged?.length > 0")
     master = K.download(pg, "exportMasterCSV()", tmp / "babbitt-master.csv")
     head = [
         ln
@@ -287,6 +290,7 @@ def assay_stage(br, site, master, tmp, R):
         const d = _topcutDiagnostics(v); return {n: v.length, disintegration: d && d.disintegration ? {value: d.disintegration.value, pct: d.disintegration.pct} : null,
         p99: v[Math.floor(v.length * 0.99)], p999: v[Math.floor(v.length * 0.999)], max: v[v.length - 1]}; })()""")
     )
+    pg.locator("#assayTopCutDiagnostics").evaluate("e => e.open = true")
     a["img_topcut"] = shot(
         pg, "05-assay-topcut", "#tc .card:has-text('Top-cut diagnostics')"
     )
@@ -295,6 +299,10 @@ def assay_stage(br, site, master, tmp, R):
     settle(pg, 1500)
     pg.evaluate(f"() => {{ setDomainMethod('cutoff'); setDomainCutoff({CUTOFF}); }}")
     settle(pg, 2500)
+    pg.locator("#domainProposalReason").fill(
+        "Public Babbitt vignette: threshold population for screening, not a geological solid"
+    )
+    pg.locator("#domainProposalApply").click()
     a["domains"] = pg.evaluate(
         """(() => { const m = {}; (window._domainTagged || []).forEach(x => { m[x.domain] = (m[x.domain] || 0) + 1; }); return m; })()"""
     )
@@ -313,9 +321,12 @@ def assay_stage(br, site, master, tmp, R):
     if cut:
         pg.evaluate("showTab(9)")
         settle(pg, 1500)
-        pg.evaluate(
-            f"() => {{ document.getElementById('customCut').value = {cut}; applyTopCut('cu_pct'); }}"
+        pg.locator("#assayTopCutOptions > summary").click()
+        pg.locator("#customCut").fill(str(cut))
+        pg.locator("#topcutDecisionReason").fill(
+            "Public Babbitt example: cap discrete massive-sulphide assays at 3% Cu for this screening comparison; retain the uncapped raw data and review this choice with geological context."
         )
+        pg.locator("button[onclick=\"applyTopCutReviewed('cu_pct')\"]").click()
         settle(pg, 2000)
         a["topcut_applied"] = (
             pg.evaluate("""(() => { const l = window._capLog && window._capLog['cu_pct']; if (!l) return null;
@@ -487,9 +498,17 @@ def resource_stage(br, site, comp_csv, comp_rows, R):
         ):
             break
         pg.wait_for_timeout(1000)
-    r["crossval"] = pg.evaluate(
-        "(typeof crossvalState !== 'undefined' && crossvalState.metrics) ? {metrics: crossvalState.metrics, pairs: crossvalState.results.actual.length} : null"
+    cv = pg.evaluate(
+        "(typeof crossvalState !== 'undefined' && crossvalState.metrics) ? {metrics: crossvalState.metrics, actual: crossvalState.results.actual, predictions: {idw: crossvalState.results.predIDW, ok: crossvalState.results.predOK, nn: crossvalState.results.predNN}} : null"
     )
+    r["crossval"] = {
+        "metrics": cv["metrics"],
+        "pairs": len(cv["actual"]),
+        "independent_metrics": {
+            method: K.regression_metrics(cv["actual"], predictions)
+            for method, predictions in cv["predictions"].items()
+        },
+    }
     r["img_crossval"] = shot(pg, "11-resource-crossval")
 
     pg.evaluate("showTab(10)")

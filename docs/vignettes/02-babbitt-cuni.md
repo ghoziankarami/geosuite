@@ -119,6 +119,8 @@ Distribusi Cu sudah menyimpang dari satu populasi lognormal sejak **0,72 % (P86)
 
 1. **Domain:** *grade shell* 0,2 % Cu. Ia memuat 91,4 % logam pada 62,5 % panjang yang dianalisis. Batas 0,2 % dekat dengan batas bawah mineralisasi tersebar di Duluth dan memisahkan batuan intrusif yang nyaris barren.
 
+   Setelah meninjau batas0,2%, isi alasan lalu klik **Terapkan populasi yang ditinjau**. Pratinjau statistik tidak mengubah label sampai Apply; ini populasi screening, bukan solid geologi.
+
    ![Domain 0,2 % Cu](img/babbitt-06-assay-domain.png)
 
 2. **Top-cut 3 % Cu**, diterapkan pada assay mentah sebelum kompositing:

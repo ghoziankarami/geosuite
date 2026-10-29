@@ -21,6 +21,7 @@ Each module opens with synthetic nickel laterite data (CC BY 4.0, credit Orebit.
 - **Stats** gives mean, CV and percentiles per element and per domain.
 - **Top-Cut** shows where the upper tail breaks up and suggests a cap.
 - **Domain** compares the saprolite and limonite domains and can group samples using a cutoff; such a grouping is not a geological solid.
+- Method changes are previews. To use that population, enter a reason and click **Apply reviewed population**; Undo and project exports retain the decision history.
 
 ## 3. Resource: estimate and report (4 minutes)
 

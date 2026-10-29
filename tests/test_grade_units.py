@@ -44,8 +44,8 @@ def nav(page, tab):
 
 def ready(context, base, module):
     page = context.new_page()
-    page.goto(base + '/' + module + '.html')
-    page.wait_for_function('()=>window.__i18nBooted===true')
+    page.goto(base + '/' + module + '.html', wait_until='domcontentloaded', timeout=60000)
+    page.wait_for_function('()=>window.__i18nBooted===true', timeout=60000)
     if page.locator('.lang-picker-overlay').count():
         page.locator('.lang-picker-overlay [data-pick="en"]').click()
     page.evaluate('''()=>{
@@ -81,9 +81,17 @@ def download(page, selector, target):
 
 
 def reveal(page, selector):
+    # Long Resource calculations may surface the optional support prompt while
+    # the Core tab is reused. Dismiss it through its visible close control so it
+    # cannot intercept the native unit-options disclosure below.
+    support_close = page.locator('#orebit-support-moment .support-close-btn')
+    if support_close.is_visible():
+        support_close.click()
     for details in page.locator(selector).locator('xpath=ancestor::details').all():
         if details.get_attribute('open') is None:
-            details.locator(':scope > summary').click()
+            summary = details.locator(':scope > summary')
+            summary.scroll_into_view_if_needed()
+            summary.click()
 
 
 def fixture(folder):
@@ -91,7 +99,7 @@ def fixture(folder):
         'collar': ['hole_id,x,y,z,depth'],
         'survey': ['hole_id,depth,dip,azimuth'],
         'geology': ['hole_id,from_m,to_m,lith1'],
-        'assay': ['hole_id,from_m,to_m,au_ppb,au_pct,ag_ppb,cu_ppm,sn_gm3,sn_kgm3,density'],
+        'assay': ['hole_id,from_m,to_m,au_ppb,au_pct,ag_ppb,cu_ppm,sn_gm3,sn_kgm3,density,ni_pct,co_pct,fe_pct,mgo_pct,sio2_pct,al2o3_pct,cr2o3_pct'],
     }
     locations=[(0,0),(50,5),(6,61),(72,66)]
     for h in range(4):
@@ -102,7 +110,7 @@ def fixture(folder):
         tables['geology'].append(f'{hole},0,50,ORE')
         for i in range(10):
             grade = 1 + i/10 + h/20
-            tables['assay'].append(f'{hole},{i*5},{i*5+5},{grade*1000},{grade/10000},{grade*1000},{grade*5000},{grade*1000},{grade},2.7')
+            tables['assay'].append(f'{hole},{i*5},{i*5+5},{grade*1000},{grade/10000},{grade*1000},{grade*5000},{grade*1000},{grade},2.7,{grade},{grade/10},{grade*10},{grade*2},{grade*20},{grade*3},{grade/2}')
     paths = []
     for name, lines in tables.items():
         p = folder / (name+'.csv')
@@ -134,7 +142,10 @@ def main():
             for col, unit in [('au_ppb','ppb'),('au_pct','pct'),('ag_ppb','ppb'),('sn_gm3','g/m³'),('sn_kgm3','kg/m³')]:
                 check('Core explicit '+col+' unit survives project save', state['units'][col] == unit and state['saved'][col] == unit, state)
             nav(core, 10)
-            core.locator('#tab10 .workflow-actions [data-workflow-next]').click()
+            core.locator('#tab10 .workflow-stage-bar-next').click()
+            core.wait_for_function('()=>document.getElementById("tab11").classList.contains("active")')
+            if not core.evaluate('()=>STATE.merged?.length'):
+                core.locator('#computeMergeBtn').click()
             core.wait_for_function('()=>STATE.merged&&STATE.merged.length===40')
             nav(core, 13)
             clean = download(core, '#tab13 button[onclick="exportMasterCSV()"]', folder/'clean.csv')
@@ -190,7 +201,7 @@ def main():
                         resource.locator('#varLag').fill('5')
                         resource.locator('#varLag').press('Tab')
                         check('Custom short lag reaches the compute action',resource.locator('#varLag').input_value()=='5')
-                    resource.locator(f'#tab{stage} .workflow-actions [data-workflow-next]').click()
+                    resource.locator(f'#tab{stage} .workflow-stage-bar-next').click()
                     try:
                         resource.wait_for_function('(n)=>!document.getElementById("tab"+n).classList.contains("active")',arg=stage,timeout=30000)
                     except Exception:
@@ -224,12 +235,30 @@ def main():
                 csv.writer(f).writerows(lines)
             upload(core, paths, '()=>STATE.assay.length===40&&STATE.assay[0].cu_ppm===.5')
             nav(core,7)
+            # The source sample contains all seven repeated dynamic controls. Operate
+            # each rendered selector by its semantic field key, then verify the
+            # actual unit assignment/label and restore the source-detected unit.
+            unit_columns=['ni_pct','co_pct','fe_pct','mgo_pct','sio2_pct','al2o3_pct','cr2o3_pct']
+            original_grades=core.evaluate('(cols)=>Object.fromEntries(cols.map(c=>[c,STATE.assay[0][c]]))',unit_columns)
+            for column in unit_columns:
+                selector=f'select[data-unit-col="{column}"]'
+                reveal(core,selector)
+                core.locator(selector).select_option('ppm')
+                check(f'Core dynamic unit control {column} operates on its own field and preserves the raw grade',core.evaluate('(a)=>STATE.units[a.c]==="ppm"&&STATE.unitsLocked[a.c]===true&&gradeColMeta(a.c).unit==="ppm"&&STATE.assay[0][a.c]===a.raw',arg={'c':column,'raw':original_grades[column]}))
+                # renderValidation redraws the disclosure closed, so reopen the
+                # actual control before its restore operation.
+                reveal(core,selector)
+                core.locator(selector).select_option('pct')
+                check(f'Core dynamic unit control {column} restores its declared percent unit',core.evaluate('(c)=>STATE.units[c]==="pct"&&gradeColMeta(c).unit==="%"',arg=column))
             selector='select[data-unit-col="cu_ppm"]'
             reveal(core,selector)
             core.locator(selector).select_option('pct')
             check('Core manual unit changes label, preserves raw',core.evaluate('()=>gradeColMeta("cu_ppm").unit==="%"&&STATE.assay[0].cu_ppm===.5'))
             nav(core,10)
-            core.locator('#tab10 .workflow-actions [data-workflow-next]').click()
+            core.locator('#tab10 .workflow-stage-bar-next').click()
+            core.wait_for_function('()=>document.getElementById("tab11").classList.contains("active")')
+            if not core.evaluate('()=>STATE.merged?.length'):
+                core.locator('#computeMergeBtn').click()
             core.wait_for_function('()=>STATE.merged?.length===40&&STATE.merged[0].cu_ppm===.5')
             nav(core,13)
             manual=download(core,'#tab13 button[onclick="exportMasterCSV()"]',folder/'manual.csv')
@@ -261,7 +290,10 @@ def main():
             reveal(core,selector)
             core.locator(selector).select_option('ppb')
             nav(core,10)
-            core.locator('#tab10 .workflow-actions [data-workflow-next]').click()
+            core.locator('#tab10 .workflow-stage-bar-next').click()
+            core.wait_for_function('()=>document.getElementById("tab11").classList.contains("active")')
+            if not core.evaluate('()=>STATE.merged?.length'):
+                core.locator('#computeMergeBtn').click()
             core.wait_for_function('()=>STATE.merged?.length===40')
             manual_core=folder/'core-manual.orebit'
             manual_core.write_text(json.dumps(core.evaluate('async()=>await OrebitProject.save("manual-core")')))

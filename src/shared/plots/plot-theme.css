@@ -1,0 +1,28 @@
+/* Plot palette roles. One owner for every Plotly figure (plot-theme.js reads
+   these with getComputedStyle, so a theme switch changes the plots with the UI).
+   c1 primary, c2 secondary, c3 model/threshold, c6 reference. */
+:root{
+  --plot-c1:#0f766e;
+  --plot-c2:#d97706;
+  --plot-c3:#dc2626;
+  --plot-c4:#0284c7;
+  --plot-c5:#7c3aed;
+  --plot-c6:#64748b;
+  --plot-c7:#4d7c0f;
+  --plot-c8:#be185d;
+  --plot-c9:#92400e;
+  --plot-c10:#4338ca;
+}
+[data-theme="dark"],body.dark{
+  --plot-c1:#2dd4bf;
+  --plot-c2:#fbbf24;
+  --plot-c3:#f87171;
+  --plot-c4:#38bdf8;
+  --plot-c5:#a78bfa;
+  --plot-c6:#94a3b8;
+  --plot-c7:#a3e635;
+  --plot-c8:#f472b6;
+  --plot-c9:#d6a35c;
+  --plot-c10:#818cf8;
+}
+.plot-caption{margin:-4px 0 8px;font-size:12px;color:var(--fg-mute)}

@@ -1,0 +1,41 @@
+name: Artifact maintenance
+on:
+  schedule:
+    - cron: '17 18 * * *'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Delete only obsolete ephemeral artifacts under the reviewed policy
+        type: boolean
+        default: false
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: artifact-maintenance
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Apply reviewed artifact policy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPLY: ${{ github.event_name == 'schedule' || inputs.apply }}
+        run: |
+          args=()
+          if [ "$APPLY" = true ]; then args+=(--apply); fi
+          python scripts/cleanup_ci_artifacts.py "${args[@]}" > "$RUNNER_TEMP/artifact-cleanup.json"
+          cat "$RUNNER_TEMP/artifact-cleanup.json"
+          {
+            echo '## Artifact maintenance receipt'
+            echo '```json'
+            cat "$RUNNER_TEMP/artifact-cleanup.json"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

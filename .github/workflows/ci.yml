@@ -68,9 +68,15 @@ jobs:
           python tests/test_assay_workflow.py
           python tests/test_screening_context.py
           python tests/test_screening_navigation.py
+          python tests/test_core_domain_method_routes.py
+          python tests/test_core_domain_multi_context.py
+          python tests/test_domain_native_pipeline.py
+          python tests/test_core_domain_positive_layout.py
+          python tests/test_core_domain_responsive_touch.py
           python tests/test_action_hierarchy.py
           python tests/test_core_training.py
           python tests/test_core_validation_resolution.py
+          python tests/test_core_validation_map_missing_values.py
           python tests/test_mobile_tour.py
           python tests/test_accessibility_keyboard.py
           python tests/test_resource_input_security.py
@@ -99,6 +105,7 @@ jobs:
           name: geosuite-dist
           path: artifacts/*
           if-no-files-found: error
+          retention-days: 3
 
   build-windows:
     runs-on: windows-latest

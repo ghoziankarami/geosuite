@@ -1,0 +1,103 @@
+<div class="panel" id="tab14" data-panel="domain" role="tabpanel">
+  <h2><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12"/><path d="M21 7l-9 5-9-5"/></svg> <span data-i18n="panel.domain.title">Domain</span></h2>
+  <div class="hint">
+    <p><span data-i18n="dom.hint">Read-only preview of the drillhole intervals in plan, section and 3D, using the same desurveyed endpoints as Merge. Nothing here changes the tables or the exported CSV.</span></p>
+  </div>
+  <div class="domain-reference-action">
+    <button type="button" class="btn secondary" id="openCoreEdaReference" data-i18n="core.edaReference.openJson">Open Assay EDA reference JSON</button>
+    <input type="file" id="coreEdaReferenceFile" accept=".json,application/json" hidden>
+  </div>
+  <section id="coreEdaReference" class="card core-eda-reference" aria-live="polite" hidden></section>
+  <nav class="domain-steps" aria-label="Domain workflow" data-i18n-attr="aria-label:dom.workflow.label">
+    <button type="button" class="btn secondary" data-domain-step="book" aria-controls="domainBuildMethod domainCodebook"><span data-i18n="dom.workflow.book">1 · Choose method</span></button>
+    <button type="button" class="btn secondary" data-domain-step="contacts" aria-controls="domainContactTitle"><span data-i18n="dom.workflow.contacts">2 · Contacts</span></button>
+    <button type="button" class="btn secondary" data-domain-step="solid" aria-controls="domainSolidTitle"><span data-i18n="dom.workflow.solid">3 · Build &amp; review</span></button>
+    <button type="button" class="btn secondary" data-domain-step="handoff" aria-controls="domainExportTitle"><span data-i18n="dom.workflow.handoff">4 · Handoff</span></button>
+  </nav>
+  <section class="domain-method-selector" aria-labelledby="domainMethodCurrentTitle">
+    <label class="domain-viewer-field"><span id="domainMethodCurrentTitle" data-i18n="dom.workflow.buildMethod">Interpretation method</span><select id="domainBuildMethod" aria-describedby="domainMethodGuide"><option value="contacts" data-i18n="dom.workflow.method.contacts">Between contact surfaces</option><option value="loft" data-i18n="dom.workflow.method.loft">Digitized section rings</option></select></label>
+    <p id="domainMethodGuide" class="domain-note" role="status" aria-live="polite"></p>
+  </section>
+  <div id="domainReadiness" class="domain-ready" role="list" aria-label="Domain solid">
+    <span role="listitem" data-state="none" data-i18n="dom.ready.none">Label only</span>
+    <span role="listitem" data-state="invalid" data-i18n="dom.ready.invalid">Geometry not valid</span>
+    <span role="listitem" data-state="stale" data-i18n="dom.ready.stale">Geometry stale</span>
+    <span role="listitem" data-state="validated" data-i18n="dom.ready.validated">Solid validated</span>
+  </div>
+  <div class="domain-workspace">
+    <aside class="domain-side" aria-labelledby="domainTreeTitle">
+      <h3 id="domainTreeTitle" class="domain-eyebrow" data-i18n="dom.tree.title">Domains</h3>
+      <div id="domainTree" class="domain-tree" role="list" aria-labelledby="domainTreeTitle"></div>
+      <h3 id="domainKeyTitle" class="domain-eyebrow" data-i18n="dom.keyTitle">Colour key</h3>
+      <div id="domainKeyList" class="domain-key-list"></div>
+      <h3 class="domain-eyebrow" data-i18n="dom.sectionsTitle">Sections</h3>
+      <div id="domainSectionList" class="domain-section-list"></div>
+    </aside>
+    <section class="domain-view" aria-label="Viewport">
+      <div id="domainViewerPanel"></div>
+    </section>
+    <aside class="domain-inspector" aria-labelledby="domainInspectorTitle">
+      <details class="domain-codebook" id="domainCodebook" data-domain-panel="book"><summary data-i18n="dom.book.title">Geological codebook</summary><p class="domain-note" data-i18n="dom.book.hint">Group logged lithologies explicitly; source values remain unchanged.</p><div id="domainCodebookForm" class="domain-contact-form"></div><button type="button" class="btn btn-primary" data-domain-step="contacts" data-i18n="dom.workflow.nextContacts">Next: interpret contacts and sections →</button></details>
+      <details class="domain-method-choice" data-domain-panel="book">
+        <summary id="domainMethodChoiceTitle" data-i18n="dom.methodChoice.title">Choose how to interpret the solid</summary>
+        <div class="domain-method-cards">
+          <article><h4 data-i18n="dom.methodChoice.sections">From sections</h4><p data-i18n="dom.methodChoice.sectionsHelp">Close a ring on section A and B, then loft and triangulate between them. Review the end rule and surface limit.</p><button type="button" class="btn" data-domain-method="loft" data-i18n="dom.methodChoice.useSections">Digitize sections →</button></article>
+          <article><h4 data-i18n="dom.methodChoice.surfaces">Between contact surfaces</h4><p data-i18n="dom.methodChoice.surfacesHelp">Choose the geological unit and its top/base contacts. Build a TIN and close the supported volume between the contacts.</p><button type="button" class="btn" data-domain-method="contacts" data-i18n="dom.methodChoice.useSurfaces">Review contacts →</button></article>
+        </div>
+        <p class="domain-note" data-i18n="dom.methodChoice.limit">Current surfaces come from interpreted drillhole contacts. Arbitrary top/base surface import with complete clipping is planned; collar ground checks are approximate.</p>
+      </details>
+      <details class="domain-view-facts"><summary id="domainInspectorTitle" data-i18n="dom.inspectorTitle">In view</summary>
+      <dl id="domainInspector" class="domain-facts"></dl></details>
+      <section class="domain-contacts" data-domain-panel="contacts" aria-labelledby="domainContactTitle">
+        <h3 id="domainContactTitle" class="domain-eyebrow" data-i18n="dom.contact.title">Contact surface</h3>
+        <div id="domainContactForm" class="domain-contact-form"></div>
+        <p id="domainContactNote" class="domain-note" aria-live="polite"></p>
+        <dl id="domainContactFacts" class="domain-facts"></dl>
+        <ul id="domainContactIssues" class="domain-contact-issues"></ul>
+        <details id="domainSurfaceLibrary" open><summary data-i18n="dom.surfaceLibrary.title">Named contact surfaces</summary><p class="domain-note" data-i18n="dom.surfaceLibrary.help">Choose a contact rule and source above, then save a named surface. Saved surfaces are boundaries, not accepted solids.</p><div id="domainSurfaceLibraryForm" class="domain-contact-form"></div></details>
+        <button type="button" class="btn secondary" data-domain-step="solid" data-i18n="dom.workflow.nextSolid">Next: build and review →</button>
+      </section>
+      <details class="domain-contacts domain-loft-optional" id="domainLoftMethod" data-domain-panel="contacts">
+        <summary id="domainLoftTitle" class="domain-eyebrow" data-i18n="dom.loft.optional">Section loft controls</summary>
+        <div id="domainLoftForm" class="domain-contact-form"></div>
+        <p id="domainLoftNote" class="domain-note" aria-live="polite"></p>
+        <ul id="domainLoftSections" class="domain-contact-issues"></ul>
+        <button type="button" class="btn btn-primary" data-domain-step="solid" data-i18n="dom.workflow.nextSolid">Next: build and review →</button>
+      </details>
+      <section class="domain-contacts" data-domain-panel="solid" aria-labelledby="domainSolidTitle">
+        <h3 id="domainSolidTitle" class="domain-eyebrow" data-i18n="dom.solid.title">Build and review solid</h3>
+        <p id="domainSolidNote" class="domain-note" aria-live="polite"></p>
+        <details class="domain-basis" open><summary data-i18n="dom.solid.basisTitle">How the top and base are chosen</summary><p class="domain-note" data-i18n="dom.solid.basis">The top follows the selected contact rule (or the first interval top); the base follows the last interval base. Ground-surface checks do not change these geological limits.</p></details>
+        <p id="domainSurfaceHelp" class="domain-note domain-surface-note" data-i18n="dom.solid.topo.help">Collar elevations provide an approximate ground-surface check. They do not clip the solid to a surveyed terrain surface.</p>
+        <details id="domainSurfaceImport" class="domain-contacts">
+          <summary id="domainSurfaceImportTitle" data-i18n="dom.surfaceImport.title">DXF terrain surface preview</summary>
+          <p class="domain-note" data-i18n="dom.surfaceImport.limit">Preview only. This surface is not active terrain and does not clip a domain until coverage and clipping acceptance is complete.</p>
+          <label class="domain-viewer-field"><span data-i18n="dom.surfaceImport.sourceCrs">Source CRS</span> <input id="domainSurfaceSourceCRS" type="text" autocomplete="off"></label>
+          <label class="domain-viewer-field"><span data-i18n="dom.surfaceImport.projectCrs">Project CRS (from project metadata)</span> <input id="domainSurfaceTargetCRS" type="text" autocomplete="off" readonly></label>
+          <label class="domain-viewer-field"><span data-i18n="dom.surfaceImport.layer">3DFACE layer (optional when one layer)</span> <input id="domainSurfaceLayer" type="text" autocomplete="off"></label>
+          <label class="domain-viewer-field"><span data-i18n="dom.surfaceImport.file">DXF file</span> <input id="domainSurfaceFile" type="file" accept=".dxf,application/dxf"></label>
+          <canvas id="domainSurfacePreviewCanvas" width="800" height="240" hidden aria-label="Imported terrain XY wireframe preview" data-i18n-attr="aria-label:dom.surfaceImport.canvas"></canvas>
+          <button type="button" class="btn secondary" id="domainSurfaceUseButton" hidden disabled data-i18n="dom.surfaceImport.use">Use this terrain for the next solid build</button>
+          <p id="domainSurfaceImportStatus" class="domain-note" role="status" aria-live="polite" data-i18n="dom.surfaceImport.empty">No surface preview loaded.</p>
+        </details>
+        <div id="domainSolidForm" class="domain-contact-form"></div>
+        <div id="domainLoftBuildForm" class="domain-contact-form"></div>
+        <p id="domainLoftBuildNote" class="domain-note" aria-live="polite"></p>
+        <dl id="domainSolidFacts" class="domain-facts"></dl>
+        <ul id="domainSolidChecks" class="domain-solid-checks"></ul>
+        <div id="domainSolidAccept" class="domain-contact-form"></div>
+        <button type="button" class="btn secondary" data-domain-step="handoff" data-i18n="dom.workflow.nextHandoff">Review handoff and exports →</button>
+      </section>
+      <div class="domain-viewer-later" data-domain-panel="handoff">
+        <h3 id="domainExportTitle" class="domain-eyebrow" data-i18n="dom.exportTitle">Reviewed geometry exports</h3>
+        <p class="domain-note" data-i18n="dom.workflow.exportHelp">Send the master data and interpretation to Assay from Core Export, then continue in Resource. Review and apply Resource block support separately before estimation.</p>
+        <button type="button" class="btn btn-primary" id="domainContinueExport" data-i18n="dom.workflow.export">Continue to Core export →</button>
+        <button type="button" class="btn" disabled aria-describedby="domainLaterWhy" data-i18n="dom.later.resource">Use in Resource</button>
+        <button type="button" class="btn secondary" id="domainSolidDxf" disabled aria-describedby="domainLaterWhy" data-i18n="dom.later.dxf">Export solid (DXF)</button>
+        <button type="button" class="btn secondary" id="domainSolidObj" disabled data-i18n="dom.exportObj">Export solid (OBJ)</button>
+        <button type="button" class="btn secondary" id="domainSectionsCsv" disabled data-i18n="dom.exportCsv">Export section polylines (CSV)</button>
+        <p id="domainLaterWhy" class="domain-note" data-i18n="dom.laterWhy">Reviewed solids export in project coordinates. Section CSV is available for accepted lofts. Resource support, density and estimation remain separate review decisions.</p>
+      </div>
+    </aside>
+  </div>
+</div>

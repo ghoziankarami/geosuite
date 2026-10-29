@@ -58,6 +58,7 @@ const PHASES_DIR = [path.join(REPO_ROOT, 'phases'), path.join(REPO_ROOT, 'exe-wr
 // is gone (GPL-3.0, docs/PLAN-opensource-dan-excellence.md O2) and its last
 // readers (footer badge, PDF licensee line) were removed in the same commit.
 // shared/io/grades.js and shared/ui/pwa.js added the same day.
+// 2026-10-11: shared/plots/plot-theme.{js,css} -- the one plot theme/label owner.
 const BASELINE = {
   Core: [
     'shared/geostat/grade-units.js',
@@ -71,6 +72,8 @@ const BASELINE = {
     'shared/ui/column-mapper.js',
     'shared/ui/pwa.js',
     'shared/ui/index.js',
+    'shared/plots/plot-theme.js',
+    'shared/plots/plot-theme.css',
   ],
   Assay: [
     'shared/geostat/grade-units.js',
@@ -84,6 +87,8 @@ const BASELINE = {
     'shared/ui/column-mapper.js',
     'shared/ui/pwa.js',
     'shared/ui/index.js',
+    'shared/plots/plot-theme.js',
+    'shared/plots/plot-theme.css',
   ],
   Resource: [
     'shared/geostat/grade-units.js',
@@ -99,6 +104,8 @@ const BASELINE = {
     'shared/ui/column-mapper.js',
     'shared/ui/pwa.js',
     'shared/ui/index.js',
+    'shared/plots/plot-theme.js',
+    'shared/plots/plot-theme.css',
   ],
 };
 

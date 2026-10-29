@@ -65,8 +65,14 @@ class RepositoryBoundaryTests(unittest.TestCase):
     def test_cli_returns_nonzero_on_a_tracked_environment(self):
         self.track(".env.vercel")
         result = subprocess.run(
-            [sys.executable, str(Path(guard.__file__).resolve()), "--root", str(self.root)],
-            capture_output=True, text=True,
+            [
+                sys.executable,
+                str(Path(guard.__file__).resolve()),
+                "--root",
+                str(self.root),
+            ],
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(result.returncode, 1)
         self.assertIn(".env.vercel", result.stdout)

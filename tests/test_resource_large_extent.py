@@ -187,6 +187,17 @@ def main():
                 dims = [math.ceil((hi-lo)/size)+1 for (lo,hi),size in zip(bounds,[75,75,8])]
                 check(grid["dims"] == dims and grid["origin"] == [a[0] for a in bounds] and grid["size"] == [75,75,8] and 0 < grid["count"] <= math.prod(dims) and grid["aligned"], "Generate Grid executes the existing owner with the chosen dimensions, origin and cell centres")
                 check(grid["unchanged"] and grid["unit"] == "g/t" and not grid["failures"] and not page.audit_errors, "grid generation retains all raw grades/coordinates and units without hidden failures")
+                page.evaluate("() => { window.__resourceBeforeRepeat=DATA; window.__resourceOldGrid=blockState.blocks; }")
+                nav(page, 2)
+                page.locator("#fileInput").set_input_files([])
+                page.locator("#fileInput").set_input_files(str(master))
+                page.wait_for_function("n=>DATA!==window.__resourceBeforeRepeat&&DATA.rows.length===n&&currentTab===2", arg=N, timeout=60000)
+                repeated=page.evaluate("""()=>({rows:DATA.rows.length,oldRows:window.__resourceBeforeRepeat.rows.length,
+                  replaced:DATA!==window.__resourceBeforeRepeat,blocks:blockState.blocks,estimate:estimState.done,
+                  failures:__largeExtentFailures})""")
+                check(repeated["replaced"] and repeated["rows"] == repeated["oldRows"] == N, "repeat upload replaces the prior large dataset without truncating the full population")
+                nav(page, 5)
+                check(repeated["blocks"] is None and not repeated["estimate"] and page.locator("#bmGenBtn").is_visible() and not page.evaluate("__largeExtentFailures") and not page.audit_errors, "repeat large upload releases stale grid/results and revisiting Block Model stays clean")
                 context.close()
                 complete = True
             finally:

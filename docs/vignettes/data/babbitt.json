@@ -313,6 +313,9 @@
         "to_m",
         "informed_length",
         "coverage",
+        "parent_support_m",
+        "parent_observation_ids",
+        "parent_contributions",
         "midx",
         "midy",
         "midz",
@@ -322,7 +325,7 @@
         "ni_pct",
         "fe_pct"
       ],
-      "topcut_line": "# topcut: cu_pct cut=3.0000 affected=94/23684 metal_removed=1.68% (length-weighted) applied_by=manual",
+      "topcut_line": "# topcut: cu_pct cut=3.0000 affected=94/23684 metal_removed=1.68% (length-weighted) applied_by=manual reviewed=yes reason=Public Babbitt example: cap discrete massive-sulphide assays at 3% Cu for this screening comparison; retain the uncapped raw data and review this choice with geological context.",
       "domains": {
         "M0-Background": 41655,
         "M1-Mineralised": 13464
@@ -483,23 +486,23 @@
       "metrics": {
         "idw": {
           "n": 194,
-          "mae": 0.14093203100187088,
-          "rmse": 0.21096861866168795,
-          "r2": 0.6148316462045341,
-          "slope": 0.6790140663558302,
+          "mae": 0.14086338488730168,
+          "rmse": 0.21012863430731146,
+          "r2": 0.6172600667080105,
+          "slope": 0.6785144332894663,
           "meanAct": 0.5272989690721648,
-          "meanPred": 0.5607358683087179,
-          "bias": 0.03343689923655313
+          "meanPred": 0.5604953794028464,
+          "bias": 0.03319641033068166
         },
         "ok": {
           "n": 194,
-          "mae": 0.142897742140507,
-          "rmse": 0.20236491911239932,
-          "r2": 0.6374881037312479,
-          "slope": 0.6400101710870696,
+          "mae": 0.142814871839175,
+          "rmse": 0.20220992854920652,
+          "r2": 0.6380287287414953,
+          "slope": 0.6399310498414992,
           "meanAct": 0.5272989690721648,
-          "meanPred": 0.5557810258951194,
-          "bias": 0.02848205682295457
+          "meanPred": 0.5557394317702489,
+          "bias": 0.02844046269808409
         },
         "nn": {
           "n": 194,
@@ -512,7 +515,39 @@
           "bias": 0.029024742268041526
         }
       },
-      "pairs": 194
+      "pairs": 194,
+      "independent_metrics": {
+        "idw": {
+          "n": 194,
+          "mae": 0.14086338488730163,
+          "rmse": 0.2101286343073115,
+          "r2": 0.6172600667080095,
+          "slope": 0.6785144332894653,
+          "meanAct": 0.527298969072165,
+          "meanPred": 0.5604953794028461,
+          "bias": 0.0331964103306811
+        },
+        "ok": {
+          "n": 194,
+          "mae": 0.142814871839175,
+          "rmse": 0.2022099285492065,
+          "r2": 0.6380287287414939,
+          "slope": 0.6399310498414981,
+          "meanAct": 0.527298969072165,
+          "meanPred": 0.5557394317702486,
+          "bias": 0.028440462698083646
+        },
+        "nn": {
+          "n": 194,
+          "mae": 0.1573257731958763,
+          "rmse": 0.2601900340413387,
+          "r2": 0.49152207733549635,
+          "slope": 0.7079825164754756,
+          "meanAct": 0.527298969072165,
+          "meanPred": 0.5563237113402062,
+          "bias": 0.029024742268041193
+        }
+      }
     },
     "img_crossval": "babbitt-11-resource-crossval.png",
     "gt_app": [
@@ -585,5 +620,5 @@
     "img_gt": "babbitt-12-resource-grade-tonnage.png",
     "page_errors": []
   },
-  "runtime_s": 110
+  "runtime_s": 141
 }

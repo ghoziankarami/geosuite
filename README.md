@@ -22,6 +22,13 @@ digunakan untuk pelaporan sumber daya publik.
 *Hosted Core dashboard captured on 29 October 2026 with synthetic data. The
 hosted application may differ from this repository revision.*
 
+**[Open the app](https://geosuite.orebit.id/Core.html)** ·
+[Windows releases](https://github.com/ghoziankarami/geosuite/releases/latest) ·
+[Tutorials](docs/vignettes/README.md) ·
+[Questions and feedback](https://github.com/ghoziankarami/geosuite/discussions)
+
+![GeoSuite Core dashboard with the public Thalanga VMS tutorial dataset](docs/vignettes/img/thalanga-01-core-dashboard.png)
+
 ## Start here / Mulai di sini
 
 | Your goal / Tujuan | Route / Langkah |
@@ -150,6 +157,7 @@ under KCMI/JORC. Read [methodology and limitations](docs/METHODOLOGY.md).
 
 [Report a bug](https://github.com/ghoziankarami/geosuite/issues/new?template=bug-report.md) ·
 [Report wrong numbers](https://github.com/ghoziankarami/geosuite/issues/new?template=wrong-numbers.md) ·
+[Share tester feedback](https://github.com/ghoziankarami/geosuite/issues/new?template=tester-feedback.md) ·
 [Security reports](SECURITY.md) · [Orebit guides](https://orebit.id/docs.html)
 
 ## Licence and attribution

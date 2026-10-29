@@ -179,6 +179,9 @@ def core_stage(br, site, tmp, R):
 
     pg.evaluate("showTab(11)")
     settle(pg, 2500)
+    if not pg.evaluate("() => STATE.merged?.length"):
+        pg.locator("#computeMergeBtn").click()
+        pg.wait_for_function("() => STATE.merged?.length > 0")
     c["merged_rows"] = pg.evaluate("STATE.merged.length")
 
     # Crop to the deposit area and export
@@ -287,6 +290,10 @@ def assay_stage(br, site, tmp, master, R):
     settle(pg, 800)
     pg.evaluate(f"setDomainCutoff({CUTOFF})")
     settle(pg, 2500)
+    pg.locator("#domainProposalReason").fill(
+        "Public Thalanga vignette: threshold population for screening, not a geological solid"
+    )
+    pg.locator("#domainProposalApply").click()
     a["domains"] = pg.evaluate("""(() => {
         const t = window._domainTagged || []; const m = {};
         t.forEach(x => { const d = x.domain; m[d] = m[d] || {n: 0}; m[d].n++; });
@@ -420,9 +427,17 @@ def resource_stage(br, site, tmp, comp_csv, comp_rows, R):
         ):
             break
         pg.wait_for_timeout(1000)
-    r["crossval"] = pg.evaluate(
-        "(typeof crossvalState !== 'undefined' && crossvalState.metrics) ? {metrics: crossvalState.metrics, pairs: crossvalState.results.actual.length} : null"
+    cv = pg.evaluate(
+        "(typeof crossvalState !== 'undefined' && crossvalState.metrics) ? {metrics: crossvalState.metrics, actual: crossvalState.results.actual, predictions: {idw: crossvalState.results.predIDW, ok: crossvalState.results.predOK, nn: crossvalState.results.predNN}} : null"
     )
+    r["crossval"] = {
+        "metrics": cv["metrics"],
+        "pairs": len(cv["actual"]),
+        "independent_metrics": {
+            method: K.regression_metrics(cv["actual"], predictions)
+            for method, predictions in cv["predictions"].items()
+        },
+    }
     r["img_crossval"] = shot(pg, "12-resource-crossval")
 
     pg.evaluate("showTab(9)")
@@ -464,7 +479,7 @@ def resource_stage(br, site, tmp, comp_csv, comp_rows, R):
     settle(pg, 2500)
     r["img_kcmi"] = shot(pg, "14-resource-kcmi")
     r["density_basis_text"] = pg.evaluate(
-        """(() => { const t = document.body.innerText; const m = t.match(/(ASSUMED[^\\n]{0,120}|ASUMSI[^\\n]{0,120})/); return m ? m[0] : null; })()"""
+        """(() => { const t = document.body.innerText; const m = t.match(/(ASSUMED[^\\n]{0,150}?reporting tonnage\\.|ASUMSI[^\\n]{0,150}?melaporkan tonase\\.)/); return m ? m[0] : null; })()"""
     )
     r["page_errors"] = errs
     pg.close()

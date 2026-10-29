@@ -7,13 +7,31 @@ function initTheme() {
   }
 }
 
+// Native scrollable regions do not consistently react to arrow keys across
+// browsers when focus is on a generic landmark. Keep keyboard access explicit
+// for long schema tables while leaving touch and pointer scrolling native.
+document.addEventListener('keydown', event => {
+  const region = event.target.closest?.('.schema-keyboard-scroll');
+  if (!region || !['ArrowRight', 'ArrowLeft'].includes(event.key)) return;
+  const max = region.scrollWidth - region.clientWidth;
+  if (max <= 0) return;
+  event.preventDefault();
+  const step = Math.max(80, Math.round(region.clientWidth * 0.7));
+  region.scrollLeft = Math.max(0, Math.min(max, region.scrollLeft + (event.key === 'ArrowRight' ? step : -step)));
+});
+
 function toggleTheme() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
                  document.body.classList.contains('dark');
+  const previousTokens = typeof plotTokenSnapshot === 'function' ? plotTokenSnapshot() : null;
   // Support both mechanisms (P1 uses data-theme, P2/P3 use body class)
   document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
   document.body.classList.toggle('dark', !isDark);
   try { localStorage.setItem('orebit-theme', isDark ? 'light' : 'dark'); } catch(e) {}
+  // Existing figures follow the new tokens; a phase re-render below may replace some.
+  if (typeof restylePlots === 'function') {
+    try { restylePlots(previousTokens); } catch(e) { console.warn('[Orebit] Plot restyle error:', e); }
+  }
   if (typeof window.__onThemeChange === 'function') {
     try { window.__onThemeChange(); } catch(e) { console.warn('[Orebit] Theme change callback error:', e); }
   }
@@ -119,6 +137,71 @@ function openModalDialog(container, options = {}) {
   trapFocus(container, {...options, opener:overlay.__dialogOpener});
 }
 
+// Embedded browsers may reject native prompts; retain explicit rename/cancel there.
+function promptBundleFilename(defaultName) {
+  try { return window.prompt('Export bundle as:', defaultName); } catch (e) {}
+  return new Promise(resolve => {
+    const id=document.documentElement.lang==='id', overlay=document.createElement('div');
+    const form=document.createElement('form'), label=document.createElement('label'), input=document.createElement('input');
+    const actions=document.createElement('div'), cancel=document.createElement('button'), save=document.createElement('button');
+    overlay.id='bundleFilenameDialog';overlay.className='orebit-modal-overlay';form.className='orebit-modal modal-body';
+    label.htmlFor='bundleFilename';label.textContent=id?'Nama file':'File name';
+    input.id='bundleFilename';input.required=true;input.style.width='100%';input.value=defaultName;
+    cancel.id='bundleFilenameCancel';cancel.type='button';cancel.className='btn secondary';cancel.textContent=id?'Batal':'Cancel';
+    save.id='bundleFilenameSave';save.type='submit';save.className='btn btn-primary';save.textContent=id?'Ekspor':'Export';
+    actions.style.cssText='display:flex;justify-content:flex-end;gap:8px;margin-top:16px';
+    actions.append(cancel,save);form.append(label,input,actions);overlay.append(form);
+    const finish=value=>{overlay.remove();releaseFocus(form);resolve(value)};
+    cancel.onclick=()=>finish(null);
+    form.onsubmit=e=>{e.preventDefault();input.value.trim()?finish(input.value):(input.value='',input.reportValidity())};
+    const opener=document.activeElement;document.body.append(overlay);
+    openModalDialog(form,{label:id?'Ekspor bundle':'Export bundle',overlay,opener,initialFocus:input,close:()=>finish(null)});input.select();
+  });
+}
+
+// A series colour shown as a swatch, so the label beside it stays in readable body text.
+function colorSwatch(color) {
+  return '<span aria-hidden="true" style="display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px;background:' + color + ';"></span>';
+}
+
+// Dashboard share bars: [label, value] pairs, largest first. The categorical plot
+// tokens keep neighbouring bars distinct and readable in both themes; red (c3)
+// is skipped so no category reads as an error.
+function shareBarsHtml(entries, total, showCount) {
+  const max = entries.length ? entries[0][1] || 1 : 1;
+  return '<div style="display:flex;flex-direction:column;gap:6px;">' + entries.map((e, i) => {
+    const label = escapeHtml(String(e[0])), pct = total ? 100 * e[1] / total : 0;
+    return '<div style="display:flex;align-items:center;gap:8px;font-size:12px;">'
+      + '<span style="flex:0 0 120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;" title="' + label + '">' + label + '</span>'
+      + '<span style="flex:1;height:20px;background:var(--border);border-radius:5px;overflow:hidden;"><span style="display:block;height:100%;width:' + Math.max(14, 100 * e[1] / max).toFixed(1) + '%;background:var(--plot-c' + [1, 2, 4, 5, 7, 6][i % 6] + ');"></span></span>'
+      + '<span style="flex:0 0 76px;text-align:right;font-family:var(--font-mono);font-size:11px;color:var(--fg-mute);">' + (showCount ? e[1].toLocaleString('en-US') + ' · ' : '') + pct.toFixed(0) + '%</span>'
+      + '</div>';
+  }).join('') + '</div>';
+}
+
+// Shown once, after the first completed export. Support is voluntary and one-time.
+function maybeShowSupportMoment() {
+  try {
+    if (localStorage.getItem('orebit_support_moment_v1') === '1') return;
+    localStorage.setItem('orebit_support_moment_v1', '1');
+  } catch (e) { return; }
+  const id = document.documentElement.lang === 'id';
+  const d = document.createElement('div'); d.id = 'orebit-support-moment';
+  d.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.38);display:flex;align-items:center;justify-content:center;padding:20px;';
+  d.innerHTML = '<div style="position:relative;max-width:390px;width:100%;background:var(--bg-card);color:var(--fg);border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:0 16px 50px rgba(0,0,0,.22);font:14px/1.55 var(--font-sans)">'
+    + '<button type="button" class="support-close-btn" aria-label="' + (id ? 'Tutup' : 'Close') + '" style="position:absolute;right:8px;top:6px;width:36px;height:36px;border:0;background:none;color:var(--fg-mute);font-size:22px;cursor:pointer">×</button>'
+    + '<div style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;margin-bottom:8px">' + (id ? 'Export selesai' : 'Export complete') + '</div>'
+    + '<h2 id="supportMomentTitle" style="margin:0 0 8px;font-size:20px">' + (id ? 'Terbantu oleh Orebit?' : 'Orebit helped?') + '</h2>'
+    + '<p style="margin:0 0 18px;color:var(--fg-mute)">' + (id ? 'Dukung tool, dokumentasi, dan infrastruktur secara sukarela. Sekali saja—tidak ada langganan.' : 'Support the tools, documentation, and infrastructure. One-time and voluntary—no subscription.') + '</p>'
+    + '<a href="https://saweria.co/orebitindonesia" target="_blank" rel="noopener" style="display:inline-block;background:var(--accent);color:var(--bg);text-decoration:none;border-radius:8px;padding:10px 16px;font-weight:700">' + (id ? 'Dukung Orebit →' : 'Support Orebit →') + '</a>'
+    + '<button type="button" class="support-dismiss-btn" style="margin-left:10px;border:0;background:none;color:var(--fg-mute);cursor:pointer;padding:10px 4px">' + (id ? 'Nanti' : 'Not now') + '</button></div>';
+  document.body.appendChild(d);
+  const close = () => d.remove();
+  d.querySelector('.support-close-btn').addEventListener('click', close);
+  d.querySelector('.support-dismiss-btn').addEventListener('click', close);
+  openModalDialog(d.firstElementChild, {labelledby: 'supportMomentTitle', overlay: d, close});
+}
+
 function openHelp() {
   const ov = document.getElementById('helpOverlay');
   if (ov) { ov.classList.add('open'); trapFocus(ov, {close:closeHelp}); }
@@ -219,8 +302,9 @@ function tourSkip() {
 
 function _focusWorkflowDestination(n, previousFocus) {
   const workflowNavigation = previousFocus?.matches('button') &&
-    previousFocus.closest('.assay-workflow-card') &&
-    previousFocus.closest('.workflow-actions,.workflow-step-links,.workflow-related');
+    ((previousFocus.closest('.assay-workflow-card') &&
+      previousFocus.closest('.workflow-actions,.workflow-step-links,.workflow-related')) ||
+     previousFocus.closest('.workflow-stage-bar'));
   // A continuation may disable its initiating button while its owner computes.
   // Retain that exact origin; do not move focus if the user chose another control.
   if (workflowNavigation) requestAnimationFrame(() => {
@@ -264,7 +348,9 @@ function _syncTabAccessibility() {
   const rail = document.querySelector('nav.tabs');
   if (!rail) return;
   rail.setAttribute('aria-label', window.__t?.('flow.workflow') || 'Workflow');
-  rail.setAttribute('aria-orientation', innerWidth >= 1080 ? 'vertical' : 'horizontal');
+  // This is a named navigation landmark, not an ARIA widget with an
+  // orientation contract. Keep orientation in CSS/layout only.
+  rail.removeAttribute('aria-orientation');
   rail.querySelectorAll('.tab').forEach((tab, i) => {
     if (!tab.id) tab.id = 'orebit-tab-' + (i + 1);
     const panel = document.getElementById('tab' + (i + 1));

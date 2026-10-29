@@ -114,3 +114,4 @@ jobs:
         with:
           name: geosuite-exe-${{ env.TAG }}
           path: desktop/dist/*
+          retention-days: 3

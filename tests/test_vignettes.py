@@ -103,8 +103,22 @@ def variogram_checks(r: dict, docs: dict[str, str], dec: int):
     quoted(docs, "first between-hole lag gamma", fit["first_lag_gamma"], dec)
 
 
+def crossval_oracle_checks(resource: dict):
+    """Validate app summaries against Python recomputation from held-out predictions."""
+    cv = resource["crossval"]
+    check(set(cv["independent_metrics"]) == {"idw", "ok", "nn"},
+          "CV independent metrics are missing an estimator")
+    for method, expected in cv["independent_metrics"].items():
+        actual = cv["metrics"].get(method) or {}
+        check(set(expected) == set(actual), f"{method} CV metric fields differ")
+        for key, value in expected.items():
+            check(key in actual and math.isclose(value, actual[key], rel_tol=1e-10, abs_tol=1e-10),
+                  f"{method} CV {key}: app {actual.get(key)} vs independent {value}")
+
+
 def thalanga_consistency(d: dict, docs: dict[str, str]):
     r, gt = d["resource"], d["independent_gt"]
+    crossval_oracle_checks(r)
     # app's computeGT vs the Python re-derivation from the exported block model
     app = {round(x["cutoff_pct"], 2): x for x in r["gt_app"]["all_blocks"]}
     for row in gt["curve"]:
@@ -169,6 +183,7 @@ def thalanga_consistency(d: dict, docs: dict[str, str]):
 
 def babbitt_consistency(d: dict, docs: dict[str, str]):
     raw, c, a, r = d["raw"], d["core"], d["assay"], d["resource"]
+    crossval_oracle_checks(r)
     ic, tc = d["independent_composites"], raw["topcut_check"]
     check(c["length_unit_source"] == "ft" and "converted from feet" in (c["export_lengths_line"] or ""),
           "feet conversion not applied or not recorded")

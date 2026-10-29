@@ -16,6 +16,14 @@ from pathlib import Path
 import fitz
 from playwright.sync_api import sync_playwright
 
+def _workflow_options(page, disclosure):
+    # Open the native task Options before editing, retaining all science checks.
+    target = page.locator('#' + disclosure)
+    if not target.evaluate('e=>e.open'):
+        target.locator(':scope > summary').click()
+    assert target.evaluate('e=>e.open'), 'Task Options must expose its actual controls'
+
+
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "build/build.mjs").is_file())
 SITE = Path(os.environ.get("ASSAY_LARGE_REPORT_SITE", os.environ.get("OREBIT_TEST_DIST", ROOT / "dist")))
 # Reuse the tested first-run controls and live safeRender canary, never force tabs.
@@ -92,7 +100,7 @@ def main():
                   length:_compositeCache?.length,minimum:_compositeCache?.minLength,
                   tail:_compositeCache?.droppedTailLength,gap:_compositeCache?.gapLength,
                   overlap:_compositeCache?.overlapCount,dropped:_compositeCache?.droppedHoles.length,
-                  checks:runValidationChecks(),dl:_qaqcDetectionLimit('au_gpt'),calls:__reportColCalls,
+                  checks:runValidationChecks(),blankCheck:qaqcSummary()?.blankRes?.dl,calls:__reportColCalls,
                   rawUnchanged:__reportRaw===JSON.stringify(DATA.rows),failures:__largeExtentFailures,
                   kcmi:document.getElementById('kcmiCommentary')?.innerText,
                   treatment:document.getElementById('reportTreatment')?.innerText
@@ -102,7 +110,7 @@ def main():
                 check(state["calls"] <= 5000000, "Report and validation use bounded full-population column work")
                 check(state["rows"] == N and state["holes"] == 5000 and state["count"] == N and state["mean"] == 5.5, "all150k native rows and composites retain5000 holes and independent mean5.5")
                 check(state["length"] == 1 and state["minimum"] == .5 and state["tail"] == state["gap"] == state["overlap"] == state["dropped"] == 0, "default composite support retains every one-metre interval")
-                check(state["element"] == "au_gpt" and state["unit"] == "g/t" and state["dl"] == 1 and state["rawUnchanged"], "large report retains the assigned gold unit, exact detection proxy and raw rows")
+                check(state["element"] == "au_gpt" and state["unit"] == "g/t" and state["blankCheck"] is None and state["rawUnchanged"], "large report retains assigned gold units and raw rows without inventing a laboratory detection limit")
                 check(len(state["checks"]) == 11 and all(c["severity"] == "pass" for c in state["checks"]), "independently complete fixture passes all11 validation checks")
                 check(state["kcmi"] and "5000" in state["kcmi"] and "45" in state["kcmi"] and state["treatment"], "actual KCMI and treatment panels render the full population")
                 with page.expect_download(timeout=90000) as result:
@@ -111,10 +119,13 @@ def main():
                 result.value.save_as(str(pdf))
                 with fitz.open(pdf) as document:
                     text = "\n".join(p.get_text() for p in document)
+                    normalized_text = " ".join(text.split())
                     check(pdf.read_bytes().startswith(b"%PDF") and len(document) >= 3, "real report action downloads a genuine multi-page PDF")
                     check("150,000" in text and "5000 holes" in text and "5.500" in text and "Au (g/t) | All loaded rows" in text, "native PDF reports full input scope, hole count, mean and units")
                     check("11 checks passed" in text and text.count("[ OK ]") == 11 and "0 failed" in text, "PDF cover passed count matches the11 detailed validation results")
-                    check("input 150000.0000m; composite 150000.0000m" in text and "Input 825000.000000; composite 825000.000000" in text, "PDF support and grade-length conservation match independent full-data answers")
+                    check("Selected-element support: input 150000.0000m; composite 150000.0000m" in normalized_text
+                          and "Input 825000.000000; composite 825000.000000" in normalized_text,
+                          "PDF support and grade-length conservation match independent full-data answers")
                 if page.locator(".support-dismiss-btn").is_visible():
                     page.locator(".support-dismiss-btn").click()
                 controls.nav(page, 8)
@@ -123,12 +134,19 @@ def main():
                 page.locator("#assayAdvancedToggle").click()
                 controls.nav(page, 9)
                 settled(page)
-                page.locator("#customCut").fill("9")
-                page.locator('#tab9 button[onclick="applyTopCut(\'au_gpt\')"]').click()
+                _workflow_options(page, 'assayTopCutOptions');page.locator("#customCut").fill("9")
+                page.locator('#topcutDecisionReason').fill('Synthetic reviewed cap for the large-population report check.')
+                page.locator('#tab9 button[onclick*="applyTopCutReviewed"]').click()
                 controls.nav(page, 13)
                 capped = page.evaluate("""()=>({mean:_compositeCache.composites.reduce((s,c)=>s+c.au_gpt_comp,0)/150000,
                   records:dataTreatmentLog(),treatment:reportTreatment.innerText})""")
                 check(capped["mean"] == 5 and len(capped["records"]) == 1 and capped["records"][0]["before"]["max"] == 10 and capped["records"][0]["after"]["max"] == 9 and capped["treatment"], "actual cap9 recomputes full composites and renders accurate before/after treatment")
+                controls.nav(page, 9)
+                page.locator('nav.tabs .tab[onclick="showTab(9)"] .pipeline-badge').click()
+                check(page.evaluate('currentTab===9'), "treatment count has the same destination as its tab")
+                page.locator('#treatmentIndicator').click()
+                page.wait_for_function('()=>currentTab===1')
+                check(page.locator('#dashTreatmentWrap').is_visible() and page.evaluate('dataTreatmentLog().length===1'), "separate Data history action opens the actual recorded treatment")
                 controls.nav(page, 9)
                 page.locator('#tab9 button[onclick="undoTopCut(\'au_gpt\')"]:visible').first.click()
                 controls.nav(page, 13)
@@ -137,7 +155,7 @@ def main():
                 settled(page)
                 page.locator("#domainMethodSelect").select_option("spatial")
                 settled(page)
-                check(page.evaluate("_domainAudit.method==='spatial'&&_domainTagged.length===150000&&new Set(_domainTagged.map(t=>t.domain)).size===4"), "actual spatial-domain control classifies all150k rows without argument overflow")
+                check(page.evaluate("_domainPreviewAudit.method==='spatial'&&_domainAudit===null&&_domainTagged.length===150000&&new Set(_domainTagged.map(t=>t.domain)).size===4"), "actual spatial-domain control classifies all150k rows without argument overflow")
                 page.locator("#domainMethodSelect").select_option("existing")
                 settled(page)
                 check(page.evaluate("__reportRaw===JSON.stringify(DATA.rows)&&new Set(_domainTagged.map(t=>t.domain)).size===2"), "existing-domain control restores both original labels and every raw value")

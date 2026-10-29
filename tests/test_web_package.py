@@ -1,4 +1,5 @@
 """Prove the distributed ZIP is complete, reproducible and locally servable."""
+
 import hashlib
 import importlib.util
 import json
@@ -13,7 +14,9 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location("package_web", ROOT / "build/package_web.py")
+spec = importlib.util.spec_from_file_location(
+    "package_web", ROOT / "build/package_web.py"
+)
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
@@ -29,14 +32,23 @@ class WebPackage(unittest.TestCase):
             output = Path(temp)
             archive = module.package(ROOT, output, "test-revision")
             first = archive.read_bytes()
-            self.assertEqual(first, module.package(ROOT, output, "test-revision").read_bytes())
-            self.assertTrue((output / "SHA256SUMS.txt").read_text().startswith(hashlib.sha256(first).hexdigest()))
+            self.assertEqual(
+                first, module.package(ROOT, output, "test-revision").read_bytes()
+            )
+            self.assertTrue(
+                (output / "SHA256SUMS.txt")
+                .read_text()
+                .startswith(hashlib.sha256(first).hexdigest())
+            )
             unpacked = output / "unpacked"
             with zipfile.ZipFile(archive) as zip_file:
                 zip_file.extractall(unpacked)
             manifest = json.loads((unpacked / "BUILD-MANIFEST.json").read_text())
             self.assertEqual(manifest["source_ref"], "test-revision")
-            server = ThreadingHTTPServer(("127.0.0.1", 0), partial(QuietHandler, directory=str(unpacked / "dist")))
+            server = ThreadingHTTPServer(
+                ("127.0.0.1", 0),
+                partial(QuietHandler, directory=str(unpacked / "dist")),
+            )
             thread = threading.Thread(target=server.serve_forever, daemon=True)
             thread.start()
             try:

@@ -496,6 +496,8 @@ try:
             "Invalid regional survey blocks full-population clean handoff",
         )
         page.evaluate("showTab(11)")
+        page.locator('#computeMergeBtn').click()
+        page.wait_for_function('()=>STATE.merged?.length===2')
         check(
             page.evaluate(
                 'STATE.desurvey.invalidHoleIds.includes("H2") && STATE.desurvey.holes.H2.trace.length===0'
@@ -649,6 +651,8 @@ try:
             "Raw-source project reopen reconstructs the same endpoints and assumptions",
         )
         page.evaluate("showTab(11)")
+        page.locator('#computeMergeBtn').click()
+        page.wait_for_function('()=>STATE.merged?.length===2')
         core_mid = page.evaluate('STATE.merged.find(r=>r.hole_id==="ARC")')
         check(
             sum((core_mid["mid" + k] - expected[k]) ** 2 for k in expected) ** 0.5

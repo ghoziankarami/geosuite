@@ -33,6 +33,7 @@ catching a real formula regression, which would be off by orders of
 magnitude, not float32 rounding.
 """
 
+import csv
 import json
 import math
 import os
@@ -40,10 +41,21 @@ import sys
 
 from playwright.sync_api import sync_playwright
 
+
+def parse_csv_records(text):
+    """Parse exported CSV without treating quoted JSON commas as separators."""
+    lines = [line for line in text.splitlines() if line and not line.startswith("#")]
+    reader = csv.reader(lines)
+    header = next(reader)
+    rows = list(reader)
+    if any(len(row) != len(header) for row in rows):
+        raise AssertionError("CSV export contains a row whose field count differs from its header")
+    return header, [dict(zip(header, row)) for row in rows]
+
 BASE = os.environ.get("GEOSUITE_TEST_BASE", "http://localhost")
-CORE_URL = f"{BASE}:8767/Core.html"
-ASSAY_URL = f"{BASE}:8768/Assay.html"
-RESOURCE_URL = f"{BASE}:8769/Resource.html"
+CORE_URL = f"{BASE}:{os.environ.get('CORE_TEST_PORT', '8767')}/Core.html"
+ASSAY_URL = f"{BASE}:{os.environ.get('ASSAY_TEST_PORT', '8768')}/Assay.html"
+RESOURCE_URL = f"{BASE}:{os.environ.get('RESOURCE_TEST_PORT', '8769')}/Resource.html"
 
 PASSED = FAILED = 0
 
@@ -279,13 +291,11 @@ def test_d11_per_sample_density(tmpdir):
         assay_export = str(tmpdir / "d11-assay-export.csv")
         dl.value.save_as(assay_export)
         with open(assay_export, encoding="utf-8") as f:
-            export_lines = [ln for ln in f.read().splitlines() if ln and not ln.startswith("#")]
-        header = export_lines[0].split(",")
+            header, d11_rows = parse_csv_records(f.read())
         check("D11/Assay: exported CSV carries a density column (was hard-coded blank before this fix)",
               "density" in header, f"header={header}")
         if "density" in header:
-            hole_i, dens_i = header.index("hole_id"), header.index("density")
-            exported_dens = {row.split(",")[hole_i]: float(row.split(",")[dens_i]) for row in export_lines[1:]}
+            exported_dens = {row["hole_id"]: float(row["density"]) for row in d11_rows}
             dens_mismatches = [s["hole_id"] for s in D11_SAMPLES
                                 if not close_enough(exported_dens.get(s["hole_id"], -1), s["density"])]
             check("D11/Assay: exported density values match the raw input for all 6 holes",
@@ -497,9 +507,7 @@ def test_core_export_category_columns(tmpdir):
         dl.value.save_as(out)
         browser.close()
     with open(out, encoding="utf-8") as f:
-        lines = [ln for ln in f.read().splitlines() if ln and not ln.startswith("#")]
-    header = lines[0].split(",")
-    rows = [dict(zip(header, ln.split(","))) for ln in lines[1:]]
+        header, rows = parse_csv_records(f.read())
     check("Core export: alteration and oxidation columns are kept under their original names",
           "alteration" in header and "oxidation" in header, f"header={header}")
     check("Core export: their values are correct per interval",
@@ -537,13 +545,11 @@ def test_tin_volumetric_end_to_end(tmpdir):
         dl.value.save_as(out)
 
         with open(out, encoding="utf-8") as f:
-            lines = [ln for ln in f.read().splitlines() if ln and not ln.startswith("#")]
-        header = lines[0].split(",")
+            header, rows = parse_csv_records(f.read())
         check("Tin Assay export: BD_TM3 reaches the export as canonical 'density'",
               "density" in header, f"header={header}")
         if "density" in header:
-            di = header.index("density")
-            vals = [float(r.split(",")[di]) for r in lines[1:] if r.split(",")[di] not in ("", "nan")]
+            vals = [float(row["density"]) for row in rows if row["density"] not in ("", "nan")]
             check("Tin Assay export: density values are populated and physical",
                   len(vals) > 0 and all(0.5 < v < 6 for v in vals), f"n={len(vals)}")
 
@@ -620,7 +626,7 @@ def test_indonesian_headers_multifile(tmpdir):
         out = str(tmpdir / "id-core.csv")
         dl.value.save_as(out)
         with open(out, encoding="utf-8") as f:
-            header = [ln for ln in f.read().splitlines() if ln and not ln.startswith("#")][0].split(",")
+            header, _ = parse_csv_records(f.read())
         check("Core export: lithology and the original 'Alterasi' column are kept",
               "lithology" in header and "Alterasi" in header, f"header={header}")
 
@@ -670,7 +676,9 @@ def test_auto_domain_host_k1(tmpdir):
         page.evaluate("showTab(2)")
         page.locator("#fileInput").set_input_files(str(fp))
         page.wait_for_timeout(3000)
-        page.evaluate("renderDomain()")
+        page.evaluate("showTab(11)")
+        page.locator('#domainProposalReason').fill('Synthetic host population check')
+        page.locator('#domainProposalApply').click()
         rows = page.evaluate("""(() => { const d = colIdx('domain'), l = colIdx('lithology'), g = colIdx('au_gpt');
             return d < 0 ? null : DATA.rows.map(r => [r[l], r[d], r[g]]); })()""")
         browser.close()
@@ -846,12 +854,8 @@ def main():
         # This is the one place a CSV-writing bug (wrong column order, a
         # dropped decimal, a comma inside an unquoted field) would show up.
         with open(assay_export, encoding="utf-8") as f:
-            export_lines = [ln for ln in f.read().splitlines()
-                            if ln and not ln.startswith("#")]
-        header = export_lines[0].split(",")
-        hole_i, grade_i = header.index("hole_id"), header.index("au_gpt")
-        exported = {row.split(",")[hole_i]: float(row.split(",")[grade_i])
-                    for row in export_lines[1:]}
+            header, exported_rows = parse_csv_records(f.read())
+        exported = {row["hole_id"]: float(row["au_gpt"]) for row in exported_rows}
         check("Assay: exported CSV has exactly 25 composite rows",
               len(exported) == 25, f"{len(exported)} rows")
         file_mismatches = [h["hole_id"] for h in holes
@@ -869,8 +873,7 @@ def main():
         # background and anomaly alike -- clear it into 'D1-Core-HighGrade'.
         # The invariant Resource actually depends on is not which label wins,
         # it's that no composite reaches Resource with an empty one.
-        domain_i = header.index("domain")
-        domains = [row.split(",")[domain_i] for row in export_lines[1:]]
+        domains = [row["domain"] for row in exported_rows]
         check("Assay: every composite gets a non-empty domain label, even with no domain column in the source",
               all(d for d in domains), f"blank count={sum(1 for d in domains if not d)}, values={set(domains)}")
 

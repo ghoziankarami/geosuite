@@ -15,6 +15,14 @@ from pathlib import Path
 import fitz
 from playwright.sync_api import sync_playwright, expect
 
+def _workflow_options(page, disclosure):
+    # Open the native task Options before editing, retaining all science checks.
+    target = page.locator('#' + disclosure)
+    if not target.evaluate('e=>e.open'):
+        target.locator(':scope > summary').click()
+    assert target.evaluate('e=>e.open'), 'Task Options must expose its actual controls'
+
+
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / 'build/build.mjs').exists())
 DIST = Path(os.environ.get('OREBIT_TEST_DIST', ROOT / 'dist'))
 PROOF = Path(os.environ['OREBIT_PROOF_DIR']) if os.environ.get('OREBIT_PROOF_DIR') else None
@@ -108,7 +116,15 @@ def main():
                 errors = []
                 context.on('page', lambda p: p.on('pageerror', lambda e: errors.append(e.stack or str(e))))
                 page = ready(context, base)
-                check(page.evaluate('()=>{const r=document.getElementById("coreValidationResults"),m=document.getElementById("coreValidationRemedies"),a=document.querySelector("#tab7 .workflow-actions");return !!(r.compareDocumentPosition(m)&Node.DOCUMENT_POSITION_FOLLOWING)&&!!(r.compareDocumentPosition(a)&Node.DOCUMENT_POSITION_FOLLOWING);}'), 'Results precede repairs and generic actions')
+                expected_warnings = page.evaluate("_p1RunValidationChecks().filter(c=>c.severity==='warn').map(c=>({name:c.name,value:String(c.value??'')}))")
+                warning_rows = page.locator('#coreValidationResults .core-validation-notices li').all_text_contents()
+                check(len(warning_rows) == len(expected_warnings), 'Every counted warning remains visible after translating its summary')
+                raw_warnings = page.evaluate("_p1RunValidationChecks().filter(c=>c.severity==='warn').map(c=>({name:c.name,value:String(c.value??'')}))")
+                check(raw_warnings == expected_warnings, 'Localized warning summaries do not mutate machine-readable validation checks')
+                check(any('No geology log is loaded for' in row and 'collar holes' in row for row in warning_rows), 'Missing geology is explained as an interpretation-readiness warning')
+                check(not any('Collar without Geology' in row for row in warning_rows), 'Internal warning label is not exposed as participant-facing copy')
+                check(any('Minimum-curvature' in row for row in warning_rows), 'Coordinate-source warning explains the minimum-curvature assumption without inventing a source-row error')
+                check(page.evaluate('()=>{const r=document.getElementById("coreValidationResults"),m=document.getElementById("coreValidationRemedies"),a=document.querySelector("#tab7 .workflow-actions"),n=document.querySelector("#tab7 .workflow-next-action");return !!(n?.querySelector("[data-workflow-repair]")&&n.compareDocumentPosition(r)&Node.DOCUMENT_POSITION_FOLLOWING)&&!!(r.compareDocumentPosition(m)&Node.DOCUMENT_POSITION_FOLLOWING)&&!!(r.compareDocumentPosition(a)&Node.DOCUMENT_POSITION_FOLLOWING);}'), 'Primary next action precedes grouped findings; remedies and generic actions remain below')
                 check(page.locator('#coreValidationMapping').get_attribute('open') is None, 'Mapping stays secondary to actual findings')
                 check(page.locator('#coreValidationResults [data-repair-locate^="missing-collar:"]').count() == 2, 'Default names both exact orphan IDs instead of generic table links')
                 check(page.locator('#coreValidationResults [data-repair-locate^="missing-collar:"]').first.get_attribute('data-action-role') == 'inspect', 'Inspecting a finding uses the shared secondary action hierarchy')
@@ -139,6 +155,31 @@ def main():
                 raw_grades = page.evaluate('()=>JSON.stringify(STATE.assay)')
                 check(page.locator('#coreRepairSource').count() == 0, 'Uploaded project cannot restore bundled sample')
                 check(page.locator('#tab7 [data-workflow-next]').is_disabled(), 'Structural errors block actual continuation')
+                # Follow the actual top-stage link even while the source is invalid.
+                # The Desurvey primary must locate findings, rather than offer only
+                # an unexplained disabled Merge action or fabricate missing geometry.
+                page.locator('#tab7 .workflow-step-links button').filter(has_text='Desurvey').click()
+                page.wait_for_function('()=>document.getElementById("tab10").classList.contains("active")')
+                expect(page.locator('#tab10 .workflow-stage-bar-next')).to_be_visible()
+                check(page.locator('#tab10 [data-workflow-next]').is_hidden(), 'Blocked Desurvey prioritizes a real remedy over unavailable Merge')
+                remedy = page.locator('#tab10 .assay-workflow-card button[data-workflow-repair]')
+                footer = page.locator('#tab10 .workflow-stage-bar-next')
+                check(
+                    remedy.count() == 1
+                    and footer.count() == 1
+                    and remedy.inner_text() == footer.inner_text(),
+                    'Blocked Desurvey card remedy is mirrored by the sticky footer action',
+                )
+                help_box = page.locator('#tab10 .workflow-help')
+                check(help_box.count() == 1 and help_box.get_attribute('open') is None, 'Stage explanations stay available without overwhelming the result')
+                if PROOF:
+                    page.locator('#tab10 .assay-workflow-card').screenshot(path=str(PROOF / f'desurvey-source-remedy-{viewport["width"]}.png'))
+                help_box.locator('summary').click()
+                check(page.locator('#tab10 .workflow-purpose').is_visible(), 'Actual help disclosure reveals the purpose without changing source data')
+                page.locator('#tab10 .workflow-stage-bar-next').click()
+                page.wait_for_function('()=>document.getElementById("tab7").classList.contains("active")')
+                check(page.locator('#coreValidationResults').is_visible(), 'Desurvey footer remedy returns to the actual source findings')
+                check(page.evaluate('()=>JSON.stringify(STATE.assay)') == raw_grades, 'Desurvey remedy and help preserve uploaded measurements')
                 page.locator('[data-core-skip]').click()
                 check(page.locator('[data-core-scope-preview] [data-action-role="next"]').is_disabled(), 'Skip is unavailable when no independently validated population remains')
                 page.locator('[data-core-scope-preview] button').filter(has_text='Cancel').click()
@@ -197,8 +238,16 @@ def main():
                 if PROOF:
                     page.locator('#coreValidationResults').screenshot(path=str(PROOF / f'corrected-results-{viewport["width"]}.png'))
                 for n in [7, 10, 11]:
-                    page.locator(f'#tab{n} .workflow-actions [data-workflow-next]').click()
+                    page.locator(f'#tab{n} .workflow-stage-bar-next').click()
                     page.wait_for_function('(n)=>!document.getElementById("tab"+n).classList.contains("active")', arg=n)
+                    if n == 10:
+                        if page.locator('#computeMergeBtn').count():
+                            page.locator('#computeMergeBtn').click()
+                        page.wait_for_function('()=>STATE.merged?.length===2')
+                    if n == 7:
+                        check('2 drillhole trajectories available' in page.locator('#tab10 .workflow-insight p').first.inner_text(), 'Desurvey insight counts calculated trajectories rather than raw imported tables')
+                    if n == 10:
+                        check('2 prepared intervals' in page.locator('#tab11 .workflow-insight p').first.inner_text(), 'Merge insight describes actual prepared intervals')
                 check(page.evaluate('()=>STATE.merged?.length===2&&STATE.desurvey?.holes["FIX-002"]'), 'Real primary route desurveys and merges the corrected holes')
                 with page.expect_download() as result:
                     page.locator('#pdf-export-btn').click()
@@ -231,6 +280,35 @@ def main():
                 page.wait_for_function('()=>STATE.collar!==window.__beforeRepairProject&&STATE.collar.some(r=>r.hole_id==="FIX-002"&&r.x===1100)')
                 stage(page, 7)
                 check(page.locator('#tab7 [data-workflow-next]').is_enabled() and page.locator('#coreRepairSource').count() == 0, 'Actual project reopen preserves corrected validation without sample restoration')
+                # A malformed later source field used to replace the earlier
+                # collar, reset scope and clear audit before failing. Exercise
+                # the native project picker, not a synthetic applyBundle call.
+                stage(page, 2)
+                state_snapshot = '''()=>JSON.stringify({tables:[STATE.collar,STATE.survey,STATE.assay,STATE.geology],
+                  rawRows:STATE.rawRows,rawHeaders:STATE.rawHeaders,crs:STATE.crs,units:STATE.units,
+                  changes:STATE.CHANGE_LOG,pipeline:window._pipelineLog,scope:OrebitCoreScope.record()})'''
+                preserved = page.evaluate(state_snapshot)
+                malformed = json.loads(json.dumps(exported))
+                malformed['phase1']['collar_csv'] = malformed['phase1']['collar_csv'].replace('1000', '99999', 1)
+                malformed['phase1']['survey_csv'] = {'invalid': 'CSV must be text'}
+                broken = folder / 'invalid-source.orebit'
+                broken.write_text(json.dumps(malformed))
+                with page.expect_file_chooser() as choice:
+                    page.locator('#btnImportBundle').click()
+                choice.value.set_files(str(broken))
+                page.wait_for_function('()=>Array.from(document.querySelectorAll(".toast,#toast")).some(e=>e.textContent.includes("Failed to parse .orebit file"))')
+                check(page.evaluate(state_snapshot) == preserved, 'Failed native project import retains all tables, raw columns, units and audit atomically')
+                check('survey' in page.locator('.toast,#toast').filter(has_text='Failed to parse .orebit file').first.inner_text(), 'Invalid project names the affected source and keeps a CSV import remedy')
+                malformed = json.loads(json.dumps(exported))
+                malformed['schemaVersion'] = 999
+                broken.write_text(json.dumps(malformed))
+                page.wait_for_function('()=>!document.querySelector(".toast")')
+                with page.expect_file_chooser() as choice:
+                    page.locator('#btnImportBundle').click()
+                choice.value.set_files(str(broken))
+                page.wait_for_function('()=>Array.from(document.querySelectorAll(".toast,#toast")).some(e=>e.textContent.includes("This project format is unsupported"))')
+                check(page.evaluate(state_snapshot) == preserved, 'Unsupported project version cannot replace current measured data')
+                stage(page, 7)
                 # Defects beyond missing values need their comparison rows, not
                 # a generic table switch. Replace the same actual CSV files.
                 tables['collar'] = 'hole_id,x,y,z,depth\nFIX-001,1000,2000,300,10\nFIX-001,1001,2001,300,10\nFIX-002,1100,2100,301,10\n'
@@ -327,10 +405,13 @@ def main():
                 check(page.evaluate('JSON.stringify([STATE.collar,STATE.survey,STATE.assay,STATE.geology])')==raw,'Skip keeps all original source records and measurements')
                 check(page.evaluate('Object.keys(STATE.desurvey.holes).join()')=='FIX-001','Scoped desurvey never calculates the excluded invalid trace')
                 check('5 source records excluded' in page.locator('[data-core-analysis-scope]').inner_text(),'Main stages visibly disclose the scoped population')
-                page.locator('#tab10 [data-workflow-next]').click()
+                page.locator('#tab10 .workflow-stage-bar-next').click()
                 page.wait_for_function('()=>document.getElementById("tab11").classList.contains("active")')
+                if page.locator('#computeMergeBtn').count():
+                    page.locator('#computeMergeBtn').click()
+                    page.wait_for_function('()=>STATE.merged?.length===1')
                 check(page.evaluate('JSON.stringify(STATE.merged.map(r=>[r.hole_id,r.ni_pct,r.midx,r.midy,r.midz]))')=='[["FIX-001",1.1,1000,2000,295]]','Scoped merge agrees with independent vertical geometry and untouched grade')
-                page.locator('#tab11 [data-workflow-next]').click()
+                page.locator('#tab11 .workflow-stage-bar-next').click()
                 page.wait_for_function('()=>document.getElementById("tab13").classList.contains("active")')
                 with page.expect_download() as result:
                     page.locator('button[onclick="exportMasterCSV()"]').click()
@@ -349,7 +430,7 @@ def main():
                 check('5 source records excluded' in assay.evaluate('OrebitScreeningReport.sourceScope(DATA.schemaMeta).summary'),'Actual Assay CSV import discloses upstream Core exclusions')
                 # Primary stage links reach the existing composite/report owner.
                 assay.locator('.panel.active .workflow-step-links button').filter(has_text='Compos').click()
-                assay.locator('#compLength').fill('2')
+                _workflow_options(assay, 'assayCompositeOptions');assay.locator('#compLength').fill('2')
                 assay.locator('#compLength').press('Tab')
                 assay.locator('.panel.active .workflow-step-links button').filter(has_text='Report').click()
                 with assay.expect_download() as result:
@@ -388,6 +469,20 @@ def main():
                 check(scope['included']==['FIX-001'] and len(scope['excluded'])==5 and scope['note']=='Survey orientation awaits source verification.','Native project stores explicit whole-hole scope and complete excluded rows')
                 check('FIX-002' in saved['phase1']['assay_csv'] and len([line for line in saved['phase1']['merged_csv'].splitlines() if line and not line.startswith('#')])==2,'Project preserves full raw sources separately from its scoped handoff')
                 stage(page,2)
+                scoped_snapshot = '''()=>JSON.stringify({raw:[STATE.collar,STATE.survey,STATE.assay,STATE.geology],
+                  scope:OrebitCoreScope.record(),geometry:STATE.desurvey,merged:STATE.merged,
+                  units:STATE.units,crs:STATE.crs,audit:STATE.CHANGE_LOG,pipeline:window._pipelineLog})'''
+                scoped_before = page.evaluate(scoped_snapshot)
+                invalid_scope_project = json.loads(json.dumps(saved))
+                invalid_scope_project['phase1']['geology_csv'] = []
+                broken_scope = folder / 'invalid-scope-source.orebit'
+                broken_scope.write_text(json.dumps(invalid_scope_project))
+                page.wait_for_function('()=>!document.querySelector(".toast")')
+                with page.expect_file_chooser() as choice:
+                    page.locator('#btnImportBundle').click()
+                choice.value.set_files(str(broken_scope))
+                page.wait_for_function('()=>Array.from(document.querySelectorAll(".toast,#toast")).some(e=>e.textContent.includes("Failed to parse .orebit file"))')
+                check(page.evaluate(scoped_snapshot) == scoped_before, 'Failed project import preserves accepted screening scope, derived coordinates and complete rationale')
                 with page.expect_file_chooser() as choice:
                     page.locator('#btnImportBundle').click()
                 choice.value.set_files(str(project))
@@ -425,7 +520,9 @@ def main():
                         page.locator('.panel.active [data-core-analysis-scope] button').click()
                         page.locator('.panel.active .workflow-step-links button').filter(has_text='Validation').click()
                 for n in [10,11]:
-                    page.locator(f'#tab{n} [data-workflow-next]').click()
+                    if n == 11 and page.locator('#computeMergeBtn').count():
+                        page.locator('#computeMergeBtn').click()
+                    page.locator(f'#tab{n} .workflow-stage-bar-next').click()
                 with page.expect_download() as result:
                     page.locator('#pdf-export-btn').click()
                 long_report=folder/'long-processing-log.pdf'

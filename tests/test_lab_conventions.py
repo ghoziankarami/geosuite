@@ -35,7 +35,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 BASE = os.environ.get("GEOSUITE_TEST_BASE", "http://localhost")
-CORE, ASSAY, RESOURCE = f"{BASE}:8767/Core.html", f"{BASE}:8768/Assay.html", f"{BASE}:8769/Resource.html"
+CORE, ASSAY, RESOURCE = f"{BASE}:{os.environ.get('CORE_TEST_PORT', '8767')}/Core.html", f"{BASE}:{os.environ.get('ASSAY_TEST_PORT', '8768')}/Assay.html", f"{BASE}:{os.environ.get('RESOURCE_TEST_PORT', '8769')}/Resource.html"
 PASSED = FAILED = 0
 
 

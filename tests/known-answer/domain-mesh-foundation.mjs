@@ -32,10 +32,20 @@ const reordered={tables:source.tables,crs:source.crs};assert.equal(await stateAp
 assert.equal(sourceHash.length,64);
 assert.notEqual(await stateApi.hash({...source,crs:'local'}),sourceHash);
 const empty=stateApi.create();assert.equal(stateApi.readiness(empty,sourceHash).status,'none');
+for(const record of [null,{}, {reviewer:' ',reason:'review'}, {reviewer:'analyst',reason:' '}, {reviewer:'x'.repeat(121),reason:'review'}, {reviewer:'analyst',reason:'x'.repeat(2001)}])assert.throws(()=>stateApi.reviewIdentity(record),/DOMAIN_REVIEW_REQUIRED/);
+assert.equal(JSON.stringify(stateApi.reviewIdentity({reviewer:'  Analyst  ',reason:'  Independent geometry check  '})),JSON.stringify({reviewer:'Analyst',reason:'Independent geometry check'}));
+assert.throws(()=>stateApi.reviewIdentity({reviewer:' '.repeat(120)+'A',reason:'review'}),/DOMAIN_REVIEW_REQUIRED/);
+assert.equal(stateApi.reviewIdentity({reviewer:'Analyst',reason:'x'.repeat(2000)}).reason.length,2000);
 const domain=stateApi.create();domain.source={sha256:sourceHash};domain.crs={kind:'local',units:'m',renderOrigin:[0,0,0],epsg:null};
 domain.domains=[{code:'SAP',density:2.7,build:{inputsHash:sourceHash,mesh,validation:{topology:true}}}];
 assert.equal(stateApi.readiness(domain,sourceHash).status,'invalid');assert.equal(stateApi.readiness(domain,sourceHash).volume,null);
 for(const key of stateApi.requiredChecks) domain.domains[0].build.validation[key]=true;
+assert.equal(stateApi.readiness(domain,sourceHash).status,'stale','legacy approval without reviewer/rationale cannot certify current geometry');
+const build=domain.domains[0].build;
+build.meshHash=await stateApi.hash(mesh);
+build.volume=1000;
+build.review={code:'SAP',volume:1000,reviewer:'Synthetic reviewer',reason:'Synthetic cube inspection',at:'2026-10-20T00:00:00Z',sourceHash,inputsHash:build.inputsHash,meshHash:build.meshHash};
+build.reviewHash=await stateApi.hash(build.review);
 assert.ok(Math.abs(stateApi.readiness(domain,sourceHash).volume-1000)<1e-9);
 assert.equal(stateApi.readiness(domain,'different').status,'stale');
 const restored=stateApi.restore(domain,'different');assert.equal(restored.domains[0].build.stale,true);assert.equal(stateApi.readiness(restored,'different').volume,null);
@@ -44,7 +54,32 @@ assert.throws(()=>stateApi.check({...domain,schemaVersion:99}),/STATE_INVALID/);
 assert.throws(()=>stateApi.check({...domain,domains:[...domain.domains,...domain.domains]}),/CODE_INVALID/);
 assert.throws(()=>stateApi.check({...domain,domains:[{code:'X',density:0}]}),/DENSITY_INVALID/);
 assert.throws(()=>stateApi.check({...domain,domains:[{code:'X',density:null,build:{mesh:{v:[],f:[]}}}]}),/MESH_MISSING/);
+const legacy=stateApi.create();legacy.codebook=[{code:'SAP',name:'Saprolite',color:'#65a30d'}];
+const migrated=stateApi.restore(legacy,sourceHash);
+assert.equal(migrated.codebook[0].label,'Saprolite');assert.equal(migrated.codebook[0].colour,'#65a30d');
+assert.equal(migrated.codebook[0].legacyLabelOnly,true);assert.equal(migrated.codebook[0].lithologies.length,0,'a legacy label must not infer membership');
+assert.equal(legacy.codebook[0].lithologies,undefined,'restoration never overwrites the legacy project');
+const savedSurface={kind:'contact-tin',id:'LIM',name:'LIM',sourceHash,geometryHash:sourceHash,crs:'EPSG:32748',units:'m',recipe:{rule:'first_from',target:'lith:LIM',threshold:null,maxEdge:null},points:25,triangles:32,maxEdge:62.5,createdAt:'2026-10-23T00:00:00Z'};
+stateApi.checkSurfaces([savedSurface]);
+for(const bad of [{...savedSurface,units:'ft'},{...savedSurface,geometryHash:'bad'},{...savedSurface,points:0},{...savedSurface,recipe:{...savedSurface.recipe,rule:'guess'}},{...savedSurface,triangles:5000}])assert.throws(()=>stateApi.checkSurfaces([bad]),/DOMAIN_SURFACE_RECORD_INVALID/);
+assert.throws(()=>stateApi.checkSurfaces([savedSurface,savedSurface]),/DOMAIN_SURFACE_RECORD_INVALID/);
+assert.throws(()=>stateApi.checkSurfaces(Array(201).fill(savedSurface)),/DOMAIN_STATE_BUDGET/);
 console.log('Domain S0 contract: canonical SHA256, legacy empty state, stale restoration, independent density and all geological validation gates passed.');
+const editor={version:1,frame:{crs:'EPSG:32748',units:'m'},
+  loft:{draft:[],draftAt:null,sections:[],domainCode:'D1',endRule:'',snap:2,undo:[],redo:[]},
+  view:{mode:'section',azimuth:90,width:25,offset:0,ve:1,veAuto:true},
+  contact:{target:'book:D1',rule:'first_from',threshold:null,maxEdge:null},
+  solid:{code:'D1',density:null,topography:'',terrainSurface:null}};
+stateApi.checkWorkspace(editor); // Existing one-context projects remain valid.
+const draft={loft:editor.loft,contact:editor.contact,solid:editor.solid,method:'loft'};
+stateApi.checkWorkspace({...editor,method:'loft',domainDrafts:[draft]});
+assert.throws(()=>stateApi.checkWorkspace({...editor,domainDrafts:[draft,draft]}),/DOMAIN_WORKSPACE_INVALID/);
+assert.throws(()=>stateApi.checkWorkspace({...editor,domainDrafts:[{...draft,method:'approve'}]}),/DOMAIN_WORKSPACE_INVALID/);
+assert.throws(()=>stateApi.checkWorkspace({...editor,domainDrafts:[{...draft,loft:{...draft.loft,undo:['{broken']}}]}),/DOMAIN_WORKSPACE_INVALID/);
+assert.throws(()=>stateApi.checkWorkspace({...editor,domainDrafts:[{...draft,solid:{...draft.solid,topography:'imported'}}]}),/DOMAIN_WORKSPACE_INVALID/);
+assert.throws(()=>stateApi.checkWorkspace({...editor,domainDrafts:[{...draft,domainDrafts:[]}]}),/DOMAIN_WORKSPACE_INVALID/);
+assert.throws(()=>stateApi.checkWorkspace({...editor,domainDrafts:Array(101).fill(draft)}),/DOMAIN_STATE_BUDGET/);
+console.log('Domain editor contexts: legacy projects accepted; duplicate, malformed Undo/terrain/method, recursive and over-budget drafts rejected.');
 vm.runInContext(fs.readFileSync(path.join(root,'src/shared/geo/drillhole-display.js'),'utf8'),ctx);
 const points=Array.from({length:20000},(_,i)=>({x:i,y:0,z:-i,rid:'H'+Math.floor(i/100),md:i%100}));
 const original=JSON.stringify(points),display=ctx.drillholeDisplay(points,1000);

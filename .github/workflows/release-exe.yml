@@ -89,6 +89,29 @@ jobs:
         working-directory: desktop
         run: python verify-exe-build.py
 
+      - name: Launch-smoke-test all EXEs on Windows
+        shell: pwsh
+        working-directory: desktop
+        run: |
+          $executables = Get-ChildItem -Path dist -Filter "Orebit-*.exe"
+          if ($executables.Count -ne 3) {
+            throw "Expected Core, Assay, and Resource EXEs; found $($executables.Count)."
+          }
+          foreach ($exe in $executables) {
+            Write-Host "Launching $($exe.Name) for a startup smoke test..."
+            $process = Start-Process -FilePath $exe.FullName -PassThru
+            try {
+              Start-Sleep -Seconds 5
+              if (-not (Get-Process -Id $process.Id -ErrorAction SilentlyContinue)) {
+                throw "$($exe.Name) exited within 5 seconds of launch."
+              }
+              Write-Host "OK: $($exe.Name) stayed open for 5 seconds."
+            }
+            finally {
+              Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            }
+          }
+
       - name: Record resolved Python dependencies
         shell: bash
         run: |
@@ -114,3 +137,4 @@ jobs:
         with:
           name: geosuite-exe-${{ env.TAG }}
           path: desktop/dist/*
+          retention-days: 3

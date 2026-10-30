@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <!-- OREBIT_BUILD_START
-Orebit Core — GeoSuite v3.1.1
+Orebit Core — GeoSuite v3.2.0
 Copyright (c) 2026 Orebit (Ghozian Islam Karami). GPL-3.0-only.
-Build: core-v3.1.1-source
+Build: core-v3.2.0-source
 Terms: https://geosuite.orebit.id/terms
 -- OREBIT_BUILD_END -->
-<script>window.OREBIT_BUILD_ID="core-v3.1.1-source";</script>
+<script>window.OREBIT_BUILD_ID="core-v3.2.0-source";</script>
+
 
 
 
@@ -23,7 +24,7 @@ Terms: https://geosuite.orebit.id/terms
 
 <head>
 <meta charset="UTF-8">
-<meta name="product-version" content="v3.1.1"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
+<meta name="product-version" content="v3.2.0"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
 <meta name="product-name" content="Orebit Core">
 <meta name="product-stage" content="Core">
 <!-- CSP: data remains local; optional online services and release checks use explicit origins. -->
@@ -41,6 +42,7 @@ Terms: https://geosuite.orebit.id/terms
 <style>
 /* @orebit-inline: shared/ui/action-roles.css */
 /* @orebit-inline: shared/ui/workflow.css */
+/* @orebit-inline: shared/plots/plot-theme.css */
 </style>
 </head>
 <body>
@@ -78,7 +80,6 @@ Terms: https://geosuite.orebit.id/terms
   </div>
   <button class="mobile-menu-toggle" aria-label="Open menu" data-i18n-attr="aria-label:hdr.openMenu" onclick="toggleMobileMenu()" type="button"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
   <div class="toolbar" id="orebitToolbar">
-    <a href="https://orebit.id" target="_blank" rel="noopener" data-orebit-collapse-mobile class="orebit-link" title="Visit orebit.id" data-i18n-attr="title:hdr.visitOrebitTitle">orebit.id ↗</a>
     <a href="Assay.html" target="_blank" rel="noopener" data-orebit-collapse-mobile data-phase-switch hidden class="orebit-link" title="Switch to Orebit Assay" data-i18n-attr="title:hdr.switchToAssayTitle" data-i18n="hdr.switchToAssay">Assay ↗</a>
     <a href="Resource.html" target="_blank" rel="noopener" data-orebit-collapse-mobile data-phase-switch hidden class="orebit-link" title="Switch to Orebit Resource" data-i18n-attr="title:hdr.switchToResourceTitle" data-i18n="hdr.switchToResource">Resource ↗</a>
     <!-- Theme toggle removed 2026-09-04: it lived in the header, the help
@@ -92,7 +93,7 @@ Terms: https://geosuite.orebit.id/terms
          external link does not -- a strict superset, so this link added
          a second door to the same room with none of its own value. -->
     <a href="https://geosuite.orebit.id/?desktop=1" target="_blank" rel="noopener" data-desktop-cta hidden class="orebit-link" title="Windows desktop app — free, offline, no licence key" data-i18n-attr="title:hdr.getDesktopTitle"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> <span data-i18n="hdr.getDesktop">Desktop ↗</span></a>
-    <button id="undoBtn" onclick="undoLast()" title="Undo (Ctrl+Z)" data-i18n-attr="title:hdr.undoTitle" style="position:relative;"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> <span data-i18n="hdr.undo">Undo</span><span id="undoBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--accent,#0d9488);color:#fff;font-size:10px;border-radius:50%;width:16px;height:16px;line-height:16px;text-align:center;"></span></button>
+    <button id="undoBtn" onclick="undoLast()" title="Undo (Ctrl+Z)" data-i18n-attr="title:hdr.undoTitle" style="position:relative;"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> <span data-i18n="hdr.undo">Undo</span><span id="undoBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--accent,#0d9488);color:#fff;font-size:11px;border-radius:50%;width:16px;height:16px;line-height:16px;text-align:center;"></span></button>
     <button id="lang-switch" class="lang-toggle" aria-label="Switch language" type="button" title="Switch language" data-i18n-attr="title:hdr.langSwitchTitle,aria-label:hdr.langSwitchTitle"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> <span class="lang-label">EN</span></button>
   </div>
   <div class="mobile-menu-backdrop" onclick="toggleMobileMenu()"></div>
@@ -126,6 +127,8 @@ Terms: https://geosuite.orebit.id/terms
   <button class="tab" onclick="showTab(11)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg> <span data-i18n="tab.merge">Merge</span></button>
   <button class="tab" onclick="showTab(12)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg> <span data-i18n="tab.composite">Composite</span></button>
   <button class="tab" onclick="showTab(13)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="tab.export">Export</span></button>
+  <span class="tab-group-label" role="presentation" data-i18n="tabgroup.preview">Preview</span>
+  <button class="tab" onclick="showTab(14)"  tabindex="0" ><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12"/><path d="M21 7l-9 5-9-5"/></svg> <span data-i18n="tab.domain">Domain</span></button>
 </nav>
 
 <!-- VERSION CHANGELOG BANNER v2.9.1 (dismissible, localStorage-gated) -->
@@ -181,6 +184,9 @@ Terms: https://geosuite.orebit.id/terms
 
 <!-- TAB 13: EXPORT -->
 /* @orebit-inline: ui/core/stage-13-export.html */
+
+<!-- TAB 14: DOMAIN (read-only preview) -->
+/* @orebit-inline: ui/core/stage-14-domain.html */
 
 </div><!-- /.wrap -->
 
@@ -458,7 +464,9 @@ const SAMPLE_SOURCE_DATA = {...SAMPLE_DATA, ...SAMPLE_SOURCE_TABLES};
 /* @orebit-inline: shared/ui/index.js */
 /* @orebit-inline: shared/i18n/index.js */
 /* @orebit-inline: shared/io/index.js */
+/* @orebit-inline: shared/io/project-capsule.js */
 /* @orebit-inline: shared/io/screening-report.js */
+/* @orebit-inline: shared/io/domain-report.js */
 /* @orebit-inline: shared/io/parse.js */
 /* @orebit-inline: shared/io/grades.js */
 /* @orebit-inline: shared/geostat/grade-units.js */
@@ -468,9 +476,23 @@ const SAMPLE_SOURCE_DATA = {...SAMPLE_DATA, ...SAMPLE_SOURCE_TABLES};
 /* @orebit-inline: shared/ui/pwa.js */
 /* @orebit-inline: shared/ui/screening-workflow.js */
 /* @orebit-inline: shared/ui/core-validation-repair.js */
+/* @orebit-inline: shared/geom/primitives.js */
 /* @orebit-inline: shared/geom/mesh.js */
+/* @orebit-inline: shared/geom/solid.js */
+/* @orebit-inline: shared/geom/interval-membership.js */
+/* @orebit-inline: shared/geom/convex-clip.js */
+/* @orebit-inline: shared/geom/terrain-clip.js */
 /* @orebit-inline: shared/geom/domain-state.js */
+/* @orebit-inline: shared/geom/viewer-scene.js */
+/* @orebit-inline: shared/geom/contacts.js */
+/* @orebit-inline: shared/geom/between.js */
+/* @orebit-inline: shared/geom/dxf.js */
+/* @orebit-inline: shared/geom/surface-import.js */
+/* @orebit-inline: shared/geom/interop.js */
+/* @orebit-inline: shared/geom/loft.js */
 /* @orebit-inline: shared/ui/core-domain.js */
+/* @orebit-inline: shared/ui/core-domain-viewer.js */
+/* @orebit-inline: shared/ui/core-eda-reference.js */
 // ============= CONSTANTS =============
 const DB_NAME    = 'orebit-projects';
 const DB_VERSION = 1;
@@ -517,6 +539,7 @@ window._plotlyReady = (function() {
     var _orig = Plotly.newPlot;
     var SAFE = { scrollZoom: false, doubleClick: 'reset', displayModeBar: false, responsive: true };
     Plotly.newPlot = function(div, data, layout, config) {
+      if (typeof plotFinish === 'function') { try { plotFinish(data, layout, div); } catch (e) { console.warn('[Orebit] plotFinish failed', e); } }
       // Auto-purge the target div before re-plotting to prevent memory leaks
       // (stacked event listeners + WebGL contexts on re-render / tab switches).
       try {
@@ -876,31 +899,7 @@ let _focusTrapContainer = null;
 
 
 
-// ============= PLOTLY THEME (shared across P1/P2/P3) =============
-// Returns a Plotly layout fragment with theme-aware colors.
-// Supports both data-theme attribute (P1) and body class (P2/P3).
-function plotTheme() {
-  const dark = document.documentElement.getAttribute('data-theme') === 'dark' ||
-               document.body.classList.contains('dark');
-  return {
-    paper_bgcolor: 'rgba(0,0,0,0)',
-    plot_bgcolor: 'rgba(0,0,0,0)',
-    // CHANGED 2026-07-28: visual polish — slightly larger font, tighter margins
-    font: { color: dark ? '#e5e7eb' : '#0f172a', family: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', size: 12.5 },
-    margin: { l: 64, r: 24, t: 28, b: 56 },
-    // CHANGED 2026-07-28: subtler grid for cleaner look
-    xaxis: { gridcolor: dark ? '#1e293b' : '#f1f5f9', gridwidth: 1, zerolinecolor: dark ? '#4b5563' : '#cbd5e1', zerolinewidth: 1.5, tickfont: { size: 11 } },
-    yaxis: { gridcolor: dark ? '#1e293b' : '#f1f5f9', gridwidth: 1, zerolinecolor: dark ? '#4b5563' : '#cbd5e1', zerolinewidth: 1.5, tickfont: { size: 11 } },
-    // Hover tooltips: force readable contrast in BOTH themes. Without an explicit
-    // hoverlabel, Plotly tints the tooltip bg from the trace color and the text becomes
-    // unreadable (light-on-light / dark-on-dark) — the "tulisan hover gak kebaca" bug.
-    hoverlabel: {
-      bgcolor: dark ? '#1e293b' : '#ffffff',
-      bordercolor: dark ? '#475569' : '#cbd5e1',
-      font: { color: dark ? '#f1f5f9' : '#0f172a', family: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', size: 12.5 }
-    },
-  };
-}
+/* @orebit-inline: shared/plots/plot-theme.js */
 
 // Shared PNG export makes a light-theme snapshot and scales its text without
 // changing the active graph, camera, filters or analytical data.
@@ -1226,7 +1225,7 @@ const AutoSave = {
 
   async _doSave() {
     try {
-      const bundle = buildBundle(STATE.currentProjectName);
+      const bundle = await sealProjectCapsule(buildBundle(STATE.currentProjectName));
       // Preserve created date from existing record
       const existing = await dbGet(STATE.currentProjectName);
       if (existing && existing.created) bundle.created = existing.created;
@@ -1396,7 +1395,7 @@ const TABLE_SCHEMA = {
 // === MODULE: init.js ===
 // ============= INIT =============
 function init() {
-  // (debug log removed)
+  initTheme();
   resetToSample({notify:false});
   updateDataTag();
   initDragDrop();
@@ -2121,7 +2120,7 @@ function renderRichDashboard() {
       const dq = (typeof computeDataQualityScore === 'function') ? computeDataQualityScore() : null;
       const rowHtml = checks.map(c =>
         '<tr><td>' + escapeHtml(c.nm) + '</td>'
-        + '<td style="text-align:right;color:' + (c.warn ? '#d97706' : '#16a34a') + ';">'
+        + '<td style="text-align:right;color:' + (c.warn ? 'var(--warn-ink)' : 'var(--good-ink)') + ';">'
         + (c.warn ? (t('core.renderRichDashboard.warning')) : 'OK') + '</td>'
         + '<td style="text-align:right;color:var(--fg-mute);">' + escapeHtml(c.ct) + '</td></tr>').join('');
       const b = dq ? dq.breakdown : null;
@@ -2157,8 +2156,8 @@ function renderRichDashboard() {
       tEl.innerHTML = '<p style="font-size:13px;color:var(--fg-mute);">' + (t('core.renderRichDashboard.noCollarDataYet')) + '</p>';
       if (hintEl) hintEl.textContent = '';
     } else {
-      if (hintEl) hintEl.textContent = (t('core.renderRichDashboard.showing')) + Math.min(10, collar.length) + (t('core.renderRichDashboard.of')) + collar.length + (t('core.renderRichDashboard.holes'));
-      const rows = collar.slice(0, 10).map(r => {
+      if (hintEl) hintEl.textContent = (t('core.renderRichDashboard.showing')) + Math.min(8, collar.length) + (t('core.renderRichDashboard.of')) + collar.length + (t('core.renderRichDashboard.holes'));
+      const rows = collar.slice(0, 8).map(r => {
         const id = _field(r, holeKey) || '—';
         const x = _numField(r, ['x','easting','east']), y = _numField(r, ['y','northing','north']), z = _numField(r, ['z','rl','elev','elevation']);
         const d = _numField(r, ['depth','total_depth','td','eoh']);
@@ -2169,7 +2168,7 @@ function renderRichDashboard() {
           + '</td><td style="text-align:right;font-variant-numeric:tabular-nums;">' + fmt(z)
           + '</td><td style="text-align:right;font-variant-numeric:tabular-nums;">' + fmt(d) + '</td></tr>';
       }).join('');
-      tEl.innerHTML = '<table tabindex="0" aria-label="Recent collars" style="width:100%;border-collapse:collapse;font-size:13px;">'
+      tEl.innerHTML = '<table tabindex="0" aria-label="' + escapeHtml(t('dash.collarTitle')) + '" style="width:100%;border-collapse:collapse;font-size:13px;">'
         + '<thead><tr style="text-align:left;font-size:11px;text-transform:uppercase;color:var(--fg-mute);">'
         + '<th style="padding:6px 8px;" data-i18n="core.holeId">Hole ID</th><th style="padding:6px 8px;text-align:right;" data-i18n="core.collar.easting">East</th><th style="padding:6px 8px;text-align:right;" data-i18n="core.north">North</th><th style="padding:6px 8px;text-align:right;">RL</th><th style="padding:6px 8px;text-align:right;">' + (t('core.renderRichDashboard.depth')) + '</th>'
         + '</tr></thead><tbody>' + rows + '</tbody></table>';
@@ -2194,19 +2193,7 @@ function renderRichDashboard() {
       if (lHint) lHint.textContent = '';
     } else {
       if (lHint) lHint.textContent = (t('core.renderRichDashboard.compositionLoggedInterval'));
-      const shades = ['var(--accent)', '#0f766e', '#475569', '#334155', '#1e293b'];
-      const maxLen = top[0][1] || 1;
-      lEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:5px;">' + top.map((e, i) => {
-        const pct = totLen ? (100 * e[1] / totLen) : 0;
-        const barW = Math.max(18, 100 * e[1] / maxLen); // proportional to largest
-        return '<div style="display:flex;align-items:center;gap:8px;font-size:12px;">'
-          + '<span style="flex:0 0 78px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--fg-body);font-weight:500;">' + escapeHtml(String(e[0])) + '</span>'
-          + '<span style="flex:1;height:22px;background:var(--border);border-radius:5px;overflow:hidden;">'
-          +   '<span style="display:block;height:100%;width:' + barW.toFixed(1) + '%;background:' + shades[i % shades.length] + ';border-radius:5px;"></span>'
-          + '</span>'
-          + '<span style="flex:0 0 38px;text-align:right;font-family:ui-monospace,monospace;font-size:11px;color:var(--fg-mute);">' + pct.toFixed(0) + '%</span>'
-          + '</div>';
-      }).join('') + '</div>';
+      lEl.innerHTML = shareBarsHtml(top, totLen, false);
     }
   }
 }
@@ -2289,6 +2276,7 @@ function showTab(n) {
   if (n === 11) safeRender(t('tab.merge'), () => renderMerge());
   if (n === 12) safeRender(t('tab.composite'), () => renderComposite());
   if (n === 13) safeRender(t('tab.export'), () => renderExport());
+  if (n === 14) safeRender(t('tab.domain'), () => OrebitCoreDomainViewer.show());
 
   // Sprint G — append next-step CTA to tab content (after main render)
   if (n >= 2 && n <= 12) {
@@ -2335,7 +2323,7 @@ function rerenderActiveTab() {
   }
 }
 
-// plotTheme → defined in THIS file below — not shared (Tahap 4.3 candidate)
+// plotTheme, plotLabel → src/shared/plots/plot-theme.js (inlined at build)
 
 
 
@@ -2450,7 +2438,7 @@ function renderEditableTable(tableName, containerId) {
         <span style="margin-left:auto;font-size:12px;color:var(--fg-mute);">${totalRows} ${filterText ? `${t('core.tbl.of')} ${allRows.length} ` : ''}${t('core.tbl.rows')}</span>
       </div>
       <div class="table-toolbar">
-        <input type="search" placeholder="Filter rows (any column)..." value="${escapeHtml(STATE.filter[tableName] || '')}" oninput="setFilter('${tableName}', this.value)">
+        <input type="search" placeholder="${escapeHtml(t('core.tbl.filterRows'))}" value="${escapeHtml(STATE.filter[tableName] || '')}" oninput="setFilter('${tableName}', this.value)">
         ${sortCfg ? `<button class="btn small secondary" onclick="clearSort('${tableName}')">⤫ clear sort</button>` : ''}
         <span class="filter-info">${t('core.tbl.clickHeaderSort')}</span>
       </div>
@@ -2532,7 +2520,7 @@ function renderRow(tableName, row, idx, kind, displayCols, requiredCols, cellIss
   }).join('');
 
   const action = isDeleted
-    ? `<button class="btn small secondary" onclick="undeleteRow('${tableName}', ${idx})">↺</button>`
+    ? `<button class="btn small secondary" aria-label="${escapeHtml(t('core.undoLast.undoDeleteRow'))}" title="${escapeHtml(t('core.undoLast.undoDeleteRow'))}" onclick="undeleteRow('${tableName}', ${idx})">↺</button>`
     : `<button class="btn small danger" onclick="deleteRow('${tableName}', ${idx}, ${isNew})">${ICONS.trash}</button>`;
 
   return `<tr class="${cls}" data-idx="${idx}"><td>${idx + 1}</td>${cells}<td class="row-actions">${action}</td></tr>`;
@@ -2812,8 +2800,12 @@ function applyChanges(tableName) {
   STATE.edits[tableName].clear();
   STATE.newRows[tableName] = [];
   STATE.deletedIdx[tableName].clear();
+  // Undo entries describe unapplied table drafts. Once Apply commits them,
+  // their old row indexes and new-row references are no longer reversible as drafts.
+  UNDO.stack = UNDO.stack.filter(action => action.table !== tableName);
+  UNDO._updateBadge();
   window.OrebitCoreScope?.reset(); STATE.desurvey = null;
-  STATE.merged = null;
+  STATE.merged = null; STATE.mergeAudit = null;
 
   STATE.composite = null;
 
@@ -2852,6 +2844,8 @@ function discardChanges(tableName) {
   STATE.edits[tableName].clear();
   STATE.newRows[tableName] = [];
   STATE.deletedIdx[tableName].clear();
+  UNDO.stack = UNDO.stack.filter(action => action.table !== tableName);
+  UNDO._updateBadge();
   toast(t('core.discardChanges.toast'), 'info');
   rerenderTable(tableName);
 }
@@ -3040,7 +3034,18 @@ function applyNumberFormat(mode) {
 
 // CSV delimiter override (Import Options). Re-parses files with specified delimiter.
 function applyDelimiterOverride(delim) {
-  window._coreDelimiterOverride = (delim === ',' || delim === ';' || delim === '\t') ? delim : 'auto';
+  const selected = delim === 'tab' || delim === '\\t' ? '\t'
+    : (delim === ',' || delim === ';') ? delim : 'auto';
+  // One user preference backs both legacy controls. Keep them visually and
+  // behaviorally aligned so the last native control change always wins.
+  window._coreDelimiterOverride = selected;
+  window._userDelim = selected;
+  const dropdown = document.getElementById('coreDelimiter');
+  const controlValue = selected === '\t' ? 'tab' : selected;
+  if (dropdown && dropdown.value !== controlValue) dropdown.value = controlValue;
+  document.querySelectorAll('input[name="csvDelim"]').forEach(input => {
+    input.checked = input.value === controlValue;
+  });
   if (_lastUploadedFiles && _lastUploadedFiles.length) {
     toast(t('core.applyDelimiterOverride.delimiterSetReParsingFiles'), 'info');
     handleUpload({ target: { files: _lastUploadedFiles } });
@@ -3144,6 +3149,10 @@ function _lengthTag() {
   return STATE.lengthUnitSource === 'ft'
     ? '# lengths: metres (converted from feet x0.3048 on import: collar x/y/z/depth, survey depth, from/to)'
     : '# lengths: metres';
+}
+function _crsTag() {
+  const crs = typeof STATE.crs === 'string' ? STATE.crs.replace(/[\r\n]+/g, ' ').trim() : '';
+  return '# crs: ' + (crs || 'not declared');
 }
 
 function _coreLoadTable(cls, mapped, headers, rows, opts = {}) {
@@ -4088,43 +4097,56 @@ const GRADE_PALETTE_5 = ['#fef3c7', '#fbbf24', '#f97316', '#dc2626', '#7f1d1d'];
 // unit follow an assigned declaration, falling back to the explicit header unit.
 function gradeColMeta(col) {
   const m = /^(.*)_(gpt|ppm|pct|ppb|kgm3|gm3|kg)$/i.exec(String(col || ''));
-  const label = (m ? m[1] : col).replace(/_/g, ' ').toUpperCase();
+  const label = plotName(col) !== col ? plotName(col) : (m ? m[1] : col).replace(/_/g, ' ').toUpperCase();
   const declared = STATE.units[col];
   const assigned = declared && declared !== 'auto' ? declared : autoDetectUnit(col);
   const unit = assigned === 'unitless' || assigned === 'auto' ? '' : (OrebitGradeUnits.normalize(assigned) || assigned || '');
   return { label, unit };
 }
 
+// Re-enter the existing router so the guide returns its moved native map to
+// its owner before rebuilding. Direct render left duplicate plot IDs, then
+// removed the live plot while moving an unrendered replacement into the guide.
+function refreshValidationMap(controlId) {
+  const hadFocus = document.activeElement?.id === controlId;
+  showTab(7);
+  if (hadFocus && document.activeElement === document.body) {
+    document.getElementById(controlId)?.focus({preventScroll:true});
+  }
+}
 function mapColorByChanged(value) {
-  if (!STATE.mapUI) STATE.mapUI = { colorBy: 'status', prospect: '', showLabels: true, gradeCol: '', gradeClass: 'quantile' };
+  if (!STATE.mapUI) STATE.mapUI = { colorBy: 'status', prospect: '', showLabels: null, gradeCol: '', gradeClass: 'quantile' };
   STATE.mapUI.colorBy = value;
-  renderValidation();
+  refreshValidationMap('mapColorBy');
 }
 function mapProspectFilterChanged(value) {
-  if (!STATE.mapUI) STATE.mapUI = { colorBy: 'status', prospect: '', showLabels: true, gradeCol: '', gradeClass: 'quantile' };
+  if (!STATE.mapUI) STATE.mapUI = { colorBy: 'status', prospect: '', showLabels: null, gradeCol: '', gradeClass: 'quantile' };
   STATE.mapUI.prospect = value;
-  renderValidation();
+  refreshValidationMap('mapProspectFilter');
 }
 function mapGradeColChanged(value) {
-  if (!STATE.mapUI) STATE.mapUI = { colorBy: 'status', prospect: '', showLabels: true, gradeCol: '', gradeClass: 'quantile' };
+  if (!STATE.mapUI) STATE.mapUI = { colorBy: 'status', prospect: '', showLabels: null, gradeCol: '', gradeClass: 'quantile' };
   STATE.mapUI.gradeCol = value;
-  renderValidation();
+  refreshValidationMap('mapGradeCol');
 }
 function mapGradeClassChanged(value) {
-  if (!STATE.mapUI) STATE.mapUI = { colorBy: 'status', prospect: '', showLabels: true, gradeCol: '', gradeClass: 'quantile' };
+  if (!STATE.mapUI) STATE.mapUI = { colorBy: 'status', prospect: '', showLabels: null, gradeCol: '', gradeClass: 'quantile' };
   STATE.mapUI.gradeClass = value;
-  renderValidation();
+  refreshValidationMap('mapGradeClass');
 }
 function mapShowLabelsChanged(checked) {
-  if (!STATE.mapUI) STATE.mapUI = { colorBy: 'status', prospect: '', showLabels: true, gradeCol: '', gradeClass: 'quantile' };
+  if (!STATE.mapUI) STATE.mapUI = { colorBy: 'status', prospect: '', showLabels: null, gradeCol: '', gradeClass: 'quantile' };
   STATE.mapUI.showLabels = checked;
   // Toggle labels on existing Plotly traces without full re-render (avoids scroll jump)
   const mapDiv = document.getElementById('linkageMap');
   if (mapDiv && mapDiv.data) {
     mapDiv.data.forEach((trace, i) => {
-      const pts = trace.x || [];
       const newMode = checked ? 'markers+text' : 'markers';
-      Plotly.restyle('linkageMap', { mode: newMode }, [i]);
+      const update = {mode: newMode};
+      // A trace rebuilt while labels were hidden has no text array. Restore
+      // its real source IDs together with the mode, preserving the map view.
+      if (Array.isArray(trace.customdata)) update.text = [checked ? trace.customdata.slice() : []];
+      Plotly.restyle(mapDiv, update, [i]);
     });
   }
 }
@@ -4174,6 +4196,10 @@ function gotoHole(holeId, tableName) {
   }
 }
 
+function coreLinkageStatusColors() {
+  return { complete: '#16a34a', noSurvey: _plotToken('--warn-ink', '#b45309'), noGeo: '#ea580c', noAssay: '#dc2626', orphan: '#dc2626' };
+}
+
 function filterHoleStatus() {
   const wrapper = document.getElementById('holeStatusTableWrapper');
   if (!wrapper) return;
@@ -4192,8 +4218,8 @@ function filterHoleStatus() {
     noAssay: '<span class="badge warn">' + t('core.st.noAssay') + '</span>',
     noSurvey: '<span class="badge warn">' + t('core.st.noSurvey') + '</span>',
   };
-  const check = '<span style="color:var(--good);font-weight:600;">✓</span>';
-  const cross = '<span style="color:var(--bad);font-weight:600;">✕</span>';
+  const check = '<span style="color:var(--good-ink);font-weight:600;">✓</span>';
+  const cross = '<span style="color:var(--bad-ink);font-weight:600;">✕</span>';
   // Every cell is a link into the table that would fix it. Validation used to
   // be a dead end: it named 381 holes with no geology and then left you to
   // find them yourself in a 14,000-row table. Clicking a cell filters that
@@ -4219,7 +4245,7 @@ function filterHoleStatus() {
   </tr>`).join('');
   wrapper.innerHTML = `<table style="font-size:12px;">
     <tr><th data-i18n="core.holeId">Hole ID</th><th>Prospect</th><th>Collar</th><th>Survey</th><th>Assay</th><th>Geology</th><th data-i18n="core.status">Status</th><th data-i18n="core.missing">Missing</th></tr>
-    ${rows || '<tr><td colspan="8" style="text-align:center;color:var(--fg-mute);">No holes match filter</td></tr>'}
+    ${rows || '<tr><td colspan="8" style="text-align:center;color:var(--fg-mute);">'+escapeHtml(t('core.val.noMatchingHoles'))+'</td></tr>'}
   </table>
   <p style="font-size:11px;color:var(--fg-mute);margin-top:4px;">${t('core.val.showingHoles').replace('{n}', data.length)}</p>`;
 }
@@ -4282,7 +4308,7 @@ function renderColumnMapping(container) {
         `<option value="${escapeHtml(dc)}" ${dc === current ? 'selected' : ''}>${escapeHtml(dc)}</option>`
       ).join('');
       const tag = isReq
-        ? '<span style="color:var(--bad);font-weight:600;">required</span>'
+        ? '<span style="color:var(--bad-ink);font-weight:600;">required</span>'
         : '<span style="color:var(--fg-mute);font-size:11px;">optional</span>';
       return `<tr>
         <td><strong>${escapeHtml(reqCol)}</strong> ${tag}</td>
@@ -4675,17 +4701,18 @@ function renderValidation() {
   `;
 
   container.innerHTML = `
+    <details id="coreValidationParameters" data-workflow-options><summary>${t('flow.options')} · ${t('core.repair.parameters')}</summary>${renderUnitColumnPanel()}</details>
+    <details id="coreValidationInspect" class="workflow-inspection"><summary>${t('flow.inspect')} · ${t('core.linkageMatrix')} / QA-QC</summary>
     ${qiPanel}
-    <details id="coreValidationParameters"><summary>${t('core.repair.parameters')}</summary>${renderUnitColumnPanel()}</details>
     <div class="card">
       <h3 data-i18n="core.linkageMatrix">Linkage Matrix</h3>
       <table>
         <tr><th data-i18n="core.check">Check</th><th data-i18n="core.status">Status</th><th data-i18n="core.detail">Detail</th></tr>
-        <tr><td colspan="3" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:var(--bad);padding-top:10px;border-top:2px solid var(--border);">${t('core.val.tierErrors')}</td></tr>
+        <tr><td colspan="3" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:var(--bad-ink);padding-top:10px;border-top:2px solid var(--border);">${t('core.val.tierErrors')}</td></tr>
         ${linkageRow(t('core.val.orphanAssay'), orphanAssay, 'bad', '', 'assay', t('core.val.adviceOrphan'))}
         ${linkageRow(t('core.val.orphanSurvey'), orphanSurvey, 'bad', '', 'survey', t('core.val.adviceOrphan'))}
         ${linkageRow(t('core.val.orphanGeology'), orphanGeo, 'bad', '', 'geology', t('core.val.adviceOrphan'))}
-        <tr><td colspan="3" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:var(--warn);padding-top:10px;border-top:2px solid var(--border);">${t('core.val.tierVerify')}</td></tr>
+        <tr><td colspan="3" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:var(--warn-ink);padding-top:10px;border-top:2px solid var(--border);">${t('core.val.tierVerify')}</td></tr>
         ${linkageRow(t('core.val.noSurvey'), collarNoSurvey, 'warn', t('core.val.assumedVertical'), 'survey', t('core.val.adviceNoSurvey'))}
         ${linkageRow(t('core.val.noAssay'), collarNoAssay, 'warn', '', 'assay', t('core.val.adviceNoAssay'))}
         ${linkageRow(t('core.val.noGeology'), collarNoGeo, 'warn', '', 'geology', t('core.val.adviceNoGeology'))}
@@ -4742,14 +4769,15 @@ function renderValidation() {
         </label>
         <label style="font-size:12px;">${t('core.map.filterProspect')}
           <select id="mapProspectFilter" onchange="mapProspectFilterChanged(this.value)" style="padding:3px 6px;font-size:12px;margin-left:4px;">
-            <option value="">All</option>
+            <option value="">${t('core.map.allProspects')}</option>
           </select>
         </label>
         <label style="font-size:12px;display:inline-flex;align-items:center;gap:4px;">
           <input type="checkbox" id="mapShowLabels" onchange="mapShowLabelsChanged(this.checked)" /> ${t('core.map.showLabels')}
         </label>
       </div>
-      <div id="linkageMap" style="height:480px;"></div>
+      <div id="linkageMapUnavailableNote" class="hint warn" role="status" hidden></div>
+      <div id="linkageMap" style="height:520px;"></div>
       <div id="linkageLegend" style="display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:12px;justify-content:center;"></div>
     </div>
     ${(bdlAnyTotal > 0 || hasEmptyOptional) ? `
@@ -4792,7 +4820,7 @@ function renderValidation() {
         ${['collar','survey','assay','geology'].map(t => {
           const cols = completeness[t];
           const avgPct = cols.length ? (cols.reduce((s,c) => s + c.pct, 0) / cols.length) : 0;
-          const color = avgPct === 100 ? 'var(--good)' : avgPct >= 95 ? 'var(--warn)' : 'var(--bad)';
+          const color = avgPct === 100 ? 'var(--good-ink)' : avgPct >= 95 ? 'var(--warn-ink)' : 'var(--bad-ink)';
           return `<span style="font-weight:600;"><span style="color:${color};">${avgPct.toFixed(0)}%</span> ${t}</span>`;
         }).join(' · ')}
       </div>
@@ -4804,7 +4832,7 @@ function renderValidation() {
         return `<details class="card" style="margin-bottom:6px;" ${hasIssues ? 'open' : ''}>
           <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">
             ${t} — ${avgPct.toFixed(1)}${window.__t('core.vc.complete')}
-            ${hasIssues ? `<span style="color:var(--bad);font-size:12px;margin-left:8px;">${missingCols.map(c=>c.col).join(', ')} ${window.__t('core.vc.incomplete')}</span>` : '<span style="color:var(--good);font-size:12px;margin-left:8px;">' + window.__t('core.vc.allComplete') + '</span>'}
+            ${hasIssues ? `<span style="color:var(--bad-ink);font-size:12px;margin-left:8px;">${missingCols.map(c=>c.col).join(', ')} ${window.__t('core.vc.incomplete')}</span>` : '<span style="color:var(--good-ink);font-size:12px;margin-left:8px;">' + window.__t('core.vc.allComplete') + '</span>'}
           </summary>
           <table style="margin-top:8px;">
             <tr><th data-i18n="core.vc.field">Field</th><th>${window.__t('core.vc.complete')}</th><th data-i18n="core.missing">Missing</th><th></th></tr>
@@ -4841,7 +4869,7 @@ function renderValidation() {
           return `<details class="card" style="margin-bottom:6px;" open>
             <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">
               ${t} — ${(issues.length > 1 ? window.__t('core.vc.rowsMissingFieldsPlural') : window.__t('core.vc.rowsMissingFieldsSingular')).replace('{n}', issues.length)}
-              <span style="color:var(--bad);font-size:12px;margin-left:8px;">${[...new Set(issues.flatMap(i => i.missing))].join(', ')}</span>
+              <span style="color:var(--bad-ink);font-size:12px;margin-left:8px;">${[...new Set(issues.flatMap(i => i.missing))].join(', ')}</span>
             </summary>
             <div style="overflow-x:auto;margin-top:8px;">
               <table style="font-size:12px;min-width:400px;">
@@ -4852,9 +4880,9 @@ function renderValidation() {
                   ${req.map(c => {
                     const v = iss.data[c];
                     const empty = v === null || v === undefined || v === '';
-                    return `<td style="${empty ? 'background:var(--bad-bg,#fef2f2);color:var(--bad);font-weight:600;' : ''}">${empty ? window.__t('core.vc.empty') : escapeHtml(String(v).substring(0, 20))}</td>`;
+                    return `<td style="${empty ? 'background:var(--bad-bg,#fef2f2);color:var(--bad-ink);font-weight:600;' : ''}">${empty ? window.__t('core.vc.empty') : escapeHtml(String(v).substring(0, 20))}</td>`;
                   }).join('')}
-                  <td style="color:var(--bad);">${iss.missing.join(', ')}</td>
+                  <td style="color:var(--bad-ink);">${iss.missing.join(', ')}</td>
                 </tr>`).join('')}
                 ${issues.length > 50 ? `<tr><td colspan="${req.length + 3}" style="text-align:center;color:var(--fg-mute);">… and ${issues.length - 50} more rows</td></tr>` : ''}
               </table>
@@ -4898,7 +4926,7 @@ function renderValidation() {
       // 3. Interval quality: from_m >= to_m check
       let badIntervalCount = 0;
       STATE.assay.forEach(r => {
-        const f = Number(r.from_m), t = Number(r.to_m);
+        const f = cellNumber(r.from_m), t = cellNumber(r.to_m);
         if (isFinite(f) && isFinite(t) && f >= t) badIntervalCount++;
       });
       qaIssues += badIntervalCount;
@@ -4993,6 +5021,7 @@ function renderValidation() {
         </div>
       `;
     })()}
+    </details>
   `;
 
   // Initialize expandable/collapsible list links
@@ -5033,8 +5062,8 @@ function renderValidation() {
   // overwrites container.innerHTML, which erased it before it was ever seen.
   // The dropdown-based reassign controls (Column Mapping card is read-only —
   // this is the interactive one) never actually appeared to users. 2026-08-18.
-  const mappingHost=document.createElement('details');mappingHost.id='coreValidationMapping';
-  const mappingSummary=document.createElement('summary');mappingSummary.textContent=t('core.map.title');mappingHost.append(mappingSummary);container.append(mappingHost);
+  const mappingHost=document.createElement('details');mappingHost.id='coreValidationMapping';mappingHost.dataset.workflowOptions='';
+  const mappingSummary=document.createElement('summary');mappingSummary.textContent=t('flow.options')+' · '+t('core.map.title');mappingHost.append(mappingSummary);container.prepend(mappingHost);
   renderColumnMapping(mappingHost);
 
   // Plot collar linkage map (enhanced)
@@ -5042,14 +5071,21 @@ function renderValidation() {
     // Initialize or restore UI state (persists across re-renders).
     // Handler functions (mapColorByChanged etc.) update STATE.mapUI BEFORE
     // calling renderValidation(), so state is always the user's choice.
-    STATE.mapUI = STATE.mapUI || { colorBy: 'status', prospect: '', showLabels: true, gradeCol: '', gradeClass: 'quantile' };
+    STATE.mapUI = STATE.mapUI || { colorBy: 'status', prospect: '', showLabels: null, gradeCol: '', gradeClass: 'quantile' };
+    // Auto is only the initial display policy: retain every point/hover and
+    // honor explicit saved/user choices, including on dense or narrow maps.
+    const showMapLabels = typeof STATE.mapUI.showLabels === 'boolean'
+      ? STATE.mapUI.showLabels : STATE.collar.length <= PLOT_DENSE && window.innerWidth >= 768;
 
     // Sync DOM elements to STATE.mapUI (they were freshly created by innerHTML)
     const colorByEl = document.getElementById('mapColorBy');
     const prospectEl = document.getElementById('mapProspectFilter');
     const labelsEl = document.getElementById('mapShowLabels');
     if (colorByEl) colorByEl.value = STATE.mapUI.colorBy;
-    if (labelsEl) labelsEl.checked = STATE.mapUI.showLabels;
+    if (labelsEl) {
+      labelsEl.checked = showMapLabels;
+      labelsEl.title = t('core.map.labelPolicy');
+    }
 
     // Grade column + classification controls only make sense in grade mode.
     const gradeColWrap = document.getElementById('mapGradeColWrap');
@@ -5061,6 +5097,8 @@ function renderValidation() {
     if (gradeClassWrap) gradeClassWrap.style.display = isGradeMode ? '' : 'none';
     if (isGradeMode && gradeColEl) {
       const gCols = (typeof getActualGradeColumns === 'function') ? getActualGradeColumns() : [];
+      gradeColEl.disabled = gCols.length === 0;
+      if(gradeClassEl) gradeClassEl.disabled = gCols.length === 0;
       if (!gCols.includes(STATE.mapUI.gradeCol)) {
         // Default pick: the column with the most non-null values, same rule
         // this map used before a picker existed, so nothing changes on first
@@ -5077,7 +5115,7 @@ function renderValidation() {
     // Populate prospect filter dropdown
     const prospects = [...new Set(STATE.collar.map(c => c.prospect).filter(Boolean))].sort();
     if (prospectEl) {
-      prospectEl.innerHTML = '<option value="">All prospects</option>' +
+      prospectEl.innerHTML = `<option value="">${escapeHtml(t('core.map.allProspects'))}</option>` +
         prospects.map(p => `<option value="${escapeHtml(p)}" ${p === STATE.mapUI.prospect ? 'selected' : ''}>${escapeHtml(p)}</option>`).join('');
       prospectEl.value = STATE.mapUI.prospect;
     }
@@ -5110,8 +5148,8 @@ function renderValidation() {
       else if (!hasAssay) status = 'noAssay';
       else if (!hasSurvey) status = 'noSurvey';
       points.push({
-        hid, x: Number(c.x), y: Number(c.y), z: Number(c.z) || 0,
-        depth: Number(c.depth) || 0, prospect: c.prospect || '—',
+        hid, x: cellNumber(c.x), y: cellNumber(c.y), z: Number(c.z) || 0,
+        depth: Number.isFinite(cellNumber(c.depth)) ? cellNumber(c.depth) : null, prospect: c.prospect || '—',
         nAssay: assayCount[hid] || 0,
         status, hasSurvey, hasAssay, hasGeo,
       });
@@ -5144,7 +5182,8 @@ function renderValidation() {
 
     const traces = [];
     // Audit-mandated symbol map: complete=filled green circle, noGeo=open orange triangle, orphan=red X
-    const STATUS_COLOR = { complete: '#16a34a', noSurvey: '#eab308', noGeo: '#ea580c', noAssay: '#dc2626', orphan: '#dc2626' };
+    const mapInk = plotTheme().font.color;
+    const STATUS_COLOR = coreLinkageStatusColors();
     const STATUS_SYMBOL = { complete: 'circle', noSurvey: 'triangle-up', noGeo: 'triangle-up', noAssay: 'x', orphan: 'x' };
     // Status counts (current filtered set)
     const counts = { complete: 0, noSurvey: 0, noGeo: 0, noAssay: 0, orphan: orphanPoints.length };
@@ -5159,35 +5198,38 @@ function renderValidation() {
 
     const hoverTpl = (p) => `<b>${p.hid}</b><br>` +
       `prospect: ${p.prospect}<br>` +
-      `depth: ${p.depth.toFixed(1)} m<br>` +
+      `${Number.isFinite(p.depth) ? t('core.map.byDepth')+': '+p.depth.toFixed(1) : t('core.map.depthUnavailable')}<br>` +
       `n_assay: ${p.nAssay.toLocaleString('en-US')}<br>` +
       `status: ${(STATUS_LABEL[p.status] || p.status).replace(/ \(\d+\)$/, '')}<br>` +
       `XY: ${p.x.toFixed(0)}, ${p.y.toFixed(0)}<extra></extra>`;
 
-    // Helper to darken a hex color for label text contrast
-    const darken = (hex, amt = 0.4) => {
-      const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      if (!m) return hex;
-      const r = Math.round(parseInt(m[1], 16) * (1 - amt));
-      const g = Math.round(parseInt(m[2], 16) * (1 - amt));
-      const b = Math.round(parseInt(m[3], 16) * (1 - amt));
-      return `rgb(${r},${g},${b})`;
-    };
+    const unavailableTrace = (pts, label) => ({
+      x:pts.map(p=>p.x), y:pts.map(p=>p.y), customdata:pts.map(p=>p.hid),
+      text:showMapLabels?pts.map(p=>p.hid):undefined,
+      textposition:'top center', textfont:{size:10,color:mapInk},
+      mode:showMapLabels?'markers+text':'markers', type:'scatter', name:label,
+      meta:{orebit:{unavailableValue:true}},
+      marker:{size:11,symbol:'circle-open',color:mapInk,line:{width:1.5,color:mapInk}},
+      hovertemplate:pts.map(p=>hoverTpl(p).replace('<extra></extra>',`<extra>${label}</extra>`))
+    });
 
+    let mapValueNotice = '';
+    // IDs are text, not status swatches: use the readable theme foreground.
+    // Status still has both its marker symbol and categorical colour.
     if (STATE.mapUI.colorBy === 'prospect') {
       // Group by prospect with distinct palette
-      const palette = ['#2D7A8E','#E87722','#1D3557','#6C3DC8','#16a34a','#dc2626','#eab308','#ec4899','#0ea5e9','#84cc16','#f97316','#a855f7'];
       const byProspect = Object.create(null);
       points.forEach(p => { (byProspect[p.prospect] = byProspect[p.prospect] || []).push(p); });
+      const palette = plotColors(Object.keys(byProspect).length);
       Object.entries(byProspect).forEach(([prospect, pts], i) => {
         const color = palette[i % palette.length];
         traces.push({
           x: pts.map(p => p.x), y: pts.map(p => p.y),
           customdata: pts.map(p => p.hid),
-          text: STATE.mapUI.showLabels ? pts.map(p => p.hid) : undefined,
+          text: showMapLabels ? pts.map(p => p.hid) : undefined,
           textposition: pts.map((_, i) => ['top center','top right','top left','bottom center','bottom right','bottom left'][i % 6]),
-          textfont: { size: 9, color: darken(color, 0.35) },
-          mode: STATE.mapUI.showLabels ? 'markers+text' : 'markers',
+          textfont: { size: 9, color: mapInk },
+          mode: showMapLabels ? 'markers+text' : 'markers',
           type: 'scatter',
           name: `${prospect} (${pts.length})`,
           marker: {
@@ -5198,44 +5240,36 @@ function renderValidation() {
         });
       });
     } else if (STATE.mapUI.colorBy === 'depth') {
-      traces.push({
-        x: points.map(p => p.x), y: points.map(p => p.y),
-        customdata: points.map(p => p.hid),
-        text: STATE.mapUI.showLabels ? points.map(p => p.hid) : undefined,
+      const knownDepth = points.filter(p=>Number.isFinite(p.depth));
+      const unknownDepth = points.filter(p=>!Number.isFinite(p.depth));
+      if(knownDepth.length) traces.push({
+        x: knownDepth.map(p => p.x), y: knownDepth.map(p => p.y),
+        customdata: knownDepth.map(p => p.hid),
+        text: showMapLabels ? knownDepth.map(p => p.hid) : undefined,
         textposition: 'top center',
-        textfont: { size: 10, color: '#1D3557' },
-        mode: STATE.mapUI.showLabels ? 'markers+text' : 'markers',
+        textfont: { size: 10, color: mapInk },
+        mode: showMapLabels ? 'markers+text' : 'markers',
         type: 'scatter',
-        name: 'depth (m)',
+        name: t('core.map.byDepth'),
         marker: {
           size: 11,
-          color: points.map(p => p.depth),
+          color: knownDepth.map(p => p.depth),
           colorscale: [[0,'#cce5ee'],[0.5,'#2D7A8E'],[1,'#1D3557']],
           showscale: true,
           colorbar: { title: t('core.ax.depth'), thickness: 12, len: 0.7 },
           line: { width: 1, color: 'rgba(0,0,0,0.3)' },
         },
-        hovertemplate: points.map(hoverTpl),
+        hovertemplate: knownDepth.map(hoverTpl),
       });
+      if(unknownDepth.length) traces.push(unavailableTrace(unknownDepth,t('core.map.depthUnavailable')));
     } else if (STATE.mapUI.colorBy === 'grade') {
       // Color by avg grade per hole — pick the grade column with the most non-null assay values
       const gradeCols = getActualGradeColumns();
       if (!gradeCols.length) {
-        // Fallback: render plain markers with warning subtitle
-        traces.push({
-          x: points.map(p => p.x), y: points.map(p => p.y),
-          customdata: points.map(p => p.hid),
-          text: STATE.mapUI.showLabels ? points.map(p => p.hid) : undefined,
-          textposition: points.map((_, i) => ['top center','top right','top left','bottom center','bottom right','bottom left'][i % 6]),
-          textfont: { size: 9, color: '#1D3557' },
-          mode: STATE.mapUI.showLabels ? 'markers+text' : 'markers',
-          type: 'scatter',
-          name: 'no grade data',
-          marker: { size: 11, color: '#bbb', line: { width: 1, color: 'rgba(0,0,0,0.3)' } },
-          hovertemplate: points.map(hoverTpl),
-        });
-        STATE.mapUI._gradeSubtitle = '' + ICONS.warn + ' No grade columns detected — color disabled';
-        STATE.mapUI._gradeSubtitleColor = '#dc2626';
+        traces.push(unavailableTrace(points,t('core.map.gradeUnavailable')));
+        mapValueNotice=t('core.map.gradeColumnsUnavailable');
+        STATE.mapUI._gradeSubtitle='';
+        STATE.mapUI._gradeSubtitleColor = plotColor('threshold');
       } else {
         // Column: the user's pick if valid, else the same "most non-null
         // values" default this map always used, so nothing changes on first
@@ -5249,7 +5283,7 @@ function renderValidation() {
         const holeAvg = Object.create(null);
         STATE.assay.forEach(r => {
           if (!r.hole_id) return;
-          const v = Number(r[activeCol]);
+          const v = cellNumber(r[activeCol]);
           if (!isFinite(v) || v < 0) return;
           const h = r.hole_id;
           if (!holeAvg[h]) holeAvg[h] = { sum: 0, n: 0 };
@@ -5257,11 +5291,13 @@ function renderValidation() {
           holeAvg[h].n++;
         });
 
-        const colorVals = points.map(p => holeAvg[p.hid] ? holeAvg[p.hid].sum / holeAvg[p.hid].n : null);
+        const informedPoints=points.filter(p=>holeAvg[p.hid]);
+        const uninformedPoints=points.filter(p=>!holeAvg[p.hid]);
+        const colorVals = informedPoints.map(p => holeAvg[p.hid] ? holeAvg[p.hid].sum / holeAvg[p.hid].n : null);
         const method = STATE.mapUI.gradeClass || 'quantile';
         const cls = gradeClassBreaks(colorVals, method, GRADE_PALETTE_5.length, unit);
         const classVals = colorVals.map(v => cls.classOf(v));
-        const nClasses = Math.max(cls.n, 1);
+        const nClasses = cls.n;
         const palette = GRADE_PALETTE_5.slice(0, nClasses);
         // classOf returns 0..n-1; Plotly's colour axis needs a numeric domain,
         // so classes ride 0..nClasses-1 with cmin/cmax pinned to that range
@@ -5269,13 +5305,13 @@ function renderValidation() {
         // below does the actual value-to-class-to-colour mapping, and the
         // colourbar's tickvals/ticktext (set after the trace) relabel the
         // axis back into real grade ranges.
-        traces.push({
-          x: points.map(p => p.x), y: points.map(p => p.y),
-          customdata: points.map(p => p.hid),
-          text: STATE.mapUI.showLabels ? points.map(p => p.hid) : undefined,
-          textposition: points.map((_, i) => ['top center','top right','top left','bottom center','bottom right','bottom left'][i % 6]),
-          textfont: { size: 9, color: '#1D3557' },
-          mode: STATE.mapUI.showLabels ? 'markers+text' : 'markers',
+        if(informedPoints.length) traces.push({
+          x: informedPoints.map(p => p.x), y: informedPoints.map(p => p.y),
+          customdata: informedPoints.map(p => p.hid),
+          text: showMapLabels ? informedPoints.map(p => p.hid) : undefined,
+          textposition: informedPoints.map((_, i) => ['top center','top right','top left','bottom center','bottom right','bottom left'][i % 6]),
+          textfont: { size: 9, color: mapInk },
+          mode: showMapLabels ? 'markers+text' : 'markers',
           type: 'scatter',
           name: `avg ${colLabel}`,
           marker: {
@@ -5292,19 +5328,21 @@ function renderValidation() {
             line: { width: 1, color: 'rgba(0,0,0,0.4)' },
             opacity: colorVals.map(v => v == null ? 0.3 : 1),
           },
-          hovertemplate: points.map((p, i) => {
+          hovertemplate: informedPoints.map((p, i) => {
             const v = colorVals[i];
             const c = classVals[i];
             return `<b>${p.hid}</b><br>` +
               `prospect: ${p.prospect}<br>` +
-              `avg ${colLabel}: ${v != null ? v.toFixed(3) : 'no data'}${c != null ? ' (' + cls.labels[c] + ')' : ''}<br>` +
+              `avg ${colLabel}: ${v != null ? v.toFixed(3) : t('core.map.gradeUnavailable')}${c != null ? ' (' + cls.labels[c] + ')' : ''}<br>` +
               `n samples: ${holeAvg[p.hid]?.n || 0}<br>` +
               `XY: ${p.x.toFixed(0)}, ${p.y.toFixed(0)}<extra></extra>`;
           }),
         });
+        if(uninformedPoints.length) traces.push(unavailableTrace(uninformedPoints,t('core.map.gradeUnavailable')));
         const classMethodLabel = method === 'equal' ? t('core.map.classEqual') : method === 'log' ? t('core.map.classLog') : t('core.map.classQuantile');
-        STATE.mapUI._gradeSubtitle = `<b>Color = avg ${colLabel} per hole</b> (BDL excluded) · ${classMethodLabel}, ${nClasses} ${t('core.map.classes')}`;
-        STATE.mapUI._gradeSubtitleColor = '#1D3557';
+        STATE.mapUI._gradeSubtitle = colorVals.length ? `<b>Color = avg ${colLabel} per hole</b> (BDL excluded) · ${classMethodLabel}, ${nClasses} ${t('core.map.classes')}` : '';
+        if(!colorVals.length)mapValueNotice=t('core.map.gradeValuesUnavailable');
+        STATE.mapUI._gradeSubtitleColor = mapInk;
       }
     } else {
       // Default: by linkage status. Build a marker config that handles open vs filled correctly.
@@ -5330,10 +5368,10 @@ function renderValidation() {
         traces.push({
           x: pts.map(p => p.x), y: pts.map(p => p.y),
           customdata: pts.map(p => p.hid),
-          text: STATE.mapUI.showLabels ? pts.map(p => p.hid) : undefined,
+          text: showMapLabels ? pts.map(p => p.hid) : undefined,
           textposition: pts.map((_, i) => ['top center','top right','top left','bottom center','bottom right','bottom left'][i % 6]),
-          textfont: { size: 9, color: darken(color, 0.35) },
-          mode: STATE.mapUI.showLabels ? 'markers+text' : 'markers',
+          textfont: { size: 9, color: mapInk },
+          mode: showMapLabels ? 'markers+text' : 'markers',
           type: 'scatter',
           name: STATUS_LABEL[st],
           marker: markerCfg,
@@ -5349,6 +5387,20 @@ function renderValidation() {
         hoverinfo: 'skip',
       });
     }
+
+    // Category outlines and numeric marker boundaries remain meaningful even
+    // on a dense collar map. Keep the scalar palette/data unchanged.
+    for (const trace of traces) {
+      if (!trace.marker) continue;
+      trace.meta = {...trace.meta, orebit:{...trace.meta?.orebit, preserveMarkerOutline:true}};
+      if (STATE.mapUI.colorBy === 'depth' || STATE.mapUI.colorBy === 'grade')
+        trace.marker.line = {...trace.marker.line, width:Math.max(1,trace.marker.line?.width||1), color:mapInk};
+    }
+
+    const valueNote=document.getElementById('linkageMapUnavailableNote');
+    if(valueNote){valueNote.textContent=mapValueNotice;valueNote.hidden=!mapValueNotice;}
+    const unavailableSummaries=traces.filter(trace=>trace.meta?.orebit?.unavailableValue&&trace.customdata?.length)
+      .map(trace=>`${trace.name} (${trace.customdata.length})`);
 
     // Bounds + scale bar
     const xs = points.map(p => p.x), ys = points.map(p => p.y);
@@ -5375,17 +5427,17 @@ function renderValidation() {
       {
         x: xMax - range * 0.04, y: yMax - range * 0.04, ax: xMax - range * 0.04, ay: yMax - range * 0.10,
         xref: 'x', yref: 'y', axref: 'x', ayref: 'y',
-        showarrow: true, arrowhead: 3, arrowsize: 1.4, arrowwidth: 2, arrowcolor: '#1D3557',
+        showarrow: true, arrowhead: 3, arrowsize: 1.4, arrowwidth: 2, arrowcolor: mapInk,
       },
       {
         x: xMax - range * 0.04, y: yMax - range * 0.025, xref: 'x', yref: 'y',
-        text: '<b>N</b>', showarrow: false, font: { size: 13, color: '#1D3557' },
+        text: '<b>N</b>', showarrow: false, font: { size: 13, color: mapInk },
       },
       // Scale bar label
       {
         x: barX0 + barLen / 2, y: barY + range * 0.02, xref: 'x', yref: 'y',
         text: `<b>${barLen >= 1000 ? (barLen/1000) + ' km' : barLen + ' m'}</b>`,
-        showarrow: false, font: { size: 11, color: '#1D3557' },
+        showarrow: false, font: { size: 11, color: mapInk },
       },
     ];
 
@@ -5395,20 +5447,24 @@ function renderValidation() {
         x: 0.5, y: 1.05, xref: 'paper', yref: 'paper',
         text: STATE.mapUI._gradeSubtitle,
         showarrow: false,
-        font: { size: 11, color: STATE.mapUI._gradeSubtitleColor || '#1D3557' },
+        font: { size: 11, color: STATE.mapUI._gradeSubtitleColor || mapInk },
         xanchor: 'center', yanchor: 'top',
-        bgcolor: 'rgba(255,255,255,0.85)', borderpad: 4,
+        bgcolor: plotTheme().hoverlabel.bgcolor, borderpad: 4,
       });
     }
+
+    if(unavailableSummaries.length)annotations.push({x:.5,y:1.12,xref:'paper',yref:'paper',
+      text:'○ '+unavailableSummaries.map(escapeHtml).join('<br>○ '),showarrow:false,
+      font:{size:11,color:mapInk},xanchor:'center',yanchor:'bottom'});
 
     const shapes = [
       // Scale bar (horizontal line)
       { type: 'line', x0: barX0, x1: barX0 + barLen, y0: barY, y1: barY,
-        line: { color: '#1D3557', width: 4 } },
+        line: { color: mapInk, width: 4 } },
       { type: 'line', x0: barX0, x1: barX0, y0: barY - range * 0.008, y1: barY + range * 0.008,
-        line: { color: '#1D3557', width: 2 } },
+        line: { color: mapInk, width: 2 } },
       { type: 'line', x0: barX0 + barLen, x1: barX0 + barLen, y0: barY - range * 0.008, y1: barY + range * 0.008,
-        line: { color: '#1D3557', width: 2 } },
+        line: { color: mapInk, width: 2 } },
     ];
 
     // With nothing plottable, drop the scale bar / north arrow (they describe a
@@ -5417,19 +5473,20 @@ function renderValidation() {
     // "Cannot read properties of undefined (reading 'val')". 2026-08-22.
     const mapAnnotations = noPlottableXY
       ? [{ x: 0.5, y: 0.5, xref: 'paper', yref: 'paper', text: emptyMapReason,
-           showarrow: false, align: 'center', font: { size: 12, color: '#6b7280' },
-           bgcolor: 'rgba(255,255,255,0.9)', borderpad: 10 }]
+           showarrow: false, align: 'center', font: { size: 12, color: 'var(--fg-mute)' },
+           bgcolor: 'var(--bg-card)', borderpad: 10 }]
       : annotations;
     const mapShapes = noPlottableXY ? [] : shapes;
     const axisExtra = noPlottableXY ? { range: [0, 100], showticklabels: false, zeroline: false } : {};
 
+    const mapAxes = plotMapAxes(t('core.ax.easting'), t('core.ax.northing'));
     Plotly.newPlot('linkageMap', traces, {
       ...plotTheme(),
-      xaxis: { title: t('core.ax.easting'), scaleanchor: 'y', scaleratio: 1, gridcolor: 'rgba(128,128,128,0.2)', ...axisExtra },
-      yaxis: { title: t('core.ax.northing'), gridcolor: 'rgba(128,128,128,0.2)', ...axisExtra },
+      xaxis: { ...mapAxes.xaxis, ...axisExtra },
+      yaxis: { ...mapAxes.yaxis, ...axisExtra },
       hovermode: 'closest', height: 520,
       showlegend: false,
-      margin: { l: 60, r: 30, t: 40, b: 60 },
+      margin: { l: 60, r: 30, t: unavailableSummaries.length ? 72 : 40, b: 60 },
       annotations: mapAnnotations, shapes: mapShapes,
     }, { responsive: true, displayModeBar: 'hover', scrollZoom: false, doubleClick: false });
 
@@ -5482,6 +5539,10 @@ function renderValidation() {
         (orphanPoints.length > 12 ? ` … +${orphanPoints.length - 12} ${t('core.val.more')}` : '');
     }
   }
+  // The guided validation card owns the overview hierarchy; refresh after the
+  // result and native Plotly map have both been rebuilt so the map is moved
+  // from the optional inspection disclosure without changing its data owner.
+  window.OrebitScreeningWorkflow?.refresh();
 }
 
 
@@ -5541,8 +5602,30 @@ function resetLithoColors() {
 // Strip Log and Section both colour by lithology; repaint whichever is on
 // screen so a colour change is visible immediately wherever it applies.
 function redrawLithoConsumers() {
+  const panels = ['stripLogPanel', 'sectionPanel'].map(id => {
+    const panel = document.getElementById(id);
+    const active = panel?.contains(document.activeElement) ? document.activeElement : null;
+    return {
+      id,
+      open: Array.from(panel?.querySelectorAll('details') || []).map(details => details.open),
+      code: active?.getAttribute('data-litho-code'),
+      reset: active?.classList.contains('litho-reset-btn'),
+    };
+  });
   try { if (document.getElementById('stripLogPanel')) renderStripLog(); } catch (e) {}
   try { if (document.getElementById('sectionPlot') && typeof renderSection === 'function') renderSection(); } catch (e) {}
+  panels.forEach(({ id, open, code, reset }) => {
+    const panel = document.getElementById(id);
+    Array.from(panel?.querySelectorAll('details') || []).forEach((details, index) => {
+      details.open = Boolean(open[index]);
+    });
+    if (code != null || reset) requestAnimationFrame(() => {
+      const control = reset ? panel?.querySelector('.litho-reset-btn')
+        : Array.from(panel?.querySelectorAll('[data-litho-code]') || [])
+          .find(input => input.getAttribute('data-litho-code') === code);
+      control?.focus();
+    });
+  });
 }
 const WEATHERING_COLOR = {
   'OX':'#b85c30','SOX':'#a0784a','POX':'#c9b18a','MOX':'#9a8d6b','FR':'#6e6e6e',
@@ -5614,7 +5697,9 @@ function renderStripLog() {
 
   const holes = STATE.collar.map(c => c.hole_id).filter(Boolean).sort();
   if (!holes.length) {
-    container.innerHTML = '<div class="hint warn">' + (t('core.renderStripLog.noCollarUploadDataFirst')) + '</div>';
+    container.innerHTML = '<div class="hint warn">' + (t('core.renderStripLog.noCollarUploadDataFirst'))
+      + ' <button type="button" class="btn small secondary" data-strip-no-collar-import onclick="showTab(2)">'
+      + t('core.sl.openImport') + '</button></div>';
     return;
   }
 
@@ -5629,10 +5714,10 @@ function renderStripLog() {
 
   // Detect which grade columns exist (have any non-null value)
   const allGradeCols = getActualGradeColumns();
-  const gradeColors = ['#2D7A8E', '#E87722', '#6C3DC8', '#16a34a', '#dc2626', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+  const gradeColors = plotColors(allGradeCols.length);
   const gradeCandidates = allGradeCols.map((key, i) => ({
     key,
-    label: key.replace(/_/g, ' ').toUpperCase(),
+    label: plotLabel(key),
     color: gradeColors[i % gradeColors.length]
   }));
   const gradeCols = gradeCandidates.filter(g => STATE.assay.some(r => r[g.key] != null && isFinite(Number(r[g.key]))));
@@ -5669,8 +5754,13 @@ function renderStripLog() {
   // Hole header info card
   const collar = STATE.collar.find(c => c.hole_id === STATE.stripLogUI.holeId) || {};
   const holeAssayRows = STATE.assay.filter(a => a.hole_id === STATE.stripLogUI.holeId);
+  const holeGeoRows = STATE.geology.filter(g => g.hole_id === STATE.stripLogUI.holeId);
   const nAssay = holeAssayRows.length;
-  const nGeo = STATE.geology.filter(g => g.hole_id === STATE.stripLogUI.holeId).length;
+  const nGeo = holeGeoRows.length;
+  const plottedDepths = [collar.depth, ...holeAssayRows.map(r => r.to_m), ...holeGeoRows.map(r => r.to_m)]
+    .map(Number).filter(v => Number.isFinite(v) && v > 0);
+  const maxPlottedDepth = plottedDepths.length ? Math.max(...plottedDepths) : 0;
+  const exportToDefault = Math.min(100, Math.max(1, maxPlottedDepth || 100));
   // Audit fix: BDL count for this hole (negative grade values across grade cols)
   const bdlGradeCols = getActualGradeColumns();
   let nBDL = 0, nBDLDenom = 0;
@@ -5687,8 +5777,8 @@ function renderStripLog() {
   const bdlPct = nBDLDenom ? (nBDL / nBDLDenom * 100) : 0;
   const fmt = (v, d = 1) => (v == null || v === '' || !isFinite(Number(v))) ? '—' : Number(v).toFixed(d);
   const warnings = [];
-  if (!nGeo) warnings.push(t('core.renderStripLog.noGeologyLoggedHole'));
-  if (!nAssay) warnings.push(t('core.renderStripLog.noAssayDataHole'));
+  if (!nGeo) warnings.push(`${t('core.renderStripLog.noGeologyLoggedHole')} <button type="button" class="btn small secondary" data-strip-source-table="geology" data-strip-source-hole="${escapeHtml(STATE.stripLogUI.holeId)}" onclick="gotoHole(this.dataset.stripSourceHole, this.dataset.stripSourceTable)">${t('core.sl.openGeologySource')}</button>`);
+  if (!nAssay) warnings.push(`${t('core.renderStripLog.noAssayDataHole')} <button type="button" class="btn small secondary" data-strip-source-table="assay" data-strip-source-hole="${escapeHtml(STATE.stripLogUI.holeId)}" onclick="gotoHole(this.dataset.stripSourceHole, this.dataset.stripSourceTable)">${t('core.sl.openAssaySource')}</button>`);
 
   // Build extra-column candidates (any column from assay/geology not already shown as a core track or grade curve)
   STATE.stripLogUI.extraCols = STATE.stripLogUI.extraCols || [];
@@ -5712,7 +5802,7 @@ function renderStripLog() {
         const bg = active ? '#2D7A8E' : 'transparent';
         const fg = active ? '#fff' : 'var(--fg)';
         const bd = active ? '#2D7A8E' : 'var(--border, rgba(0,0,0,0.2))';
-        return `<span data-extra="${escapeHtml(spec)}" onclick="stripLogToggleExtra(this.dataset.extra)" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;border:1px solid ${bd};background:${bg};color:${fg};font-size:11px;user-select:none;" title="${escapeHtml(table)}.${escapeHtml(col)}"><strong>${escapeHtml(col)}</strong> <span style="opacity:0.65;font-size:10px;">${escapeHtml(table)}</span></span>`;
+        return `<button type="button" class="strip-extra-col" data-extra="${escapeHtml(spec)}" aria-pressed="${active}" onclick="stripLogToggleExtra(this.dataset.extra)" style="appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;border:1px solid ${bd};background:${bg};color:${fg};font:inherit;font-size:11px;line-height:1.2;text-align:left;" title="${escapeHtml(table)}.${escapeHtml(col)}"><strong>${escapeHtml(col)}</strong> <span style="opacity:0.75;font-size:11px;">${escapeHtml(table)}</span></button>`;
       }).join('')
     : '<span style="color:var(--fg-mute);font-size:12px;">no extra columns available</span>';
 
@@ -5728,7 +5818,6 @@ function renderStripLog() {
       <div class="hh-cell"><div class="label">${t('core.sl.assayRows')}</div><div class="value">${nAssay.toLocaleString('en-US')}</div></div>
       <div class="hh-cell"><div class="label">${t('core.sl.geologyRows')}</div><div class="value">${nGeo.toLocaleString('en-US')}</div></div>
       ${nBDL > 0 ? `<div class="hh-cell"><div class="label">Below-detection</div><div class="value" style="color:var(--info,#2563eb);">${nBDL.toLocaleString('en-US')} (${bdlPct.toFixed(1)}%)</div></div>` : ''}
-      ${warnings.length ? `<div class="hh-warn">${ICONS.warn} ${warnings.join(' · ')}</div>` : ''}
     </div>
   `;
 
@@ -5763,6 +5852,7 @@ function renderStripLog() {
           <div id="stripExtraColPicker" style="display:flex;flex-wrap:wrap;gap:6px;">${extraChips}</div>
         </div>
       </details>
+      ${warnings.length ? `<div class="hint warn strip-source-warnings">${ICONS.warn} ${warnings.join(' · ')}</div>` : ''}
     </div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
@@ -5772,13 +5862,13 @@ function renderStripLog() {
             <input type="number" id="stripLogExportFrom" value="0" min="0" step="10" style="width:60px;padding:3px 5px;font-size:12px;margin-left:4px;">
           </label>
           <label style="font-size:12px;color:var(--fg-mute);">${t('core.sl.exportTo') || 'to (m)'}
-            <input type="number" id="stripLogExportTo" value="100" min="0" step="10" style="width:60px;padding:3px 5px;font-size:12px;margin-left:4px;">
+            <input type="number" id="stripLogExportTo" value="${exportToDefault}" data-default-to="${exportToDefault}" min="0" step="10" style="width:60px;padding:3px 5px;font-size:12px;margin-left:4px;">
           </label>
           <button class="btn" id="striplogExportPngBtn" data-export-png="striplog" aria-label="Export Strip Log as PNG" onclick="exportStripLogPNG(event)" title="Export a fixed-size PNG for marketing/docs, cropped to the depth range above" data-i18n-attr="title:btn.exportPngTitle" data-i18n="btn.exportPng">Export PNG</button>
         </div>
       </div>
       <p style="font-size:12px;color:var(--fg-mute);">${t('core.sl.depthAxisHint')}</p>
-      <div id="stripLogPlot" style="height:780px;"></div>
+      <div id="stripLogPlot"></div>
     </div>
   `;
 
@@ -5798,12 +5888,22 @@ function stripLogStep(delta) {
   stripLogPick(holes[next]);
 }
 function stripLogToggleExtra(spec) {
+  const container = document.getElementById('stripLogPanel');
+  const openDetails = Array.from(container?.querySelectorAll('details') || []).map(details => details.open);
   STATE.stripLogUI = STATE.stripLogUI || {};
   STATE.stripLogUI.extraCols = STATE.stripLogUI.extraCols || [];
   const i = STATE.stripLogUI.extraCols.indexOf(spec);
   if (i >= 0) STATE.stripLogUI.extraCols.splice(i, 1);
   else STATE.stripLogUI.extraCols.push(spec);
   renderStripLog();
+  Array.from(document.querySelectorAll('#stripLogPanel details')).forEach((details, index) => {
+    details.open = Boolean(openDetails[index]);
+  });
+  requestAnimationFrame(() => {
+    const replacement = Array.from(document.querySelectorAll('#stripExtraColPicker .strip-extra-col'))
+      .find(button => button.dataset.extra === spec);
+    if (replacement) replacement.focus();
+  });
 }
 
 function drawStripLog(holeId, gradeCols) {
@@ -5999,9 +6099,9 @@ function drawStripLog(holeId, gradeCols) {
       // Compute actual min/max ignoring nulls + below-detection check.
       const samples = [];
       assayRows.forEach(a => {
-        const vRaw = Number(a[t.key]);
+        const vRaw = cellNumber(a[t.key]);
         if (!isFinite(vRaw)) return;
-        const f = Number(a.from_m), to = Number(a.to_m);
+        const f = cellNumber(a.from_m), to = cellNumber(a.to_m);
         if (!isFinite(f) || !isFinite(to)) return;
         samples.push({ v: vRaw, mid: (f + to) / 2, from: f, to: to });
       });
@@ -6056,7 +6156,7 @@ function drawStripLog(holeId, gradeCols) {
         x: xs, y: ys, xaxis: axN, yaxis: 'y',
         type: 'scatter', mode: 'lines+markers',
         line: { color: t.color, width: 1.5 },
-        marker: { size: 4, color: t.color, line: { width: 0.5, color: '#fff' } },
+        marker: { size: 4, color: t.color },
         connectgaps: false,
         hovertext: hov,
         hovertemplate: '%{hovertext}<extra></extra>',
@@ -6067,13 +6167,13 @@ function drawStripLog(holeId, gradeCols) {
         shapes.push({
           type: 'line', xref: i === 0 ? 'x' : `x${i+1}`, yref: 'y',
           x0: p99, x1: p99, y0: minDepth, y1: maxDepth,
-          line: { color: '#E87722', width: 1, dash: 'dot' },
+          line: { color: plotColor('threshold'), width: 1, dash: 'dot' },
         });
         annotations.push({
           xref: i === 0 ? 'x' : `x${i+1}`, yref: 'y',
           x: p99, y: minDepth + (maxDepth - minDepth) * 0.02,
           text: `p99=${p99.toFixed(p99 < 1 ? 2 : 1)}`,
-          showarrow: false, font: { size: 8, color: '#E87722' },
+          showarrow: false, font: { size: 8, color: plotColor('threshold') },
           xanchor: 'left',
         });
       }
@@ -6086,7 +6186,7 @@ function drawStripLog(holeId, gradeCols) {
         shapes.push({
           type: 'line', xref: i === 0 ? 'x' : `x${i+1}`, yref: 'y',
           x0: 0.2, x1: 0.8, y0: (f + to) / 2, y1: (f + to) / 2,
-          line: { color: '#1D3557', width: 1 },
+          line: { color: plotTheme().font.color, width: 1 },
         });
       });
       traces.push({
@@ -6110,11 +6210,19 @@ function drawStripLog(holeId, gradeCols) {
       if (!sourceRows.length) {
         annotations.push({
           xref, yref: 'y', x: 0.5, y: (minDepth + maxDepth) / 2,
-          text: `no ${t.table}<br>data`, showarrow: false,
+          text: window.__t(t.table === 'geology' ? 'core.renderStripLog.noGeologyLoggedHole' : 'core.renderStripLog.noAssayDataHole'), showarrow: false,
           font: { size: 9, color: 'var(--fg-mute)' }, align: 'center',
         });
         traces.push({ x: [0.5], y: [minDepth], xaxis: axN, yaxis: 'y', type: 'scatter', mode: 'markers', marker: { opacity: 0 }, hoverinfo: 'skip', showlegend: false });
         return;
+      }
+      const hasValues = sourceRows.some(r => r[t.col] != null && String(r[t.col]).trim() !== '');
+      if (!hasValues) {
+        annotations.push({
+          xref, yref: 'y', x: 0.5, y: (minDepth + maxDepth) / 2,
+          text: window.__t('core.sl.noTrackValues'), showarrow: false,
+          font: { size: 9, color: 'var(--fg-mute)' }, align: 'center',
+        });
       }
       sourceRows.forEach(r => {
         const f = Number(r.from_m), to = Number(r.to_m);
@@ -6182,8 +6290,8 @@ function renderSection() {
   let bestProspect = null, bestN = 0;
   Object.entries(prospectGroups).forEach(([k, arr]) => { if (arr.length > bestN) { bestN = arr.length; bestProspect = k; } });
   const seedHoles = bestProspect ? prospectGroups[bestProspect] : STATE.collar.filter(c => c.x != null && c.y != null);
-  const sx = seedHoles.map(c => Number(c.x)).filter(isFinite).sort((a,b)=>a-b);
-  const sy = seedHoles.map(c => Number(c.y)).filter(isFinite).sort((a,b)=>a-b);
+  const sx = seedHoles.map(c => cellNumber(c.x)).filter(isFinite).sort((a,b)=>a-b);
+  const sy = seedHoles.map(c => cellNumber(c.y)).filter(isFinite).sort((a,b)=>a-b);
   const medX = sx.length ? sx[Math.floor(sx.length/2)] : 0;
   const medY = sy.length ? sy[Math.floor(sy.length/2)] : 0;
 
@@ -6231,10 +6339,10 @@ function renderSection() {
             <option value="0" ${ui.azPreset==='0'?'selected':''}>N–S (Az 0°)</option>
             <option value="45" ${ui.azPreset==='45'?'selected':''}>NE–SW (Az 45°)</option>
             <option value="135" ${ui.azPreset==='135'?'selected':''}>SE–NW (Az 135°)</option>
-            <option value="custom" ${ui.azPreset==='custom'?'selected':''}>Custom…</option>
+            <option value="custom" ${ui.azPreset==='custom'?'selected':''}>${t('core.sec.customAzimuth')}</option>
           </select>
         </label>
-        ${ui.azPreset === 'custom' ? `<label style="font-size:12px;">Az °:
+        ${ui.azPreset === 'custom' ? `<label style="font-size:12px;">${t('core.sec.azimuthDegrees')}
           <input type="number" id="secAzCustom" value="${ui.azCustom}" onchange="sectionUpdate({azCustom:Number(this.value)})" style="width:70px;padding:4px;font-size:12px;">
         </label>` : ''}
         <label style="font-size:12px;">${t('core.sec.originX')}
@@ -6289,22 +6397,28 @@ function varianceAlongAz(holes, ox, oy, azDeg) {
   if (!holes.length) return 0;
   const azRad = azDeg * Math.PI / 180;
   const ux = Math.sin(azRad), uy = Math.cos(azRad);
-  const alongs = holes.map(c => (Number(c.x) - ox) * ux + (Number(c.y) - oy) * uy).filter(isFinite);
+  const alongs = holes.map(c => (cellNumber(c.x) - ox) * ux + (cellNumber(c.y) - oy) * uy).filter(isFinite);
   if (!alongs.length) return 0;
   const mean = alongs.reduce((s, v) => s + v, 0) / alongs.length;
   return alongs.reduce((s, v) => s + (v - mean) ** 2, 0) / alongs.length;
 }
 
 function sectionUpdate(patch) {
+  const safePatch = { ...(patch || {}) };
+  for (const key of ['halfWidth', 'sectionSpacing']) {
+    if (safePatch[key] == null) continue;
+    const value = Number(safePatch[key]);
+    safePatch[key] = Number.isFinite(value) ? Math.max(10, value) : 10;
+  }
   // If user manually edits origin, clear stored base + reset section index
-  if (patch && (patch.originX != null || patch.originY != null)) {
+  if (safePatch.originX != null || safePatch.originY != null) {
     if (STATE.sectionUI) {
       delete STATE.sectionUI._baseOriginX;
       delete STATE.sectionUI._baseOriginY;
       STATE.sectionUI.sectionIndex = 0;
     }
   }
-  STATE.sectionUI = { ...(STATE.sectionUI || {}), ...patch };
+  STATE.sectionUI = { ...(STATE.sectionUI || {}), ...safePatch };
   renderSection();
 }
 function sectionStep(delta) {
@@ -6355,13 +6469,13 @@ function drawSection(azDeg) {
   const onSection = [];
   STATE.collar.forEach(c => {
     if (c.x == null || c.y == null) return;
-    const dx = Number(c.x) - ui.originX;
-    const dy = Number(c.y) - ui.originY;
+    const dx = cellNumber(c.x) - ui.originX;
+    const dy = cellNumber(c.y) - ui.originY;
     const along = dx * ux + dy * uy;        // distance along section
     const perp = Math.abs(dx * nx + dy * ny); // perpendicular distance
     if (perp > ui.halfWidth) return;
     onSection.push({
-      hid: c.hole_id, x: Number(c.x), y: Number(c.y), z: Number(c.z) || 0,
+      hid: c.hole_id, x: cellNumber(c.x), y: cellNumber(c.y), z: Number(c.z) || 0,
       depth: Number(c.depth) || 0, prospect: c.prospect || '',
       along, perp,
     });
@@ -6369,7 +6483,7 @@ function drawSection(azDeg) {
 
   if (!onSection.length) {
     Plotly.newPlot('sectionPlot', [], { ...plotTheme(), height: 560,
-      annotations: [{ x: 0.5, y: 0.5, xref: 'paper', yref: 'paper', text: 'No holes in corridor.<br>Try changing the origin or expanding half-width.', showarrow: false }],
+      annotations: [{ x: 0.5, y: 0.5, xref: 'paper', yref: 'paper', text: window.__t('core.sec.noHolesInCorridor'), showarrow: false }],
     }, { responsive: true, displayModeBar: 'hover', scrollZoom: false, doubleClick: false });
     drawSectionOverview(azDeg);
     return;
@@ -6394,6 +6508,14 @@ function drawSection(azDeg) {
   if (!isFinite(zMin)) zMin = -100;
   if (!isFinite(zMax)) zMax = 100;
   const zRange = zMax - zMin || 100;
+  // Close collars would stack their IDs into one unreadable blot: label a hole only
+  // when it sits at least 1/12 of the section width past the last labelled one.
+  // Every collar keeps its ID on hover.
+  const labelled = [];
+  let lastLabel = -Infinity;
+  onSection.slice().sort((a, b) => a.along - b.along).forEach(p => {
+    if (p.along - lastLabel >= aRange / 12) { labelled.push(p); lastLabel = p.along; }
+  });
 
   onSection.forEach(p => {
     const a0 = p.along;
@@ -6439,7 +6561,7 @@ function drawSection(azDeg) {
     traces.push({
       x: [spineTopA, spineBotA], y: [spineTopZ, spineBotZ],
       mode: 'lines', type: 'scatter',
-      line: { color: '#1D3557', width: geoRows.length ? 1 : 1.5, dash: geoRows.length ? 'solid' : 'dot' },
+      line: { color: 'var(--fg)', width: geoRows.length ? 1 : 1.5, dash: geoRows.length ? 'solid' : 'dot' },
       hoverinfo: 'skip', showlegend: false,
     });
     // Hole as "no geology" is indicated by the dotted spine line (already drawn above).
@@ -6447,14 +6569,19 @@ function drawSection(azDeg) {
     // Collar marker — inverted triangle ▽ at top of hole
     traces.push({
       x: [a0], y: [p.z],
-      mode: 'markers+text', type: 'scatter',
-      text: [p.hid], textposition: 'top center',
-      textfont: { size: 10, color: '#1D3557' },
-      marker: { size: 11, color: '#E87722', symbol: 'triangle-down', line: { width: 1.4, color: '#1D3557' } },
+      mode: 'markers', type: 'scatter',
+      marker: { size: 11, color: 'var(--plot-c2)', symbol: 'triangle-down', line: { width: 1.4, color: 'var(--fg)' } },
       hovertemplate: `<b>${p.hid}</b><br>prospect: ${p.prospect || '—'}<br>depth: ${p.depth.toFixed(1)} m<br>geology rows: ${geoRows.length}<br>along: ${p.along.toFixed(0)} m<br>perp: ${p.perp.toFixed(0)} m<extra></extra>`,
       showlegend: false,
     });
   });
+
+  // IDs as annotations: they sit above every trace and carry a backing, so a
+  // neighbouring collar triangle cannot cover them.
+  labelled.forEach(p => annotations.push({
+    x: p.along, y: p.z, yshift: 14, text: p.hid, showarrow: false,
+    font: { size: 10, color: 'var(--fg)' }, bgcolor: 'var(--bg-card)', borderpad: 1,
+  }));
 
   // Corridor boundary indicator at edges of plot
   const corridorTextY = zMax + zRange * 0.06;
@@ -6463,7 +6590,7 @@ function drawSection(azDeg) {
     xref: 'x', yref: 'y',
     text: `↔ corridor ±${ui.halfWidth} m`,
     showarrow: false,
-    font: { size: 11, color: '#6b7280', style: 'italic' },
+    font: { size: 11, color: 'var(--fg-mute)', style: 'italic' },
     xanchor: 'left',
   });
 
@@ -6474,8 +6601,8 @@ function drawSection(azDeg) {
   const barLen = candidates.reduce((best, v) => Math.abs(v - target) < Math.abs(best - target) ? v : best, candidates[0]);
   const barX0 = minA + aRange * 0.04;
   const barY = zMin - zRange * 0.05;
-  shapes.push({ type: 'line', x0: barX0, x1: barX0 + barLen, y0: barY, y1: barY, line: { color: '#1D3557', width: 4 } });
-  annotations.push({ x: barX0 + barLen / 2, y: barY - zRange * 0.025, text: `<b>${barLen >= 1000 ? (barLen/1000)+' km' : barLen+' m'}</b>`, showarrow: false, font: { size: 11, color: '#1D3557' } });
+  shapes.push({ type: 'line', x0: barX0, x1: barX0 + barLen, y0: barY, y1: barY, line: { color: 'var(--fg)', width: 4 } });
+  annotations.push({ x: barX0 + barLen / 2, y: barY - zRange * 0.025, text: `<b>${barLen >= 1000 ? (barLen/1000)+' km' : barLen+' m'}</b>`, showarrow: false, font: { size: 11, color: 'var(--fg)' } });
 
   // Section direction label
   annotations.push({
@@ -6498,15 +6625,17 @@ function drawSection(azDeg) {
   Plotly.newPlot('sectionPlot', traces, {
     ...plotTheme(),
     xaxis: {
+      ...plotTheme().xaxis,
       title: { text: `Distance along section (m, az ${azDeg.toFixed(0)}°)`, font: { size: 12 } },
-      gridcolor: 'rgba(128,128,128,0.18)', zeroline: false,
+      zeroline: false, tickformat: ',.0f',
       dtick: dtickX, showticklabels: true, ticks: 'outside', ticklen: 4,
       tickangle: aRange > 300 ? -45 : 0,
       tickfont: { size: aRange > 500 ? 9 : 11 },
     },
     yaxis: {
+      ...plotTheme().yaxis,
       title: { text: `Elevation Z (m RL)${vExag > 1 ? ' · V:H = ' + vExag.toFixed(1) + ':1' : ''}`, font: { size: 12 } },
-      gridcolor: 'rgba(128,128,128,0.18)', zeroline: false,
+      zeroline: false, tickformat: ',.0f',
       ...(useScaleAnchor ? { scaleanchor: 'x', scaleratio: 1 } : {}),
       dtick: dtickZ, showticklabels: true, ticks: 'outside', ticklen: 4,
     },
@@ -6532,7 +6661,7 @@ function drawSectionOverview(azDeg) {
   const allX = [], allY = [], inX = [], inY = [], outX = [], outY = [];
   STATE.collar.forEach(c => {
     if (c.x == null || c.y == null) return;
-    const x = Number(c.x), y = Number(c.y);
+    const x = cellNumber(c.x), y = cellNumber(c.y);
     if (!isFinite(x) || !isFinite(y)) return;
     const dx = x - ui.originX;
     const dy = y - ui.originY;
@@ -6557,18 +6686,18 @@ function drawSectionOverview(azDeg) {
   const traces = [
     // Out-of-corridor collars (faint grey)
     { x: outX, y: outY, mode: 'markers', type: 'scatter', name: `outside (${outX.length})`,
-      marker: { size: 4, color: 'rgba(100,100,100,0.4)' }, hoverinfo: 'skip', showlegend: false },
+      marker: { size: 4, color: 'var(--plot-c6)', opacity: 0.45 }, hoverinfo: 'skip', showlegend: false },
     // In-corridor collars (highlighted orange)
     { x: inX, y: inY, mode: 'markers', type: 'scatter', name: `in corridor (${inX.length})`,
-      marker: { size: 6, color: '#E87722', line: { width: 0.8, color: '#1D3557' } }, hoverinfo: 'skip', showlegend: false },
+      marker: { size: 6, color: 'var(--plot-c2)', line: { width: 0.8, color: 'var(--fg)' } }, hoverinfo: 'skip', showlegend: false },
     // Current section line (bold orange)
     { x: [ui.originX - ux * lineLen, ui.originX + ux * lineLen],
       y: [ui.originY - uy * lineLen, ui.originY + uy * lineLen],
       mode: 'lines', type: 'scatter', name: 'section',
-      line: { color: '#E87722', width: 2.5 }, hoverinfo: 'skip', showlegend: false },
+      line: { color: 'var(--plot-c2)', width: 2.5 }, hoverinfo: 'skip', showlegend: false },
     // Origin marker
     { x: [ui.originX], y: [ui.originY], mode: 'markers', type: 'scatter',
-      marker: { size: 10, symbol: 'cross', color: '#1D3557', line: { width: 1, color: '#fff' } }, hoverinfo: 'skip', showlegend: false },
+      marker: { size: 10, symbol: 'cross', color: 'var(--fg)', line: { width: 1, color: 'var(--bg-card)' } }, hoverinfo: 'skip', showlegend: false },
   ];
 
   // Adjacent section lines (±1, ±2) as dotted faded lines
@@ -6614,50 +6743,49 @@ function drawSectionOverview(azDeg) {
   const shapes = [
     corridorShape,
     { type: 'line', x0: barX0, x1: barX0 + barLen, y0: barY, y1: barY,
-      line: { color: '#1D3557', width: 3 } },
+      line: { color: 'var(--fg)', width: 3 } },
   ];
 
   const annotations = [
     // Az label near origin
     { x: ui.originX, y: ui.originY, xref: 'x', yref: 'y',
       text: `Az ${azDeg.toFixed(0)}°`,
-      showarrow: false, font: { size: 10, color: '#1D3557' },
-      bgcolor: 'rgba(255,255,255,0.85)', bordercolor: '#1D3557', borderwidth: 0.5, borderpad: 2,
+      showarrow: false, font: { size: 10, color: 'var(--fg)' },
+      bgcolor: 'var(--bg-card)', bordercolor: 'var(--fg)', borderwidth: 0.5, borderpad: 2,
       xanchor: 'left', yanchor: 'bottom', xshift: 6, yshift: 6,
     },
     // North arrow
     { x: xMax - range * 0.05, y: yMax - range * 0.05,
       ax: xMax - range * 0.05, ay: yMax - range * 0.13,
       xref: 'x', yref: 'y', axref: 'x', ayref: 'y',
-      showarrow: true, arrowhead: 3, arrowsize: 1.2, arrowwidth: 1.5, arrowcolor: '#1D3557',
+      showarrow: true, arrowhead: 3, arrowsize: 1.2, arrowwidth: 1.5, arrowcolor: 'var(--fg)',
     },
     { x: xMax - range * 0.05, y: yMax - range * 0.03, xref: 'x', yref: 'y',
-      text: '<b>N</b>', showarrow: false, font: { size: 11, color: '#1D3557' },
+      text: '<b>N</b>', showarrow: false, font: { size: 11, color: 'var(--fg)' },
     },
     // Scale bar label
     { x: barX0 + barLen / 2, y: barY - padding * 0.25, xref: 'x', yref: 'y',
       text: `<b>${barLen >= 1000 ? (barLen/1000) + ' km' : barLen + ' m'}</b>`,
-      showarrow: false, font: { size: 9, color: '#1D3557' },
+      showarrow: false, font: { size: 9, color: 'var(--fg)' },
     },
     // Section index marker
     { x: 0.99, y: 0.99, xref: 'paper', yref: 'paper',
       text: `${t('tab.section')} ${curIdx >= 0 ? '+' : ''}${curIdx}`,
-      showarrow: false, font: { size: 10, color: '#E87722', weight: 600 },
-      bgcolor: 'rgba(255,255,255,0.85)', bordercolor: '#E87722', borderwidth: 0.5, borderpad: 3,
+      showarrow: false, font: { size: 10, color: 'var(--plot-c2)', weight: 600 },
+      bgcolor: 'var(--bg-card)', bordercolor: 'var(--plot-c2)', borderwidth: 0.5, borderpad: 3,
       xanchor: 'right', yanchor: 'top',
     },
   ];
 
   Plotly.newPlot('sectionOverviewMap', traces, {
     ...plotTheme(), height: 280,
-    margin: { l: 40, r: 10, t: 20, b: 35 },
-    xaxis: {
-      title: { text: 'X (E)', font: { size: 10 } }, tickfont: { size: 9 },
-      scaleanchor: 'y', scaleratio: 1,
+    margin: { l: 56, r: 10, t: 20, b: 35 },
+    xaxis: { ...plotMapAxes().xaxis,
+      title: { text: 'X (E)', font: { size: 10 } }, tickfont: { ...plotTheme().xaxis.tickfont, size: 9 },
       range: [xMin - padding, xMax + padding],
     },
-    yaxis: {
-      title: { text: 'Y (N)', font: { size: 10 } }, tickfont: { size: 9 },
+    yaxis: { ...plotMapAxes().yaxis,
+      title: { text: 'Y (N)', font: { size: 10 } }, tickfont: { ...plotTheme().yaxis.tickfont, size: 9 },
       range: [yMin - padding, yMax + padding],
     },
     shapes,
@@ -6807,6 +6935,20 @@ function getXYZAtDepth(holeId, depth) {
 function _coreTraceAssumptionLabel(code) {
   return ({NO_MEASURED_SURVEY:t('core.renderDesurvey.noSurvey'),ASSUMED_VERTICAL_START:t('core.renderDesurvey.assumedStart'),LAST_DIRECTION_EXTENSION:t('core.renderDesurvey.lastExtension')})[code]||code;
 }
+function _coreDesurveyRepairRoute(table, holeId, depth, field, checks) {
+  const issues=window.OrebitCoreRepair?.findings(checks)||[];
+  for(const issue of issues){
+    if(issue.table!==table||!issue.records?.length)continue;
+    const matches=issue.records.filter(record=>{
+      const row=STATE[table]?.[record.idx];
+      return row&&String(row.hole_id)===String(holeId)&&
+        (depth==null||String(row.depth)===String(depth)||Number(row.depth)===Number(depth));
+    });
+    const record=matches.find(item=>field&&item.columns?.includes(field))||matches[0];
+    if(record)return {issue:issue.id,idx:record.idx,hole:String(holeId),columns:record.columns||[field||'hole_id']};
+  }
+  return null;
+}
 function renderDesurvey() {
   const container = document.getElementById('desurveyPanel');
   if (!container) return;
@@ -6823,6 +6965,12 @@ function renderDesurvey() {
     : (dip) => Math.PI / 180 * (90 + dip);
   const inclined = holes.filter(([_, h]) => h.surveys.some(s => Math.abs(incFromVert(s.dip)) > (Math.PI / 180))).length;
   const assumedHoles=holes.filter(([,h])=>h.assumptions?.length);
+  const validationChecks=_p1RunValidationChecks();
+  const repairButton=(table,holeId,depth,field)=>{
+    const route=_coreDesurveyRepairRoute(table,holeId,depth,field,validationChecks);
+    if(!route)return '';
+    return `<button type="button" class="btn small secondary" data-desurvey-repair="${escapeHtml(route.issue)}" data-desurvey-idx="${route.idx}" data-desurvey-hole="${escapeHtml(route.hole)}" data-desurvey-columns="${escapeHtml(route.columns.join(','))}">${t('core.renderDesurvey.openFinding')}</button>`;
+  };
 
   container.innerHTML = `
     <div class="card">
@@ -6853,12 +7001,19 @@ function renderDesurvey() {
       html += '<div class="hint bad" style="margin:0;">';
       if (bs.length) {
         html += `<strong>${ICONS.error} ${t('core.renderDesurvey.invalidTrajectory')}</strong>
-          <div style="margin-top:6px;font-size:12px;">${t('core.renderDesurvey.affectedHoles')}: ${holesAffected.slice(0,8).map(h=>`<code>${escapeHtml(String(h))}</code>`).join(', ')}${holesAffected.length>8?` … +${holesAffected.length-8} ${t('core.renderDesurvey.more')}`:''}</div>`;
+          <div style="margin-top:6px;font-size:12px;">${t('core.renderDesurvey.affectedHoles')}: ${holesAffected.slice(0,8).map(h=>{
+            const bad=bs.find(row=>String(row.hole_id)===String(h));
+            return `<div class="row-controls"><code>${escapeHtml(String(h))}${bad?.depth!=null?` · ${t('core.renderDesurvey.depth')} ${escapeHtml(String(bad.depth))} m`:''}${bad?.field&&bad.field!=='curvature'?` · ${escapeHtml(bad.field)}`:''}</code>${repairButton('survey',h,bad?.depth,bad?.field)}</div>`;
+          }).join('')}${holesAffected.length>8?` … +${holesAffected.length-8} ${t('core.renderDesurvey.more')}`:''}</div>`;
       }
       if (bc.length) {
         html += `<div style="margin-top:${bs.length?'8px':'0'};"><strong>${ICONS.error} ${bc.length} ${t('core.renderDesurvey.collarSMissingNonNumeric')}</strong>
           ${t('core.renderDesurvey.theseHolesExcludedFromDesurvey')}
-          <div style="margin-top:6px;font-size:12px;">${t('core.renderDesurvey.holes')}: ${bc.slice(0,8).map(h=>`<code>${escapeHtml(String(h))}</code>`).join(', ')}${bc.length>8?` … +${bc.length-8} ${t('core.renderDesurvey.more')}`:''}</div></div>`;
+          <div style="margin-top:6px;font-size:12px;">${t('core.renderDesurvey.holes')}: ${bc.slice(0,8).map(h=>{
+            const row=STATE.collar.find(item=>String(item.hole_id)===String(h));
+            const field=['x','y','z'].find(key=>row&&(!Number.isFinite(Number(row[key]))||row[key]===null||String(row[key]).trim()===''))||'x';
+            return `<div class="row-controls"><code>${escapeHtml(String(h))} · ${escapeHtml(field)}</code>${repairButton('collar',h,null,field)}</div>`;
+          }).join('')}${bc.length>8?` … +${bc.length-8} ${t('core.renderDesurvey.more')}`:''}</div></div>`;
       }
       html += '</div></div>';
       return html;
@@ -6868,16 +7023,16 @@ function renderDesurvey() {
       <p style="font-size:12px;color:var(--fg-mute);margin-bottom:8px;">${t('core.d3.hint')}</p>
       <div id="d3Controls" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
         <button class="btn small" onclick="toggle3DView()" id="d3ToggleBtn">${t('core.d3.show')}</button>
-        <label style="font-size:12px;display:none;" id="d3ColorWrap">${t('core.d3.colorBy')}
+        <label style="font-size:12px;" id="d3ColorWrap">${t('core.d3.colorBy')}
           <select id="d3ColorBy" onchange="render3DTraces()" style="padding:3px 6px;font-size:12px;"></select>
         </label>
-        <label style="font-size:12px;display:none;" id="d3ExagWrap">${t('core.d3.exag')}
+        <label style="font-size:12px;" id="d3ExagWrap">${t('core.d3.exag')}
           <input type="range" id="d3Exag" min="0.25" max="4" step="0.25" value="1"
                  oninput="document.getElementById('d3ExagVal').textContent=this.value+'×'" onchange="render3DTraces()"
                  style="vertical-align:middle;width:110px;">
           <span id="d3ExagVal" style="font-variant-numeric:tabular-nums;">1×</span>
         </label>
-        <label style="font-size:12px;display:none;" id="d3LabelWrap">
+        <label style="font-size:12px;" id="d3LabelWrap">
           <input type="checkbox" id="d3ShowLabels" onchange="render3DTraces()"> ${t('core.d3.collarLabels')}
         </label>
       </div>
@@ -6887,12 +7042,13 @@ function renderDesurvey() {
     <div class="card">
       <h3>${t('core.renderDesurvey.drillholeTrace3dHandoff')}</h3>
       <p style="font-size:13px;color:var(--fg-mute);">${t('core.renderDesurvey.3dVisualizationContinuesIndustryStandard')}</p>
-      <div class="hint" style="background:#f3f4f6;border-left:3px solid #6366f1;font-size:12px;">
+      <div class="hint" style="background:var(--bg-alt);border-left:3px solid var(--plot-c10);font-size:12px;">
         <strong>${ICONS.upload} ${t('core.renderDesurvey.3dViewing')}:</strong> ${t('core.renderDesurvey.export')} <code>desurvey-trace.csv</code> ${t('core.renderDesurvey.belowThenImportInto3d')}
         <ul style="margin:4px 0 0 18px;">
           <li>${t('core.renderDesurvey.importDesurveyTraceCsvInto')}</li>
           <li><strong>QGIS 3D</strong> (${t('core.renderDesurvey.free')}) → ${t('core.renderDesurvey.meshLayerCollarMarkers')}</li>
         </ul>
+        <a data-docs="ref/tabs" data-docs-find="Desurvey">${t('core.renderDesurvey.moreDocs')}</a>
       </div>
       <button class="btn small" style="margin-top:8px;" onclick="exportDesurveyCSV()">${ICONS.download} ${t('core.renderDesurvey.exportDesurveyTraceCsv')}</button>
     </div>
@@ -6916,6 +7072,21 @@ function renderDesurvey() {
       ${holes.length > 30 ? `<p style="font-size:12px;color:var(--fg-mute);margin-top:8px;">${t('core.renderDesurvey.showingFirst30').replace('{n}', holes.length)}</p>` : ''}
     </div>
   `;
+
+  container.querySelectorAll('[data-desurvey-repair]').forEach(button=>button.addEventListener('click',()=>{
+    window.OrebitCoreRepair?.locate(button.dataset.desurveyRepair,{
+      idx:Number(button.dataset.desurveyIdx),hole_id:button.dataset.desurveyHole,
+      columns:button.dataset.desurveyColumns.split(',')
+    });
+  }));
+
+  const colorBy = document.getElementById('d3ColorBy');
+  if (colorBy && !colorBy.options.length) {
+    const opts = [`<option value="litho">${t('core.d3.byLithology')}</option>`];
+    (typeof getActualGradeColumns === 'function' ? getActualGradeColumns() : [])
+      .forEach(g => { opts.push(`<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`); });
+    colorBy.innerHTML = opts.join('');
+  }
 
 }
 
@@ -7016,26 +7187,12 @@ function toggle3DView() {
   if (showing) {
     try { if (typeof Plotly !== 'undefined') Plotly.purge('d3Plot'); } catch (e) {}
     div.style.display = 'none';
-    document.getElementById('d3ColorWrap').style.display = 'none';
-    document.getElementById('d3ExagWrap').style.display = 'none';
-    document.getElementById('d3LabelWrap').style.display = 'none';
     document.getElementById('d3Note').textContent = '';
     btn.textContent = t('core.d3.show');
     return;
   }
   div.style.display = '';
-  document.getElementById('d3ColorWrap').style.display = '';
-  document.getElementById('d3ExagWrap').style.display = '';
-  document.getElementById('d3LabelWrap').style.display = '';
   btn.textContent = t('core.d3.hide');
-  // Populate colour-by options once: lithology plus whatever grades exist.
-  const sel = document.getElementById('d3ColorBy');
-  if (sel && !sel.options.length) {
-    const opts = [`<option value="litho">${t('core.d3.byLithology')}</option>`];
-    (typeof getActualGradeColumns === 'function' ? getActualGradeColumns() : [])
-      .forEach(g => { opts.push(`<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`); });
-    sel.innerHTML = opts.join('');
-  }
   render3DTraces();
 }
 
@@ -7130,14 +7287,14 @@ function render3DTraces() {
       });
     });
   } else {
-    const xs = [], ys = [], zs = [], vs = [], txt = [];
+    const xs = [], ys = [], zs = [], vs = [], validRows = [];
     rows.forEach((a, idx) => {
       if (idx % budgetStep) return;
-      const v = Number(a[colorBy]);
+      const v = cellNumber(a[colorBy]);
       if (!isFinite(v)) return;
-      const mid = getXYZAtDepth(a.hole_id, (Number(a.from_m) + Number(a.to_m)) / 2);
+      const mid = getXYZAtDepth(a.hole_id, (cellNumber(a.from_m) + cellNumber(a.to_m)) / 2);
       if (!mid) return;
-      xs.push(mid.x); ys.push(mid.y); zs.push(mid.z); vs.push(v);
+      xs.push(mid.x); ys.push(mid.y); zs.push(mid.z); vs.push(v); validRows.push(a);
     });
     // Same quantile classification as the collar map (§2.1 of the Core/Assay
     // audit): a continuous ramp over the raw range has the identical failure
@@ -7148,9 +7305,11 @@ function render3DTraces() {
     const cls = gradeClassBreaks(vs, 'quantile', GRADE_PALETTE_5.length, meta.unit);
     const nClasses = Math.max(cls.n, 1);
     const classVals = vs.map(v => cls.classOf(v));
-    const idxByRow = [];
-    rows.forEach((a, idx) => { if (!(idx % budgetStep)) { const v = Number(a[colorBy]); if (isFinite(v)) idxByRow.push(a); } });
-    const txt2 = idxByRow.map((a, i) => `${a.hole_id}<br>${Number(a.from_m).toFixed(1)}–${Number(a.to_m).toFixed(1)} m<br>${meta.label || colorBy}: ${vs[i].toFixed(3)}${classVals[i] != null ? ' (' + cls.labels[classVals[i]] + ')' : ''}`);
+    // Keep hover labels paired with the same rows that produced valid XYZ
+    // points. Grade rows can be numerically valid while lacking a usable
+    // desurvey midpoint; filtering those out of `vs` but not here shifted
+    // indices and could pass undefined to toFixed() during a grade toggle.
+    const txt2 = validRows.map((a, i) => `${a.hole_id}<br>${Number(a.from_m).toFixed(1)}–${Number(a.to_m).toFixed(1)} m<br>${meta.label || colorBy}: ${vs[i].toFixed(3)}${classVals[i] != null ? ' (' + cls.labels[classVals[i]] + ')' : ''}`);
     traces.push({
       type: 'scatter3d', mode: 'markers', x: xs, y: ys, z: zs,
       marker: {
@@ -7357,8 +7516,13 @@ function buildMasterExportCols(rows) {
   const baseCols = _masterBaseCols();
   const gradeCols = getActualGradeColumns();
   const densityCols = getActualDensityColumns();
+  const specificGravityNames = new Set(['sg', 'specific_gravity', 'specificgravity', 'sg_dimensionless']);
+  const specificGravityCols = STATE.assay && STATE.assay.length
+    ? Object.keys(STATE.assay[0]).filter(col => specificGravityNames.has(_norm(col)))
+    : [];
   const tailCols = _masterTailCols(rows);
-  return { baseCols, gradeCols, densityCols, tailCols, outCols: [...baseCols, ...gradeCols, ...densityCols, ...tailCols] };
+  return { baseCols, gradeCols, densityCols, specificGravityCols, tailCols,
+    outCols: [...baseCols, ...gradeCols, ...densityCols, ...specificGravityCols, ...tailCols] };
 }
 
 function _coreDirectionIssues(source) {
@@ -7403,7 +7567,7 @@ function computeMerge() {
   source.assay.forEach(a => {
     if (!a.hole_id || a.from_m == null || a.to_m == null) return;
     assayHoles.add(a.hole_id);
-    const f = Number(a.from_m), t = Number(a.to_m);
+    const f = cellNumber(a.from_m), t = cellNumber(a.to_m);
     const mid = (f + t) / 2;
     // Explicit input mode: interval midpoint XYZ supplied by the data owner.
     // This is not a directional survey and must never be silently inferred.
@@ -7468,16 +7632,49 @@ function computeMerge() {
 function renderMerge() {
   const container = document.getElementById('mergePanel');
   if (!container) return;
-  if (!STATE.merged) computeMerge();
+  if (!STATE.merged) {
+    const ready = _coreAnalysisReady();
+    const notice = document.createElement('div');
+    notice.className = ready ? 'hint' : 'hint warn';
+    notice.textContent = t(ready ? 'core.renderMerge.notRun' : 'flow.blockedGeometry');
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.className = 'btn';
+    action.id = 'computeMergeBtn';
+    action.textContent = t('core.renderMerge.run');
+    action.onclick = () => {
+      if (!STATE.assay.length) { showTab(7); return; }
+      computeMerge();
+      renderMerge();
+    };
+    container.replaceChildren(notice, action);
+    if (!ready) {
+      const review = document.createElement('button');
+      review.type = 'button';
+      review.className = 'btn secondary';
+      review.textContent = t('tab.validation');
+      review.onclick = () => showTab(7);
+      container.append(review);
+    }
+    action.disabled = !STATE.assay.length;
+    return;
+  }
   const m = STATE.merged;
   const audit = STATE.mergeAudit || {};
+  const mergeSourceLinks = (kind, holes) => {
+    if(!holes?.length)return '';
+    const label=kind==='collar'?'core.renderMerge.openCollarIssue':'core.renderMerge.openSurveyIssue';
+    const shown=holes.slice(0,8).map(hole=>`<button type="button" class="btn small secondary" data-merge-repair="${kind}" data-merge-hole="${escapeHtml(String(hole))}">${t(label).replace('{hole}',escapeHtml(String(hole)))}</button>`).join('');
+    const rest=holes.length>8?`<p>${t('core.renderMerge.moreAffected').replace('{n}',String(holes.length-8))}</p><button type="button" class="btn small secondary" data-merge-repair="all">${t('core.renderMerge.openAllFindings')}</button>`:'';
+    return `<details class="merge-source-review"><summary>${t('core.renderMerge.reviewAffected').replace('{n}',String(holes.length))}</summary><div class="row-controls">${shown}</div>${rest}</details>`;
+  };
   const withXYZ = m.filter(r => r.midx !== null).length;
   const withLith = m.filter(r => r.lithology).length;
   // Previously hardcoded to au_gpt — always 0 for non-Au deposits (e.g. Sn/SnO2
   // tin data), which read as "assay merge failed" when it hadn't. Pick whichever
   // detected grade column actually has the most data in THIS dataset instead.
   // 2026-08-18.
-  const shortGradeLabel = (key) => key.replace(/_(pct|ppm|gpt|ppb|kg)$/i, '').replace(/_/g, ' ').toUpperCase();
+  const shortGradeLabel = (key) => plotName(key) !== key ? plotName(key) : key.replace(/_(pct|ppm|gpt|ppb|kg)$/i, '').replace(/_/g, ' ').toUpperCase();
   const gradeDensity = (col) => m.reduce((n, r) => n + (r[col] != null && isFinite(Number(r[col])) ? 1 : 0), 0);
   const rankedGradeCols = getActualGradeColumns().slice().sort((a, b) => gradeDensity(b) - gradeDensity(a));
   const primaryGrade = rankedGradeCols[0] || null;
@@ -7503,10 +7700,10 @@ function renderMerge() {
       <h3>${ICONS.zap} ${t('core.qi.titlePrefix')} ${mIsId ? 'Gabungan Master' : 'Merge Master'}</h3>
       <div class="qi-row">
         <div><strong>${mIsId ? 'Baris master' : 'Master rows'}:</strong> ${m.length.toLocaleString('en-US')} ${mIsId ? 'interval digabung' : 'interval merged'}</div>
-        <div><strong>${mIsId ? 'Dengan XYZ' : 'With XYZ'}:</strong> ${withXYZ.toLocaleString('en-US')} (${xyzPct.toFixed(0)}%) — <span class="${xyzVerdict.cls}">${xyzVerdict.label}</span></div>
+        <div><strong>${mIsId ? 'Dengan XYZ' : 'With XYZ'}:</strong> ${withXYZ.toLocaleString('en-US')} (${xyzPct.toFixed(1)}%) — <span class="${xyzVerdict.cls}">${xyzVerdict.label}</span></div>
       </div>
       <div class="qi-row">
-        <div><strong>${mIsId ? 'Dengan litho' : 'With litho'}:</strong> ${withLith.toLocaleString('en-US')} (${lithPct.toFixed(0)}%) — <span class="${lithVerdict.cls}">${lithVerdict.label}</span></div>
+        <div><strong>${mIsId ? 'Dengan litho' : 'With litho'}:</strong> ${withLith.toLocaleString('en-US')} (${lithPct.toFixed(1)}%) — <span class="${lithVerdict.cls}">${lithVerdict.label}</span></div>
         <div><strong>${primaryGradeLabel ? `${mIsId ? 'Dengan assay' : 'With'} ${escapeHtml(primaryGradeLabel)}${mIsId ? '' : ' assay'}:` : (mIsId ? 'Cakupan assay:' : 'Assay coverage:')}</strong> ${primaryGradeLabel ? withPrimaryGrade.toLocaleString('en-US') : (mIsId ? 'tidak ada kolom kadar terdeteksi' : 'no grade columns detected')}</div>
       </div>
       ${dqLine ? `<div class="qi-row">${dqLine}</div>` : ''}
@@ -7522,14 +7719,16 @@ function renderMerge() {
       <h3>${mIsId ? 'Ringkasan Merge' : 'Merge Summary'}</h3>
       <div class="stat-grid">
         <div class="stat-box"><div class="label">${mIsId ? 'Baris master' : 'Master rows'}</div><div class="value">${m.length.toLocaleString('en-US')}</div></div>
-        <div class="stat-box"><div class="label">${mIsId ? 'Dengan XYZ' : 'With XYZ'}</div><div class="value">${withXYZ.toLocaleString('en-US')} (${(withXYZ/m.length*100).toFixed(0)}%)</div></div>
-        <div class="stat-box"><div class="label">${mIsId ? 'Dengan litologi' : 'With lithology'}</div><div class="value">${withLith.toLocaleString('en-US')} (${(withLith/m.length*100).toFixed(0)}%)</div></div>
+        <div class="stat-box"><div class="label">${mIsId ? 'Dengan XYZ' : 'With XYZ'}</div><div class="value">${withXYZ.toLocaleString('en-US')} (${(withXYZ/m.length*100).toFixed(1)}%)</div></div>
+        <div class="stat-box"><div class="label">${mIsId ? 'Dengan litologi' : 'With lithology'}</div><div class="value">${withLith.toLocaleString('en-US')} (${(withLith/m.length*100).toFixed(1)}%)</div></div>
         <div class="stat-box"><div class="label">${primaryGradeLabel ? `${mIsId ? 'Dengan' : 'With'} ${escapeHtml(primaryGradeLabel)}` : (mIsId ? 'Dengan assay' : 'With assay')}</div><div class="value">${primaryGradeLabel ? withPrimaryGrade.toLocaleString('en-US') : '—'}</div></div>
       </div>
       <div class="hint ${audit.assayWithoutCollar?.length || audit.assayWithoutSurvey?.length || audit.intervalsWithoutXYZ ? 'warn' : ''}" style="margin-top:10px;">
         <strong>${mIsId ? 'Audit join' : 'Join audit'}:</strong> ${audit.assayWithoutCollar?.length || 0} ${mIsId ? 'hole assay tanpa collar' : 'assay holes without collar'} · ${audit.assayWithoutSurvey?.length || 0} ${mIsId ? 'tanpa survey' : 'without survey'} · ${audit.intervalsWithoutXYZ || 0} ${mIsId ? 'interval tanpa XYZ' : 'intervals without XYZ'} · ${audit.intervalsWithoutGeology || 0} ${mIsId ? 'interval tanpa geology' : 'intervals without geology'}.
         ${audit.geologyWithoutAssay?.length ? `<br>${mIsId ? 'Hole geology-only yang tidak dipakai' : 'Geology-only holes not used'}: ${audit.geologyWithoutAssay.length}.` : ''}
       </div>
+      ${mergeSourceLinks('collar',audit.assayWithoutCollar)}
+      ${mergeSourceLinks('survey',audit.assayWithoutSurvey)}
       <button data-action-role="apply" class="btn small" onclick="computeMerge(); renderMerge(); toast(t('core.renderMerge.reMerged'), 'good');">↻ ${mIsId ? 'Hitung ulang merge' : 'Recompute merge'}</button>
     </div>
     <div class="card">
@@ -7551,6 +7750,20 @@ function renderMerge() {
       </div>
     </div>
   `;
+  container.querySelectorAll('[data-merge-repair]').forEach(button=>button.addEventListener('click',()=>{
+    const kind=button.dataset.mergeRepair,hole=button.dataset.mergeHole;
+    if(kind==='all'){showTab(7);return;}
+    const findings=window.OrebitCoreRepair?.findings()||[];
+    if(kind==='collar'){
+      const issue=findings.find(item=>item.code==='missing-collar'&&String(item.hole_id)===String(hole));
+      if(issue){window.OrebitCoreRepair.locate(issue.id);return;}
+    }else if(kind==='survey'){
+      const issue=findings.find(item=>item.code==='missing-table'&&item.table==='survey'&&item.holes?.some(id=>String(id)===String(hole)));
+      if(issue){window.OrebitCoreRepair.locate(issue.id,{idx:null,hole_id:hole,columns:['hole_id']});return;}
+    }
+    showTab(7);
+  }));
+  window.OrebitScreeningWorkflow?.refresh(11);
 }
 
 function fmt(v, d = 2) {
@@ -7579,15 +7792,15 @@ function lengthWeightedComposite(rows, start, end, gradeCols) {
   let midxSum = 0, midySum = 0, midzSum = 0, xyzWeight = 0;
 
   rows.forEach(r => {
-    const rf = Number(r.from_m), rt = Number(r.to_m);
+    const rf = cellNumber(r.from_m), rt = cellNumber(r.to_m);
     const overlapStart = Math.max(start, rf);
     const overlapEnd = Math.min(end, rt);
     const overlap = overlapEnd - overlapStart;
-    if (overlap <= 0) return;
+    if (!(overlap > 0)) return; // also skips a row without a readable from/to
 
     totalWeight += overlap;
     gradeCols.forEach(c => {
-      const v = Number(r[c]);
+      const v = cellNumber(r[c]);
       if (isFinite(v)) { gradeSums[c] += v * overlap; gradeWeights[c] += overlap; }
     });
 
@@ -7598,10 +7811,11 @@ function lengthWeightedComposite(rows, start, end, gradeCols) {
     }
 
     // Weighted XYZ
-    if (r.midx != null && r.midy != null && r.midz != null) {
-      midxSum += r.midx * overlap;
-      midySum += r.midy * overlap;
-      midzSum += r.midz * overlap;
+    const mx = cellNumber(r.midx), my = cellNumber(r.midy), mz = cellNumber(r.midz);
+    if (isFinite(mx) && isFinite(my) && isFinite(mz)) {
+      midxSum += mx * overlap;
+      midySum += my * overlap;
+      midzSum += mz * overlap;
       xyzWeight += overlap;
     }
   });
@@ -7681,7 +7895,7 @@ function renderComposite() {
   const checkboxHtml = gradeCols.map(c => {
     const checked = savedCols.includes(c) ? 'checked' : '';
     return `<label style="font-size:12px;display:inline-flex;align-items:center;gap:4px;margin-right:12px;">
-      <input type="checkbox" class="comp-grade-cb" value="${escapeHtml(c)}" ${checked} /> ${escapeHtml(c)}
+      <input type="checkbox" class="comp-grade-cb" value="${escapeHtml(c)}" ${checked} /> <span title="${escapeHtml(c)}">${escapeHtml(plotLabel(c))}</span>
     </label>`;
   }).join('');
 
@@ -7690,13 +7904,14 @@ function renderComposite() {
       <h3 data-i18n="core.compositeParams">Composite Parameters</h3>
       <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
         <label style="font-size:13px;">${t('core.cp.lengthLabel')}
-          <input type="number" id="compLen" value="${savedLen}" min="0.5" step="0.5" style="width:70px;padding:3px 6px;font-size:13px;margin-left:6px;" />
+          <input type="number" id="compLen" value="${savedLen}" min="0.5" step="0.5" aria-describedby="compLenError" aria-invalid="false" style="width:70px;padding:3px 6px;font-size:13px;margin-left:6px;" />
         </label>
         <button class="btn" id="btnComputeComp">${ICONS.compute} ${t('core.cp.computeBtn')}</button>
         <button class="btn secondary" id="btnExportComp" style="display:none;">${ICONS.download} ${t('core.cp.exportCsv')}</button>
       </div>
       <div style="margin-bottom:8px;font-size:12px;font-weight:600;color:var(--fg-mute);">${t('core.cp.gradeCols')}</div>
       <div style="margin-bottom:4px;">${checkboxHtml || `<span style="font-size:12px;color:var(--fg-mute);">${t('core.cp.noGradeCols')}</span>`}</div>
+      <p id="compLenError" class="hint bad" role="alert" hidden>${t('core.cp.invalidLength')}</p>
     </div>
     <div id="compResult">${(STATE.composite && STATE.composite.length) ? '' : `<div class="hint" style="text-align:center;color:var(--fg-mute);">${t('core.cp.pressComputeToPreview')}</div>`}</div>
     <div id="compInsight"></div>
@@ -7712,7 +7927,19 @@ function renderComposite() {
   }
 
   document.getElementById('btnComputeComp').onclick = () => {
-    const len = Math.max(0.5, Number(document.getElementById('compLen').value) || 2);
+    const lengthInput=document.getElementById('compLen');
+    const error=document.getElementById('compLenError');
+    const rawLength=lengthInput.value.trim();
+    const len=Number(rawLength);
+    const stepMismatch=lengthInput.validity.stepMismatch;
+    if(!rawLength||!Number.isFinite(len)||len<0.5||stepMismatch){
+      lengthInput.setAttribute('aria-invalid','true');
+      error.hidden=false;
+      lengthInput.focus();
+      return;
+    }
+    lengthInput.setAttribute('aria-invalid','false');
+    error.hidden=true;
     const checked = [...document.querySelectorAll('.comp-grade-cb:checked')].map(cb => cb.value);
     if (!checked.length) { toast(t('core.renderComposite.selectLeastOneGradeColumn'), 'warn'); return; }
     STATE._compLen = len;
@@ -7724,6 +7951,12 @@ function renderComposite() {
     toast(t('core.showCompResults.computed').replace('{n}', comp.length.toLocaleString('en-US')).replace('{len}', len), 'good');
     if (typeof logPipeline === 'function') logPipeline('Compositing', `${len}m regular composites on ${checked.join(', ')} → ${comp.length} intervals`);
   };
+  document.getElementById('compLen').addEventListener('input',event=>{
+    if(event.currentTarget.validity.valid&&event.currentTarget.value.trim()){
+      event.currentTarget.setAttribute('aria-invalid','false');
+      document.getElementById('compLenError').hidden=true;
+    }
+  });
 
   document.getElementById('btnExportComp').onclick = () => {
     if (!STATE.composite || !STATE.composite.length) return;
@@ -7751,8 +7984,8 @@ function _showCompResults(comp, gradeCols) {
   const rawCount = STATE.merged ? STATE.merged.length : 0;
   const ratio = rawCount > 0 ? (comp.length / rawCount * 100).toFixed(0) : 0;
   const insightRows = gradeCols.map(c => {
-    const rawVals = STATE.merged.map(r => Number(r[c])).filter(v => isFinite(v) && v >= 0);
-    const compVals = comp.map(r => Number(r[c])).filter(v => isFinite(v) && v >= 0);
+    const rawVals = STATE.merged.map(r => cellNumber(r[c])).filter(v => isFinite(v) && v >= 0);
+    const compVals = comp.map(r => cellNumber(r[c])).filter(v => isFinite(v) && v >= 0);
     const rawMean = rawVals.length ? rawVals.reduce((a, b) => a + b, 0) / rawVals.length : 0;
     const compMean = compVals.length ? compVals.reduce((a, b) => a + b, 0) / compVals.length : 0;
     const diff = rawMean > 0 ? ((compMean - rawMean) / rawMean * 100) : 0;
@@ -7760,7 +7993,7 @@ function _showCompResults(comp, gradeCols) {
       <td style="font-weight:600;">${escapeHtml(c)}</td>
       <td>${rawMean.toFixed(4)}</td>
       <td>${compMean.toFixed(4)}</td>
-      <td style="color:${Math.abs(diff) < 1 ? 'var(--good)' : Math.abs(diff) < 5 ? 'var(--warn)' : 'var(--bad)'};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}%</td>
+      <td style="color:${Math.abs(diff) < 1 ? 'var(--good-ink)' : Math.abs(diff) < 5 ? 'var(--warn-ink)' : 'var(--bad-ink)'};">${diff > 0 ? '+' : ''}${diff.toFixed(1)}%</td>
     </tr>`;
   }).join('');
 
@@ -8266,7 +8499,7 @@ function _dataBBox() {
   const m = STATE.merged || [];
   let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity, n = 0;
   m.forEach(r => {
-    const x = Number(r.midx), y = Number(r.midy);
+    const x = cellNumber(r.midx), y = cellNumber(r.midy);
     if (!['midx','midy'].every(k => r[k] !== null && r[k] !== undefined && String(r[k]).trim() !== '' && Number.isFinite(Number(r[k])))) return;
     n++;
     if (x < minx) minx = x; if (x > maxx) maxx = x;
@@ -8290,7 +8523,7 @@ function _looksLatLon(bb) {
 function _collarLooksGeographic(collars = STATE.collar) {
   const xs = [], ys = [];
   collars.forEach(r => {
-    const x = Number(r.x), y = Number(r.y);
+    const x = cellNumber(r.x), y = cellNumber(r.y);
     if (r.x !== null && r.x !== '' && r.y !== null && r.y !== '' && Number.isFinite(x) && Number.isFinite(y)) { xs.push(x); ys.push(y); }
   });
   if (xs.length < 2) return false;
@@ -8329,7 +8562,7 @@ function _cropStats() {
   let kept = 0, dropped = 0, noCoord = 0;
   const keptHoles = new Set();
   m.forEach(r => {
-    const x = Number(r.midx), y = Number(r.midy);
+    const x = cellNumber(r.midx), y = cellNumber(r.midy);
     if (!['midx','midy','midz'].every(k => r[k] !== null && r[k] !== undefined && String(r[k]).trim() !== '' && Number.isFinite(Number(r[k])))) { noCoord++; return; }
     if (_pointInAnyPoly(x, y)) { kept++; keptHoles.add(r.hole_id); }
     else dropped++;
@@ -8405,7 +8638,7 @@ function renderSpatialMap() {
   if (!STATE.merged) { try { computeMerge(); } catch (e) {} }
   const holes = Object.create(null);
   (STATE.merged || []).forEach(r => {
-    const x = Number(r.midx), y = Number(r.midy);
+    const x = cellNumber(r.midx), y = cellNumber(r.midy);
     if (!isFinite(x) || !isFinite(y)) return;
     const id = r.hole_id || '?';
     (holes[id] = holes[id] || { xs: [], ys: [] });
@@ -8427,15 +8660,15 @@ function renderSpatialMap() {
     const outLL = pts.filter(p => !p.inside).map(proj);
     const traces = [
       { type: 'scattermapbox', lon: outLL.map(c => c[0]), lat: outLL.map(c => c[1]), mode: 'markers',
-        marker: { size: 8, color: 'rgba(160,160,160,0.9)' }, name: 'outside', hoverinfo: 'skip' },
+        marker: { size: 8, color: 'var(--plot-c6)' }, name: 'outside', hoverinfo: 'skip' },
       { type: 'scattermapbox', lon: inLL.map(c => c[0]), lat: inLL.map(c => c[1]), mode: 'markers',
-        marker: { size: 10, color: '#16a34a' }, name: 'inside', hoverinfo: 'skip' },
+        marker: { size: 10, color: 'var(--plot-c1)' }, name: 'inside', hoverinfo: 'skip' },
     ];
     CROP.polys.forEach(ring => {
       const ll = ring.map(p => _utmToLonLat(p[0], p[1], crs.zone, crs.south));
       if (ll.length) ll.push(ll[0]);
       traces.push({ type: 'scattermapbox', lon: ll.map(c => c[0]), lat: ll.map(c => c[1]),
-        mode: 'lines', line: { color: '#E87722', width: 2.5 }, name: 'constraint', hoverinfo: 'skip' });
+        mode: 'lines', line: { color: 'var(--plot-c2)', width: 2.5 }, name: 'constraint', hoverinfo: 'skip' });
     });
     const allLL = inLL.concat(outLL);
     const clon = allLL.reduce((a, c) => a + c[0], 0) / allLL.length;
@@ -8460,22 +8693,21 @@ function renderSpatialMap() {
   const outX = pts.filter(p => !p.inside).map(p => p.x), outY = pts.filter(p => !p.inside).map(p => p.y);
   const traces = [
     { x: outX, y: outY, mode: 'markers', type: 'scatter', name: `outside (${outX.length})`,
-      marker: { size: 8, color: 'rgba(140,140,140,0.7)', line: { width: 0.5, color: '#555' } } },
+      marker: { size: 8, color: 'var(--plot-c6)', opacity: 0.7 } },
     { x: inX, y: inY, mode: 'markers', type: 'scatter', name: `inside (${inX.length})`,
-      marker: { size: 10, color: '#16a34a', line: { width: 0.8, color: '#065f46' } } },
+      marker: { size: 10, color: 'var(--plot-c1)' } },
   ];
   const shapes = CROP.polys.map(ring => {
     if (!ring.length) return null;
     const d = 'M ' + ring[0][0] + ' ' + ring[0][1] + ' ' +
       ring.slice(1).map(p => 'L ' + p[0] + ' ' + p[1]).join(' ') + ' Z';
-    return { type: 'path', path: d, line: { color: '#E87722', width: 2 },
+    return { type: 'path', path: d, line: { color: 'var(--plot-c2)', width: 2 },
       fillcolor: 'rgba(232,119,34,0.08)', layer: 'below' };
   }).filter(Boolean);
   Plotly.newPlot(gd, traces, {
-    ...plotTheme(), height: 480, margin: { l: 55, r: 20, t: 20, b: 45 },
-    xaxis: { title: { text: 'Easting (m)' }, scaleanchor: 'y', scaleratio: 1 },
-    yaxis: { title: { text: 'Northing (m)' } },
-    shapes, showlegend: true, legend: { orientation: 'h', y: 1.04, x: 0 }, hovermode: 'closest',
+    ...plotTheme(), height: 480, margin: { l: 64, r: 20, t: 20, b: 45 },
+    ...plotMapAxes('Easting (m)', 'Northing (m)'),
+    shapes, showlegend: true, hovermode: 'closest',
   }, { responsive: true, displayModeBar: false, scrollZoom: true });
 }
 
@@ -8512,7 +8744,7 @@ function toggleDrawConstraint() {
   if (satEl && satEl.checked) { toast(t('core.toggleDrawConstraint.turnOffSatelliteBasemapDraw'), 'warn'); return; }
   CROP._drawing = !CROP._drawing;
   if (CROP._drawing) {
-    Plotly.relayout(gd, { dragmode: 'drawclosedpath', 'newshape.line.color': '#E87722',
+    Plotly.relayout(gd, { dragmode: 'drawclosedpath', 'newshape.line.color': plotColor('secondary'),
       'newshape.fillcolor': 'rgba(232,119,34,0.12)', 'newshape.opacity': 1 });
     if (btn) btn.textContent = t('core.toggleDrawConstraint.finishDrawing');
     if (hint) hint.textContent = t('core.toggleDrawConstraint.clickAddVerticesDoubleClick');
@@ -8676,6 +8908,7 @@ function exportCroppedMaster() {
     '# orebit-schema=v1 source=phase1-core',
     '# units: ' + (unitSummary || 'unitless'),
     _lengthTag(),
+    _crsTag(),
     _cropTag(),
     '# validation-scope: selected intervals='+rows.length+' holes='+new Set(rows.map(r=>r.hole_id)).size+'; regional findings retained in Core project/PDF',
     '# source-audit: changes='+STATE.CHANGE_LOG.length+'; detailed corrections in Core project/PDF',
@@ -8818,6 +9051,7 @@ function exportMasterCSV() {
     '# orebit-schema=v1 source=phase1-core',
     '# units: ' + (unitSummary || 'unitless'),
     _lengthTag(),
+    _crsTag(),
     '# notes: BDL applied per STATE.bdlMode. Grade columns dynamically detected from input.',
     '# coordinates: ' + (STATE.mergeAudit && STATE.mergeAudit.coordinateSource || 'minimum-curvature-survey'),
     window.OrebitCoreScope.csv(),
@@ -9048,7 +9282,7 @@ async function _p1RenderCollarMapForPDF() {
   const holes = buildHoleStatusData().filter(_coreMapHasXY);
   if (!holes.length) return null;
 
-  const STATUS_COLOR = { complete: '#16a34a', noSurvey: '#eab308', noGeo: '#ea580c', noAssay: '#dc2626', orphan: '#dc2626' };
+  const STATUS_COLOR = coreLinkageStatusColors();
   const STATUS_LABEL = { complete: t('core.lg.complete'), noSurvey: t('core.lg.noSurvey'), noGeo: t('core.lg.noGeology'), noAssay: t('core.lg.noAssay'), orphan: t('core.lg.orphan') };
 
   // Group holes by status so the legend reads cleanly.
@@ -9079,24 +9313,6 @@ async function _p1RenderCollarMapForPDF() {
   return div.id;
 }
 
-function maybeShowSupportMoment() {
-  try {
-    if (localStorage.getItem('orebit_support_moment_v1') === '1') return;
-    localStorage.setItem('orebit_support_moment_v1', '1');
-    var id = document.documentElement.lang === 'id';
-    var d = document.createElement('div'); d.id = 'orebit-support-moment';
-    d.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.38);display:flex;align-items:center;justify-content:center;padding:20px;';
-    d.innerHTML = '<div role="dialog" aria-modal="true" style="position:relative;max-width:390px;width:100%;background:#fff;color:#0f172a;border-radius:14px;padding:24px;box-shadow:0 16px 50px rgba(0,0,0,.22);font:14px/1.55 system-ui,sans-serif"><button class="support-close-btn" aria-label="' + (id ? 'Tutup' : 'Close') + '" style="position:absolute;right:12px;top:8px;border:0;background:none;font-size:22px;cursor:pointer">×</button><div style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#0d9488;font-weight:700;margin-bottom:8px">' + (id ? 'Export selesai' : 'Export complete') + '</div><h2 style="margin:0 0 8px;font-size:20px">' + (id ? 'Terbantu oleh Orebit?' : 'Orebit helped?') + '</h2><p style="margin:0 0 18px;color:#64748b">' + (id ? 'Dukung tool, dokumentasi, dan infrastruktur secara sukarela. Sekali saja—tidak ada langganan.' : 'Support the tools, documentation, and infrastructure. One-time and voluntary—no subscription.') + '</p><a href="https://saweria.co/orebitindonesia" target="_blank" style="display:inline-block;background:#0d9488;color:#fff;text-decoration:none;border-radius:8px;padding:10px 16px;font-weight:700">' + (id ? 'Dukung Orebit →' : 'Support Orebit →') + '</a><button class="support-dismiss-btn" style="margin-left:10px;border:0;background:none;color:#64748b;cursor:pointer;padding:10px 4px">' + (id ? 'Nanti' : 'Not now') + '</button></div>';
-    document.body.appendChild(d);
-
-    // Attach event listeners to modal buttons
-    const closeBtn = d.querySelector('.support-close-btn');
-    const dismissBtn = d.querySelector('.support-dismiss-btn');
-    const removeModal = function() { d.remove(); };
-    if (closeBtn) closeBtn.addEventListener('click', removeModal);
-    if (dismissBtn) dismissBtn.addEventListener('click', removeModal);
-  } catch (e) { console.warn('support moment', e); }
-}
 
 // Reusable fixed-viewport PNG export for visual tabs (marketing/docs
 // screenshots that must be pixel-identical regardless of the exporting
@@ -9224,8 +9440,14 @@ async function exportStripLogPNG(evt) {
 
   const fromEl = document.getElementById('stripLogExportFrom');
   const toEl = document.getElementById('stripLogExportTo');
-  const fromM = Math.max(0, Number(fromEl && fromEl.value) || 0);
-  const toM = Math.max(fromM + 1, Number(toEl && toEl.value) || fromM + 100);
+  const fromRaw = fromEl ? fromEl.value.trim() : '';
+  const toRaw = toEl ? toEl.value.trim() : '';
+  const parsedFrom = fromRaw === '' ? 0 : Number(fromRaw);
+  const parsedTo = toRaw === '' ? NaN : Number(toRaw);
+  const fromM = Math.max(0, Number.isFinite(parsedFrom) ? parsedFrom : 0);
+  const defaultTo = toEl ? Number(toEl.dataset.defaultTo) : NaN;
+  const toFallback = Number.isFinite(defaultTo) && defaultTo > 0 ? defaultTo : fromM + 100;
+  const toM = Math.max(fromM + 1, Number.isFinite(parsedTo) ? parsedTo : toFallback);
   const prevRange = (gd.layout && gd.layout.yaxis && gd.layout.yaxis.range) || null;
 
   try {
@@ -9772,8 +9994,9 @@ if (!STATE.collar.length) { toast(t('core.maybeShowSupportMoment.noDataLoadedCli
       ['Missing merged coordinates',STATE.mergeAudit?STATE.mergeAudit.intervalsWithoutXYZ:'Merge not run'],
       ['Grade statistics population','Finite nonnegative grades including valid zero values; missing and negative BDL placeholders excluded'],
       ['Further evidence needed','Assay certificates, QA/QC controls, survey verification, geological interpretation and measured density require independent project evidence'],
-      ['Next step','Export the merged master, inspect coordinate/source notes, then review treatment and compositing in Assay before Resource estimation']
-    ]);
+      ['Next step','Export the merged master, inspect coordinate/source notes, then review treatment and compositing in Assay before Resource estimation'],
+      ...OrebitDomainReport.rows(await window.__orebitDomainHandoff(),'Core')
+    ],{startY:y+15});
     const scopeRecord=window.OrebitCoreScope.record();
     if(scopeRecord)OrebitScreeningReport.append(pdf,'Core',[
       [t('core.scope.title'),window.OrebitCoreScope.describe()],
@@ -9865,6 +10088,7 @@ document.addEventListener('keydown', (e) => {
         '# orebit-schema=v1 source=phase1-core',
         '# units: ' + (unitSummary || 'unitless'),
         _lengthTag(),
+        _crsTag(),
         '# notes: BDL applied per STATE.bdlMode. Grade columns dynamically detected from input.',
         '# coordinates: ' + (STATE.mergeAudit && STATE.mergeAudit.coordinateSource || 'minimum-curvature-survey'),
     window.OrebitCoreScope.csv(),
@@ -9941,6 +10165,7 @@ document.addEventListener('keydown', (e) => {
         units_locked:  STATE.unitsLocked || {},
         audit: {schemaVersion:1, changes:STATE.CHANGE_LOG || [], pipeline:window._pipelineLog || [], validationScope:window.OrebitCoreScope.record()},
       },
+      edaReference: window.OrebitCoreEDAReference?.exportState() || null,
     };
   }
 
@@ -9974,7 +10199,48 @@ document.addEventListener('keydown', (e) => {
   }
 
   /* ---- Load bundle data into STATE ---- */
-  function applyBundle(bundle) {
+  async function applyBundle(bundle) {
+    // Stage all four source tables before touching the active project. A bad
+    // later CSV field must not leave an earlier table, audit or scope replaced.
+    // Reuse the ordinary parser/mapping owners and keep legacy optional tables.
+    let capsuleCheck;
+    try {
+      capsuleCheck = await validateProjectCapsule(bundle);
+    } catch (error) {
+      // Keep the established user-facing unsupported-format remedy while the
+      // capsule preflight still rejects the bundle before any state mutation.
+      if (error && error.code === 'PROJECT_SCHEMA_UNSUPPORTED') {
+        const unsupported = new Error(t('core.importBundle.unsupportedSchema'));
+        unsupported.code = 'SCHEMA_UNSUPPORTED';
+        throw unsupported;
+      }
+      throw error;
+    }
+    if (capsuleCheck.legacy) await sealProjectCapsule(bundle, 'Core');
+    if (bundle.edaReference) await validateAssayEDAReference(bundle.edaReference.reference);
+    if (!bundle || typeof bundle !== 'object' || Array.isArray(bundle) ||
+        !bundle.phase1 || typeof bundle.phase1 !== 'object' || Array.isArray(bundle.phase1) ||
+        (bundle.schema != null && bundle.schema !== 'orebit-project') ||
+        (bundle.schemaVersion != null && ![1,2,3,OREBIT_PROJECT_VERSION].includes(bundle.schemaVersion))) {
+      const error = new Error(t('core.importBundle.unsupportedSchema'));
+      error.code = 'SCHEMA_UNSUPPORTED';
+      throw error;
+    }
+    const tables = ['collar','survey','assay','geology'];
+    const csvKeys = { collar:'collar_csv', survey:'survey_csv', assay:'assay_csv', geology:'geology_csv' };
+    const staged = Object.create(null);
+    for (const table of tables) {
+      const csv = bundle.phase1[csvKeys[table]];
+      if (csv != null && typeof csv !== 'string') {
+        const error = new Error(t('core.importBundle.invalidSource').replace('{table}', table));
+        error.code = 'PROJECT_SOURCE_INVALID';
+        throw error;
+      }
+    }
+    for (const table of tables) {
+      const rows = parseCSVText(bundle.phase1[csvKeys[table]] || '');
+      staged[table] = { rows, mapped: typeof remapRows === 'function' ? remapRows(rows, table) : rows };
+    }
     window.OrebitCoreRepair?.reset();
     const audit = bundle.metadata?.audit;
     STATE.CHANGE_LOG = Array.isArray(audit?.changes) ? audit.changes.filter(e => e && typeof e.summary === 'string' && Array.isArray(e.diffs)).map(e => ({...e,diffs:e.diffs.filter(d => d && typeof d === 'object')})) : [];
@@ -9983,16 +10249,10 @@ document.addEventListener('keydown', (e) => {
     setCoreProvidedXYZ(bundle.metadata && bundle.metadata.coordinate_mode === 'supplied-assay-midpoints');
     STATE.lengthUnitSource = 'm'; window._coreLengthUnit = 'm';
     const lengthUnitSelect = document.getElementById('coreLengthUnit'); if (lengthUnitSelect) lengthUnitSelect.value = 'm';
-    const p = bundle.phase1 || {};
-    const tables = ['collar','survey','assay','geology'];
-    const csvKeys = { collar:'collar_csv', survey:'survey_csv', assay:'assay_csv', geology:'geology_csv' };
-
     tables.forEach(t => {
-      const csv = p[csvKeys[t]];
-      const rows = parseCSVText(csv);
+      const { rows, mapped } = staged[t];
       if (rows.length) {
         // Remap columns to canonical names (same logic as upload flow)
-        const mapped = typeof remapRows === 'function' ? remapRows(rows, t) : rows;
         STATE[t] = mapped;
         // Store original CSV headers (before remapping) for audit trail
         STATE.rawHeaders[t] = Object.keys(rows[0] || {});
@@ -10029,12 +10289,13 @@ document.addEventListener('keydown', (e) => {
     STATE.crs = typeof bundle.metadata?.crs === 'string' ? bundle.metadata.crs : '';
     STATE.units = Object.fromEntries(Object.entries(bundle.metadata?.units || {}).filter(([key,value]) => typeof value === 'string'));
     STATE.unitsLocked = Object.fromEntries(Object.keys(STATE.units).filter(key => STATE.units[key] !== 'auto' && (!bundle.metadata?.units_locked || bundle.metadata.units_locked[key])).map(key => [key,true]));
+    window.OrebitCoreScope.restore(audit?.validationScope);
     if (bundle.geologicalDomain) window.OrebitCoreDomain.restore(bundle.geologicalDomain).catch(error => {
       console.warn('Domain interpretation not restored', error.message);
       toast(t('core.domain.invalidState'), 'warn');
     });
+    await window.OrebitCoreEDAReference?.restore(bundle.edaReference || null);
 
-    window.OrebitCoreScope.restore(audit?.validationScope);
     refreshDemoBanner();
     updateDataTag();
     rerenderAll();
@@ -10042,6 +10303,7 @@ document.addEventListener('keydown', (e) => {
     const counts = tables.map(t => `${t}:${STATE[t].length}`).join(', ');
     const bdlMsg = bdlReport.changed > 0 ? ` · BDL: ${bdlReport.changed} fixed` : '';
     toast(t('core.applyBundle.projectLoaded').replace('{counts}', counts).replace('{bdlMsg}', bdlMsg), 'good');
+    return true;
   }
 
   /* ---- Public API ---- */
@@ -10088,7 +10350,7 @@ document.addEventListener('keydown', (e) => {
       existing = null;
     }
 
-    const bundle = buildBundle(name);
+    const bundle = await sealProjectCapsule(buildBundle(name));
     if (existing && existing.created) {
       bundle.created = existing.created;
     }
@@ -10133,7 +10395,7 @@ document.addEventListener('keydown', (e) => {
       toast(t('core.load.notFound').replace('{name}', name), 'warn');
       return null;
     }
-    applyBundle(bundle);
+    await applyBundle(bundle);
     // Track as current project
     STATE.currentProjectName = name;
     STATE.saveStatus = 'saved';
@@ -10144,13 +10406,13 @@ document.addEventListener('keydown', (e) => {
   }
 
   /** Export current STATE as .orebit JSON file (Blob download) */
-  function exportBundle(projectName) {
+  async function exportBundle(projectName) {
     if (!projectName) {
       projectName = STATE.currentProjectName || ('Drillhole-Export-' + new Date().toISOString().slice(0,10));
     }
     projectName = projectName.trim();
 
-    const bundle = buildBundle(projectName);
+    const bundle = await sealProjectCapsule(buildBundle(projectName));
     const json = JSON.stringify(bundle, null, 2);
     // Suffix with the phase name so the same project name exported from two
     // different modules (Core/Assay/Resource) never collides in the user's
@@ -10158,9 +10420,9 @@ document.addEventListener('keydown', (e) => {
     // clash, which reads as a mystery duplicate) -- and so the filename
     // alone says which tool it came from. Keep this suffix + sanitization
     // pattern identical across all three phases' exportBundle().
-    // Allow renaming before export — prompt() works in browser + pywebview.
+    // Keep rename/cancel available when the host does not support native prompts.
     const defaultName = projectName.replace(/[^a-zA-Z0-9_\- ]/g, '_').replace(/\s+/g, '_') + '-Core.orebit';
-    const userInput = prompt('Export bundle as:', defaultName);
+    const userInput = await promptBundleFilename(defaultName);
     if (userInput === null) return; // user cancelled
     const fileName = userInput.trim().endsWith('.orebit') ? userInput.trim() : userInput.trim() + '.orebit';
     downloadFile(fileName, json, 'application/json');
@@ -10172,18 +10434,18 @@ document.addEventListener('keydown', (e) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.orebit,.json';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (ev) => {
+      reader.onload = async (ev) => {
         try {
           const bundle = JSON.parse(ev.target.result);
           if (!bundle.phase1) {
             toast(t('core.importBundle.invalidOrebitFileMissingPhase1'), 'bad');
             return;
           }
-          applyBundle(bundle);
+          await applyBundle(bundle);
         } catch (err) {
           toast((t('core.importBundle.failedParseOrebitFile')) + err.message, 'bad');
         }
@@ -10213,7 +10475,26 @@ document.addEventListener('keydown', (e) => {
   }
 
   /* ---- Export to window ---- */
-  window.OrebitProject = { save, load, exportBundle, importBundle, list, remove };
+  window.OrebitProject = { save, load, exportBundle, importBundle, list, remove,
+    currentCapsuleRevision: async function () { return (await sealProjectCapsule(buildBundle(STATE.currentProjectName || 'Current Core project'))).sourceCapsule.revision; },
+    currentProjectStateRevision: async function () {
+      const project = await sealProjectCapsule(buildBundle(STATE.currentProjectName || 'Current Core project'));
+      return _opcSha256({sourceRevision:project.sourceCapsule.revision,metadata:project.metadata || {}});
+    },
+    savedProjectStateRevision: async function (name) {
+      if (!name) return null;
+      const project = await dbGet(name);
+      if (!project) return null;
+      await sealProjectCapsule(project, 'Core');
+      return _opcSha256({sourceRevision:project.sourceCapsule.revision,metadata:project.metadata || {}});
+    },
+    createHandoffContext: async function (file) {
+      const project = await sealProjectCapsule(buildBundle(STATE.currentProjectName || 'Core handoff'));
+      return createCoreHandoffContext(project, file.name, file.text);
+    } };
+  window.__orebitSourceHandoff = function (file) {
+    return window.OrebitProject.createHandoffContext(file);
+  };
   // Expose to global scope for onclick handlers
   window.openProjectManager = openProjectManager;
   window.importBundle = importBundle;
@@ -10249,7 +10530,7 @@ document.addEventListener('keydown', (e) => {
         localStorage.removeItem('orebit-current-project');
         return;
       }
-      applyBundle(bundle);
+      await applyBundle(bundle);
       STATE.currentProjectName = lastName;
       updateProjectNameDisplay();
     } catch (e) {
@@ -10407,7 +10688,7 @@ document.addEventListener('keydown', (e) => {
     const ver = project.versions.find(v => v.version === versionNum);
     if (!ver || !ver.data) { toast(t('core.importBundle.versionNotFound'), 'warn'); return; }
     if (!await orebitConfirm(t('core.restoreProjectVersion.confirmRestore').replace('{n}', versionNum))) return;
-    applyBundle(ver.data);
+    await applyBundle(ver.data);
     STATE.currentProjectName = name;
     updateProjectNameDisplay();
     toast(t('core.restoreProjectVersion.restored').replace('{n}', versionNum).replace('{name}', name), 'good');
@@ -10448,7 +10729,7 @@ document.addEventListener('keydown', (e) => {
   function runAutoLoadOnce() {
     if (_autoLoadDone) return;
     _autoLoadDone = true;
-    autoLoadLastProject();
+    window.__orebitCoreProjectReady = autoLoadLastProject();
   }
 
   if (document.readyState === 'loading') {
@@ -10513,18 +10794,6 @@ window.toggleMobileMenu = function() {
 
 </script>
 
-<footer class="orebit-footer">
-  <p>
-    <strong>Orebit GeoSuite</strong> · Orebit Core · <span id="footerVersion">v3.1.1</span>
-    <span class="divider">·</span>
-     © 2026 Orebit · <a href="https://github.com/ghoziankarami/geosuite" target="_blank" rel="noopener" data-i18n="footer.sourceCode">GPL-3.0 Source Code</a>
-    <span class="divider">·</span>
-    <a href="https://orebit.id" target="_blank" rel="noopener">orebit.id</a>
-    <span class="divider">·</span>
-    <span title="Data stays on the user's laptop — no outgoing requests" data-i18n-attr="title:footer.privacyTitle" data-i18n="footer.privacy">🔒 Privacy-first · processed only on your device</span>
-    <span class="divider">·</span>
-  </p>
-</footer>
 
 <!-- SPRINT H — Tour overlay + spotlight -->
 <div id="tourOverlay" class="tour-overlay"></div>
@@ -10889,7 +11158,7 @@ body header.orebit-header .logo.orebit-app-logo {
   place-items: center !important;
 }
 body header.orebit-header .orebit-phase-pill {
-  font-size: 10.5px !important; font-weight: 600 !important; margin-left: 4px !important;
+  font-size: 11px !important; font-weight: 600 !important; margin-left: 4px !important;
 }
 </style>
 
@@ -10905,19 +11174,6 @@ body header.orebit-header .orebit-phase-pill {
      (licence gate removed 2026-09-25, docs/PLAN-opensource-dan-excellence.md O2). -->
 
 
-<script>
-// The footer version is filled from <meta name="product-version">, the same
-// anchor version-sync-guard.sh checks. It used to be a separate hardcoded
-// literal, which is how the footer sat at v2.7.0 while the update banner said
-// v2.9.1 -- the guard never saw it because it was not a consumer.
-document.addEventListener('DOMContentLoaded', function () {
-  try {
-    var el = document.getElementById('footerVersion');
-    var m = document.querySelector('meta[name="product-version"]');
-    if (el && m && m.getAttribute('content')) el.textContent = m.getAttribute('content');
-  } catch (e) { /* footer stamp is cosmetic; never block boot on it */ }
-});
-</script>
 </body>
 
 

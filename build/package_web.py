@@ -2,6 +2,7 @@
 
 Run after `npm run build`. Python standard library only.
 """
+
 import argparse
 import hashlib
 import json
@@ -9,11 +10,21 @@ from pathlib import Path
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-REQUIRED = ["Core.html", "Assay.html", "Resource.html", "manifest.webmanifest",
-            "service-worker.js", "pwa/icon-192.png", "pwa/icon-512.png",
-            "pwa/icon-maskable-512.png", "pwa/apple-touch-icon.png",
-            "vendor/plotly.min.js", "vendor/jspdf.umd.min.js",
-            "vendor/html2canvas.min.js", "vendor/jszip.min.js"]
+REQUIRED = [
+    "Core.html",
+    "Assay.html",
+    "Resource.html",
+    "manifest.webmanifest",
+    "service-worker.js",
+    "pwa/icon-192.png",
+    "pwa/icon-512.png",
+    "pwa/icon-maskable-512.png",
+    "pwa/apple-touch-icon.png",
+    "vendor/plotly.min.js",
+    "vendor/jspdf.umd.min.js",
+    "vendor/html2canvas.min.js",
+    "vendor/jszip.min.js",
+]
 
 
 def package(root, output, source_ref="local-unrecorded"):
@@ -37,13 +48,23 @@ def package(root, output, source_ref="local-unrecorded"):
         "Check the bundled sample name before choosing a tutorial.\n"
         "Source and installation: https://github.com/ghoziankarami/geosuite\n"
     ).encode()
-    manifest = {"schema_version": 1, "version": version, "source_ref": source_ref,
-                "files": {name: {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
-                          for name, data in sorted(files.items())}}
-    files["BUILD-MANIFEST.json"] = (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode()
+    manifest = {
+        "schema_version": 1,
+        "version": version,
+        "source_ref": source_ref,
+        "files": {
+            name: {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+            for name, data in sorted(files.items())
+        },
+    }
+    files["BUILD-MANIFEST.json"] = (
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+    ).encode()
     output.mkdir(parents=True, exist_ok=True)
     archive = output / f"geosuite-{version}-web.zip"
-    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zip_file:
+    with zipfile.ZipFile(
+        archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+    ) as zip_file:
         for name, data in sorted(files.items()):
             info = zipfile.ZipInfo(name, (1980, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED

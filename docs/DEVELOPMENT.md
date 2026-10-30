@@ -105,10 +105,11 @@ py -3.11 -m pip check
 py -3.11 desktop/build_exe.py Core Assay Resource
 ```
 
-The runtime file retains the 14 resolved package versions recorded with v3.1.0
-and adds the explicit `setuptools` dependency required by PyInstaller. The build
-file pins `setuptools`, `wheel` and wheel's `packaging` dependency; shared entries
-have identical versions/hashes. Together they cover 16 distinct package inputs.
+The Windows lock keeps the v3.1.0 dependency set and now aligns its PyInstaller
+entry with the direct build requirement (`6.22.3`); it also includes the explicit
+`setuptools` dependency required by PyInstaller. The build file pins `setuptools`,
+`wheel` and wheel's `packaging` dependency; shared entries have identical
+versions/hashes. Together they cover 16 distinct package inputs.
 Hashes come from the published PyPI artifacts compatible with Windows x64 and
 CPython 3.11. `proxy-tools` 0.1.0 is published only as source, so its verified source
 archive is the single exception to wheel-only installation. `--no-build-isolation`

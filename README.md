@@ -7,6 +7,28 @@
 then estimate a preliminary block model. Free, open source, English and Bahasa Indonesia.
 No account, licence key, or paid feature is required.
 
+GeoSuite helps exploration and resource geologists inspect drillhole data,
+prepare assays and explore a preliminary estimation workflow in a browser.
+Use it for learning, screening and documented technical review; results need
+geological and professional review before any public resource declaration.
+
+**Bahasa Indonesia:** GeoSuite membantu geolog eksplorasi dan sumber daya
+memeriksa data bor, menyiapkan assay dan mengeksplorasi estimasi awal melalui
+browser. Hasilnya perlu ditinjau secara geologi dan profesional sebelum
+digunakan untuk pelaporan sumber daya publik.
+
+![GeoSuite Core dashboard with synthetic nickel example](docs/assets/core-dashboard-hosted-20261029.jpg)
+
+*Hosted Core dashboard captured on 29 October 2026 with synthetic data. The
+hosted application may differ from this repository revision.*
+
+**[Open the app](https://geosuite.orebit.id/Core.html)** ·
+[Windows releases](https://github.com/ghoziankarami/geosuite/releases/latest) ·
+[Tutorials](docs/vignettes/README.md) ·
+[Questions and feedback](https://github.com/ghoziankarami/geosuite/discussions)
+
+![GeoSuite Core dashboard with the public Thalanga VMS tutorial dataset](docs/vignettes/img/thalanga-01-core-dashboard.png)
+
 ## Start here / Mulai di sini
 
 | Your goal / Tujuan | Route / Langkah |
@@ -46,9 +68,7 @@ For the easiest training run, use the [10-minute quickstart](docs/vignettes/en/0
 ([Bahasa Indonesia](docs/vignettes/00-quickstart.md)) **when your build shows the
 synthetic nickel sample**. Core starts with 349 collars and documented missing/mismatched source links; use Validation → Download source CSVs → Import to correct them. Assay/Resource open prepared LIM/SAP intervals from the complete 350-hole sources. For real uploaded data and detailed decisions,
 use [Thalanga](docs/vignettes/en/01-thalanga-vms.md)
-([Bahasa Indonesia](docs/vignettes/01-thalanga-vms.md)) or
-[Babbitt](docs/vignettes/en/02-babbitt-cuni.md)
-([Bahasa Indonesia](docs/vignettes/02-babbitt-cuni.md)).
+([Bahasa Indonesia](docs/vignettes/01-thalanga-vms.md)). The 10-minute quickstart uses the licensed synthetic nickel dataset.
 
 Hosted apps, source and Windows releases can have different revisions. Check the
 version and sample name/count in the app; an older Thalanga sample is not the
@@ -135,6 +155,7 @@ under KCMI/JORC. Read [methodology and limitations](docs/METHODOLOGY.md).
 
 [Report a bug](https://github.com/ghoziankarami/geosuite/issues/new?template=bug-report.md) ·
 [Report wrong numbers](https://github.com/ghoziankarami/geosuite/issues/new?template=wrong-numbers.md) ·
+[Share tester feedback](https://github.com/ghoziankarami/geosuite/issues/new?template=tester-feedback.md) ·
 [Security reports](SECURITY.md) · [Orebit guides](https://orebit.id/docs.html)
 
 ## Licence and attribution
@@ -142,4 +163,6 @@ under KCMI/JORC. Read [methodology and limitations](docs/METHODOLOGY.md).
 [GPL-3.0-only](LICENSE). Sample data and bundled libraries retain their own
 licences and credit in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 [CITATION.cff](CITATION.cff) provides citation metadata.
-Contact: <support@orebit.id>.
+Contact: <contact@orebit.id>.
+
+If GeoSuite is useful to you, you can voluntarily star the repository on GitHub.

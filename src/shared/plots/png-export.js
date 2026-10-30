@@ -12,12 +12,34 @@ async function plotlyToImageWhiteBg(gd, opts) {
     config: { ...gd._context, displayModeBar: false }
   };
   const out = image.layout;
+  // The export is always light: move dark-palette trace colours to their light
+  // roles, and carry the on-screen display caption (e.g. sampled point count).
+  if (typeof plotPalette === 'function' && typeof PLOT_FALLBACK !== 'undefined') {
+    const swap = new Map(plotPalette().map((c, i) => [c, PLOT_FALLBACK[i]]));
+    const walk = (o) => {
+      if (!o || typeof o !== 'object' || ArrayBuffer.isView(o)) return;
+      for (const k of Object.keys(o)) {
+        const v = o[k];
+        if (typeof v === 'string') { const hit = swap.get(v.toLowerCase()); if (hit) o[k] = hit; }
+        else if (v && typeof v === 'object' && !['x', 'y', 'z', 'text', 'customdata'].includes(k)) walk(v);
+      }
+    };
+    image.data.forEach(walk);
+    out.colorway = PLOT_FALLBACK.slice();
+  }
+  const caption = gd.dataset && gd.dataset.plotCaption;
+  if (caption) {
+    const base = typeof out.title === 'string' ? out.title : (out.title && out.title.text) || '';
+    out.title = { ...(typeof out.title === 'object' ? out.title : {}), text: (base ? base + '<br>' : '') + `<span style="font-size:11px">${caption}</span>` };
+  }
   out.paper_bgcolor = '#ffffff';
   out.plot_bgcolor = '#ffffff';
   out.font = { ...out.font, color: '#0f172a' };
+  if (out.legend && out.legend.font) out.legend = { ...out.legend, font: { ...out.legend.font, color: '#0f172a' } };
   const axisKeys = Object.keys(layout).filter(k => /^[xy]axis\d*$/.test(k));
   axisKeys.forEach(k => {
     out[k] = { ...out[k], gridcolor: '#f1f5f9', zerolinecolor: '#cbd5e1' };
+    if (out[k].tickfont && out[k].tickfont.color) out[k].tickfont = { ...out[k].tickfont, color: '#475569' };
     if (layout[k].linecolor) out[k].linecolor = '#cbd5e1';
   });
 

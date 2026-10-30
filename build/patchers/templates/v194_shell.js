@@ -11,6 +11,9 @@
 (function () {{
   'use strict';
 
+  const RAIL_KEY = 'orebit.rail.collapsed';
+  try {{ if (localStorage.getItem(RAIL_KEY) === '1') document.documentElement.classList.add('orebit-rail-collapsed'); }} catch (e) {{}}
+
   const PHASE_PILL = window.__OREBIT_RT__ ? 'Desktop Edition' : 'Web';
   const LABEL_EN = {label_en!r};
   const LABEL_ID = {label_id!r};
@@ -50,6 +53,9 @@
       'lang.picker.skip': 'Continue with browser default',
       'qs.title': QS_TITLE_EN, 'qs.body': QS_BODY_EN, 'qs.cta': QS_CTA_EN,
       'help.bubble.title': 'Need help?',
+      'nav.hideSide': 'Hide sidebar', 'nav.showSide': 'Show sidebar',
+      'help.links': 'Orebit', 'help.source': 'Source code (GPL-3.0)', 'help.support': 'Support Orebit',
+      'help.privacy': 'Privacy-first: data is processed only on your device.',
       'tab.dashboard': 'Dashboard', 'tab.import': 'Import', 'tab.collar': 'Collar',
       'tab.survey': 'Survey', 'tab.assay': 'Assay', 'tab.geology': 'Geology',
       'tab.validation': 'Validation', 'tab.striplog': 'Strip Log', 'tab.section': 'Section',
@@ -158,6 +164,9 @@
       'lang.picker.skip': 'Lanjut pakai bahasa browser',
       'qs.title': QS_TITLE_ID, 'qs.body': QS_BODY_ID, 'qs.cta': QS_CTA_ID,
       'help.bubble.title': 'Butuh bantuan?',
+      'nav.hideSide': 'Sembunyikan sidebar', 'nav.showSide': 'Tampilkan sidebar',
+      'help.links': 'Orebit', 'help.source': 'Kode sumber (GPL-3.0)', 'help.support': 'Dukung Orebit',
+      'help.privacy': 'Mengutamakan privasi: data diproses hanya di perangkat Anda.',
       'tab.dashboard': 'Dasbor', 'tab.import': 'Impor', 'tab.collar': 'Collar',
       'tab.survey': 'Survei', 'tab.assay': 'Assay', 'tab.geology': 'Geologi',
       'tab.validation': 'Validasi', 'tab.striplog': 'Strip Log', 'tab.section': 'Penampang',
@@ -279,6 +288,8 @@
       const key = el.getAttribute('data-orebit-i18n-title');
       el.setAttribute('title', t(key));
     }});
+    const railToggle = document.querySelector('.orebit-rail-toggle');
+    if (railToggle && railToggle.__sync) railToggle.__sync();
     document.documentElement.setAttribute('lang', currentLang);
     updateLangToggle();
     // Update header h1
@@ -748,7 +759,7 @@
         label.className = 'sidebar-section-label';
         label.setAttribute('data-orebit-i18n', s.key);
         label.textContent = (typeof t === 'function' ? t(s.key) : s.label) || s.label;
-        label.style.cssText = 'font-family:ui-monospace,"JetBrains Mono",monospace;font-size:10px;font-weight:700;color:var(--fg-mute);letter-spacing:0.1em;padding:16px 12px 6px;margin-top:4px;';
+        label.style.cssText = 'font-family:ui-monospace,"JetBrains Mono",monospace;font-size:11px;font-weight:700;color:var(--fg-mute);letter-spacing:0.1em;padding:16px 12px 6px;margin-top:4px;';
         tabs[s.idx].parentNode.insertBefore(label, tabs[s.idx]);
       }}
     }});
@@ -806,6 +817,63 @@
     return null;
   }};
 
+  // Footer links moved here (2026-10-11): the owner rejected a page footer
+  // inside the apps, so orebit.id, source, socials, support and the privacy
+  // note live in the Help menu (desktop) and the Steps drawer (phone, where
+  // the Help bubble is hidden behind the bottom nav).
+  /* Desktop rail collapses to its icons. The state persists per browser, and
+     plots are resized once the grid column has finished changing width. */
+  function injectRailToggle() {{
+    const rail = document.querySelector('nav.tabs');
+    if (!rail || rail.querySelector('.orebit-rail-toggle')) return;
+    const root = document.documentElement;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'orebit-rail-toggle';
+    btn.style.order = '-1';
+    function sync() {{
+      const mini = root.classList.contains('orebit-rail-collapsed'), label = t(mini ? 'nav.showSide' : 'nav.hideSide');
+      btn.setAttribute('aria-expanded', String(!mini));
+      btn.setAttribute('aria-label', label);
+      btn.title = label;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="' + (mini ? '9 18 15 12 9 6' : '15 18 9 12 15 6') + '"/></svg>';
+    }}
+    btn.__sync = sync;
+    // Collapsed tabs show icons only; their accessible names become the tooltip.
+    rail.addEventListener('mouseover', function (e) {{
+      const tab = e.target.closest && e.target.closest('.tab');
+      if (tab) tab.title = root.classList.contains('orebit-rail-collapsed') ? (tab.getAttribute('aria-label') || tab.textContent.trim()) : '';
+    }});
+    btn.addEventListener('click', function () {{
+      // Animate only a user toggle, never the layout settling on page load.
+      root.classList.add('orebit-rail-animating');
+      const on = root.classList.toggle('orebit-rail-collapsed');
+      try {{ localStorage.setItem(RAIL_KEY, on ? '1' : '0'); }} catch (e) {{}}
+      sync();
+      setTimeout(function () {{
+        root.classList.remove('orebit-rail-animating');
+        window.dispatchEvent(new Event('resize'));
+        if (window.Plotly && window.Plotly.Plots) document.querySelectorAll('.panel.active .js-plotly-plot').forEach(function (p) {{
+          if (p.offsetParent) try {{ window.Plotly.Plots.resize(p); }} catch (e) {{}}
+        }});
+      }}, 220);
+    }});
+    sync();
+    rail.prepend(btn);
+  }}
+
+  function helpLinksHtml() {{
+    return (
+      '<div class="divider" role="separator"></div>' +
+      '<div class="orebit-help-links-label" data-orebit-i18n="help.links">' + t('help.links') + '</div>' +
+      '<a data-action="link" href="https://orebit.id" target="_blank" rel="noopener"><span class="icon">↗</span><span class="label">orebit.id</span></a>' +
+      '<a data-action="link" href="https://github.com/ghoziankarami/geosuite" target="_blank" rel="noopener"><span class="icon">⌘</span><span class="label" data-orebit-i18n="help.source">' + t('help.source') + '</span></a>' +
+      '<a data-action="link" href="https://www.instagram.com/orebit.id" target="_blank" rel="noopener"><span class="icon">◎</span><span class="label">Instagram</span></a>' +
+      '<a data-action="link" href="https://www.linkedin.com/company/orebit-id" target="_blank" rel="noopener"><span class="icon">in</span><span class="label">LinkedIn</span></a>' +
+      '<a data-action="link" href="{SUPPORT_URL}" target="_blank" rel="noopener"><span class="icon">💚</span><span class="label" data-orebit-i18n="help.support">' + t('help.support') + '</span></a>' +
+      '<p class="orebit-help-privacy" data-orebit-i18n="help.privacy">' + t('help.privacy') + '</p>');
+  }}
+
   /* ─── Floating Help bubble ─── */
   function injectHelpBubble() {{
     // `button.` is load-bearing, not decoration. Fixed 2026-09-04: this
@@ -824,6 +892,15 @@
     btn.setAttribute('aria-label', t('help.bubble.title'));
     btn.title = t('help.bubble.title');
     btn.textContent = '?';
+    // Header-mounted since 2026-10-11 (mock v2): Help sits beside language and
+    // profile instead of floating over content. Phones keep the drawer copy.
+    const toolbar = document.querySelector('header.orebit-header .toolbar');
+    if (toolbar) {{
+      btn.classList.add('orebit-help-header');
+      btn.setAttribute('aria-haspopup', 'true');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.innerHTML = '<svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg> <span data-orebit-i18n="nav.help">' + t('nav.help') + '</span>';
+    }}
 
     const menu = document.createElement('div');
     menu.className = 'orebit-help-menu';
@@ -857,27 +934,37 @@
       '<a data-action="report-bug" href="' + esc(orebitIssueUrl('bug')) + '" target="_blank" rel="noopener">' +
         '<span class="icon">🐛</span><span class="label">' + (document.documentElement.lang === 'id' ? 'Laporkan Bug' : 'Report Bug') + '</span></a>' +
       '<a data-action="report-numbers" href="' + esc(orebitIssueUrl('numbers')) + '" target="_blank" rel="noopener">' +
-        '<span class="icon">∑</span><span class="label">' + (document.documentElement.lang === 'id' ? 'Laporkan Angka Salah' : 'Report Wrong Number') + '</span></a>';
+        '<span class="icon">∑</span><span class="label">' + (document.documentElement.lang === 'id' ? 'Laporkan Angka Salah' : 'Report Wrong Number') + '</span></a>' +
+      helpLinksHtml();
 
     document.body.appendChild(menu);
-    document.body.appendChild(btn);
+    if (toolbar) toolbar.insertBefore(btn, toolbar.querySelector('#lang-switch')); else document.body.appendChild(btn);
+    const setOpen = (open) => {{
+      if (open && toolbar) {{
+        const r = btn.getBoundingClientRect();
+        menu.style.top = (r.bottom + 8) + 'px';
+        menu.style.right = Math.max(8, innerWidth - r.right) + 'px';
+        menu.style.bottom = 'auto';
+        menu.style.maxHeight = (innerHeight - r.bottom - 24) + 'px';
+      }}
+      menu.classList.toggle('open', open);
+      if (toolbar) btn.setAttribute('aria-expanded', String(open));
+    }};
 
     btn.addEventListener('click', (e) => {{
       e.stopPropagation();
-      menu.classList.toggle('open');
+      setOpen(!menu.classList.contains('open'));
     }});
 
     document.addEventListener('click', (e) => {{
-      if (!menu.contains(e.target) && e.target !== btn) {{
-        menu.classList.remove('open');
-      }}
+      if (!menu.contains(e.target) && !btn.contains(e.target)) setOpen(false);
     }});
 
     menu.addEventListener('click', (e) => {{
       const action = e.target.closest('[data-action]');
       if (!action) return;
       const a = action.getAttribute('data-action');
-      menu.classList.remove('open');
+      setOpen(false);
       try {{
         if (a === 'tour' && typeof window.startTour === 'function') {{ window.startTour(); }}
         else if (a === 'glossary' && typeof window.openGlossary === 'function') {{ window.openGlossary(); }}
@@ -951,11 +1038,12 @@
     function svg(d) {{ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">'+d+'</svg>'; }}
     function inventory() {{
       var tabs = Array.from(document.querySelectorAll('nav.tabs .tab')).map(function(btn,i) {{
-        return {{idx:i+1,label:btn.textContent.trim(),advanced:btn.dataset.workflowAdvanced==='true',order:Number(btn.style.order)||0,
+        return {{idx:i+1,label:btn.textContent.trim(),advanced:btn.dataset.workflowAdvanced==='true',auxiliary:btn.dataset.workflowAuxiliary==='true',order:Number(btn.style.order)||0,
           icon:btn.querySelector('svg')?.innerHTML || '<circle cx="12" cy="12" r="3"/>'}};
       }});
       if(tabs.length<2) return [];
-      var end=tabs[tabs.length-1];
+      // Export is the last main-workflow tab; Advanced tools may follow it in the DOM.
+      var main=tabs.filter(tb=>!tb.advanced&&!tb.auxiliary).sort((a,b)=>a.order-b.order), end=main[main.length-1]||tabs[tabs.length-1];
       return [
         {{key:'home',label:tabs[0].label,tabs:[tabs[0]]}},
         {{key:'analysis',label:t('nav.workflow'),tabs:tabs.filter(tb=>tb.idx!==1&&tb!==end&&!tb.advanced).sort((a,b)=>a.order-b.order)}},
@@ -985,6 +1073,7 @@
         button.onclick=function(){{closeDrawer();if(typeof showTab==='function')showTab(tb.idx);window.scrollTo(0,0);}};
         drawer.append(button);
       }});
+      var links=document.createElement('div');links.className='drawer-links';links.innerHTML=helpLinksHtml();drawer.append(links);
     }}
     function openDrawer(key,button) {{
       renderDrawer(key); opener=button; opener?.setAttribute('aria-expanded','true');
@@ -1032,6 +1121,7 @@
   function init() {{
     try {{ transformHeader(); }} catch (e) {{ console.warn('[orebit-v194] header:', e); }}
     try {{ injectHelpBubble(); }} catch (e) {{ console.warn('[orebit-v194] help bubble:', e); }}
+    try {{ injectRailToggle(); }} catch (e) {{ console.warn('[orebit-v194] rail toggle:', e); }}
     try {{ injectQuickStart(); }} catch (e) {{ console.warn('[orebit-v194] quickstart:', e); }}
 
     try {{ applyI18n(); }} catch (e) {{ console.warn('[orebit-v194] i18n:', e); }}

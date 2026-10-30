@@ -31,10 +31,14 @@ try:
             check(hero.locator('.workflow-notes,.action-key,.workflow-eyebrow').count()==0, name+' dashboard removes stage-only distractions')
             check(hero.bounding_box()['height']<300, name+' dashboard leaves space for actual results')
             rail=page.locator('nav.tabs')
-            check(abs(rail.bounding_box()['width']-216)<2, name+' workflow rail uses a compact shared width')
+            check(abs(rail.bounding_box()['width']-240)<2, name+' workflow rail matches the owner mock shared 240px width')
             check(rail.locator('.workflow-nav-heading:visible').count()==1, name+' groups the main workflow below Dashboard')
             sequence=rail.locator('.tab[data-workflow-step]').evaluate_all('(els)=>els.map(e=>Number(e.dataset.workflowStep)).sort((a,b)=>a-b)')
             check(sequence==list(range(1,len(sequence)+1)), name+' sidebar numbers describe every main stage in order')
+            if name == 'Core':
+                ordered=rail.locator('.tab[data-workflow-step]').evaluate_all('(els)=>els.sort((a,b)=>Number(a.dataset.workflowStep)-Number(b.dataset.workflowStep)).map(e=>Array.from(document.querySelectorAll("nav.tabs .tab")).indexOf(e)+1)')
+                check(ordered == [2,7,10,11,14,13], 'Core includes Domain between Merge and Export as the fifth of six numbered review stages')
+                check(rail.locator('.tab').nth(13).get_attribute('data-workflow-auxiliary') == 'false', 'Core Domain uses the main rail without implying geological approval')
             check(rail.locator('.tab[aria-current="page"]').count()==1, name+' announces only the actual current page')
             check(rail.locator('.tab[data-workflow-step]').first.evaluate("e=>getComputedStyle(e,'::after').content===JSON.stringify(e.dataset.workflowStep) && getComputedStyle(e,'::after').display==='grid'"), name+' sequence remains visible without claiming analyst approval')
             toggle=page.locator('#assayAdvancedToggle' if name=='Assay' else '.screening-advanced-toggle')
@@ -47,10 +51,17 @@ try:
             hero.locator('[data-action-role="next"]').click()
             target=page.locator('.panel.active .assay-workflow-card')
             check(target.is_visible() and page.evaluate('typeof currentTab!=="undefined"?currentTab:7')!=1, name+' start enters the actual review')
+            resume_stage=page.evaluate('typeof currentTab!=="undefined"?currentTab:7')
+            page.locator('nav.tabs .tab[onclick="showTab(1)"]').click()
+            resume=page.locator('#tab1 .workflow-dashboard [data-action-role="next"]')
+            check(resume.inner_text().startswith('Resume '), name+' dashboard offers Resume after leaving a main task')
+            resume.click()
+            page.wait_for_function(f'() => (typeof currentTab!=="undefined"?currentTab:7)==={resume_stage}')
+            check(page.locator('.panel.active .assay-workflow-card .workflow-step-links').is_visible(), name+' Resume returns to the last task in the active dataset')
             check(target.locator('.workflow-step-links').is_visible(), name+' stage actions stay at the top')
             check(rail.locator('.tab[aria-current="page"]').evaluate('e=>e.classList.contains("active")'), name+' primary action updates the current-page navigation state')
             if name=='Resource':
-                check(page.locator('#tab3 button[data-action-role="next"]:visible').count()==1, 'Setup presents exactly one visible next action')
+                check(page.locator('#tab3 button[data-action-role="next"]:visible').count()==1 and page.locator('#tab3 .workflow-stage-bar-next').is_visible(), 'Setup presents exactly one visible continuation in the shared action bar')
                 page.evaluate('showTab(4)')
                 check(not page.locator('#variogramAdvanced').evaluate('(e)=>e.open'), 'Continuity diagnostics are optional and initially collapsed')
                 check(not page.locator('#variogramSampling').evaluate('(e)=>e.open'), 'Sampling controls do not compete with the main action')
@@ -91,15 +102,48 @@ try:
                     evidence=Path(os.environ['OREBIT_UX_EVIDENCE']);evidence.mkdir(parents=True,exist_ok=True)
                     page.screenshot(path=str(evidence/'Resource-variography-advanced.png'),full_page=True)
                 page.locator('#variogramAdvanced>summary').click()
-                page.locator('#tab4 [data-workflow-next]').click()
+                page.locator('#tab4 .workflow-stage-bar-next').click()
                 check(page.locator('#blockModelContent').is_visible(), 'Next opens the real block model stage')
                 check(not page.locator('#blockAdvanced').evaluate('(e)=>e.open'), 'Advanced density and extent are available without overwhelming the form')
                 check(page.locator('#tab5 .assay-workflow-card #bmGenBtn').is_visible(), 'Create-grid action stays in the top action area')
                 page.evaluate('showTab(12);showTab(3);showTab(12)')
                 check(page.locator('#pdf-export-btn').count()==1 and page.locator('#pdf-export-btn').is_visible(), 'Report action survives revisits without deletion or duplicate IDs')
+            if name == 'Resource':
+                page.set_viewport_size({'width':1440,'height':1000})
+                page.evaluate("showTab(4)")
+                page.locator('#variogramAdvanced>summary').click()
+                page.locator('#variogramScanTool>summary').click()
+                page.locator('#dsStep').fill('10')
+                page.locator('#dsLag').fill('100')
+                page.locator('#dsMaxH').fill('5000')
+                page.evaluate("""() => {
+                  const run=computeDirectionalScan;
+                  window.__continuityRaceDone=false;
+                  window.computeDirectionalScan=()=>run().finally(()=>{window.__continuityRaceDone=true;});
+                }""")
+                page.locator('button[onclick="computeDirectionalScan()"]').click()
+                check(not page.evaluate('window.__continuityRaceDone'),
+                      'A large scan yields to the UI while its diagnostic job is pending')
+                replacement='hole_id,from_m,to_m,midx,midy,midz,ni_pct,domain\nNEW1,0,1,100,200,10,1,D1\nNEW2,0,1,110,200,10,2,D1\nNEW3,0,1,120,200,10,3,D1\n'
+                page.evaluate('showTab(9)')
+                page.locator('#fileInput').set_input_files({'name':'continuity-replacement.csv','mimeType':'text/csv','buffer':replacement.encode()})
+                page.wait_for_function('() => DATA.rows.length===3 && window.__continuityRaceDone')
+                check(page.evaluate('variogramState.directionalScan.results===null'),
+                      'A replaced CSV cannot receive a late directional result from the previous population')
+                page.locator('nav.tabs .tab[onclick="showTab(1)"]').click()
+                check(page.locator('#tab1 .workflow-dashboard [data-action-role="next"]').inner_text()=='Start review',
+                      'A replacement source does not resume an unrelated optional task from the previous dataset')
+                page.locator('#tab1 .workflow-dashboard [data-action-role="next"]').click()
+                page.wait_for_function('() => currentTab===3')
+                check(page.evaluate('variogramState.variogramMap===null && variogramState.downhole.lags===null && variogramState.downhole.suggestedNugget===0'),
+                      'A new source cannot inherit old anisotropy or a downhole nugget during its next fit')
+                check(page.evaluate('DATA.rows.map(r=>r[colIdx("ni_pct")]).join(",")')=='1,2,3',
+                      'Diagnostic cancellation preserves the newly imported measured grades exactly')
             for language in ('id','en'):
                 page.evaluate('(language)=>{applyLanguage(language);showTab(1)}',language)
                 check(page.locator('#tab1 .workflow-dashboard').is_visible(), name+' dashboard works in '+language)
+                prefix='Lanjutkan ' if language=='id' else 'Resume '
+                check(page.locator('#tab1 .workflow-dashboard [data-action-role="next"]').inner_text().startswith(prefix), name+' resumes the current stage in '+language)
             for width in (390,320):
                 page.set_viewport_size({'width':width,'height':844})
                 page.evaluate('showTab(1)')

@@ -206,7 +206,7 @@ header.orebit-header .orebit-link:hover {{
 .orebit-profile-sec {{ padding: 12px 16px !important; border-bottom: 1px solid var(--border-sub, var(--border)) !important; }}
 .orebit-profile-sec:last-child {{ border-bottom: none !important; }}
 .orebit-profile-sec .lbl {{
-  font-size: 10.5px !important; font-weight: 700 !important; letter-spacing: 0.06em !important;
+  font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.06em !important;
   text-transform: uppercase !important; color: var(--fg-mute, var(--fg-body)) !important; margin-bottom: 8px !important;
 }}
 .orebit-profile-row {{ display: flex !important; align-items: center !important; justify-content: space-between !important; padding: 4px 0 !important; }}
@@ -239,7 +239,7 @@ header.orebit-header .orebit-link:hover {{
 .orebit-profile-edit svg {{ width: 15px !important; height: 15px !important; }}
 .orebit-edit-form {{ display: flex !important; flex-direction: column !important; gap: 4px !important; }}
 .orebit-edit-lbl {{
-  font-size: 10.5px !important; font-weight: 700 !important; letter-spacing: 0.05em !important;
+  font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.05em !important;
   text-transform: uppercase !important; color: var(--fg-mute, var(--fg-body)) !important; margin-top: 6px !important;
 }}
 .orebit-edit-inp {{
@@ -307,8 +307,7 @@ header.orebit-header .orebit-link:hover {{
     margin: 12px 28px 0 !important;
   }}
   /* FIX v1.9.4: footer must span full width, not stuck in sidebar column */
-  .wrap > footer,
-  .wrap > .orebit-footer {{
+  .wrap > footer {{
     grid-column: 1 / -1 !important;
     margin: 16px 0 0 !important;
     width: 100% !important;
@@ -385,7 +384,7 @@ header.orebit-header .orebit-link:hover {{
   /* Group labels (template-owned, single source of truth) */
   .wrap > nav.tabs .tab-group-label {{
     font-family: var(--font-sans), "Inter", sans-serif !important;
-    font-size: 10.5px !important;
+    font-size: 11px !important;
     font-weight: 600 !important;
     letter-spacing: 0.06em !important;
     text-transform: uppercase !important;
@@ -432,7 +431,6 @@ header.orebit-header .orebit-link:hover {{
   body .wrap {{ grid-template-columns: 1fr !important; }}
   body .wrap > nav.tabs {{ display: none !important; }}
   body .wrap > .panel {{ grid-column: 1 !important; padding: 20px 24px 60px !important; }}
-  body .wrap > .orebit-footer {{ grid-column: 1 !important; }}
 }}
 
 /* === SMALL TABLET / LARGE PHONE (768-1024px) === */
@@ -471,7 +469,7 @@ header.orebit-header .orebit-link:hover {{
 
   /* Hide sidebar — mobile-bottom-nav replaces it */
   body .wrap > nav.tabs {{ display: none !important; }}
-  body .wrap > .panel {{ grid-column: 1 !important; padding: 16px 14px calc(96px + env(safe-area-inset-bottom, 0px)) !important; }}
+  body .wrap > .panel {{ grid-column: 1 !important; padding: 16px 14px calc(152px + env(safe-area-inset-bottom, 0px)) !important; }}
 
   /* Clear fixed bottom-nav: last cards were hidden behind it */
   .wrap {{ padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important; }}
@@ -505,15 +503,12 @@ header.orebit-header .orebit-link:hover {{
     display: table !important; overflow-x: visible !important; max-width: none !important;
   }}
 
-  /* Footer lives OUTSIDE .wrap — give it its own clearance from the fixed bottom-nav */
-  footer.orebit-footer, .orebit-footer {{ margin-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important; padding-left: 14px !important; padding-right: 14px !important; }}
-
   /* Font size minimums */
   body {{ font-size: 14px !important; }}
   .tab {{ font-size: 14px !important; }}
   .section-label {{ font-size: 12px !important; }}
   .mobile-bottom-nav {{ font-size: 12px !important; }}
-  .mobile-bottom-nav .nav-item span {{ font-size: 11px !important; }}
+  .mobile-bottom-nav .nav-item span {{ font-size: 12px !important; }}
 
   header.orebit-header {{
     padding: 10px 14px !important;
@@ -709,6 +704,17 @@ button, .tab, .glossary-trigger {{ touch-action: manipulation; }}
   box-shadow: 0 12px 32px rgba(13, 148, 136, 0.45);
 }}
 .orebit-help-bubble:active {{ transform: translateY(0) scale(1.0); }}
+header.orebit-header .toolbar .orebit-help-bubble.orebit-help-header {{
+  position: static;
+  width: auto;
+  height: auto;
+  box-shadow: none;
+  transform: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  z-index: auto;
+}}
 .orebit-help-menu {{
   position: fixed;
   bottom: 92px;
@@ -760,6 +766,22 @@ body.dark .orebit-help-menu {{
   font-family: ui-monospace, monospace;
   font-size: 11px;
   color: var(--fg-mute, #94a3b8);
+}}
+.orebit-help-menu {{ max-height: calc(100vh - 120px); overflow-y: auto; }}
+.orebit-help-links-label {{
+  padding: 6px 12px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-mute, #64748b);
+}}
+.orebit-help-privacy {{
+  margin: 4px 12px 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--fg-mute, #64748b);
+  max-width: 240px;
 }}
 .orebit-help-menu .divider {{
   height: 1px;
@@ -859,7 +881,7 @@ body.dark .orebit-quickstart p {{ color: #cbd5e1; }}
   /* ─── Mobile Bottom Nav ─── */
   .mobile-bottom-nav {{ display:block !important;position:fixed;bottom:0;left:0;right:0;background:var(--bg-card);border-top:1px solid var(--border);z-index:1000;padding:6px 0 calc(8px + env(safe-area-inset-bottom, 0px));box-shadow:0 -2px 12px rgba(0,0,0,0.08) }}
   .mobile-bottom-nav .nav-items {{ display:flex;justify-content:space-around;align-items:center;max-width:500px;margin:0 auto }}
-  .mobile-bottom-nav .nav-item {{ display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;flex:1;min-height:44px;border:none;background:none;color:var(--fg-mute);font-size:10px;font-weight:500;cursor:pointer;border-radius:8px;transition:all .2s;font-family:inherit;-webkit-tap-highlight-color:transparent;min-width:0;overflow-wrap:anywhere }}
+  .mobile-bottom-nav .nav-item {{ display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;flex:1;min-height:44px;border:none;background:none;color:var(--fg-mute);font-size:11px;font-weight:500;cursor:pointer;border-radius:8px;transition:all .2s;font-family:inherit;-webkit-tap-highlight-color:transparent;min-width:0;overflow-wrap:anywhere }}
   .mobile-bottom-nav .nav-item svg {{ width:22px;height:22px;stroke-width:1.8 }}
   .mobile-bottom-nav .nav-item.active {{ color:var(--accent) }}
   .mobile-bottom-nav .nav-item:active {{ transform:scale(0.92) }}
@@ -941,6 +963,14 @@ body.dark .orebit-quickstart p {{ color: #cbd5e1; }}
   .mobile-nav-drawer .sub-tab:active {{ background:var(--bg-alt); }}
   .mobile-nav-drawer .sub-tab.active {{ color:var(--accent); background:var(--accent-bg); }}
   .mobile-nav-drawer .sub-tab svg {{ width:18px; height:18px; stroke-width:1.8; flex-shrink:0; }}
+  .mobile-nav-drawer .drawer-links {{ margin-top:auto; padding-top:12px; }}
+  .mobile-nav-drawer .drawer-links .divider {{ height:1px; background:var(--border); margin:4px 0 8px; }}
+  .mobile-nav-drawer .drawer-links a {{
+    display:flex; align-items:center; gap:10px; min-height:44px; padding:10px 12px;
+    border-radius:9px; color:var(--fg-body); font-size:14px; text-decoration:none;
+  }}
+  .mobile-nav-drawer .drawer-links a:active {{ background:var(--bg-alt); }}
+  .mobile-nav-drawer .drawer-links .icon {{ width:18px; text-align:center; flex-shrink:0; }}
 }}
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1149,4 +1179,36 @@ details.hint[open] .hint-more-count::before {{ content: '\25b4 '; }}
  /* The persistent bottom Tour action provides help without covering content. */
  .orebit-help-bubble {{display:none!important}}
 }}
+/* === Collapsible desktop rail (icons only) === */
+.orebit-rail-toggle {{ display: none; }}
+@media (min-width: 1080px) {{
+  html.orebit-rail-animating body .wrap {{ transition: grid-template-columns .18s ease; }}
+  .wrap > nav.tabs .orebit-rail-toggle {{
+    display: inline-grid; place-items: center; align-self: flex-end;
+    width: 36px; height: 36px; margin: 0 2px 4px; padding: 0;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg); color: var(--fg-mute); cursor: pointer;
+  }}
+  .wrap > nav.tabs .orebit-rail-toggle:hover {{ color: var(--fg); background: var(--bg-alt); }}
+  .wrap > nav.tabs .orebit-rail-toggle:focus-visible {{ outline: 2px solid var(--accent); outline-offset: 2px; }}
+  .wrap > nav.tabs .orebit-rail-toggle svg {{ width: 18px; height: 18px; }}
+  html.orebit-rail-collapsed body .wrap {{ grid-template-columns: 64px minmax(0, 1fr) !important; }}
+  html.orebit-rail-collapsed body .wrap > nav.tabs {{ padding: 12px 8px !important; overflow-x: hidden !important; }}
+  html.orebit-rail-collapsed body .wrap > nav.tabs .orebit-rail-toggle {{ align-self: center; }}
+  html.orebit-rail-collapsed body .wrap > nav.tabs .tab {{
+    font-size: 0 !important; justify-content: center !important; gap: 0 !important; padding: 0 !important; min-height: 44px !important;
+  }}
+  html.orebit-rail-collapsed body .wrap > nav.tabs .tab::after {{ display: none !important; }}
+  html.orebit-rail-collapsed body .wrap > nav.tabs .tab:not(:has(svg))::before {{
+    content: '' !important; width: 18px; height: 18px; background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='3' width='7' height='9' rx='1'/%3E%3Crect x='14' y='3' width='7' height='5' rx='1'/%3E%3Crect x='14' y='12' width='7' height='9' rx='1'/%3E%3Crect x='3' y='16' width='7' height='5' rx='1'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='3' width='7' height='9' rx='1'/%3E%3Crect x='14' y='3' width='7' height='5' rx='1'/%3E%3Crect x='14' y='12' width='7' height='9' rx='1'/%3E%3Crect x='3' y='16' width='7' height='5' rx='1'/%3E%3C/svg%3E") center / contain no-repeat;
+  }}
+  html.orebit-rail-collapsed body .wrap > nav.tabs .workflow-nav-heading,
+  html.orebit-rail-collapsed body .wrap > nav.tabs .tab-group-label,
+  html.orebit-rail-collapsed body .wrap > nav.tabs .orebit-rail-foot {{ display: none !important; }}
+  html.orebit-rail-collapsed body .wrap > nav.tabs .workflow-nav-disclosure {{
+    font-size: 0 !important; justify-content: center !important; padding: 0 !important; margin: 10px 0 4px !important;
+  }}
+}}
+@media (prefers-reduced-motion: reduce) {{ html.orebit-rail-animating body .wrap {{ transition: none; }} }}
 </style>

@@ -145,5 +145,13 @@ console.log('\nactive-dataset label');
   assert('no dataset', label(null) === 'no dataset');
 }
 
+console.log('\nSpecific gravity does not declare dry bulk density');
+{
+  const columns=classifyColumns(['SG','specific_gravity','density_t_m3','ni_pct'],[[2.8,2.8,1.6,1]]).columns;
+  assert('dimensionless SG remains an auxiliary numeric measurement',columns[0].role==='other_numeric');
+  assert('specific_gravity does not silently acquire tonnes-per-volume units',columns[1].role==='other_numeric');
+  assert('explicit dry density column retains the density role',columns[2].role==='density');
+  assert('Ni percent remains the actual grade',columns[3].role==='grade');
+}
 console.log(`\nCOLUMN-MAPPER BOUNDARY: ${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

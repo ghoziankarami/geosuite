@@ -111,12 +111,17 @@ function neighborsAround(idx, x, y, z, samples, search) {
   }
 
   const grid = idx.grid;
+  // Hash collisions put several cells in one candidate bucket. Read each
+  // bucket once; the exact distance check below still filters its samples.
+  const visitedBuckets = new Set();
   for (let dx = -span; dx <= span; dx++) {
     for (let dy = -span; dy <= span; dy++) {
       for (let dz = -span; dz <= span; dz++) {
         const k = _cellHash(ncx + dx, ncy + dy, ncz + dz);
         const list = grid.get(k);
         if (!list) continue;
+        if (visitedBuckets.has(k)) continue;
+        visitedBuckets.add(k);
         for (let li = 0; li < list.length; li++) {
           const si = list[li];
           // LOO targets do not consume a drillhole quota or a top-k slot.
@@ -328,15 +333,18 @@ function sparseEnvelopeBlocks(samples, origin, size, dims, radius, limit) {
 }
 
 
-function summarizeBlocks(indices, grades, volumePerBlock, densityAt, volumetric = false) {
+function summarizeBlocks(indices, grades, volumePerBlock, densityAt, volumetric = false, supportVolumeAt = null) {
  if (!(Number.isFinite(volumePerBlock) && volumePerBlock > 0)) throw new Error('Invalid block volume');
  let n=0,tonnes=0,volume=0,sum=0,weights=0,sumSq=0;
  for (const i of indices) {
    const grade=grades[i]; if (!Number.isFinite(grade)) continue;
    const density=typeof densityAt === 'function' ? densityAt(i) : densityAt[i];
    if (!(Number.isFinite(density) && density > 0)) throw new Error('Invalid block density');
-   const mass=volumePerBlock*density, weight=volumetric ? volumePerBlock : mass;
-   n++; tonnes+=mass; volume+=volumePerBlock; sum+=weight*grade; sumSq+=weight*grade*grade; weights+=weight;
+   const supportedVolume=typeof supportVolumeAt==='function'?supportVolumeAt(i):volumePerBlock;
+   if(!(Number.isFinite(supportedVolume)&&supportedVolume>=0&&supportedVolume<=volumePerBlock*(1+1e-8)))throw new Error('Invalid block support volume');
+   if(supportedVolume===0)continue;
+   const mass=supportedVolume*density, weight=volumetric ? supportedVolume : mass;
+   n++; tonnes+=mass; volume+=supportedVolume; sum+=weight*grade; sumSq+=weight*grade*grade; weights+=weight;
  }
  const meanGrade=weights>0 ? sum/weights : null;
  return {blocks:n,tonnes,volume,meanGrade,sd:weights>0?Math.sqrt(Math.max(0,sumSq/weights-meanGrade*meanGrade)):null};

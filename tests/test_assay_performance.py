@@ -43,9 +43,14 @@ with tempfile.TemporaryDirectory() as temp:
             assert page.locator('#declusterPanel').inner_text().strip() == ''
             assert page.evaluate("statsSummary(DATA.rows.map(r=>r[colIdx('au_gpt')])).mean") == 5.5
             assert page.evaluate("statCDF.data[0].x.length<=2500&&statCDF.data[0].x[0]===1&&statCDF.data[0].x.at(-1)===10")
-            assert page.evaluate("statCDF.layout.title.text.includes('18,000')")
-            # The display disclosure is part of the rendered/exportable chart.
-            # Check actual SVG bounds: a long single line can silently be clipped.
+            # The sampled-point disclosure is a caption under the plot heading
+            # (kept on the node for PNG export), not text inside the figure title.
+            assert page.evaluate("statCDF.dataset.plotCaption.includes('18,000')")
+            assert page.evaluate("document.querySelector('.plot-caption[data-for=statCDF]').textContent.includes('18,000')")
+            assert page.evaluate("!(statCDF.layout.title&&statCDF.layout.title.text||'').includes('18,000')")
+            qq_shown = page.evaluate('statQQ.data[0].x.length')
+            assert f'{qq_shown:,} of {n:,} samples shown' in page.evaluate('statQQ.dataset.plotCaption'), 'QQ sample disclosure must exclude the two reference-line endpoints'
+            # Check actual caption bounds: a long single line can silently be clipped.
             for lang in ['en','id']:
                 page.evaluate('(lang)=>applyLanguage(lang)', lang)
                 for width in [390,320]:
@@ -54,10 +59,10 @@ with tempfile.TemporaryDirectory() as temp:
                     page.wait_for_function("()=>!_plotQueueRunning&&!_plotQueue.length")
                     page.wait_for_function("""() => {
                       const chart=document.getElementById('statCDF');
-                      const text=chart.querySelector('.g-gtitle .gtitle');
-                      if(!text)return false;
+                      const text=document.querySelector('.plot-caption[data-for=statCDF]');
+                      if(!text||!text.textContent.includes('18,000'))return false;
                       const c=chart.getBoundingClientRect(),b=text.getBoundingClientRect();
-                      return b.left>=c.left-1&&b.right<=c.right+1&&b.top>=c.top&&b.bottom<=c.bottom;
+                      return b.width>0&&b.left>=c.left-1&&b.right<=c.right+1&&b.bottom<=c.top+1&&b.right<=document.documentElement.clientWidth;
                     }""")
             page.set_viewport_size({'width':1280,'height':720})
             page.evaluate("applyLanguage('en')")

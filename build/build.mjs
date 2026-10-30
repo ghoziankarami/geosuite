@@ -58,6 +58,58 @@ mkdirSync(DIST_DIR, { recursive: true });
 const MARKER_OPEN = Buffer.from("/* @orebit-inline: ");
 const MARKER_CLOSE = Buffer.from(" */");
 
+function compactCss(buf) {
+  const source = buf.toString("utf8");
+  let out = "", quote = "", escaped = false, space = false, newlines = 0;
+  const flushSpace = () => {
+    if (newlines) {
+      out = out.replace(/ +$/, "") + "\n".repeat(newlines);
+      newlines = 0;
+      space = false;
+    } else if (space && out) {
+      out += " ";
+      space = false;
+    }
+  };
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i];
+    if (quote) {
+      out += ch;
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === quote) quote = "";
+    } else if (source.startsWith("/*", i)) {
+      const end = source.indexOf("*/", i + 2);
+      if (end < 0) throw new Error("unterminated CSS comment");
+      if (source[i + 2] === "!") {
+        flushSpace();
+        out += source.slice(i, end + 2);
+      } else {
+        space = true;
+        newlines += (source.slice(i, end + 2).match(/\n/g) || []).length;
+      }
+      i = end + 1;
+    } else if (ch === "'" || ch === '"') {
+      flushSpace();
+      out += ch; quote = ch; space = false;
+    } else if (ch === "\n") newlines++;
+    else if (/\s/.test(ch)) space = true;
+    else {
+      flushSpace();
+      out += ch; space = false;
+    }
+  }
+  if (quote) throw new Error("unterminated CSS string");
+  flushSpace();
+  return Buffer.from(out);
+}
+
+if (compactCss(Buffer.from(`/* note */ .x { content: "a  b"; color: red; } /*! license */`)).toString() !==
+    `.x { content: "a  b"; color: red; } /*! license */`)
+  throw new Error("CSS compaction self-check failed");
+if ((compactCss(Buffer.from(`.a {\n  --accent: #0d9488;\n  color: var(--accent, #0d9488);\n}`)).toString().match(/\n/g) || []).length !== 3)
+  throw new Error("CSS compaction changed source line numbers");
+
 // ─── Tahap 2.4: patchers run here, on build output ─────────────────────────
 // The v194 shell and help panel are generated content. They used to be
 // injected into the canonical source files by hand-run patchers, which is
@@ -134,7 +186,8 @@ function resolveInlineMarkers(buf, phaseName, depth = 0) {
     const assetAbsPath = path.join(ASSETS_ROOT, assetRelPath);
     const assetBytes = readFileSync(assetAbsPath); // Buffer
     chunks.push(buf.subarray(cursor, openAt));
-    chunks.push(resolveInlineMarkers(assetBytes, phaseName, depth + 1));
+    const resolved = resolveInlineMarkers(assetBytes, phaseName, depth + 1);
+    chunks.push(assetRelPath.endsWith(".css") ? compactCss(resolved) : resolved);
     cursor = closeAt + MARKER_CLOSE.length;
   }
   return Buffer.concat(chunks);

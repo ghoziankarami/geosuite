@@ -95,6 +95,12 @@ class DesktopBridgeTests(unittest.TestCase):
         path.write_text("[]", encoding="utf-8")
         self.assertIsNone(wrapper.FileAPI("Assay").take_handoff())
 
+    def test_malformed_checkpoint_return_is_discarded(self):
+        path = Path(wrapper._handoff_dir()) / "Assay-return.json"
+        path.write_text("[]", encoding="utf-8")
+        self.assertIsNone(wrapper.FileAPI("Assay").take_assay_checkpoint_return())
+        self.assertFalse(path.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

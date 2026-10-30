@@ -68,9 +68,7 @@ For the easiest training run, use the [10-minute quickstart](docs/vignettes/en/0
 ([Bahasa Indonesia](docs/vignettes/00-quickstart.md)) **when your build shows the
 synthetic nickel sample**. Core starts with 349 collars and documented missing/mismatched source links; use Validation → Download source CSVs → Import to correct them. Assay/Resource open prepared LIM/SAP intervals from the complete 350-hole sources. For real uploaded data and detailed decisions,
 use [Thalanga](docs/vignettes/en/01-thalanga-vms.md)
-([Bahasa Indonesia](docs/vignettes/01-thalanga-vms.md)) or
-[Babbitt](docs/vignettes/en/02-babbitt-cuni.md)
-([Bahasa Indonesia](docs/vignettes/02-babbitt-cuni.md)).
+([Bahasa Indonesia](docs/vignettes/01-thalanga-vms.md)). The 10-minute quickstart uses the licensed synthetic nickel dataset.
 
 Hosted apps, source and Windows releases can have different revisions. Check the
 version and sample name/count in the app; an older Thalanga sample is not the
@@ -165,6 +163,6 @@ under KCMI/JORC. Read [methodology and limitations](docs/METHODOLOGY.md).
 [GPL-3.0-only](LICENSE). Sample data and bundled libraries retain their own
 licences and credit in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 [CITATION.cff](CITATION.cff) provides citation metadata.
-Contact: <support@orebit.id>.
+Contact: <contact@orebit.id>.
 
 If GeoSuite is useful to you, you can voluntarily star the repository on GitHub.

@@ -8,7 +8,7 @@ const here=path.dirname(fileURLToPath(import.meta.url));
 const root=fs.existsSync(path.join(here,'../../../src'))?path.resolve(here,'../../..'):path.resolve(here,'../..');
 const ctx=vm.createContext({});
 for(const name of ['primitives','mesh','solid','contacts','between']) vm.runInContext(fs.readFileSync(path.join(root,`src/shared/geom/${name}.js`),'utf8'),ctx);
-const B=ctx.OrebitDomainBetween,G=ctx.OrebitDomainGeometry;
+const B=ctx.OrebitDomainBetween,G=ctx.OrebitDomainGeometry,P=ctx.OrebitGeometryPrimitives;
 let checks=0;
 const ok=(cond,msg)=>{assert.ok(cond,msg);checks++;};
 const close=(a,b,msg,tol=1e-6)=>ok(Math.abs(a-b)<=tol,`${msg}: ${a} != ${b}`);
@@ -104,6 +104,18 @@ for(const origin of [[0,0],[700000,9800000]])for(const flip of [false,true]){
  const absent=B.buildSurfacePair(top,bottom,{terrain:horizon(x,y,x+50,y+100,()=>110)});ok(!absent.validation.topography,'missing terrain coverage cannot pass topography');
  let budget=false;try{B.buildSurfacePair(top,bottom,{maxPairs:1});}catch(e){budget=e.message==='DOMAIN_SURFACE_PAIR_BUDGET';}ok(budget,'paired-surface operation fails at its finite budget');
 }
+
+// A shifted lower TIN creates real edge-on-vertex intersections in the overlay.
+// The parallel horizons have no crossing; the shell still must be conforming.
+const shiftedTopPoints=[[0,0,150],[100,0,150],[0,100,150],[100,100,150]];
+const shiftedTop={v:shiftedTopPoints,triangles:P.makeTIN(shiftedTopPoints).triangles};
+const shiftedBasePoints=[[-5.26313844602555,-0.800511222332716,100],[93.77900609280914,4.837992591783404,100],[4.340197728015482,92.34458442777395,100],[94.11599989514798,99.44683064706624,100]];
+const shiftedBase={v:shiftedBasePoints,triangles:P.makeTIN(shiftedBasePoints).triangles};
+const shiftedPair=B.buildSurfacePair(shiftedTop,shiftedBase);
+ok(shiftedPair.status==='solid'&&shiftedPair.meshDiagnostics.closed,'shifted independent TINs with a vertex on an opposing edge form a closed solid');
+ok(shiftedPair.validation.selfIntersection===true,'a conforming shifted-TIN shell passes the unchanged self-intersection gate');
+close(shiftedPair.volume,shiftedPair.meshVolume,'shifted-TIN prism integral agrees with its closed mesh');
+close(shiftedPair.volume,shiftedPair.commonArea*50,'shifted flat horizons retain the exact overlap-area prism volume');
 
 
 // A terrain valley inside a coarse upper face must not pass a vertex-only check.

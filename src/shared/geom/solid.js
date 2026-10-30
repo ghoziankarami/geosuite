@@ -83,10 +83,17 @@
         for(const p of b.p) if(inTriangle(p,a) && !allowed(p)) return true;
         const axis=a.n.map(Math.abs).indexOf(Math.max(...a.n.map(Math.abs)));
         for(let i=0;i<3;i++) for(let j=0;j<3;j++) {
-          const p=a.p[i],q=a.p[(i+1)%3],r=b.p[j],s=b.p[(j+1)%3],u=projected(g.sub(q,p),axis),w=projected(g.sub(s,r),axis),delta=projected(g.sub(r,p),axis),den=u[0]*w[1]-u[1]*w[0];
-          if(den===0) continue; // Collinear overlaps already supply an endpoint above.
-          const t=(delta[0]*w[1]-delta[1]*w[0])/den,h=(delta[0]*u[1]-delta[1]*u[0])/den;
-          if(t>=0 && t<=1 && h>=0 && h<=1 && !allowed(g.add(p,g.mul(g.sub(q,p),t)))) return true;
+          const p=projected(a.p[i],axis),q=projected(a.p[(i+1)%3],axis),r=projected(b.p[j],axis),s=projected(b.p[(j+1)%3],axis);
+          const cross=(x,y,z)=>(y[0]-x[0])*(z[1]-x[1])-(y[1]-x[1])*(z[0]-x[0]);
+          const onSegment=(x,start,end)=>{const dx=end[0]-start[0],dy=end[1]-start[1],length=Math.hypot(dx,dy),t=((x[0]-start[0])*dx+(x[1]-start[1])*dy)/(length*length);return t>=-eps/length&&t<=1+eps/length&&Math.abs(cross(start,end,x))<=eps*length;};
+          for(const [point,start,end,index3] of [[p,r,s,a.p[i]],[q,r,s,a.p[(i+1)%3]],[r,p,q,b.p[j]],[s,p,q,b.p[(j+1)%3]]])
+            if(onSegment(point,start,end)&&!allowed(index3)) return true;
+          const pa=Math.hypot(q[0]-p[0],q[1]-p[1]),pb=Math.hypot(s[0]-r[0],s[1]-r[1]);
+          const d1=cross(p,q,r)/pa,d2=cross(p,q,s)/pa,d3=cross(r,s,p)/pb,d4=cross(r,s,q)/pb;
+          if(((d1<0&&d2>0)||(d1>0&&d2<0))&&((d3<0&&d4>0)||(d3>0&&d4<0))) {
+            const t=d1/(d1-d2),hit=g.add(a.p[i],g.mul(g.sub(a.p[(i+1)%3],a.p[i]),t));
+            if(!allowed(hit)) return true;
+          }
         }
         return false;
       }

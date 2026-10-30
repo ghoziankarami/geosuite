@@ -181,59 +181,7 @@ def thalanga_consistency(d: dict, docs: dict[str, str]):
             quoted(docs, f"GT high+medium {row['cutoff_pct']}%", row["tonnes_Mt"], 3)
 
 
-def babbitt_consistency(d: dict, docs: dict[str, str]):
-    raw, c, a, r = d["raw"], d["core"], d["assay"], d["resource"]
-    crossval_oracle_checks(r)
-    ic, tc = d["independent_composites"], raw["topcut_check"]
-    check(c["length_unit_source"] == "ft" and "converted from feet" in (c["export_lengths_line"] or ""),
-          "feet conversion not applied or not recorded")
-    check(abs(c["B1_001_deepest_midz"] - raw["B1_001_expected_deepest_midz"]) < 0.01,
-          f"B1-001 deepest sample at z={c['B1_001_deepest_midz']}, trigonometry says {raw['B1_001_expected_deepest_midz']}")
-    check(a["topcut"]["disintegration"] is None and a["topcut"]["body_departure"] is not None,
-          "top-cut diagnostics offer a cut inside the body again")
-    check((a["export"]["topcut_line"] or "").startswith(f"# topcut: cu_pct cut={tc['cut']:.4f}"), "cap not recorded in the export")
-    check(a["topcut_applied"]["affected"] == tc["assays_above"], "app and independent count of capped assays differ")
-    check(abs(a["topcut_applied"]["metal_removed_pct"] - tc["metal_removed_length_weighted_pct"]) < 0.01,
-          f"app metal removed {a['topcut_applied']['metal_removed_pct']:.2f}% vs length-weighted {tc['metal_removed_length_weighted_pct']}%")
-    check(ic["m1_cu_max"] <= tc["cut"] + 1e-9, "a composite exceeds the cap")
-    check(r["setup"]["samples"] == ic["m1_n"], "Resource did not receive every M1 composite")
-    variogram_checks(r, docs, 3)
-    e = r["estimate"]
-    eu = r["estimate_unbounded"]
-    check(e["domain_boundary"] and not eu["domain_boundary"] and e["ok"]["n"] < eu["ok"]["n"], "Babbitt boundary runs not as described")
-    quoted(docs, "unbounded Mt", eu["tonnes_Mt"], 0)
-    quoted(docs, "unbounded blocks", eu["ok"]["n"], 0)
-    quoted(docs, "boundary removed", e["outside_domain"], 0)
-    bx, by, bz = r["blocks"]["size"]
-    check(abs(e["tonnes_Mt"] - e["ok"]["n"] * bx * by * bz * r["blocks"]["density"] / 1e6) < 1e-6, "tonnage != blocks x volume x density")
-    check(abs(r["gt_app"][0]["tonnes_Mt"] - e["tonnes_Mt"]) < 0.01, "GT at the domain cut-off != estimated tonnage")
-    check(r["crossval"]["pairs"] >= 190, f"cross-validation found neighbours for only {r['crossval']['pairs']} of 200")
-    check(all(not d[s]["page_errors"] for s in ("core", "assay", "resource")), "page errors during the run")
-    for label, v, dec in [("holes", raw["holes"], 0), ("assay rows", raw["assay_rows"], 0), ("unassayed m", raw["unassayed_m"], 0),
-                          ("unassayed pct", raw["unassayed_pct"], 1), ("mean assayed", raw["cu_mean_assayed"], 4),
-                          ("mean zero-filled", raw["cu_mean_zero_filled"], 4), ("extent x", raw["extent_m"][0], 0),
-                          ("volume factor", raw["volume_factor_if_read_as_m"], 1), ("cu-ni r", raw["cu_ni_r"], 3),
-                          ("ni/cu", raw["ni_cu_ratio_median"], 3), ("metal share 0.2", raw["metal_share"]["0.2"]["metal_pct"], 1),
-                          ("capped assays", tc["assays_above"], 0), ("metal removed lw", tc["metal_removed_length_weighted_pct"], 2),
-                          ("cv raw", tc["m1_cv_raw"], 2), ("cv capped", tc["m1_cv_capped"], 2),
-                          ("body departure", a["topcut"]["body_departure"]["value"], 2),
-                          ("under-half composites", a["export"]["under_half_informed"], 0), ("composites", a["composites"]["n"], 0),
-                          ("M1 composites", ic["m1_n"], 0), ("M1 mean", ic["m1_cu_mean"], 4), ("nugget", r["variogram"]["nugget"], 3),
-                          ("sill", r["variogram"]["sill"], 3), ("range", r["variogram"]["range"], 1),
-                          ("spacing", r["spacing_note"]["median_m"], 0), ("blocks", r["blocks"]["n"], 0),
-                          ("estimated blocks", e["ok"]["n"], 0), ("OK grade", e["ok"]["mean"], 3), ("NN grade", e["nn"]["mean"], 3),
-                          ("tonnes", e["tonnes_Mt"], 0), ("metal Mt", e["cu_metal_kt"] / 1000, 1),
-                          ("cv pairs", r["crossval"]["pairs"], 0), ("OK slope", r["crossval"]["metrics"]["ok"]["slope"], 2),
-                          ("B1-001 z", c["B1_001_deepest_midz"], 2)]:
-        quoted(docs, label, v, dec)
-    for row in r["gt_app"]:
-        if row["cutoff_pct"] in (0.2, 0.3, 0.4, 0.5, 0.6):
-            quoted(docs, f"GT {row['cutoff_pct']} Mt", row["tonnes_Mt"], 0)
-            quoted(docs, f"GT {row['cutoff_pct']} grade", row["grade_pct"], 3)
-
-
-CONSISTENCY = {"thalanga": ("01-thalanga-vms.md", thalanga_consistency),
-               "babbitt": ("02-babbitt-cuni.md", babbitt_consistency)}
+CONSISTENCY = {"thalanga": ("01-thalanga-vms.md", thalanga_consistency)}
 
 
 def main():

@@ -33,7 +33,7 @@
     }]));
     for (const name of ['collar','geology']) {
       const rows = copy(SAMPLE_SOURCE_DATA[name]);
-      _coreLoadTable(name, rows, Object.keys(rows[0] || {}), copy(rows));
+      _coreLoadTable(name, rows, Object.keys(rows[0] || {}), copy(rows), {sourceChange:'correction'});
       STATE.isSample[name] = true; // Known synthetic source; never presented as customer data.
     }
     const diffs=[];
@@ -49,6 +49,7 @@
   }
   function undoSource() {
     if (!undo || undo.after !== snapshot()) { undo = null; toast(tr('changed'), 'warn'); return false; }
+    window.OrebitCoreDomain?.invalidate('Source correction undone');
     for (const [name, prior] of Object.entries(undo.before)) {
       STATE[name] = copy(prior.rows); STATE.rawHeaders[name] = copy(prior.headers); STATE.rawRows[name] = copy(prior.raw);
       STATE.isSample[name] = true;

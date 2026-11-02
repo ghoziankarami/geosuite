@@ -4,6 +4,7 @@
   let interpretation = OrebitDomainState.create();
   let epoch = 0, revision = 0;
   const geometryCache=new Map();
+  function scheduleSave() { if(typeof AutoSave!=='undefined') AutoSave.schedule(); }
   function source() {
     const scope=window.OrebitCoreScope?.record();
     return {tables:Object.fromEntries(['collar','survey','assay','geology'].map(k=>[k,STATE[k]])),
@@ -25,12 +26,12 @@
     }
   }
   function displaySolids(){
-    return interpretation.domains.map(d=>Object.freeze({code:d.code,label:d.label||d.code,colour:d.colour,visible:d.visible!==false,stale:!!d.build?.stale,mesh:d.build?.mesh}));
+    return interpretation.domains.map(d=>Object.freeze({code:d.code,label:d.displayName||d.label||d.code,colour:d.colour,visible:d.visible!==false,stale:!!d.build?.stale,mesh:d.build?.mesh}));
   }
   function setVisibility(code,visible){
     if(typeof visible!=='boolean')throw Error('DOMAIN_VISIBILITY_INVALID');
     const domain=interpretation.domains.find(d=>d.code===code);if(!domain)throw Error('DOMAIN_CODE_INVALID');
-    domain.visible=visible;revision++;
+    domain.visible=visible;revision++;scheduleSave();
     interpretation.provenance.history.push({at:new Date().toISOString(),action:'domain-visibility',detail:code+' · '+visible});
   }
 
@@ -68,7 +69,7 @@
   async function saveContactSurface(name,recipe){
     name=String(name).trim();
     if(!name||name.length>80||/[\u0000-\u001f\u007f]/.test(name))throw Error('DOMAIN_SURFACE_NAME_INVALID');
-    if(interpretation.surfaces.some(s=>s.id===name))throw Error('DOMAIN_SURFACE_NAME_EXISTS');
+    if(interpretation.surfaces.some(s=>s.id===name||(s.displayName||s.name)===name))throw Error('DOMAIN_SURFACE_NAME_EXISTS');
     const token=epoch,version=revision,current=await capture(),surface=deriveSurface(recipe);
     const record={kind:'contact-tin',id:name,name,sourceHash:current.sha256,crs:String(STATE.crs||'').trim(),units:'m',
       recipe:JSON.parse(JSON.stringify(recipe)),geometryHash:await OrebitDomainState.hash(surface.tin),
@@ -76,7 +77,24 @@
     if(token!==epoch||version!==revision)throw Error('DOMAIN_SOURCE_CHANGED');
     const next=JSON.parse(JSON.stringify(interpretation));next.surfaces.push(record);OrebitDomainState.checkSurfaces(next.surfaces);
     next.provenance.history.push({at:record.createdAt,action:'save-contact-surface',detail:name});
-    interpretation=next;revision++;return JSON.parse(JSON.stringify(record));
+    interpretation=next;revision++;scheduleSave();return JSON.parse(JSON.stringify(record));
+  }
+  function editSurfaceDisplay(id,name,colour){
+    const surface=interpretation.surfaces.find(s=>s.id===id);
+    if(!surface)throw Error('DOMAIN_SURFACE_PAIR_REQUIRED');
+    name=String(name).trim();
+    if(!name||name.length>80||/[\u0000-\u001f\u007f]/.test(name)||!/^#[0-9a-f]{6}$/i.test(colour))throw Error('DOMAIN_SURFACE_NAME_INVALID');
+    if(interpretation.surfaces.some(s=>s.id!==id&&(s.displayName||s.name)===name))throw Error('DOMAIN_SURFACE_NAME_EXISTS');
+    surface.displayName=name;surface.colour=colour;
+    interpretation.provenance.history.push({at:new Date().toISOString(),action:'edit-surface-display',detail:id});
+    revision++;scheduleSave();
+  }
+  function removeSurface(id){
+    const index=interpretation.surfaces.findIndex(s=>s.id===id);
+    if(index<0)throw Error('DOMAIN_SURFACE_PAIR_REQUIRED');
+    interpretation.surfaces.splice(index,1);
+    interpretation.provenance.history.push({at:new Date().toISOString(),action:'remove-contact-surface',detail:id});
+    revision++;scheduleSave();
   }
   async function previewContactSurface(id){
     const token=epoch,version=revision,record=interpretation.surfaces.find(s=>s.id===id);
@@ -118,7 +136,9 @@
     }else if(inputs.rules.topography!=='imported')throw Error('DOMAIN_SURFACE_PAIR_TOPOGRAPHY');
 
     const rebuilt=OrebitDomainBetween.buildSurfacePair(upper.tin,lower.tin,{terrain:inputs.terrainSurface});
-    if(rebuilt.status!=='solid'||rebuilt.validation.topography!==true||await OrebitDomainState.hash(rebuilt.mesh)!==await OrebitDomainState.hash(mesh))throw Error('DOMAIN_SURFACE_PAIR_CHANGED');
+    const part=pair.component;
+    const candidate=part==null?rebuilt:Number.isInteger(part)&&part>=0?rebuilt.separation?.parts[part]:null;
+    if(!candidate||(part==null&&rebuilt.status!=='solid')||candidate.validation.topology!==true||candidate.validation.topography!==true||await OrebitDomainState.hash(candidate.mesh)!==await OrebitDomainState.hash(mesh))throw Error('DOMAIN_SURFACE_PAIR_CHANGED');
   }
 
   function contactSourceIssue(inputs,codebook=interpretation.codebook) {
@@ -169,23 +189,31 @@
     const next=JSON.parse(JSON.stringify(value));
     if(JSON.stringify(next)===JSON.stringify(interpretation.workspace))return;
     OrebitDomainState.checkWorkspace(next);
-    interpretation.workspace=next;revision++;
+    interpretation.workspace=next;revision++;scheduleSave();
   }
   // Several disjoint domains can coexist. Replacing a code checks every other
   // current domain; boundary contact is permitted, positive-volume overlap is not.
-  async function acceptSolid(value) {
+  async function acceptSolid(value) {return acceptSolids([value]);}
+  async function acceptSolids(values) {
+    if(!Array.isArray(values)||!values.length||values.length>100||new Set(values.map(v=>v.code?.trim())).size!==values.length)throw Error('DOMAIN_CODE_INVALID');
+    const token=epoch,version=revision,current=await capture();let next=interpretation;
+    for(const value of values)next=await prepareSolidAcceptance(value,next,token,version,current);
+    if(token!==epoch||version!==revision)throw Error('DOMAIN_SOURCE_CHANGED');
+    // Publish the whole reviewed set once; a failure leaves every old layer intact.
+    interpretation=next;freezeSolids();revision++;scheduleSave();return exportState();
+  }
+  async function prepareSolidAcceptance(value,base,token,version,current) {
     if(value?.density!=null&&(!Number.isFinite(value.density)||value.density<=0))throw Error('DOMAIN_DENSITY_INVALID');
     if(value?.volume!=null&&!Number.isFinite(value.volume))throw Error('DOMAIN_SOLID_VOLUME_MISMATCH');
-    const token=epoch,version=revision,entry=JSON.parse(JSON.stringify(value));
+    const entry=JSON.parse(JSON.stringify(value));
     const changed=()=>token!==epoch||version!==revision;
-    const current=await capture();
     if(changed()||(entry.sourceRevision!=null&&entry.sourceRevision!==epoch))throw Error('DOMAIN_SOURCE_CHANGED');
     const v=entry?.validation;
     if(!v||['topology','selfIntersection','topography','surfaceCrossings','honouring'].some(k=>v[k]!==true)||entry.review!==true)throw Error('DOMAIN_SOLID_NOT_ACCEPTABLE');
     const reviewer=OrebitDomainState.reviewIdentity(entry.reviewRecord);
     if(typeof entry.code!=='string'||!entry.code.trim())throw Error('DOMAIN_CODE_INVALID');
     if(!entry.inputs||typeof entry.inputs!=='object'||Array.isArray(entry.inputs)||!entry.inputs.rules||typeof entry.inputs.rules!=='object'||Array.isArray(entry.inputs.rules))throw Error('DOMAIN_SOLID_INPUT_INVALID');
-    await validateSurfacePairBuild(entry.inputs,entry.mesh,current.sha256,interpretation.codebook);
+    await validateSurfacePairBuild(entry.inputs,entry.mesh,current.sha256,base.codebook);
     const contactIssue=contactSourceIssue(entry.inputs);if(contactIssue)throw Error(contactIssue);
     const code=entry.code.trim(),prepared=OrebitDomainSolid.prepareSolid(entry.mesh);
     if(entry.volume!=null&&(!Number.isFinite(entry.volume)||Math.abs(entry.volume-prepared.volume)>Math.max(1,prepared.volume)*1e-8))throw Error('DOMAIN_SOLID_VOLUME_MISMATCH');
@@ -220,7 +248,7 @@
         volumeBelowTerrain:clipped.solid,terrainExcluded:clipped.terrainExcluded,validationMethod:'exact-signed-tetrahedron-volume'};
       }
     }
-    const next=JSON.parse(JSON.stringify(interpretation));
+    const next=JSON.parse(JSON.stringify(base));
     if(next.source?.sha256!==current.sha256)for(const d of next.domains)if(d.build){d.build.stale=true;d.build.staleReason='Source data or coordinate context changed';}
     const others=next.domains.filter(d=>d.code!==code),overlaps=[];
     for(const other of others){
@@ -247,8 +275,7 @@
     next.sections=next.domains.flatMap(d=>(d.build.inputs.sections||[]).map(s=>({...s,domainCode:d.code})));
     next.provenance.history.push({at:review.at,action:'accept-solid',detail:code+' · '+Math.round(prepared.volume)+' m3',review,reviewHash,overlaps});
     if(changed())throw Error('DOMAIN_SOURCE_CHANGED');
-    interpretation=OrebitDomainState.check(next);freezeSolids();revision++;
-    return exportState();
+    return OrebitDomainState.check(next);
   }
   function setCodebook(entries){
     const next=JSON.parse(JSON.stringify(entries));OrebitDomainState.checkCodebook(next);
@@ -259,9 +286,18 @@
       const code=key.slice(5),before=interpretation.codebook.find(e=>e.code===code),after=next.find(e=>e.code===code);
       if(JSON.stringify(before)!==JSON.stringify(after))OrebitDomainState.invalidate({...interpretation,domains:[d]},'Geological codebook changed');
     }
-    interpretation.codebook=next;revision++;
+    interpretation.codebook=next;revision++;scheduleSave();
     interpretation.provenance.history.push({at:new Date().toISOString(),action:'edit-codebook',detail:next.map(d=>d.code).join(', ')});
     return exportState();
+  }
+  function editSolidDisplay(code,name,colour){
+    const domain=interpretation.domains.find(d=>d.code===code);
+    if(!domain)throw Error('DOMAIN_CODE_INVALID');
+    name=String(name).trim();
+    if(!name||name.length>80||/[\u0000-\u001f\u007f]/.test(name)||!/^#[0-9a-f]{6}$/i.test(colour))throw Error('DOMAIN_SURFACE_NAME_INVALID');
+    domain.displayName=name;domain.colour=colour;
+    interpretation.provenance.history.push({at:new Date().toISOString(),action:'edit-solid-display',detail:code});
+    revision++;scheduleSave();
   }
   function removeSolid(code=null) {
     const removed=interpretation.domains.filter(d=>code==null||d.code===code);
@@ -269,7 +305,7 @@
     interpretation.provenance.history.push({at:new Date().toISOString(),action:'remove-solid',detail:removed.map(d=>d.code).join(', ')});
     interpretation.domains=interpretation.domains.filter(d=>!removed.includes(d));
     interpretation.sections=interpretation.domains.flatMap(d=>(d.build.inputs.sections||[]).map(s=>({...s,domainCode:d.code})));
-    interpretation.contactRules=interpretation.domains.map(d=>d.build.inputs.rules);revision++;
+    interpretation.contactRules=interpretation.domains.map(d=>d.build.inputs.rules);revision++;scheduleSave();
     return exportState();
   }
   function intervalGeometry(table='assay') {
@@ -356,6 +392,6 @@
     if(format==='csv')return OrebitDomainInterop.writePolylines(snapshot,options);
     throw Error('DOMAIN_INTEROP_FORMAT');
   }
-  window.OrebitCoreDomain = {saveContactSurface,previewContactSurface,buildContactSurfacePair,surfaces:()=>JSON.parse(JSON.stringify(interpretation.surfaces)),capture,contactMembership,reset,invalidate,invalidateInterpretation,sourceRevision:()=>epoch,hasAcceptedLoft:code=>interpretation.domains.some(d=>d.code===code&&d.build?.inputs?.rules?.method==='section-loft'&&!d.build.stale),interpretationRevision:()=>revision,saveWorkspace,setCodebook,displaySolids,setVisibility,codebook:()=>JSON.parse(JSON.stringify(interpretation.codebook)),summaries:()=>interpretation.domains.map(d=>({code:d.code,density:d.density,visible:d.visible,build:{volume:d.build?.volume,stale:d.build?.stale,staleReason:d.build?.staleReason,review:d.build?.review?{...d.build.review}:null,validation:{...d.build?.validation}}})),exportState,restore,intervalGeometry,intervalMembership,acceptSolid,removeSolid,exportSolidDXF,exportInterop,
+  window.OrebitCoreDomain = {saveContactSurface,editSurfaceDisplay,removeSurface,previewContactSurface,buildContactSurfacePair,surfaces:()=>JSON.parse(JSON.stringify(interpretation.surfaces)),capture,contactMembership,reset,invalidate,invalidateInterpretation,sourceRevision:()=>epoch,hasAcceptedLoft:code=>interpretation.domains.some(d=>d.code===code&&d.build?.inputs?.rules?.method==='section-loft'&&!d.build.stale),interpretationRevision:()=>revision,saveWorkspace,setCodebook,displaySolids,setVisibility,codebook:()=>JSON.parse(JSON.stringify(interpretation.codebook)),summaries:()=>interpretation.domains.map(d=>({code:d.code,density:d.density,visible:d.visible,build:{volume:d.build?.volume,stale:d.build?.stale,staleReason:d.build?.staleReason,review:d.build?.review?{...d.build.review}:null,validation:{...d.build?.validation}}})),exportState,restore,intervalGeometry,intervalMembership,acceptSolid,acceptSolids,editSolidDisplay,removeSolid,exportSolidDXF,exportInterop,
     readiness:async()=>(await checkedSnapshot()).readiness};
 })();

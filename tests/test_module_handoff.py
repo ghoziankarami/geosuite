@@ -472,7 +472,7 @@ def main():
         check("Malformed Core capsule import fails before replacing the active dataset", malformed_capsule)
         cancelled_load = core.evaluate("async () => { const prompt=window.prompt; window.prompt=()=>null; try { const active=STATE.assay; const result=await OrebitProject.load(); return result===null&&STATE.assay===active; } finally { window.prompt=prompt; } }")
         check("Cancelling the saved-project picker keeps the active Core dataset unchanged", cancelled_load)
-        same_name_replacement = core.evaluate("async () => { const b=structuredClone(await dbGet('P3.05-eda-roundtrip')); const old=b.sourceCapsule.revision; b.phase1.collar_csv+=' '; await sealProjectCapsule(b); await applyBundle(b); const active=OrebitCoreEDAReference.exportState(); return b.name==='P3.05-eda-roundtrip'&&b.sourceCapsule.revision!==old&&active?.status==='stale'; }")
+        same_name_replacement = core.evaluate("async () => { const b=structuredClone(await dbGet('P3.05-eda-roundtrip')); const old=b.sourceCapsule.revision; const saved=STATE.collar; STATE.collar=structuredClone(b.phase1.source_rows.collar); STATE.collar[0].x=Number(STATE.collar[0].x)+0.01; let replacement; try { replacement=await OrebitProject.snapshot(b.name); } finally { STATE.collar=saved; } await applyBundle(replacement); const active=OrebitCoreEDAReference.exportState(); return b.name==='P3.05-eda-roundtrip'&&replacement.sourceCapsule.revision!==old&&active?.status==='stale'; }")
         check("Replacing a same-name Core project's bound source revision marks its saved EDA reference stale", same_name_replacement)
         newer_core = ctx.new_page()
         newer_core.goto(f"{BASE}/Core.html", wait_until="load", timeout=60000)

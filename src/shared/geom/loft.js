@@ -11,6 +11,8 @@
     const g = root.OrebitGeometryPrimitives, topology = root.OrebitDomainGeometry;
     if (!g || !topology) throw Error('DOMAIN_GEOMETRY_DEPENDENCY');
     const {plane, sections, endRule} = input || {};
+    const correspondence=input?.correspondence??'rightmost';
+    if(!['rightmost','upper-right'].includes(correspondence))throw Error('DOMAIN_LOFT_CORRESPONDENCE');
     if (!RULES.includes(endRule)) throw Error('DOMAIN_LOFT_END_RULE');
     if (!Array.isArray(sections) || sections.length < 2) throw Error('DOMAIN_LOFT_SECTIONS');
     g.unproject(plane, [0, 0, 0]); // validates the plane
@@ -21,7 +23,7 @@
         if (Math.hypot(...c) > 1e-9) throw Error('DOMAIN_LOFT_NOT_PARALLEL');
       }
       if (s.rings !== undefined && (!Array.isArray(s.rings) || s.rings.length !== 1)) throw Error('DOMAIN_LOFT_BRANCHING');
-      return {station:s.station, ring:align(g.inspectPolygon(s.ring || s.rings[0]).points)};
+      return {station:s.station, ring:align(g.inspectPolygon(s.ring || s.rings[0]).points,correspondence)};
     }).sort((a, b) => a.station - b.station);
     for (let i = 1; i < list.length; i++) if (!(list[i].station - list[i - 1].station > 1e-9)) throw Error('DOMAIN_LOFT_STATION_DUPLICATE');
 
@@ -57,29 +59,33 @@
     }
 
     const mesh = {v, f}, report = topology.inspectMesh(mesh, {maxFaces:20000, maxVertices:10000});
-    let shell = null, shellError = null;
-    try { shell = root.OrebitDomainSolid ? root.OrebitDomainSolid.prepareSolid(mesh, {maxFaces:10000}) : null; } catch (e) { shellError = e.message; }
-    return {status:report.closed && report.volume > 0 && shell ? 'solid' : 'invalid', mesh, volume:report.volume, endRule,
-      sections:list.length, stations:list.map(s => s.station), extension:{before, after}, pointsPerRing:M, shellError,
+    let shell = null, shellError = null, shellFaces = null;
+    try { shell = root.OrebitDomainSolid ? root.OrebitDomainSolid.prepareSolid(mesh, {maxFaces:10000}) : null; } catch (e) { shellError = e.message; shellFaces=Array.isArray(e.faces)?e.faces:null; }
+    const result={status:report.closed && report.volume > 0 && shell ? 'solid' : 'invalid', mesh, volume:report.volume, endRule,correspondence,
+      sections:list.length, stations:list.map(s => s.station), extension:{before, after}, pointsPerRing:M, shellError, shellFaces,
       validation:{topology:report.closed, selfIntersection:!!shell, geologistReview:false}};
+    if(correspondence==='rightmost'&&shellError==='DOMAIN_SOLID_SELF_INTERSECTION'){
+      try{
+        const proposal=loft({...input,correspondence:'upper-right'});
+        // This changes interpolation between sections, never the rings. Only
+        // explicit Apply/review may use it; the original remains rejected.
+        if(proposal.status==='solid')result.repairProposal=proposal;
+      }catch(error){if(!String(error.message).startsWith('DOMAIN_'))throw error;result.repairFailure=error.message;}
+    }
+    return result;
   }
 
-  // Counter-clockwise ring starting where the ray from its centroid along +s first meets it (inserted when it falls
-  // mid-edge), so the start does not depend on how densely the ring was digitised. t = arc-length share.
-  function align(input) {
-    const c = centroid(input), ring = input.slice();
-    let hit = null;
-    for (let i = 0; i < ring.length; i++) {
-      const a = ring[i], b = ring[(i + 1) % ring.length];
-      if ((a[1] - c[1]) * (b[1] - c[1]) > 0 || a[1] === b[1]) continue;
-      const w = (c[1] - a[1]) / (b[1] - a[1]), x = a[0] + w * (b[0] - a[0]);
-      if (x >= c[0] && (!hit || x < hit.x)) hit = {i, w, x};
-    }
+  // A concave centroid can cross a notch as the ring changes; anchor at the section's +h, low-RL corner instead. t = arc-length share.
+  function align(input,correspondence) {
     let start = 0;
-    if (hit && hit.w <= 1e-12) start = hit.i;
-    else if (hit && hit.w >= 1 - 1e-12) start = (hit.i + 1) % ring.length;
-    else if (hit) { ring.splice(hit.i + 1, 0, [hit.x, c[1]]); start = hit.i + 1; }
-    const p = ring.slice(start).concat(ring.slice(0, start)), t = [0];
+    if(correspondence==='upper-right'){
+      const low=[0,1].map(k=>Math.min(...input.map(p=>p[k]))),span=[0,1].map(k=>Math.max(...input.map(p=>p[k]))-low[k]);
+      // Section v points downward; normalize the axes so a thin horizon's
+      // width cannot dominate the choice of its upper-right corner.
+      const score=p=>(p[0]-low[0])/span[0]-(p[1]-low[1])/span[1];
+      for(let i=1;i<input.length;i++)if(score(input[i])>score(input[start])||(score(input[i])===score(input[start])&&input[i][0]>input[start][0]))start=i;
+    }else for(let i=1;i<input.length;i++) if(input[i][0]>input[start][0] || (input[i][0]===input[start][0]&&input[i][1]>input[start][1])) start=i;
+    const p = input.slice(start).concat(input.slice(0, start)), t = [0];
     let total = 0;
     for (let i = 0; i < p.length; i++) {
       const q = p[(i + 1) % p.length];

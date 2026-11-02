@@ -102,7 +102,9 @@ assert.throws(()=>prepared.classify([null,1,1]),/COORDINATE_INVALID/);
 for(const z of [-5,0]) {
   const crossing={v:v.map(p=>p.slice()),f};crossing.v[6]=[5,5,z];
   assert.ok(ctx.OrebitDomainGeometry.inspectMesh(crossing).volume>0,'topology alone accepts this invalid shell');
-  assert.throws(()=>solid(crossing),/SELF_INTERSECTION/,'actual crossing or coplanar contact is rejected');
+  let error;try{solid(crossing);}catch(e){error=e;}
+  assert.match(error?.message||'',/SELF_INTERSECTION/,'actual crossing or coplanar contact is rejected');
+  assert.equal(error.faces.length,2,'the rejected crossing reports its two actual intersecting faces');
 }
 const lring=[[0,0],[2,0],[2,1],[1,1],[1,2],[0,2]],caps=[[0,1,3],[1,2,3],[0,3,5],[3,4,5]],lf=[];
 for(const t of caps) {lf.push(t.slice().reverse());lf.push(t.map(i=>i+6));}

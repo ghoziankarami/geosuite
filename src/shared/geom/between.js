@@ -148,9 +148,47 @@
       const ground=buildSurfacePair(options.terrain,{v:v.slice(0,n),triangles:cells},{maxPairs,cancelled:options.cancelled});
       above=ground.inverted.length===0&&Math.abs(ground.commonArea-area)<=Math.max(1,area)*1e-8?0:Math.max(1,ground.inverted.length);
     }
+    const validation={topology:!!shell,selfIntersection:shell?true:shellError==='DOMAIN_SOLID_SELF_INTERSECTION'?false:null,topography:options.terrain?above===0:null,
+      surfaceCrossings:true,overlap:null,honouring:true,geologistReview:false};
+    let separation=null;
+    if(!shell){
+      // Only full-edge neighbours belong to one body. A point/line contact must
+      // not weld two shells or fill the unsupported gap between them.
+      const owners=new Map(),neighbours=cells.map(()=>[]);
+      cells.forEach((face,index)=>{for(let i=0;i<3;i++){
+        const a=face[i],b=face[(i+1)%3],key=Math.min(a,b)+':'+Math.max(a,b),previous=owners.get(key);
+        if(previous==null)owners.set(key,index);else {neighbours[index].push(previous);neighbours[previous].push(index);}
+      }});
+      const seen=new Set(),groups=[];
+      for(let i=0;i<cells.length;i++){
+        if(seen.has(i))continue;
+        const pending=[i],group=[];seen.add(i);
+        while(pending.length){const index=pending.pop();group.push(index);for(const next of neighbours[index])if(!seen.has(next)){seen.add(next);pending.push(next);}}
+        groups.push(group.sort((a,b)=>a-b));
+      }
+      if(groups.length>1&&groups.length<=100){
+        const parts=[];
+        for(const group of groups){
+          const ids=[...new Set(group.flatMap(index=>cells[index]))].sort((a,b)=>a-b),local=new Map(ids.map((id,index)=>[id,index])),m=ids.length;
+          const pv=[...ids.map(id=>v[id].slice()),...ids.map(id=>v[n+id].slice())],pf=[],boundary=new Map();let partArea=0,partVolume=0;
+          for(const index of group){
+            const face=cells[index].map(id=>local.get(id)),[a,b,c]=face;pf.push([a,b,c],[m+a,m+c,m+b]);
+            const cellArea=cross(...face.map(id=>pv[id]))/2;partArea+=cellArea;partVolume+=cellArea*face.reduce((sum,id)=>sum+pv[id][2]-pv[m+id][2],0)/3;
+            for(const [x,y] of [[a,b],[b,c],[c,a]]){const key=Math.min(x,y)+':'+Math.max(x,y);boundary.set(key,boundary.has(key)?null:[x,y]);}
+          }
+          for(const edge of boundary.values())if(edge){const [x,y]=edge;pf.push([x,m+x,m+y],[x,m+y,y]);}
+          const partMesh={v:pv,f:pf};let partShell;
+          try{partShell=root.OrebitDomainSolid.prepareSolid(partMesh,{maxFaces});}catch{break;}
+          if(Math.abs(partShell.volume-partVolume)>Math.max(1,partVolume)*1e-8)break;
+          parts.push({mesh:partMesh,volume:partVolume,meshVolume:partShell.volume,commonArea:partArea,triangles:group.length,
+            validation:{...validation,topology:true,selfIntersection:true}});
+        }
+        if(parts.length===groups.length&&Math.abs(parts.reduce((sum,p)=>sum+p.volume,0)-volume)<=Math.max(1,volume)*1e-8)
+          separation={method:'separate-edge-connected-support',parts};
+      }
+    }
     return {status:shell?'solid':'invalid',...report,mesh,volume,meshVolume:shell?.volume??null,shellError,meshDiagnostics,triangles:cells.length,baseDeviation:0,
-      terrainOutsideOrAbove:above,validation:{topology:!!shell,selfIntersection:shell?true:shellError==='DOMAIN_SOLID_SELF_INTERSECTION'?false:null,topography:options.terrain?above===0:null,
-        surfaceCrossings:true,overlap:null,honouring:true,geologistReview:false}};
+      terrainOutsideOrAbove:above,validation,separation};
   }
 
   root.OrebitDomainBetween = Object.freeze({buildBetween,buildSurfacePair});

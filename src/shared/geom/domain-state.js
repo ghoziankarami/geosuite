@@ -30,7 +30,7 @@
     const key=k=>k==null||(k&&finite(k.origin)&&k.origin.length===2&&Number.isFinite(k.offset)&&Number.isFinite(k.azimuth));
     const snap=s=>s==null||(s&&typeof s==='object'&&Number.isFinite(s.depth)&&Number.isFinite(s.off)&&s.off>=0&&(s.radius==null||(Number.isFinite(s.radius)&&s.radius>=0)));
     if(!l||!Array.isArray(l.draft)||!Array.isArray(l.sections)||!Number.isFinite(l.snap)||l.snap<0||
-       !['','zero','half','pinch'].includes(l.endRule)||!key(l.draftAt)||(l.domainCode!=null&&typeof l.domainCode!=='string'))throw Error('DOMAIN_WORKSPACE_INVALID');
+       !['','zero','half','pinch'].includes(l.endRule)||(l.correspondence!=null&&!['rightmost','upper-right'].includes(l.correspondence))||!key(l.draftAt)||(l.domainCode!=null&&typeof l.domainCode!=='string'))throw Error('DOMAIN_WORKSPACE_INVALID');
     if(l.sections.length>1000||l.draft.length+l.sections.reduce((n,s)=>n+(s?.points?.length||0),0)>10000)throw Error('DOMAIN_STATE_BUDGET');
     for(const p of l.draft)if(!p||!Number.isFinite(p.h)||!Number.isFinite(p.rl)||!snap(p.snap))throw Error('DOMAIN_WORKSPACE_INVALID');
     if(l.draft.length&&!l.draftAt)throw Error('DOMAIN_WORKSPACE_INVALID');
@@ -98,6 +98,8 @@
       if(!s||s.kind!=='contact-tin'||typeof s.id!=='string'||!s.id.trim()||s.id.length>80||ids.has(s.id)||s.name!==s.id||
          /[\u0000-\u001f\u007f]/.test(s.id)||s.units!=='m'||typeof s.crs!=='string'||s.crs.length>200||
          [s.sourceHash,s.geometryHash].some(h=>typeof h!=='string'||!/^[a-f0-9]{64}$/.test(h))||
+         (s.displayName!=null&&(typeof s.displayName!=='string'||!s.displayName.trim()||s.displayName.length>80||/[\u0000-\u001f\u007f]/.test(s.displayName)))||
+         (s.colour!=null&&!/^#[0-9a-f]{6}$/i.test(s.colour))||
          !s.recipe||typeof s.recipe.target!=='string'||!['first_from','last_to','grade_cross'].includes(s.recipe.rule)||
          (s.recipe.maxEdge!=null&&(!Number.isFinite(s.recipe.maxEdge)||s.recipe.maxEdge<=0))||
          (s.recipe.threshold!=null&&!Number.isFinite(s.recipe.threshold))||
@@ -117,6 +119,7 @@
     const codes=new Set();
     for(const domain of state.domains){
       if(!domain || typeof domain.code!=='string' || !domain.code.trim() || codes.has(domain.code)) throw new Error('DOMAIN_CODE_INVALID');
+      if(domain.displayName!=null&&(typeof domain.displayName!=='string'||!domain.displayName.trim()||domain.displayName.length>80||/[\u0000-\u001f\u007f]/.test(domain.displayName)))throw Error('DOMAIN_DISPLAY_NAME_INVALID');
       codes.add(domain.code);
       if(domain.density!=null && (!Number.isFinite(domain.density)||domain.density<=0)) throw new Error('DOMAIN_DENSITY_INVALID');
       if(domain.build?.mesh) root.OrebitDomainGeometry.inspectMesh(domain.build.mesh);

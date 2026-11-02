@@ -2447,9 +2447,10 @@ a { text-decoration: underline !important; text-underline-offset: 2px; }
 .domain-viewer-status { display: flex; flex-wrap: wrap; gap: 2px 16px; margin: 0; min-width: 0; }
 .domain-cursor { color: var(--fg); }
 #domainViewerThin { margin: 8px 12px; }
-.domain-facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 0; font-size: 13px; }
+.domain-facts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 12px; margin: 0; font-size: 13px; }
+.domain-facts dt, .domain-facts dd { min-width: 0; overflow-wrap: anywhere; }
 .domain-facts dt { color: var(--fg-mute); }
-.domain-facts dd { margin: 0; text-align: right; white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums; }
+.domain-facts dd { margin: 0; text-align: right; white-space: normal; font-weight: 600; font-variant-numeric: tabular-nums; }
 .domain-viewer-later { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
 .domain-contacts { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
 .domain-contact-form { display: flex; flex-direction: column; gap: 8px; }
@@ -2490,6 +2491,9 @@ a { text-decoration: underline !important; text-underline-offset: 2px; }
 .domain-check { width: 100%; min-width: 0; }
 .domain-accepted { display: flex; flex-direction: column; gap: 8px; }
 .domain-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--fg-mute); }
+#tab14 details.domain-help { grid-column: 1 / -1; min-width: 0; }
+#tab14 details.domain-help > summary { min-height: 44px; align-content: center; color: var(--fg-mute); cursor: pointer; }
+#tab14 details.domain-help > p { padding: 4px 0; }
 @media (max-width: 1100px) { .domain-workspace { grid-template-columns: minmax(0, 1fr); } .domain-view { order: -1; } }
 @container (max-width: 940px) { .domain-workspace { grid-template-columns: minmax(0, 1fr); } .domain-view { order: -1; } }
 @media (max-width: 820px) { .domain-tree-row { min-height: 44px; } }

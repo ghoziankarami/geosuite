@@ -74,7 +74,8 @@
       const common=a.ids.filter(i=>b.ids.includes(i)).map(i=>v[i]);
       if(common.length===3) return true;
       const allowed=p=>common.length===1?Math.hypot(...g.sub(p,common[0]))<=eps:common.length===2 && onLine(p,...common);
-      const da=a.p.map(p=>g.dot(b.n,g.sub(p,b.p[0]))),db=b.p.map(p=>g.dot(a.n,g.sub(p,a.p[0])));
+      const planeDistance=(p,t)=>{const d=g.dot(t.n,g.sub(p,t.p[0]));return Math.abs(d)<=eps?0:d;};
+      const da=a.p.map(p=>planeDistance(p,b)),db=b.p.map(p=>planeDistance(p,a));
       if(da.every(x=>x>eps) || da.every(x=>x<-eps) || db.every(x=>x>eps) || db.every(x=>x<-eps)) return false;
       if(da.every(x=>Math.abs(x)<=eps) && db.every(x=>Math.abs(x)<=eps)) {
         // Coplanar overlap: include interior vertices and every edge contact,

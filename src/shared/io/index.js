@@ -258,6 +258,29 @@ var OrebitHandoff = (function () {
     return null;
   }
   function send(target, exportFn) {return sendFile(target,capture(exportFn));}
+  function sendCoreProject(project, openedWindow) {
+    if (!project || project.sourcePhase !== 'Core' || !openedWindow) return Promise.reject(Error('CORE_PROJECT_HANDOFF_INVALID'));
+    return Promise.resolve().then(function () { return validateProjectCapsule(project); }).then(function () {
+      var text=JSON.stringify(project);
+      if(new TextEncoder().encode(text).length>SOURCE_MAX)throw Error('CORE_PROJECT_HANDOFF_TOO_LARGE');
+      var bytes=new Uint8Array(24);window.crypto.getRandomValues(bytes);
+      var token='core-'+Array.from(bytes,function(b){return b.toString(16).padStart(2,'0');}).join('');
+      return put('CoreProject:'+token,{schema:'orebit-core-project-handoff',project:project,ts:Date.now()}).then(function(){
+        openedWindow.location.href='Core.html?coreHandoff='+encodeURIComponent(token);
+        return true;
+      });
+    }).catch(function(error){try{openedWindow.close();}catch(e){/* closed popup */}throw error;});
+  }
+  function takeCoreProject() {
+    var token=new URLSearchParams(location.search).get('coreHandoff');
+    if(!token)return Promise.resolve(null);
+    try{history.replaceState(null,'',location.pathname);}catch(e){/* keep the token private from the address bar */}
+    if(!/^core-[a-z0-9-]{8,80}$/.test(token))return Promise.reject(Error('CORE_PROJECT_HANDOFF_INVALID'));
+    return take('CoreProject:'+token).then(function(record){
+      if(!record||record.schema!=='orebit-core-project-handoff'||record.project?.sourcePhase!=='Core')throw Error('CORE_PROJECT_HANDOFF_MISSING');
+      return validateProjectCapsule(record.project).then(function(){return record.project;});
+    });
+  }
   function sendFile(target,file,openedWindow) {
     if(!['Assay','Resource'].includes(target)||!file||typeof file.name!=='string'||typeof file.text!=='string'||!file.name||!file.text)return Promise.resolve(false);
     var job=domainJob,key=sourceStateKey();
@@ -491,7 +514,7 @@ var OrebitHandoff = (function () {
   return { available: available, capture: capture, send: send, sendFile:sendFile, receive: receive,
     bindTextImport:bindTextImport, bindFileImport:bindFileImport, inheritImport:inheritImport, activated:activated,
     domainReady:function(){return domainValidation;}, domain: currentDomain, contexts: function () { return receivedContexts.slice(); }, showDomain: showDomain,
-    sendEDAReference: sendEDAReference, receiveDesktopAssayReference: receiveDesktopAssayReference,
+    sendEDAReference: sendEDAReference, sendCoreProject:sendCoreProject, takeCoreProject:takeCoreProject, receiveDesktopAssayReference: receiveDesktopAssayReference,
     sendAssayCheckpointReturn:sendAssayCheckpointReturn, receiveDesktopAssayCheckpointReturn:receiveDesktopAssayCheckpointReturn,
     receiveAssayCheckpointReturn:receiveAssayCheckpointReturn, importAssayCheckpointReturnFile:importAssayCheckpointReturnFile,
     recordAssayCheckpointReturn:recordAssayCheckpointReturn, restoreAssayCheckpointReturn:restoreAssayCheckpointReturn,

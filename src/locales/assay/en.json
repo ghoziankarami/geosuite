@@ -1321,6 +1321,7 @@
   "asy.workflow.estimation.approved": "Current population approval: {status}; {elements} element; {parents} parent intervals. Source grades remain unchanged.",
   "asy.workflow.estimation.counts": "Preview: {retain} retained, {split} split, {reject} rejected, {ambiguous} ambiguous parent intervals.",
   "asy.workflow.openCoreDomain": "Open Domain workspace in Core",
+  "asy.workflow.openCoreFailed": "Could not reopen the matching Core project. Keep working in this tab and retry the link.",
   "asy.workflow.estimation.edaInspect": "Inspect reviewed domain in EDA",
   "asy.workflow.estimation.edaActive": "EDA: reviewed geological-domain parent samples",
   "asy.workflow.estimation.edaClear": "Return to source-label scope",

@@ -16,6 +16,15 @@ const refuses=(fn,code,msg)=>{try{fn();}catch(e){ok(e.message===code,`${msg}: ${
 const square=(s,c=[0,0])=>[[c[0]-s/2,c[1]-s/2],[c[0]+s/2,c[1]-s/2],[c[0]+s/2,c[1]+s/2],[c[0]-s/2,c[1]+s/2]];
 const plane=P.sectionPlane([0,0,0],0,90);
 const run=(sections,endRule,pl=plane)=>L.loft({plane:pl,sections,endRule});
+function independentSurfaceVolume(mesh) {
+  let volume=0;
+  for(const face of mesh.f) {
+    const [a,b,c]=face.map(i=>mesh.v[i]),ab=b.map((x,i)=>x-a[i]),ac=c.map((x,i)=>x-a[i]);
+    const normal=[ab[1]*ac[2]-ab[2]*ac[1],ab[2]*ac[0]-ab[0]*ac[2],ab[0]*ac[1]-ab[1]*ac[0]];
+    volume+=(a[0]+b[0]+c[0])*normal[0]/18+(a[1]+b[1]+c[1])*normal[1]/18+(a[2]+b[2]+c[2])*normal[2]/18;
+  }
+  return volume;
+}
 
 // PLAN known answers: two 10 x 10 squares 10 m apart.
 const two=[{station:0,ring:square(10)},{station:10,ring:square(10)}];
@@ -49,6 +58,56 @@ const ell=[[0,0],[10,0],[10,5],[5,5],[5,10],[0,10]];
 const lr=run([{station:0,ring:ell},{station:10,ring:ell}],'zero');
 close(lr.volume,750,'non-convex rings are capped without overlap');
 ok(lr.status==='solid','non-convex loft is a valid single shell');
+for(let trial=0;trial<60;trial++) {
+  const sections=[0,10,40].map((station,index)=>{
+    let ring=ell.map(([x,y])=>[x+station*.1,y+station*.025]);
+    if((trial+index)%2===0){const i=(trial+index)%ring.length,a=ring[i],b=ring[(i+1)%ring.length];ring.splice(i+1,0,[(a[0]+b[0])/2,(a[1]+b[1])/2]);}
+    const start=(trial*7+index*3)%ring.length;ring=ring.slice(start).concat(ring.slice(0,start));
+    if((trial+index)%3===0)ring.reverse();
+    return {station,ring};
+  });
+  const candidate=run(sections,'zero');
+  ok(candidate.status==='solid',`three-section concave prism remains a valid shell under ring start/orientation/subdivision changes (case ${trial})`);
+  close(candidate.volume,3000,`three-section sheared concave prism has invariant analytic volume (case ${trial})`);
+}
+const uSection=base=>[[0,0],[12,0],[12,-12],[9,-12],[9,-base],[3,-base],[3,-12],[0,-12]];
+const changingConcavity=run([1,4,7].map((base,index)=>({station:index*10,ring:uSection(base)})),'zero');
+ok(changingConcavity.status==='solid',`valid three-section U-shaped loft stays a single shell across a changing concavity reference: ${changingConcavity.shellError}`);
+ok(changingConcavity.volume>0&&changingConcavity.volume<12*12*20,'three-section U-shaped loft volume stays within its independent bounding prism');
+close(changingConcavity.volume,independentSurfaceVolume(changingConcavity.mesh),'three-section U-shaped loft volume matches independent surface-divergence calculation',1e-9);
+// Four valid, thin sloping rings. The farthest horizontal corner changes
+// between upper/lower edges, so perimeter matching genuinely folds side faces.
+const slopingFour=[
+ [[-226.452,-242.512],[218.176,-221.522],[217.469,-243.156],[-227.100,-264.147]],
+ [[-223.742,-243.018],[212.581,-240.660],[212.885,-259.709],[-222.768,-262.066]],
+ [[-236.927,-241.353],[227.687,-226.545],[228.098,-258.378],[-236.040,-273.185]],
+ [[-225.957,-221.965],[229.871,-228.307],[231.774,-255.598],[-226.633,-249.256]]
+].map((ring,index)=>({station:index*50,ring}));
+const folded=run(slopingFour,'zero',P.sectionPlane([392137,9558026,0],160,90));
+ok(folded.status==='invalid'&&folded.shellError==='DOMAIN_SOLID_SELF_INTERSECTION','four-section folded correspondence stays rejected, despite individually valid convex rings');
+ok(folded.repairProposal?.correspondence==='upper-right'&&folded.repairProposal.status==='solid','a different valid correspondence is proposed explicitly rather than silently changing the rejected model');
+const aligned=folded.repairProposal;
+ok(aligned.validation.topology&&aligned.validation.selfIntersection&&!aligned.validation.geologistReview,'the proposal passes the unchanged shell owner without geological approval');
+close(aligned.volume,independentSurfaceVolume(aligned.mesh),'proposed four-section volume agrees with independent surface divergence',1e-8);
+for(const section of slopingFour)for(const point of section.ring){
+ const original=P.unproject(P.sectionPlane([392137,9558026,0],160,90),[...point,section.station]);
+ ok(aligned.mesh.v.some(p=>Math.hypot(...P.sub(p,original))<1e-8),'correspondence preserves every original ring vertex exactly');
+}
+for(const spacing of [25,100]){
+ const sections=slopingFour.map((s,index)=>({station:index*spacing,ring:index%2?s.ring.slice().reverse():s.ring.slice(2).concat(s.ring.slice(0,2))}));
+ const input={plane:P.sectionPlane([700000,9800000,0],37,90),sections,endRule:'zero',correspondence:'upper-right'},before=JSON.stringify(input),candidate=L.loft(input);
+ ok(candidate.status==='solid',`explicit matching handles narrower/wider stations, changed ring starts/winding and rotated UTM plane: ${spacing} ${candidate.shellError} ${candidate.shellFaces}`);
+ close(candidate.volume,aligned.volume*spacing/50,'station scaling preserves independent loft volume ratio',1e-8);
+ ok(JSON.stringify(input)===before,'matching does not mutate the source interpretation');
+}
+refuses(()=>L.loft({plane,sections:two,endRule:'zero',correspondence:'guess'}),'DOMAIN_LOFT_CORRESPONDENCE','unknown correspondence cannot silently replace the legacy method');
+const solidOwner=ctx.OrebitDomainSolid;
+try {
+  ctx.OrebitDomainSolid={prepareSolid:()=>{const e=new Error('DOMAIN_SOLID_SELF_INTERSECTION');e.faces=[3,8];throw e;}};
+  const failed=run(two,'zero');
+  ok(failed.status==='invalid'&&failed.shellError==='DOMAIN_SOLID_SELF_INTERSECTION'&&JSON.stringify(failed.shellFaces)==='[3,8]',
+    'loft retains intersecting face indices for the UI diagnostic and remains invalid');
+} finally {ctx.OrebitDomainSolid=solidOwner;}
 // Square to triangle: closed, valid, and between the smaller and larger prisms.
 const tri=[[-5,-5],[5,-5],[0,5]];
 const st=run([{station:0,ring:square(10)},{station:10,ring:tri}],'zero');

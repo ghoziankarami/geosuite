@@ -547,11 +547,11 @@ var DOCS = [
           ['<code>hole_id</code>', {en:'Yes',id:'Ya'}, {en:'Must match a hole_id in the collar table.',id:'Harus cocok dengan hole_id di tabel collar.'}],
           ['<code>depth</code>', {en:'Yes',id:'Ya'}, {en:'Depth of the survey station, in metres.',id:'Kedalaman stasiun survey, dalam meter.'}],
           ['<code>azimuth</code>', {en:'Yes',id:'Ya'}, {en:'Bearing in degrees, 0–360, measured clockwise from north.',id:'Arah dalam derajat, 0–360, diukur searah jarum jam dari utara.'}],
-          ['<code>dip</code>', {en:'Yes',id:'Ya'}, {en:'Inclination in degrees. Negative is downward — a vertical hole is −90.',id:'Kemiringan dalam derajat. Negatif berarti ke bawah — lubang vertikal adalah −90.'}]
+          ['<code>dip</code>', {en:'Yes',id:'Ya'}, {en:'Inclination in degrees from horizontal. A vertical downward hole is +90 or −90 according to the source convention.',id:'Kemiringan dalam derajat dari horizontal. Lubang vertikal ke bawah bernilai +90 atau −90 sesuai konvensi sumber.'}]
         ]},
       {t:'note', k:'warn',
-        en:'Dip sign is the single most common import mistake. If your source data records a vertical hole as +90, every hole will desurvey upward into the air. Check one known hole in the Desurvey tab before trusting the whole dataset.',
-        id:'Tanda dip adalah kesalahan impor paling umum. Kalau data sumber Anda mencatat lubang vertikal sebagai +90, semua lubang akan ter-desurvey ke atas menuju udara. Periksa satu lubang yang Anda kenal di tab Desurvey sebelum memercayai seluruh dataset.'},
+        en:'Core detects a project-wide dip sign convention from the median dip with magnitude greater than 1°; if none qualify it defaults to negative-down. Use a consistent source convention; mixed signs require investigation. Check the detected convention and a known hole in Desurvey before relying on the traces.',
+        id:'Core mendeteksi konvensi tanda dip untuk seluruh proyek dari median dip dengan besar lebih dari 1°; jika tidak ada, digunakan konvensi negatif ke bawah. Gunakan konvensi sumber yang konsisten; tanda yang bercampur perlu diperiksa. Periksa konvensi terdeteksi dan satu lubang yang diketahui di Desurvey sebelum memakai lintasannya.'},
       {t:'p',
         en:'A hole with no survey rows is not rejected. Core treats it as vertical and flags it in Validation, so you can decide whether that assumption is acceptable for that hole.',
         id:'Lubang tanpa baris survey tidak ditolak. Core menganggapnya vertikal dan menandainya di Validation, sehingga Anda bisa memutuskan apakah asumsi itu dapat diterima untuk lubang tersebut.'},
@@ -1276,8 +1276,8 @@ var DOCS = [
         head:[{en:'Control',id:'Kendali'},{en:'Unit',id:'Satuan'},{en:'Default',id:'Default'},{en:'Meaning and effect',id:'Arti dan pengaruh'}],
         rows:[
           [{en:'Direction',id:'Arah'},'—','Omnidirectional',
-           {en:'Omnidirectional pools all pairs. E–W is azimuth 90°, N–S is azimuth 0°, Vertical works down the Z axis.',
-            id:'Omnidirectional mengumpulkan semua pasangan. E–W adalah azimuth 90°, N–S adalah azimuth 0°, Vertical bekerja pada sumbu Z.'}],
+           {en:'Omnidirectional pools all pairs. E–W is azimuth 90°, N–S is azimuth 0°, and Vertical follows Z. Custom direction uses azimuth and dip with 3D Euclidean distance and an angular cone; positive dip points down and opposite directions are equivalent. Use the model major or horizontal cross shortcut to fill the direction, then compute. Applying the resulting direction to the model is a separate action.',
+            id:'Omnidirectional mengumpulkan semua pasangan. E–W adalah azimuth 90°, N–S adalah azimuth 0°, dan Vertical mengikuti sumbu Z. Arah kustom memakai azimuth dan dip dengan jarak Euclidean 3D serta kerucut sudut; dip positif ke bawah dan arah berlawanan dianggap sama. Gunakan pintasan arah mayor model atau silang horizontal untuk mengisi arah, lalu hitung. Menerapkan arah hasil ke model adalah tindakan terpisah.'}],
           [{en:'Lag distance',id:'Jarak lag'},'m','50',
            {en:'Separation step between plotted points. Set near your average drill spacing. Too small gives a noisy curve; too large hides short-range structure. Minimum 2.',
             id:'Langkah jarak pisah antar titik yang diplot. Setel mendekati spasi bor rata-rata Anda. Terlalu kecil menghasilkan kurva berisik; terlalu besar menyembunyikan struktur jarak pendek. Minimum 2.'}],
@@ -1299,11 +1299,11 @@ var DOCS = [
           [{en:'Model type',id:'Tipe model'},'—',
            {en:'Spherical, Exponential or Gaussian. Spherical is the usual starting choice.',id:'Spherical, Exponential, atau Gaussian. Spherical adalah pilihan awal yang lazim.'}],
           ['Nugget',{en:'variance',id:'varians'},
-           {en:'Value at zero separation. Sampling error plus sub-sample-scale variability. Step 0.01.',id:'Nilai pada jarak pisah nol. Kesalahan sampling ditambah variabilitas berskala di bawah sampel. Langkah 0,01.'}],
+           {en:'Discontinuity as distance approaches zero from above; it can include sampling error and variation below sample scale. The model evaluates to zero at exactly zero distance. Step 0.01.',id:'Diskontinuitas saat jarak mendekati nol dari atas; dapat mencakup kesalahan sampling dan variasi di bawah skala sampel. Model bernilai nol tepat pada jarak nol. Langkah 0,01.'}],
           ['Sill',{en:'variance',id:'varians'},
            {en:'Plateau value. Normally close to the total variance of the data. Step 0.01.',id:'Nilai dataran. Umumnya mendekati varians total data. Langkah 0,01.'}],
           ['Range','m',
-           {en:'Separation at which the model reaches the sill. Sets the natural starting search radius. Step 5.',id:'Jarak pisah saat model mencapai sill. Menentukan radius pencarian awal alami. Langkah 5.'}]
+           {en:'For spherical models this is the distance to the sill; for exponential and Gaussian models it is the practical range, about 95% of the structured sill. Review search settings separately. Step 5.',id:'Pada model spherical, jarak saat mencapai sill; pada model exponential dan Gaussian, practical range sekitar 95% sill terstruktur. Tinjau pengaturan pencarian secara terpisah. Langkah 5.'}]
         ]},
 
       {t:'h', en:'Nested structures and anisotropy', id:'Struktur bertingkat dan anisotropi'},
@@ -2400,13 +2400,13 @@ var DOCS = [
        q:{en:'Desurveyed holes point upward, or in the wrong direction',
           id:'Lubang hasil desurvey mengarah ke atas, atau ke arah yang salah'},
        a:[
-        {t:'p',en:'This is a dip sign convention mismatch, and it is the single most common import error.',
-                id:'Ini ketidakcocokan konvensi tanda dip, dan merupakan kesalahan impor paling umum.'},
+        {t:'p',en:'Check the survey measurements, dip convention and azimuth before changing source data.',
+                id:'Periksa pengukuran survey, konvensi dip dan azimuth sebelum mengubah data sumber.'},
         {t:'ul', items:[
-          {en:'A vertical hole must be recorded as dip <b>−90</b>, not +90. Downward is negative.',
-           id:'Lubang vertikal harus dicatat sebagai dip <b>−90</b>, bukan +90. Ke bawah bernilai negatif.'},
-          {en:'If every hole is inverted, multiply the dip column by −1 in your source data and re-import.',
-           id:'Kalau semua lubang terbalik, kalikan kolom dip dengan −1 pada data sumber Anda lalu impor ulang.'},
+          {en:'A downward vertical hole can be <b>−90°</b> or <b>+90°</b>, depending on the source convention.',
+           id:'Lubang vertikal ke bawah dapat bernilai <b>−90°</b> atau <b>+90°</b>, sesuai konvensi sumber.'},
+          {en:'Check the detected convention in Desurvey against the survey metadata and a known hole. Correct only confirmed source errors, then re-import and revalidate.',
+           id:'Cocokkan konvensi terdeteksi di Desurvey dengan metadata survey dan lubang yang diketahui. Koreksi hanya kesalahan sumber yang dipastikan, lalu impor dan validasi ulang.'},
           {en:'If only some holes are wrong, the survey file probably came from two sources with different conventions.',
            id:'Kalau hanya sebagian lubang yang salah, file survey kemungkinan berasal dari dua sumber dengan konvensi berbeda.'},
           {en:'Azimuth should be 0–360 measured clockwise from north. A negative azimuth or one above 360 needs normalising.',

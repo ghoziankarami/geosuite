@@ -178,6 +178,25 @@ def main():
                     page=browser.new_page(viewport={'width':width,'height':1000 if width>768 else 844});errors=[]
                     page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f'http://127.0.0.1:{server.server_port}/Core.html')
                     original,want=native_model(page,paths,method,lang);model=accepted(page)
+                    task(page,'solid')
+                    guide=page.locator('#domainMethodGuide').inner_text().strip()
+                    check(len(guide)<=100 and guide.count('.')<=1,
+                          tag+': method guidance stays short enough to scan beside the workflow')
+                    check(page.locator('#tab14 [data-domain-step="handoff"]:visible').count()==1,
+                          tag+': one handoff navigation control is shown inside the current workflow')
+                    help_id='domainLoftSurfaceHelp' if method=='loft' else 'domainSurfaceHelp'
+                    help_text=page.locator('#'+help_id)
+                    details=help_text.evaluate("e=>{const d=e.closest('details[data-domain-help]');return d&&{open:d.open,summary:d.querySelector(':scope>summary')?.textContent.trim()}}")
+                    detail_label='Lihat detail' if lang=='id' else 'See details'
+                    check(details and not details['open'] and details['summary']==detail_label,
+                          tag+': long ground guidance starts collapsed behind a localized detail control')
+                    help_text.locator('xpath=ancestor::details/summary').click()
+                    check(help_text.is_visible() and help_text.locator('a[data-docs]').count()==1,
+                          tag+': expanding ground guidance reveals the full text and Domain documentation link')
+                    help_text.locator('xpath=ancestor::details/summary').click()
+                    check(not help_text.locator('xpath=ancestor::details').evaluate('e=>e.open') and accepted(page)==model
+                          and page.evaluate('JSON.stringify([STATE.collar,STATE.survey,STATE.assay,STATE.geology])')==original,
+                          tag+': closing help does not change geometry or imported rows')
                     # The stage footer delegates the same task and final owner controls.
                     task(page,'book')
                     for next_step in ('contacts','solid','handoff'):
@@ -188,9 +207,9 @@ def main():
                         page.locator('#tab14 .workflow-stage-bar-next').click()
                         page.wait_for_function("step=>document.querySelector('.domain-steps [aria-current=step]')?.dataset.domainStep===step",arg=next_step)
                         check(accepted(page)==model,tag+': native footer advances to '+next_step+' without changing accepted geometry')
-                    own_export=page.locator('#domainContinueExport').inner_text()
-                    check(page.locator('#tab14 .workflow-stage-bar-next').inner_text()==own_export.rstrip(' →'),tag+': standalone handoff footer names the actual Core Export owner')
-                    page.locator('#tab14 .workflow-stage-bar-next').click()
+                    check(not page.locator('#domainWorkflowNext').is_visible() and page.locator('#domainContinueExport').is_visible(),
+                          tag+': handoff presents one primary Core Export action in its owning panel')
+                    page.locator('#domainContinueExport').click()
                     page.wait_for_function("()=>document.getElementById('tab13').classList.contains('active')")
                     check(page.evaluate('JSON.stringify([STATE.collar,STATE.survey,STATE.assay,STATE.geology])')==original and accepted(page)==model,
                           tag+': native handoff footer opens Core Export with raw and reviewed geometry intact')
@@ -198,6 +217,8 @@ def main():
                     inspector=page.locator('#domainInspectorTitle');was_open=inspector.locator('xpath=..').evaluate('e=>e.open')
                     inspector.focus();page.keyboard.press('Enter')
                     check(inspector.locator('xpath=..').evaluate('e=>e.open')!=was_open and page.locator('#domainInspector dt').count()>0,tag+': native Enter toggles the actual current-view facts')
+                    facts=page.evaluate("""()=>{const list=document.querySelector('#domainSolidFacts');return [...list.querySelectorAll('dd')].filter(e=>{const r=e.getBoundingClientRect();return e.scrollWidth>e.clientWidth+1||r.left<0||r.right>innerWidth+1}).map(e=>({text:e.textContent,width:e.clientWidth,scroll:e.scrollWidth,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right}));}""")
+                    check(not facts,tag+': Domain fact values wrap inside the narrow inspector instead of clipping')
                     page.keyboard.press('Enter')
                     check(inspector.locator('xpath=..').evaluate('e=>e.open')==was_open and accepted(page)==model
                           and page.evaluate('JSON.stringify([STATE.collar,STATE.survey,STATE.assay,STATE.geology])')==original,tag+': closing current-view facts preserves raw and reviewed state')

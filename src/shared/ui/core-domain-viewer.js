@@ -11,6 +11,7 @@
   const view = {mode:'plan', colour:'lith', azimuth:90, width:25, offset:0, ve:1, veAuto:true, stride:1, hidden:new Set()};
   let workflowStep='book', buildMethod='contacts';
   let fit = null;
+  let redrawSection = null;
   // Display-only camera: never part of ring coordinates, Undo or accepted science.
   const sectionCamera={key:null,range:null,zoom:1};
   let sectionRange=null;
@@ -49,7 +50,7 @@
     }catch(error){if(job===layerJob)toast(error.message||'DOMAIN_SURFACE_STALE','warn');}
   }
   // S5/S6 section loft: one ring per section, digitised in Section view (distance, RL). Undo/redo keeps 60 steps.
-  const loft = {tool:'navigate', draft:[], sections:[], endRule:'', snap:2, undo:[], redo:[], error:null, selection:null, domainCode:null};
+  const loft = {tool:'navigate', draft:[], sections:[], endRule:'', snap:2, correspondence:'rightmost', undo:[], redo:[], error:null, selection:null, domainCode:null};
   const UNDO_LIMIT = 60;
   // Editable contexts are separate from accepted scientific builds. Switching
   // definitions must never reuse another domain's rings, review or Undo stack.
@@ -57,7 +58,7 @@
   const copy=value=>JSON.parse(JSON.stringify(value));
   function editorContext(){
     return {loft:{draft:loft.draft,draftAt:loft.draftAt||null,sections:loft.sections,domainCode:loft.domainCode,
-      endRule:loft.endRule,snap:loft.snap,undo:loft.undo,redo:loft.redo},
+      endRule:loft.endRule,snap:loft.snap,correspondence:loft.correspondence,undo:loft.undo,redo:loft.redo},
       contact:{rule:contact.rule,target:contact.target,threshold:contact.threshold,maxEdge:contact.maxEdge},
       solid:{sourceMode:solid.sourceMode,upperSurface:solid.upperSurface,lowerSurface:solid.lowerSurface,topography:solid.topography,terrainSurface:solid.terrainSurface,density:solid.density,code:solid.code},method:buildMethod};
   }
@@ -76,7 +77,7 @@
     // An untargeted new draft can acquire its first definition. Otherwise the
     // next definition starts empty or resumes its own saved editor context.
     if(saved||previous||accepted){
-      Object.assign(loft,{draft:[],draftAt:null,sections:[],domainCode:null,endRule:'',snap:2,undo:[],redo:[]});
+      Object.assign(loft,{draft:[],draftAt:null,sections:[],domainCode:null,endRule:'',snap:2,correspondence:'rightmost',undo:[],redo:[]});
       Object.assign(contact,{rule:'first_from',threshold:null,maxEdge:null});
       Object.assign(solid,{sourceMode:'interval',upperSurface:'',lowerSurface:'',topography:'',terrainSurface:null,density:null,code});
       if(saved){
@@ -88,7 +89,7 @@
         const inputs=accepted.build.inputs,rules=inputs?.rules;
         if(rules?.method==='section-loft'){
           loft.sections=copy(inputs.sections).map(s=>({...s,normal:OrebitGeometryPrimitives.sectionPlane([...s.origin,0],s.azimuth).normal.slice()}));
-          loft.endRule=rules.endRule;loft.snap=rules.snapRadius;buildMethod='loft';
+          loft.endRule=rules.endRule;loft.snap=rules.snapRadius;loft.correspondence=rules.correspondence??'rightmost';buildMethod='loft';
         }else if(rules?.method==='surface-pair'){solid.sourceMode='pair';solid.upperSurface=rules.upperSurface;solid.lowerSurface=rules.lowerSurface;buildMethod='contacts';
         }else if(rules){contact.rule=rules.top;contact.threshold=rules.threshold??null;contact.maxEdge=rules.maxEdge??null;buildMethod='contacts';}
         solid.topography=rules?.topography||'';solid.terrainSurface=solid.topography==='imported'?copy(inputs.terrainSurface):null;
@@ -347,14 +348,14 @@
       const row = el('button', 'domain-tree-row');
       Object.assign(row, {type:'button'});
       row.dataset.domainCode = domain.code;
-      const isSolid=bodies.some(d=>d.code===domain.code);
+      const body=bodies.find(d=>d.code===domain.code),isSolid=!!body;
       if(isSolid){row.dataset.layerKind='solid';row.setAttribute('aria-pressed',String(selectedLayer?.kind==='solid'&&selectedLayer.id===domain.code));}
       if(domain.code===(selectedLayer?(selectedLayer.kind==='solid'?selectedLayer.id:''):active))row.setAttribute('aria-current','true');
       const count=isSolid?t('dom.surfacePair.savedSolid'):domain.lithologies.length===1?t('dom.tree.oneLithology'):tt('dom.tree.lithologies',{n:domain.lithologies.length});
       row.setAttribute('aria-label',isSolid?tt('dom.layers.solid',{name:domain.code}):tt('dom.tree.row',{name:domain.label,code:domain.code,count}));
-      const swatch = el('i', 'domain-tree-swatch'); swatch.style.background = domain.colour || '#0f766e';
+      const swatch = el('i', 'domain-tree-swatch'); swatch.style.background = body?.colour || domain.colour || '#0f766e';
       const name = el('span', 'domain-tree-name');
-      name.append(el('b', null, domain.label || domain.code), el('small', null, domain.code));
+      name.append(el('b', null, body?.label || domain.displayName || domain.label || domain.code), el('small', null, domain.code));
       row.append(swatch, name, el('span', 'domain-key-count', count));
       row.addEventListener('click', () => {
         if(domain.acceptedOnly){selectDomain('book:'+domain.code);saveWorkspace();contactForm();computeContacts();solidForm();render();selectWorkflowStep('solid');selectLayer('solid',domain.code);return;}
@@ -367,15 +368,48 @@
         }
         if(isSolid)selectLayer('solid',domain.code);
       });
-      item.append(row); box.append(item);
+      item.append(row);
+      if(isSolid&&selectedLayer?.kind==='solid'&&selectedLayer.id===domain.code){
+        const editor=el('div','domain-layer-editor');
+        const label=el('input');Object.assign(label,{id:'domainLayerName',type:'text',maxLength:80,value:domain.displayName||domain.label||domain.code});
+        const colour=el('input');Object.assign(colour,{id:'domainLayerColour',type:'color',value:body.colour||'#0f766e'});
+        const apply=el('button','btn secondary',t('dom.layers.apply'));apply.type='button';apply.id='domainLayerApply';
+        const remove=el('button','btn secondary',t('dom.layers.deleteSolid'));remove.type='button';remove.id='domainLayerDelete';
+        const status=el('p','domain-note');status.setAttribute('role','status');
+        apply.onclick=()=>{try{OrebitCoreDomain.editSolidDisplay(domain.code,label.value,colour.value);selectedLayer.revision=OrebitCoreDomain.interpretationRevision();render();}
+          catch(error){status.textContent=error.message;}};
+        remove.onclick=async()=>{if(!await orebitConfirm(tt('dom.layers.deleteSolidConfirm',{name:domain.displayName||domain.label||domain.code})))return;
+          OrebitCoreDomain.removeSolid(domain.code);layerJob++;selectedLayer=null;solid.accepted=null;
+          if(solid.code.trim()===domain.code){solid.result=null;solid.error=null;clearReview();}
+          acceptState();readiness();render();};
+        editor.append(field(t('dom.layers.name'),label),field(t('dom.book.colour'),colour),apply,remove,status);item.append(editor);
+      }
+      box.append(item);
     }
     for(const surface of surfaces){
       const item=el('div','domain-tree-item');item.setAttribute('role','listitem');
       const row=el('button','domain-tree-row');row.type='button';row.dataset.surfaceId=surface.id;
-      row.setAttribute('aria-label',tt('dom.layers.surface',{name:surface.name}));
+      row.setAttribute('aria-label',tt('dom.layers.surface',{name:surface.displayName||surface.name}));
       row.setAttribute('aria-pressed',String(selectedLayer?.kind==='surface'&&selectedLayer.id===surface.id));
-      const name=el('span','domain-tree-name');name.append(el('b',null,surface.name),el('small',null,t('dom.layers.surfaceType')));row.append(name);
-      row.addEventListener('click',()=>selectLayer('surface',surface.id));item.append(row);box.append(item);
+      const swatch=el('i','domain-tree-swatch');swatch.style.background=surface.colour||token('--accent','#0f766e');
+      const name=el('span','domain-tree-name');name.append(el('b',null,surface.displayName||surface.name),el('small',null,t('dom.layers.surfaceType')));row.append(swatch,name);
+      row.addEventListener('click',()=>selectLayer('surface',surface.id));item.append(row);
+      if(selectedLayer?.kind==='surface'&&selectedLayer.id===surface.id){
+        const editor=el('div','domain-layer-editor');
+        const label=el('input');Object.assign(label,{id:'domainLayerName',type:'text',maxLength:80,value:surface.displayName||surface.name});
+        const colour=el('input');Object.assign(colour,{id:'domainLayerColour',type:'color',value:surface.colour||'#0f766e'});
+        const apply=el('button','btn secondary',t('dom.layers.apply'));apply.type='button';apply.id='domainLayerApply';
+        const remove=el('button','btn secondary',t('dom.layers.delete'));remove.type='button';remove.id='domainLayerDelete';
+        const status=el('p','domain-note');status.setAttribute('role','status');
+        apply.onclick=()=>{try{OrebitCoreDomain.editSurfaceDisplay(surface.id,label.value,colour.value);selectedLayer.revision=OrebitCoreDomain.interpretationRevision();solidForm();render();}
+          catch(error){status.textContent=error.message;}};
+        remove.onclick=async()=>{if(!await orebitConfirm(tt('dom.layers.deleteConfirm',{name:surface.displayName||surface.name})))return;
+          OrebitCoreDomain.removeSurface(surface.id);layerJob++;selectedLayer=null;
+          for(const key of ['upperSurface','lowerSurface'])if(solid[key]===surface.id)solid[key]='';
+          solid.result=null;clearReview();saveWorkspace();surfaceLibraryForm();solidForm();render();};
+        editor.append(field(t('dom.layers.name'),label),field(t('dom.book.colour'),colour),apply,remove,status);item.append(editor);
+      }
+      box.append(item);
     }
     if(bodies.length||surfaces.length){
       const all=el('button','btn secondary',t('dom.layers.all'));all.type='button';all.id='domainLayersShowAll';all.setAttribute('aria-pressed',String(!selectedLayer));
@@ -462,6 +496,7 @@
   }
   function render() {
     if (!$('domainViewerStatus')) return;
+    redrawSection = null;
     const thisRender=++renderJob,sourceRevision=OrebitCoreDomain.sourceRevision();
     if(selectedLayer&&(selectedLayer.source!==sourceRevision||selectedLayer.revision!==OrebitCoreDomain.interpretationRevision())){layerJob++;selectedLayer=null;}
     if(view.mode==='3d'&&!supports3D()){view.mode='section';fallback3d=true;layerJob++;selectedLayer=null;}
@@ -501,7 +536,7 @@
       }
       traces.push({type:'scatter3d', mode:collars.length <= LABEL_LIMIT ? 'markers+text' : 'markers', x:collars.map(c => c.x - origin[0]), y:collars.map(c => c.y - origin[1]), z:collars.map(c => c.z),
         text:collars.map(c => c.id), textposition:'top center', textfont:{size:10}, marker:{size:3, color:token('--fg', '#0f172a')}, hovertemplate:'%{text}<extra></extra>', showlegend:false});
-      const built=solid.result?.mesh,accepted=OrebitCoreDomain.displaySolids();
+      const built=solid.result?.status==='separated'&&solid.result.validation.geologistReview?null:solid.result?.mesh,accepted=OrebitCoreDomain.displaySolids();
       const stored=accepted.filter(d=>d.visible&&d.mesh&&(!built||d.code!==solid.code.trim()));
       const chosen=OrebitCoreDomain.codebook().find(d=>'book:'+d.code===contact.target);
       const showPreview=built&&accepted.find(d=>d.code===solid.code.trim())?.visible!==false;
@@ -526,7 +561,7 @@
         if(mesh){
           const faces=mesh.f||mesh.triangles;
           traces.splice(0,traces.length,{type:'mesh3d',name:selectedLayer.id,x:mesh.v.map(p=>p[0]-origin[0]),y:mesh.v.map(p=>p[1]-origin[1]),z:mesh.v.map(p=>p[2]),
-            i:faces.map(f=>f[0]),j:faces.map(f=>f[1]),k:faces.map(f=>f[2]),color:body?.colour||token('--accent','#0f766e'),opacity:body?.stale?0.15:0.65,flatshading:true,hoverinfo:'skip',showlegend:false});
+            i:faces.map(f=>f[0]),j:faces.map(f=>f[1]),k:faces.map(f=>f[2]),color:body?.colour||(selectedLayer.kind==='surface'?OrebitCoreDomain.surfaces().find(s=>s.id===selectedLayer.id)?.colour:null)||token('--accent','#0f766e'),opacity:body?.stale?0.15:0.65,flatshading:true,hoverinfo:'skip',showlegend:false});
         }
       }
       const m = Math.max(dx, dy);
@@ -585,6 +620,10 @@
       hidden = out.hidden;
       for (const segs of out.groups.values()) shown += segs.length;
       vFill = draw(canvas, range, out.groups, opt).vFill;
+      if(view.mode==='section')redrawSection=next=>{
+        if(!canvas.isConnected||$('domainViewerCanvas')!==canvas||view.mode!=='section')return false;
+        range=next;vFill=draw(canvas,range,out.groups,opt).vFill;return true;
+      };
     }
     syncControls();
     keyList(paint, drawn);
@@ -776,9 +815,10 @@
     };
     for (const i of [rule, target, threshold, maxEdge]) i.addEventListener('change', update);
     box.append(field(t('dom.contact.rule'), rule), field(t('dom.contact.target'), target), thresholdField, field(t('dom.contact.maxEdgeLabel'), maxEdge));
-    const edgeHelp=el('p','domain-note',t('dom.contact.maxEdgeHelp'));edgeHelp.id='domainContactMaxEdgeHelp';edgeHelp.style.gridColumn='1 / -1';domainGuide(edgeHelp);
+    const edgeHelp=el('p','domain-note',t('dom.contact.maxEdgeHelp'));edgeHelp.id='domainContactMaxEdgeHelp';edgeHelp.style.gridColumn='1 / -1';
     maxEdge.setAttribute('aria-describedby',edgeHelp.id);box.append(edgeHelp);
-    const help=el('p','domain-note',t('dom.contact.boundaryHelp'));help.id='domainContactBoundaryHelp';help.style.gridColumn='1 / -1';rule.setAttribute('aria-describedby',help.id);domainGuide(help);box.append(help);
+    const help=el('p','domain-note',t('dom.contact.boundaryHelp'));help.id='domainContactBoundaryHelp';help.style.gridColumn='1 / -1';rule.setAttribute('aria-describedby',help.id);box.append(help);
+    domainGuide(edgeHelp,true);domainGuide(help,true);
     sync();
     solidForm();
   }
@@ -874,11 +914,17 @@
     // without requiring an unrelated density or end-rule edit.
     solidForm(); loftPanel(); solidFacts(); readiness();syncBuildMethod();
   }
-  function domainGuide(target){
-    if(!target||target.querySelector('a[data-docs]'))return;
+  function domainGuide(target,collapsed=false){
+    if(!target)return;
+    if(collapsed&&!target.closest('details[data-domain-help]')){
+      const details=el('details','domain-help'),summary=el('summary',null,t('dom.guide.more'));
+      summary.setAttribute('data-i18n','dom.guide.more');details.dataset.domainHelp='';
+      target.parentNode.insertBefore(details,target);details.append(summary,target);
+    }
+    if(target.querySelector('a[data-docs]'))return;
     const a=el('a',null,t('dom.guide.read'));a.href='#';a.dataset.docs='ref/tabs';a.dataset.docsFind='Core Domain';target.append(' ',a);
   }
-  function syncTerrainHelp(){const help=$('domainSurfaceHelp');if(help){help.textContent=t(solid.topography==='imported'?'dom.solid.topo.importedHelp':'dom.solid.topo.help');domainGuide(help);}}
+  function syncTerrainHelp(){const help=$('domainSurfaceHelp');if(help){help.textContent=t(solid.topography==='imported'?'dom.solid.topo.importedHelp':'dom.solid.topo.help');domainGuide(help,true);}}
   function surfaceLibraryForm(){
     const box=$('domainSurfaceLibraryForm');if(!box)return;
     const previous=$('domainSurfaceName')?.value||'';box.textContent='';
@@ -911,7 +957,7 @@
     const controls=[];
     for(const [key,id,label] of [['upperSurface','domainUpperSurface','dom.solid.topBoundary'],['lowerSurface','domainLowerSurface','dom.solid.baseBoundary']]){
       const select=el('select');select.id=id;select.append(new Option(t('dom.surfacePair.choose'),''));
-      for(const s of OrebitCoreDomain.surfaces())select.append(new Option(s.name,s.id));select.value=solid[key];
+      for(const s of OrebitCoreDomain.surfaces())select.append(new Option(s.displayName||s.name,s.id));select.value=solid[key];
       select.onchange=()=>{solid[key]=select.value;solid.result=null;solid.error=null;clearReview();saveWorkspace();updateLimits();render();};
       controls.push(field(t(label),select));
     }
@@ -979,10 +1025,11 @@
   function solidFacts() {
     const facts = $('domainSolidFacts'), note = $('domainSolidNote'), checks = $('domainSolidChecks');
     if (!facts) return;
+    const diagnostic=(key,text)=>{const details=el('details','domain-help'),summary=el('summary',null,t('dom.guide.more'));details.dataset.domainDiagnostic=key;details.append(summary,el('p','domain-note',text));return details;};
     facts.textContent = ''; checks.textContent = '';
     const go = $('domainSolidBuild'); if (go) go.disabled = !contactBuildReady();
     const r = solid.result;
-    window.__domainSolid = r ? {kind:r.kind || 'between', endRule:r.endRule ?? null, above:r.above ?? null, outside:r.outside ?? null, status:r.status, shellError:r.shellError??null, meshDiagnostics:r.meshDiagnostics??null, volume:r.volume ?? null, meshVolume:r.meshVolume ?? null, density:solid.density, topography:r.topography,
+    window.__domainSolid = r ? {kind:r.kind || 'between', endRule:r.endRule ?? null, above:r.above ?? null, outside:r.outside ?? null, status:r.status, shellError:r.shellError??null, shellFaces:r.shellFaces??null, meshDiagnostics:r.meshDiagnostics??null, volume:r.volume ?? null, meshVolume:r.meshVolume ?? null, density:solid.density, topography:r.topography,
       validation:r.validation ? {...r.validation} : null, excluded:r.excluded.length, inverted:[...r.inverted || []], pinched:[...r.pinched || []], triangles:r.triangles ?? 0} : null;
     const saved=OrebitCoreDomain.displaySolids().find(d=>d.code===solid.code.trim());
     note.textContent = solid.error || (saved&&(!r||r.validation?.geologistReview===true)?tt(saved.stale?'dom.solid.savedStale':'dom.solid.savedView',{code:saved.code}):
@@ -991,13 +1038,49 @@
       note.append(document.createElement('br'),document.createTextNode(t(r.meshDiagnostics?.nonManifoldEdges?'dom.surfacePair.fragmented':'dom.surfacePair.invalidDetail')+' '+r.shellError));
       if(r.supportJunctions?.length){
         const points=r.supportJunctions.map(j=>j.point.slice(0,2).map(x=>fmt(x,2)).join(', ')).join(' / ');
-        note.append(document.createElement('br'),document.createTextNode(tt('dom.surfacePair.supportJunctions',{n:r.supportJunctions.length,points})));
+        note.append(diagnostic('surface-support-junctions',tt('dom.surfacePair.supportJunctions',{n:r.supportJunctions.length,points})));
+      }
+      if(r.separation){
+        const apply=el('button','btn secondary',tt('dom.surfacePair.separate',{n:r.separation.parts.length}));apply.id='domainSurfacePairSeparate';apply.type='button';
+        apply.onclick=()=>{
+          solid.result={...r,status:'separated',validation:{...r.separation.parts[0].validation},beforeSeparation:r};
+          clearReview();saveWorkspace();render();
+        };
+        note.append(document.createElement('br'),apply);
+      }
+    }
+    if(r?.status==='separated'){
+      note.textContent=tt(r.validation.geologistReview===true?'dom.surfacePair.separatedSaved':'dom.surfacePair.separated',{n:r.separation.parts.length});
+      if(r.validation.geologistReview!==true){
+        const undo=el('button','btn secondary',t('dom.surfacePair.undoSeparation'));undo.id='domainSurfacePairUndoSeparation';undo.type='button';
+        undo.onclick=()=>{solid.result=r.beforeSeparation;clearReview();saveWorkspace();render();};
+        note.append(document.createElement('br'),undo);
       }
       if(r.meshDiagnostics?.nonManifoldEdges||r.shellError==='DOMAIN_SOLID_MULTISHELL'){
         const remedy=el('button','btn secondary',t('dom.surfacePair.reviewSupport'));remedy.id='domainSurfacePairReviewSupport';remedy.type='button';
         remedy.onclick=()=>{selectWorkflowStep('contacts');$('domainContactMaxEdge')?.focus();};
         note.append(document.createElement('br'),remedy);
       }
+    }
+    if(r?.kind==='loft'&&r.shellError==='DOMAIN_SOLID_SELF_INTERSECTION'){
+      const faces=(r.shellFaces||[]).map(index=>{
+        const ids=r.mesh?.f?.[index],points=ids?.map(i=>r.mesh.v[i]);
+        if(!points?.length)return '#'+(index+1);
+        const centre=[0,1,2].map(k=>points.reduce((sum,p)=>sum+p[k]/points.length,0));
+        return '#'+(index+1)+' ('+centre.map(x=>fmt(x,2)).join(', ')+')';
+      }).join('; ');
+      note.append(diagnostic('loft-self-intersection',tt('dom.loft.selfIntersection',{faces:faces||t('dom.loft.unknownFaces')})));
+    }
+    if(r?.kind==='loft'&&(r.repairProposal||r.correspondence==='upper-right')){
+      const proposal=r.repairProposal,button=el('button','btn secondary',t(proposal?'dom.loft.applyMatching':'dom.loft.undoMatching'));
+      button.id=proposal?'domainLoftApplyCorrespondence':'domainLoftUndoCorrespondence';button.type='button';
+      if(proposal)note.append(document.createElement('br'),document.createTextNode(tt('dom.loft.matchingProposal',{volume:fmt(proposal.volume,0)})));
+      button.onclick=()=>{remember();loft.correspondence=proposal?'upper-right':'rightmost';changed();buildLoft();render();};
+      note.append(document.createElement('br'),button);
+    }
+    if(r?.kind==='loft'&&r.terrainIssues?.length){
+      const issues=r.terrainIssues.slice(0,8).map(v=>'#'+v.vertex+' '+(v.reason==='above'?tt('dom.loft.aboveBy',{metres:fmt(v.delta,2)}):t('dom.loft.outside'))+' ('+v.point.map(x=>fmt(x,2)).join(', ')+')').join('; ');
+      note.append(diagnostic('loft-terrain-issues',tt('dom.loft.terrainIssues',{issues})));
     }
     if(r?.status==='invalid')domainGuide(note);
     const add = (k, v) => facts.append(el('dt', null, k), el('dd', null, v));
@@ -1014,7 +1097,7 @@
     const named = list => list.slice(0, 12).join(', ') + (list.length > 12 ? ' …' : '');
     if (r.inverted?.length) add(t(r.kind==='surface-pair'?'dom.surfacePair.invertedPoints':'dom.solid.inverted'), named(r.inverted));
     if (r.pinched?.length) add(t(r.kind==='surface-pair'?'dom.surfacePair.pinchedPoints':'dom.solid.pinched'), named(r.pinched));
-    if (r.status !== 'solid' && r.status !== 'invalid') return;
+    if (!['solid','invalid','separated'].includes(r.status)) return;
     add(t(r.status==='invalid'?'dom.solid.unvalidatedVolume':'dom.solid.volume'), r.volume == null ? '—' : fmt(r.volume, 0) + ' m³');
     if (solid.density != null && r.volume != null) add(t('dom.solid.tonnage'), fmt(r.volume * solid.density, 0) + ' t');
     if(r.kind==='surface-pair')add(t('dom.surfacePair.area'),fmt(r.commonArea,2)+' m²');
@@ -1031,7 +1114,7 @@
       // The review is the geologist's own action, so it is pending here, never failed.
       const v = r.validation[k], state = v === true ? 'pass' : v === false && k !== 'geologistReview' ? 'fail' : 'open';
       const li = el('li', 'is-' + state); li.dataset.check = k;
-      li.append(el('span', null, t('dom.solid.check.' + k)), el('b', null, t('dom.solid.state.' + state)));
+      li.append(el('span', null, t(r.status==='separated'&&k==='topology'?'dom.surfacePair.separatedShells':'dom.solid.check.' + k)), el('b', null, t('dom.solid.state.' + state)));
       checks.append(li);
     }
     if(r.sourceRevision==null){r.sourceRevision=OrebitCoreDomain.sourceRevision();r.interpretationRevision=OrebitCoreDomain.interpretationRevision();}
@@ -1042,7 +1125,7 @@
     const box = $('domainSolidAccept'); if (!box) return;
     box.textContent = '';
     const v = r?.validation;
-    if (!v || r.status !== 'solid') return;
+    if (!v || !['solid','separated'].includes(r.status)) return;
     const geometryOk = ['topology', 'selfIntersection', 'surfaceCrossings', 'honouring'].every(k => v[k] === true);
     const name = document.createElement('input'); Object.assign(name, {type:'text', id:'domainSolidCode', value:solid.code, maxLength:40});
     name.addEventListener('input', () => { solid.code=name.value;saveWorkspace();go.disabled=!ready(); });
@@ -1055,7 +1138,7 @@
       control.setAttribute('aria-describedby','domainSolidAcceptWhy');
       control.addEventListener('input',()=>{solid.reviewer=reviewer.value;solid.reason=reason.value;go.disabled=!ready();explainReview();});
     }
-    const go = el('button', 'btn btn-primary', t('dom.solid.accept')); Object.assign(go, {type:'button', id:'domainSolidAcceptBtn'});
+    const go = el('button', 'btn btn-primary', r.status==='separated'?tt('dom.surfacePair.acceptSeparated',{n:r.separation.parts.length}):t('dom.solid.accept')); Object.assign(go, {type:'button', id:'domainSolidAcceptBtn'});
     let accepting=false;
     const reviewReady=()=>{try{OrebitDomainState.reviewIdentity({reviewer:solid.reviewer,reason:solid.reason});return true;}catch{return false;}};
     const ready = () => !accepting && geometryOk && v.topography === true && solid.reviewed && solid.code.trim() !== '' && reviewReady();
@@ -1063,9 +1146,12 @@
     go.addEventListener('click', async () => {
       accepting=true;go.disabled=true;name.disabled=tick.disabled=reviewer.disabled=reason.disabled=true;
       try {
-        const accepted=await OrebitCoreDomain.acceptSolid({sourceRevision:r.sourceRevision,code:solid.code, density:solid.density, mesh:r.mesh, volume:r.volume, validation:r.validation, review:solid.reviewed,reviewRecord:{reviewer:solid.reviewer,reason:solid.reason},
+        const entry={sourceRevision:r.sourceRevision,code:solid.code, density:solid.density, mesh:r.mesh, volume:r.volume, validation:r.validation, review:solid.reviewed,reviewRecord:{reviewer:solid.reviewer,reason:solid.reason},
           inputs:r.inputs || {topographyAudit:{type:'per-hole collar elevation check',fullSurfaceClipping:false},rules:{top:contact.rule === 'last_to' ? 'first_from' : contact.rule, base:'last_to', target:contact.target, threshold:contact.threshold,
-            maxEdge:r.maxEdge, maxEdgeSource:r.maxEdgeSource, topography:r.topography}, holes:r.holes}});
+            maxEdge:r.maxEdge, maxEdgeSource:r.maxEdgeSource, topography:r.topography}, holes:r.holes}};
+        const entries=r.status==='separated'?r.separation.parts.map((part,index)=>({...entry,...part,code:index?solid.code.trim()+' / '+(index+1):solid.code.trim(),
+          inputs:{...entry.inputs,surfacePair:{...entry.inputs.surfacePair,component:index}}})): [entry];
+        const accepted=await OrebitCoreDomain.acceptSolids(entries);
         if(solid.result===r&&r.sourceRevision===OrebitCoreDomain.sourceRevision()){
           Object.assign(r.validation,accepted.domains.find(d=>d.code===solid.code.trim()).build.validation);
           solid.accepted=null;if(r.kind==='loft')loft.domainCode=solid.code.trim();
@@ -1111,7 +1197,7 @@
   const sameKey = (a, b) => a && b && a.azimuth === b.azimuth && Math.hypot(a.origin[0] - b.origin[0], a.origin[1] - b.origin[1]) < 1e-6;
   const hereKey = () => here && {offset:here.offset, origin:here.origin, azimuth:view.azimuth};
   const draftHere = () => (sameKey(loft.draftAt, hereKey()) ? loft.draft : []);
-  const LOFT_ERRORS = ['DOMAIN_POLYGON_SELF_INTERSECTION', 'DOMAIN_POLYGON_DUPLICATE', 'DOMAIN_POLYGON_DEGENERATE', 'DOMAIN_LOFT_NOT_PARALLEL',
+  const LOFT_ERRORS = ['DOMAIN_POLYGON_SELF_INTERSECTION', 'DOMAIN_POLYGON_DUPLICATE', 'DOMAIN_POLYGON_DEGENERATE', 'DOMAIN_LOFT_NOT_PARALLEL', 'DOMAIN_SOLID_SELF_INTERSECTION',
     'DOMAIN_LOFT_STATION_DUPLICATE', 'DOMAIN_LOFT_CAP', 'DOMAIN_LOFT_BUDGET', 'DOMAIN_TIN_COLLINEAR'];
   const loftError = e => tt('dom.contact.error', {code:LOFT_ERRORS.includes(e.message) ? t('dom.loft.err.' + e.message) : e.message});
   function loftOverlay() {
@@ -1119,7 +1205,7 @@
     return {rings:loft.sections.filter(s => sameKey(s, key)).map(s => s.points), draft:draftHere().map(p => [p.h, p.rl]), edit:loft.tool === 'edit', selected:selectedVertex()?.point || null};
   }
   function remember() {
-    loft.undo.push(JSON.stringify({draft:loft.draft, draftAt:loft.draftAt || null, sections:loft.sections, domainCode:loft.domainCode, endRule:loft.endRule, snap:loft.snap}));
+    loft.undo.push(JSON.stringify({draft:loft.draft, draftAt:loft.draftAt || null, sections:loft.sections, domainCode:loft.domainCode, endRule:loft.endRule, snap:loft.snap,correspondence:loft.correspondence}));
     if (loft.undo.length > UNDO_LIMIT) loft.undo.shift();
     loft.redo = [];
   }
@@ -1127,10 +1213,10 @@
     if (!from.length) return;
     const next=JSON.parse(from[from.length-1]);
     OrebitDomainState.checkLoftSnapshot(next);
-    to.push(JSON.stringify({draft:loft.draft, draftAt:loft.draftAt || null, sections:loft.sections, domainCode:loft.domainCode, endRule:loft.endRule, snap:loft.snap}));
+    to.push(JSON.stringify({draft:loft.draft, draftAt:loft.draftAt || null, sections:loft.sections, domainCode:loft.domainCode, endRule:loft.endRule, snap:loft.snap,correspondence:loft.correspondence}));
     if(to.length>UNDO_LIMIT)to.shift();
     from.pop();
-    for(const key of ['draft','draftAt','sections','domainCode','endRule','snap'])loft[key]=next[key];
+    for(const key of ['draft','draftAt','sections','domainCode','endRule','snap','correspondence'])loft[key]=key==='correspondence'?(next[key]??'rightmost'):next[key];
     loft.error=null;
     if(!selectedVertex())loft.selection=null;
     changed();
@@ -1248,7 +1334,7 @@
       const first = loft.sections[0], plane = P.sectionPlane([first.origin[0], first.origin[1], 0], first.azimuth);
       const placed = loft.sections.map(s => { const d = [s.origin[0] - first.origin[0], s.origin[1] - first.origin[1], 0]; return {s, du:P.dot(d, plane.u), station:P.dot(d, plane.normal)}; });
       // The section plane's v axis points down from z = 0, so local v is −RL.
-      const r = OrebitDomainLoft.loft({plane, endRule:loft.endRule, sections:placed.map(x => ({station:x.station, normal:x.s.normal, ring:x.s.points.map(([h, rl]) => [h + x.du, -rl])}))});
+      const r = OrebitDomainLoft.loft({plane, endRule:loft.endRule,correspondence:loft.correspondence, sections:placed.map(x => ({station:x.station, normal:x.s.normal, ring:x.s.points.map(([h, rl]) => [h + x.du, -rl])}))});
       // Honouring: every snapped contact is a vertex of the solid, in the plane of its section.
       let honouring = true, offPlane = 0;const badAnchors=[];
       const holes = new Set();
@@ -1267,24 +1353,24 @@
         }
       });
       // Topography: compare the closed mesh with its selected, provenance-bound TIN.
-      let topography = null, above = 0, outside = 0, terrainSurface=null;
+      let topography = null, above = 0, outside = 0, terrainSurface=null, terrainIssues=[];
       if (solid.topography === 'collars') {
         terrainSurface = {kind:'reviewed-collar-tin',...P.makeTIN(collarsOf(new Set(STATE.collar.map(c=>c.hole_id))).map(c=>[c.x,c.y,c.z]))};
       }else if(solid.topography==='imported')terrainSurface=solid.terrainSurface;
       let coverage=null;
       if(terrainSurface){
         const tin = P.prepareTIN(terrainSurface);
-        for (const q of r.mesh.v) { const s = tin.sample(q[0], q[1]); if (!s) outside++; else if (q[2] > s.z + 1e-6) above++; }
+        for (let i=0;i<r.mesh.v.length;i++) { const q=r.mesh.v[i],s=tin.sample(q[0],q[1]); if (!s) {outside++;terrainIssues.push({vertex:i+1,point:q,reason:'outside'});} else if (q[2] > s.z + 1e-6) {above++;terrainIssues.push({vertex:i+1,point:q,terrainZ:s.z,delta:q[2]-s.z,reason:'above'});} }
         if(solid.topography==='imported')coverage=OrebitSurfaceImport.assessCoverage(terrainSurface,r.mesh);
         topography = above === 0 && (solid.topography!=='imported'||(outside===0&&coverage.fullSurfaceCoverage));
       }
       const sections = placed.map(x => ({station:x.station, origin:x.s.origin, offset:x.s.offset, azimuth:x.s.azimuth, points:x.s.points, snaps:x.s.snaps}));
       solid.result = {sourceRevision:OrebitCoreDomain.sourceRevision(),interpretationRevision:OrebitCoreDomain.interpretationRevision(),kind:'loft', status:r.status, volume:r.volume, meshVolume:r.volume, mesh:r.mesh, holes:[...holes], excluded:[], triangles:r.mesh.f.length,
-        topography:solid.topography, endRule:r.endRule, sections:r.sections, extension:r.extension, offPlane, badAnchors,above, outside, shellError:r.shellError,
+        topography:solid.topography, endRule:r.endRule, sections:r.sections, extension:r.extension, offPlane, badAnchors,above, outside, terrainIssues:terrainIssues.slice(0,50), shellError:r.shellError, shellFaces:r.shellFaces,correspondence:r.correspondence,repairProposal:r.repairProposal?{correspondence:r.repairProposal.correspondence,volume:r.repairProposal.volume}:null,
         validation:{topology:r.validation.topology, selfIntersection:r.validation.selfIntersection, topography, surfaceCrossings:true, overlap:null, honouring, geologistReview:false},
         inputs:{honouringAudit:{type:'section-projected contacts',maxOffPlaneMetres:offPlane,unmatchedAnchors:badAnchors,snappedVertices:loft.sections.reduce((n,s)=>n+s.snaps.filter(Boolean).length,0),manualVertices:loft.sections.reduce((n,s)=>n+s.snaps.filter(p=>!p).length,0)},
           ...(terrainSurface?{topographyAudit:{type:solid.topography==='imported'?'imported DXF terrain TIN':'reviewed collar-elevation TIN',pointCount:terrainSurface.v.length,triangleCount:terrainSurface.triangles.length,outsideVertices:outside,aboveVertices:above,fullSurfaceClipping:solid.topography==='imported'?coverage.fullSurfaceCoverage:true,...(coverage?{coverage}: {})},terrainSurface}:{}),
-          rules:{method:'section-loft', target:contact.target, endRule:r.endRule, azimuth:first.azimuth, snapRadius:loft.snap, topography:solid.topography}, sections, holes:[...holes]}};
+          rules:{method:'section-loft',correspondence:r.correspondence, target:contact.target, endRule:r.endRule, azimuth:first.azimuth, snapRadius:loft.snap, topography:solid.topography}, sections, holes:[...holes]}};
       clearReview();
       if (!solid.code) solid.code = contact.target ? contact.target.slice(contact.target.indexOf(':') + 1) : '';
     } catch (e) { solid.error = loftError(e); }
@@ -1346,7 +1432,7 @@
     box.append(field(t('dom.axis.distance'), h), field(t('dom.loft.rl'), rl), points, field(t('dom.loft.snap'), snap),newDomain);
     const buildBox=$('domainLoftBuildForm');buildBox.textContent='';
     buildBox.append(field(t('dom.loft.endRule'),end),field(t('dom.solid.topoLabel'),topo),go);
-    const help=el('p','domain-note',t(solid.topography==='imported'?'dom.solid.topo.importedHelp':'dom.solid.topo.help'));help.id='domainLoftSurfaceHelp';buildBox.append(help);
+    const help=el('p','domain-note',t(solid.topography==='imported'?'dom.solid.topo.importedHelp':'dom.solid.topo.help'));help.id='domainLoftSurfaceHelp';buildBox.append(help);domainGuide(help,true);
     const note = $('domainLoftNote'); note.setAttribute('aria-live', 'polite');
     const missing=[];
     if(loft.sections.length<2)missing.push(tt('dom.loft.needRings',{n:loft.sections.length}));
@@ -1366,7 +1452,7 @@
       const remove = button('dom.loft.remove', '', () => { remember(); loft.sections = loft.sections.filter(x => x !== s); changed(); });
       remove.removeAttribute('id'); li.append(' ', remove); list.append(li);
     }
-    window.__domainLoft = {tool:loft.tool, inSection, draft:draft.map(p => ({h:p.h, rl:p.rl, snap:p.snap})), endRule:loft.endRule, snap:loft.snap,
+    window.__domainLoft = {tool:loft.tool, inSection, draft:draft.map(p => ({h:p.h, rl:p.rl, snap:p.snap})), endRule:loft.endRule, snap:loft.snap,correspondence:loft.correspondence,
       sections:loft.sections.map(s => ({offset:s.offset, azimuth:s.azimuth, points:s.points.map(p => p.slice()), snapped:s.snaps.filter(Boolean).length})),
       undo:loft.undo.length, redo:loft.redo.length, error:loft.error, selected:selectedVertex() ? {kind:loft.selection.kind, index:loft.selection.index, point:selectedVertex().point.slice()} : null};
   }
@@ -1393,12 +1479,12 @@
       workspaceSource=OrebitCoreDomain.sourceRevision();
       const saved=OrebitCoreDomain.exportState().workspace;
       domainDrafts=[];
-      Object.assign(loft,{tool:'navigate',draft:[],draftAt:null,sections:[],endRule:'',snap:2,undo:[],redo:[],error:null,selection:null,domainCode:null});
+      Object.assign(loft,{tool:'navigate',draft:[],draftAt:null,sections:[],endRule:'',snap:2,correspondence:'rightmost',undo:[],redo:[],error:null,selection:null,domainCode:null});
       Object.assign(solid,{sourceMode:'interval',upperSurface:'',lowerSurface:'',topography:'',terrainSurface:null,density:null,result:null,error:null,reviewed:false,reviewer:'',reason:'',code:'',accepted:null});
       if(saved?.version===1 && saved.frame.crs===(STATE.crs||null)) {
         domainDrafts=copy(saved.domainDrafts||[]);
         if(saved.method)buildMethod=saved.method;
-        for(const [target,source,keys] of [[loft,saved.loft,['draft','draftAt','sections','domainCode','endRule','snap','undo','redo']],
+        for(const [target,source,keys] of [[loft,saved.loft,['draft','draftAt','sections','domainCode','endRule','snap','correspondence','undo','redo']],
           [view,saved.view,['mode','azimuth','width','offset','ve','veAuto']],
           [contact,saved.contact,['rule','target','threshold','maxEdge']], [solid,saved.solid,['sourceMode','upperSurface','lowerSurface','topography','terrainSurface','density','code']]])
           for(const key of keys)if(Object.prototype.hasOwnProperty.call(source,key))target[key]=source[key];
@@ -1469,10 +1555,11 @@
     });
     canvas.addEventListener('pointermove',event=>{
       if(!pan||pan.id!==event.pointerId||view.mode!=='section'||!fit)return;
-      const now=fit.toWorld(...canvasPoint(canvas,event));
+      const point=canvasPoint(canvas,event),now=fit.toWorld(...point);
       // Use incremental world deltas because each draw refreshes the transform.
       const next={};for(const [i,axis] of ['h','v'].entries())next[axis]=pan.range[axis].map(value=>value+pan.point[i]-now[i]);
-      sectionCamera.range=next;pan.range={h:next.h.slice(),v:next.v.slice()};render();
+      sectionCamera.range=next;sectionRange={h:next.h.slice(),v:next.v.slice()};pan.range=sectionRange;
+      if(redrawSection?.(next))pan.point=fit.toWorld(...point);else render();
     });
     const stopPan=event=>{if(pan?.id!==event.pointerId)return;pan=null;canvas.classList.remove('is-panning');if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);};
     canvas.addEventListener('pointerup',stopPan);canvas.addEventListener('pointercancel',stopPan);canvas.addEventListener('lostpointercapture',stopPan);
@@ -1514,8 +1601,8 @@
       render();
     });
     const fallback=el('p','hint');fallback.id='domain3dFallback';fallback.setAttribute('role','status');fallback.hidden=true;
-    const planHelp=el('p','domain-note',t('dom.section.planHelp'));planHelp.id='domainPlanHelp';domainGuide(planHelp);
-    panel.append(fallback,bar, stage, foot,planHelp, thin);
+    const planHelp=el('p','domain-note',t('dom.section.planHelp'));planHelp.id='domainPlanHelp';
+    panel.append(fallback,bar, stage, foot,planHelp, thin);domainGuide(planHelp,true);
     observeCanvas(canvas);
     const continueExport=$('domainContinueExport');if(continueExport)continueExport.onclick=()=>showTab(13);
     const surfaceFile=$('domainSurfaceFile');
@@ -1645,6 +1732,7 @@
   }
   function updateContinuation(button) {
     if(!button||button!==$('domainWorkflowNext'))return;
+    button.hidden=workflowStep==='handoff'&&!!$('domainContinueExport')?.getClientRects().length;
     const action=continuationAction();button.textContent=action.label.replace(/\s*→\s*$/,'');button.disabled=!!action.disabled;
     button.onclick=()=>{
       if(button!==$('domainWorkflowNext')||!$('tab14')?.classList.contains('active'))return;

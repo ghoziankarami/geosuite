@@ -152,13 +152,20 @@ function _opcDescribe(bundle) {
   const phase = bundle?.sourcePhase;
   if (phase === 'Core') {
     if (!bundle.phase1 || typeof bundle.phase1 !== 'object' || Array.isArray(bundle.phase1)) _opcFail('PROJECT_SOURCE_INVALID');
+    const exactRows = bundle.phase1.source_rows;
+    if (exactRows != null && (typeof exactRows !== 'object' || Array.isArray(exactRows) ||
+        Object.keys(exactRows).length !== 4)) _opcFail('PROJECT_SOURCE_ROWS_INVALID');
     return ['collar', 'survey', 'assay', 'geology'].map(role => {
       const key = role + '_csv';
       const text = bundle.phase1[key];
       if (typeof text !== 'string') _opcFail('PROJECT_SOURCE_ROLE_MISSING:' + role);
       const columns = text.trim() ? _opcCsvFirstRecord(text.replace(/^\uFEFF/, '')) : [];
       const rowCount = _opcCsvRecordCount(text);
-      return { role, content: text, rowCount, columns,
+      if (exactRows != null && (!Array.isArray(exactRows[role]) || exactRows[role].length !== rowCount ||
+          exactRows[role].some(row => !row || typeof row !== 'object' || Array.isArray(row) ||
+            Object.values(row).some(value => value !== null && !['string','number','boolean'].includes(typeof value) ||
+              typeof value === 'number' && !Number.isFinite(value))))) _opcFail('PROJECT_SOURCE_ROWS_INVALID');
+      return { role, content: exactRows == null ? text : _opcGeometryCanonical({csv:text, rows:exactRows[role]}), rowCount, columns,
         columnRoles: _opcColumnRoles(phase, role, columns, rowCount) };
     });
   }

@@ -3,8 +3,8 @@
   'use strict';
   let active = null;
   const clone = value => value == null ? null : JSON.parse(JSON.stringify(value));
-  const currentRevision = async () => {
-    if (window.__orebitCoreProjectReady) await window.__orebitCoreProjectReady;
+  const currentRevision = async (waitForProjectReady = true) => {
+    if (waitForProjectReady && window.__orebitCoreProjectReady) await window.__orebitCoreProjectReady;
     return window.OrebitProject.currentCapsuleRevision();
   };
   function render() {
@@ -137,12 +137,12 @@
     render();
     return {ok: true, status: active.status};
   }
-  async function restore(record) {
+  async function restore(record, {duringStartup = false} = {}) {
     active = null;
     if (!record) { render(); return null; }
     if (!record || !record.reference) throw Error('EDA_REFERENCE_PROJECT_INVALID');
     await validateAssayEDAReference(record.reference);
-    const current = await currentRevision(), stateRevision = await window.OrebitProject.currentProjectStateRevision();
+    const current = await currentRevision(!duringStartup), stateRevision = await window.OrebitProject.currentProjectStateRevision();
     const savedStateRevision = await window.OrebitProject.savedProjectStateRevision(STATE.currentProjectName);
     const matches = current === record.reference.source.coreRevision && stateRevision === record.reference.source.coreProjectStateRevision &&
       (!savedStateRevision || savedStateRevision === stateRevision);
@@ -181,8 +181,24 @@
     });
   }
   function receiveDesktop() { if (typeof OrebitHandoff === 'object') OrebitHandoff.receiveDesktopAssayReference(); }
+  async function receiveCoreProject() {
+    if (!/[?&]coreHandoff=/.test(location.search) || window.__OREBIT_RT__) return;
+    try {
+      if (window.__orebitCoreProjectReady) await window.__orebitCoreProjectReady;
+      const project=await window.OrebitHandoff.takeCoreProject();
+      if (!project || typeof window.applyBundle!=='function') throw Error('CORE_PROJECT_HANDOFF_UNAVAILABLE');
+      await window.applyBundle(project);
+      STATE.currentProjectName=null;STATE.saveStatus='unsaved';
+      if(typeof updateProjectNameDisplay==='function')updateProjectNameDisplay();
+      window.showTab(14);
+    } catch(error) {
+      console.warn('[Core project return]',error);
+      toast(t('core.edaReference.projectReturnRejected')+' '+(error.code||error.message||'CORE_PROJECT_HANDOFF_REJECTED'),'bad');
+    }
+  }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wireImport); else setTimeout(wireImport, 0);
   window.addEventListener('load', receiveDesktop, {once:true});
+  window.addEventListener('load', receiveCoreProject, {once:true});
   window.__i18nPostApplyHooks = window.__i18nPostApplyHooks || [];
   window.__i18nPostApplyHooks.push(render);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render); else setTimeout(render, 0);

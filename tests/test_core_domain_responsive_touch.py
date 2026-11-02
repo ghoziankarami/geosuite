@@ -65,8 +65,17 @@ def main():
     def observed_wait(page,expression,*args,**kwargs):
         try:return original_wait(page,expression,*args,**kwargs)
         except Exception as error:
+            try:state=page.evaluate('''()=>{const c=document.getElementById('domainViewerCanvas');return {
+              step:document.querySelector('.domain-steps [aria-current=step]')?.dataset.domainStep,
+              viewport:[innerWidth,innerHeight],scroll:[scrollX,scrollY],active:document.activeElement?.id,
+              canvas:c?{rect:(()=>{const r=c.getBoundingClientRect();return [r.x,r.y,r.width,r.height]})(),
+                layout:[c.clientWidth,c.clientHeight],bitmap:[c.width,c.height]}:null,
+              cameraInputs:window.__domainCameraInputs||[],errors:window.__positiveErrors||[]};}''')
+            except Exception as diagnostic_error:state={'captureError':str(diagnostic_error)}
+            print('DOMAIN_TOUCH_WAIT_FAILURE',json.dumps({**{k:v for k,v in active_diagnostic.items()if k!='page'},
+              'expression':expression,'error':str(error),'state':state}),flush=True)
             active_diagnostic['page']=page;capture_failure(expression,error);raise
-    if DIAGNOSTICS:Page.wait_for_function=observed_wait
+    Page.wait_for_function=observed_wait
     try:
         with tempfile.TemporaryDirectory(prefix='domain-touch-') as folder,sync_playwright() as pw:
             paths=write_domain_fixture(Path(folder),measured_ends=True)

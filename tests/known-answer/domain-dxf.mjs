@@ -96,6 +96,8 @@ assert.throws(()=>SI.assessCoverage(fullTerrain,box,{maxPairs:0}),/SURFACE_IMPOR
 const workspace={version:1,frame:{crs:'EPSG:32751',units:'m'},loft:{draft:[],draftAt:null,sections:[],domainCode:null,endRule:'',snap:2,undo:[],redo:[]},
   view:{mode:'plan',azimuth:90,width:25,offset:0,ve:1,veAuto:true},contact:{rule:'first_from',target:'',threshold:null,maxEdge:null},solid:{topography:'imported',terrainSurface:fullTerrain,density:null,code:''}};
 ctx.OrebitDomainState.checkWorkspace(workspace);ok(true,'explicit imported terrain choice plus source hash and target CRS survive workspace validation');
+ctx.OrebitDomainState.checkWorkspace({...workspace,loft:{...workspace.loft,correspondence:'upper-right'}});ok(true,'explicit loft correspondence survives workspace validation while legacy snapshots remain supported');
+assert.throws(()=>ctx.OrebitDomainState.checkWorkspace({...workspace,loft:{...workspace.loft,correspondence:'guess'}}),/DOMAIN_WORKSPACE_INVALID/);checks++;
 assert.throws(()=>ctx.OrebitDomainState.checkWorkspace({...workspace,frame:{...workspace.frame,crs:'EPSG:32750'}}),/DOMAIN_WORKSPACE_INVALID/);checks++;
 assert.throws(()=>ctx.OrebitDomainState.checkWorkspace({...workspace,solid:{...workspace.solid,terrainSurface:undefined}}),/DOMAIN_WORKSPACE_INVALID/);checks++;
 assert.throws(()=>SI.readDXF3DFaceTIN(tinDXF,{sourceCRS:'',targetCRS:'EPSG:32751',sourceHash:'d'.repeat(64)}),/SURFACE_IMPORT_CRS_REQUIRED/);checks++;

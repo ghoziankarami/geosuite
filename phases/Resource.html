@@ -1344,7 +1344,8 @@ function _resourceProjectModel(model) {
     type: model.type, nugget: model.nugget, sill: model.sill, range: model.range,
     covarianceMode: model.covarianceMode === 'model-range' ? 'model-range' : 'legacy-search'
   };
-  if (Number.isFinite(model.azDeg)) result.azDeg = model.azDeg;
+  if (Number.isFinite(model.azDeg) && model.azDeg >= 0 && model.azDeg < 360) result.azDeg = model.azDeg;
+  if (Number.isFinite(model.dipDeg) && model.dipDeg >= -90 && model.dipDeg <= 90) result.dipDeg = model.dipDeg;
   if (model.struct1 && typeof model.struct1 === 'object') {
     const copyStructure = structure => {
       if (!structure || !['spherical', 'exponential', 'gaussian'].includes(structure.type) ||
@@ -1375,7 +1376,8 @@ function _sealResourceProjectDecision(bundle) {
     sourceRevision: bundle.sourceCapsule.revision,
     element: setupState.element, domain: setupState.domain,
     gradeUnit: resourceDeclaredUnit(bundle.units?.[setupState.element]) || null,
-    direction: ['omni', 'NS', 'EW', 'vert'].includes(variogramState.direction) ? variogramState.direction : 'omni',
+    direction: ['omni', 'NS', 'EW', 'vert','custom'].includes(variogramState.direction) ? variogramState.direction : 'omni',
+    directionDescriptor:validVariogramDirectionDescriptor(variogramState.directionDescriptor)?{...variogramState.directionDescriptor}:null,
     variogram: model
   };
   return bundle;
@@ -1387,7 +1389,8 @@ function _restoreResourceProjectDecision(bundle) {
       decision.version !== 1 || decision.sourceRevision !== bundle.sourceCapsule?.revision ||
       !Array.isArray(DATA?.cols) || !DATA.cols.includes(decision.element) ||
       decision.gradeUnit !== (resourceDeclaredUnit(bundle.units?.[decision.element]) || null) ||
-      !['omni', 'NS', 'EW', 'vert'].includes(decision.direction)) return false;
+      !['omni', 'NS', 'EW', 'vert','custom'].includes(decision.direction) ||
+      (decision.direction==='custom'&&(!validVariogramDirectionDescriptor(decision.directionDescriptor)||decision.directionDescriptor.mode!=='custom'))) return false;
   const model = _resourceProjectModel(decision.variogram);
   if (!model) return false;
   setupState.element = decision.element;
@@ -1399,9 +1402,13 @@ function _restoreResourceProjectDecision(bundle) {
   }
   variogramState.model = model;
   variogramState.direction = decision.direction;
-  // Nested Apply synchronizes its major azimuth into the kriging search
-  // ellipsoid. Carry that coupled setting through project reopen as well.
-  if (model.struct1 && Number.isFinite(model.azDeg)) searchState.azDeg = model.azDeg;
+  if(decision.direction==='custom'){
+   variogramState.directionDescriptor={...decision.directionDescriptor};
+   variogramState.customDirection={azimuth:decision.directionDescriptor.azimuthDeg,dip:decision.directionDescriptor.dipDeg};
+  }
+  // Directional Apply synchronizes model orientation and the kriging search.
+  if (Number.isFinite(model.azDeg)) searchState.azDeg = model.azDeg;
+  if (Number.isFinite(model.dipDeg)) searchState.dipDeg = model.dipDeg;
   // setActiveDataset() has already retired bins and all downstream estimates.
   saveResourceSession();
   return true;
@@ -1679,7 +1686,9 @@ function newResourceVariography() { return {
  experimental: null, // {lags:[], gammas:[], pairs:[], maxh}
  model: null, // {type, nugget, sill, range, struct2?:{type,psill,rangeMaj,rangeMin,rangeVert}}
  samplingIssue: null, // transient feedback, bound to the current rows and sampling drafts
- direction: 'omni', // 'omni' | 'NS' | 'EW' | 'vert'
+ direction: 'omni', // Legacy presets retain their original distance meaning; custom uses Euclidean 3D.
+ customDirection: {azimuth:0,dip:0},
+ directionDescriptor: null,
  // F-4: directional scan (multi-azimuth experimental sweep)
  directionalScan: { results: null, scanStep: 22.5, tolHor: 22.5, lagSize: 50, maxDist: null },
  // F-4: downhole variogram (strict vertical, small lag for nugget anchoring)
@@ -1695,6 +1704,7 @@ function resetResourceVariography(preserveControls = false) {
  const previous = variogramState, next = newResourceVariography();
  if (preserveControls) {
    next.direction = previous.direction;
+   next.customDirection = {...previous.customDirection};
    for (const key of ['scanStep','tolHor','lagSize','maxDist'])
      if (previous.directionalScan[key] != null) next.directionalScan[key] = previous.directionalScan[key];
    for (const key of ['lagSize','maxDist']) next.downhole[key] = previous.downhole[key];
@@ -1703,6 +1713,46 @@ function resetResourceVariography(preserveControls = false) {
  // inherit an old suggested nugget, anisotropy direction or diagnostic grid.
  variogramState = next;
  _directionalScanSequence++;
+}
+
+function currentVariogramDirectionDescriptor(maxDistance = null) {
+ const mode=variogramState.direction,azimuth=mode==='EW'?90:mode==='NS'?0:mode==='custom'?Number(document.getElementById('varAzimuth')?.value??variogramState.customDirection.azimuth):null;
+ const dip=mode==='custom'?Number(document.getElementById('varDip')?.value??variogramState.customDirection.dip):mode==='vert'?90:0;
+ return {mode,azimuthDeg:azimuth,dipDeg:dip,dipConvention:'positive-down',
+  metric:mode==='custom'?'euclidean-3d':mode==='vert'?'vertical-z':'horizontal-xy',
+  angularToleranceDeg:Number(document.getElementById('varTol')?.value??22.5),
+  horizontalBandwidthM:mode==='vert'?5:null,verticalBandwidthM:null,
+  lagWidthM:Number(document.getElementById('varLag')?.value??50),lagCount:Number(document.getElementById('varN')?.value??15),
+  maxDistanceM:maxDistance,sampleCap:5000,seed:0x9e3779b9};
+}
+
+function validVariogramDirectionDescriptor(d) {
+ if (!d || !['omni','NS','EW','vert','custom'].includes(d.mode) || d.dipConvention!=='positive-down' ||
+     !Number.isFinite(d.angularToleranceDeg) || d.angularToleranceDeg<5 || d.angularToleranceDeg>90 ||
+     !Number.isFinite(d.lagWidthM) || d.lagWidthM<=0 || !Number.isInteger(d.lagCount) || d.lagCount<1 || d.lagCount>40 ||
+     (d.maxDistanceM!=null&&(!Number.isFinite(d.maxDistanceM)||d.maxDistanceM<=0))) return false;
+ if (d.mode==='omni') return d.metric==='horizontal-xy'&&d.azimuthDeg===null&&d.dipDeg===0;
+ if (d.mode==='vert') return d.metric==='vertical-z'&&d.horizontalBandwidthM===5&&d.azimuthDeg===null&&d.dipDeg===90;
+ if (d.mode==='custom') return d.metric==='euclidean-3d'&&Number.isFinite(d.azimuthDeg)&&d.azimuthDeg>=0&&d.azimuthDeg<360&&
+  Number.isFinite(d.dipDeg)&&d.dipDeg>=-90&&d.dipDeg<=90&&Number.isInteger(d.sampleCount)&&d.sampleCount>=30&&
+  d.sampleCap===5000&&d.seed===0x9e3779b9&&Number.isFinite(d.maxDistanceM)&&d.maxDistanceM>0;
+ return d.metric==='horizontal-xy'&&Number.isFinite(d.azimuthDeg)&&d.dipDeg===0&&d.azimuthDeg===(d.mode==='NS'?0:90);
+}
+
+function variogramDirectionNeedsApply() {
+ const d=variogramState.directionDescriptor,m=variogramState.model;
+ if(d?.mode!=='custom'||!m)return false;
+ const axis=(az,dp)=>[Math.sin(az*Math.PI/180)*Math.cos(dp*Math.PI/180),Math.cos(az*Math.PI/180)*Math.cos(dp*Math.PI/180),-Math.sin(dp*Math.PI/180)];
+ const requested=axis(d.azimuthDeg,d.dipDeg);
+ return ![m.azDeg,m.dipDeg,searchState.azDeg,searchState.dipDeg].every(Number.isFinite)||
+  Math.abs(requested.reduce((sum,value,i)=>sum+value*axis(m.azDeg,m.dipDeg)[i],0))<1-1e-10||
+  Math.abs(requested.reduce((sum,value,i)=>sum+value*axis(searchState.azDeg,searchState.dipDeg)[i],0))<1-1e-10;
+}
+
+function formatVariogramDirection(d=variogramState.directionDescriptor) {
+ if(d?.mode==='custom')return `${t('res.vg.direction.custom')} ${Number(d.azimuthDeg).toFixed(1)}° / ${t('res.vg.customDip')} ${d.dipDeg>0?'+':''}${Number(d.dipDeg).toFixed(1)}° · 3D`;
+ const mode=d?.mode||variogramState.direction||'omni';
+ return mode==='omni'?t('res.vg.direction.omni'):mode==='NS'?t('res.renderDeclusterResult.nSAzimuth0'):mode==='EW'?t('res.renderDeclusterResult.eWAzimuth90'):mode==='vert'?t('res.renderDeclusterResult.verticalZ'):mode;
 }
 
 
@@ -3225,13 +3275,21 @@ async function renderVariography() {
 <label>${t('res.renderDeclusterResult.element')}: <strong>${escapeHtml(plotLabel(elementLabelFor(setupState.element)))}</strong></label>
 <label>Domain: <strong>${setupState.domain === 'all'? (t('res.renderDeclusterResult.all')) : 'D' + escapeHtml(String(setupState.domain))}</strong></label>
  <label>${t('res.renderDeclusterResult.direction')}:
- <select id="varDir" title="${t('res.renderDeclusterResult.directionFilterOmniAllPairs')}">
+ <select id="varDir" onchange="renderCustomVariogramDirection()" title="${t('res.renderDeclusterResult.directionFilterOmniAllPairs')}">
  <option value="omni" ${variogramState.direction === 'omni'? 'selected' : ''}>${t('res.vg.direction.omni')}</option>
  <option value="EW" ${variogramState.direction === 'EW'? 'selected' : ''}>${t('res.renderDeclusterResult.eWAzimuth90')}</option>
  <option value="NS" ${variogramState.direction === 'NS'? 'selected' : ''}>${t('res.renderDeclusterResult.nSAzimuth0')}</option>
  <option value="vert" ${variogramState.direction === 'vert'? 'selected' : ''}>${t('res.renderDeclusterResult.verticalZ')}</option>
+ <option value="custom" ${variogramState.direction === 'custom'? 'selected' : ''}>${t('res.vg.direction.custom')}</option>
  </select>
  </label>
+ <div id="varCustomDirection" style="display:${variogramState.direction==='custom'?'flex':'none'};gap:8px;align-items:end;flex-wrap:wrap;">
+ <label>${t('res.vg.customAzimuth')} (°): <input type="number" id="varAzimuth" value="${variogramState.customDirection.azimuth}" min="0" max="359.999999" step="1" style="width:86px;"></label>
+ <label>${t('res.vg.customDip')} (°; + down): <input type="number" id="varDip" value="${variogramState.customDirection.dip}" min="-90" max="90" step="1" style="width:76px;"></label>
+ <button type="button" class="btn secondary" id="varUseModelMajor" onclick="setCustomVariogramFromModel(false)">${t('res.vg.useMajor')}</button>
+ <button type="button" class="btn secondary" id="varUseModelCross" onclick="setCustomVariogramFromModel(true)">${t('res.vg.useCross')}</button>
+ <span class="hint">${t('res.vg.customHelp')}</span>
+ </div>
  <label>${abbr('Lag', 'lag')} (m): <input type="number" id="varLag" value="50" min="2" step="5" style="width:90px;" title="${t('res.vg.help.lag')}"></label>
  <label>${t('res.vg.nLags')} <input type="number" id="varN" value="15" min="3" max="40" style="width:70px;" title="${t('res.vg.help.nLags')}"></label>
  <label title="${t('res.vg.help.tolerance')}">${t('res.vg.tolAngle')} <input type="number" id="varTol" value="22.5" min="5" max="90" style="width:80px;" title="${t('res.vg.help.tolerance')}"></label>
@@ -3239,6 +3297,7 @@ async function renderVariography() {
  </div>
  </details>
  <div id="varStatus" style="margin-top:10px;font-size:13px;color:var(--fg-mute);">${t('res.renderDeclusterResult.pressComputeVariogramStart')}</div>
+ <button type="button" id="varApplyOrientation" class="btn secondary" style="display:none;margin-top:8px;" onclick="applyVariogramDirectionToModel()">${t('res.vg.applyOrientation')}</button>
  </div>
 
  <div class="grid-2" style="margin-top:14px;">
@@ -3400,6 +3459,7 @@ async function renderVariography() {
  }
  // Pre-fill nested-model inputs from current model if exists
  syncNestedInputsFromModel();
+ renderCustomVariogramDirection();
 }
 
 
@@ -3423,7 +3483,7 @@ function _seededSubsample(arr, k, seed) {
 }
 
 function variogramSamplingIssueSignature() {
- return JSON.stringify(['varDir','varLag','varN','varTol','varMaxH'].map(id => document.getElementById(id)?.value));
+ return JSON.stringify(['varDir','varAzimuth','varDip','varLag','varN','varTol','varMaxH'].map(id => document.getElementById(id)?.value));
 }
 
 function renderVariogramSamplingIssue() {
@@ -3450,7 +3510,7 @@ function clearVariogramSamplingIssue() {
  variogramState.samplingIssue = null;
  const distance = document.getElementById('varMaxH');
  if (distance) distance.title = t('res.vg.help.maxH');
- const inputs = ['varN', 'varMaxH'].map(id => document.getElementById(id));
+ const inputs = ['varN', 'varMaxH','varAzimuth','varDip'].map(id => document.getElementById(id));
  for (const input of inputs) {
  if (input?.getAttribute('aria-errormessage') === 'varStatus') {
  input.removeAttribute('aria-invalid'); input.removeAttribute('aria-errormessage');
@@ -3462,6 +3522,40 @@ function clearVariogramSamplingIssue() {
  status.style.color = 'var(--fg-mute)';
  status.textContent = t('res.renderDeclusterResult.pressComputeVariogramStart');
  }
+}
+
+function renderCustomVariogramDirection() {
+ const mode=document.getElementById('varDir')?.value,box=document.getElementById('varCustomDirection');
+ if(box)box.style.display=mode==='custom'?'flex':'none';
+ if(mode==='custom'){
+  const az=document.getElementById('varAzimuth'),dip=document.getElementById('varDip');
+  if(az)az.value=variogramState.customDirection.azimuth;
+  if(dip)dip.value=variogramState.customDirection.dip;
+ }
+}
+
+function setCustomVariogramFromModel(cross=false) {
+ const modelAz=Number.isFinite(variogramState.model?.azDeg)?variogramState.model.azDeg:searchState.azDeg;
+ const az=(cross?modelAz+90:modelAz+360)%180,dip=cross?0:Number.isFinite(variogramState.model?.dipDeg)?variogramState.model.dipDeg:searchState.dipDeg;
+ document.getElementById('varAzimuth').value=az;document.getElementById('varDip').value=dip;
+}
+
+async function applyVariogramDirectionToModel() {
+ const d=variogramState.directionDescriptor,model=variogramState.model;
+ if(!model||d?.mode!=='custom'||!validVariogramDirectionDescriptor(d))return;
+ model.azDeg=d.azimuthDeg;model.dipDeg=d.dipDeg;searchState.azDeg=d.azimuthDeg;searchState.dipDeg=d.dipDeg;
+ if(typeof estimState!=='undefined')estimState={results:null,done:false};
+ if(typeof crossvalState!=='undefined')crossvalState={results:null,metrics:null};
+ if(typeof classState!=='undefined')classState={thresholds:null,labels:null};
+ window.__resourceResultSnapshot=null;window._resourceReportSnapshot=null;window.__resourceReportSelectionSnapshot=null;
+ if(typeof window._gtCurveSnapshot!=='undefined')window._gtCurveSnapshot=null;
+ for(const id of ['estimResults','cvResults','gtResults'])document.getElementById(id)?.replaceChildren();
+ const estimationStatus=document.getElementById('estimStatus');if(estimationStatus)estimationStatus.textContent=t('res.vg.orientationApplied');
+ saveResourceSession();
+ const status=document.getElementById('varStatus');if(status)status.textContent=t('res.vg.orientationApplied');
+ document.getElementById('varApplyOrientation').style.display='none';
+ if(typeof onPipelineStateChanged==='function')onPipelineStateChanged();
+ await plotVariogram();
 }
 
 async function computeVariogram() {
@@ -3476,6 +3570,15 @@ async function computeVariogram() {
  const nLag = +document.getElementById('varN').value;
  const tol = +document.getElementById('varTol').value;
  clearVariogramSamplingIssue();
+ const azInput=document.getElementById('varAzimuth'),dipInput=document.getElementById('varDip');
+ const customAz=dir==='custom'?Number(azInput?.value):0,customDip=dir==='custom'?Number(dipInput?.value):0;
+ if(dir==='custom'&&(!Number.isFinite(customAz)||customAz<0||customAz>=360)){
+  setVariogramSamplingIssue('res.variogram.status.invalidCustomAzimuth',{},'varAzimuth');return;
+ }
+ if(dir==='custom'&&(!Number.isFinite(customDip)||customDip< -90||customDip>90)){
+  setVariogramSamplingIssue('res.variogram.status.invalidCustomDip',{},'varDip');return;
+ }
+ if(dir==='custom')variogramState.customDirection={azimuth:customAz,dip:customDip};
  // Array bins require a whole count; retain the declared upper limit and the
  // existing one/two-bin shortfall diagnosis rather than truncating a draft.
  if (!Number.isInteger(nLag) || nLag < 1 || nLag > 40) {
@@ -3501,7 +3604,8 @@ async function computeVariogram() {
  if (maxHDraft === '') {
  // Auto-scale: use between-hole statistics to set reasonable maxH
  const xs = samples.map(s => s.x), ys = samples.map(s => s.y);
- const extentXY = Math.max(xs.reduce((a,b) => Math.max(a,b), -Infinity) - xs.reduce((a,b) => Math.min(a,b), Infinity), ys.reduce((a,b) => Math.max(a,b), -Infinity) - ys.reduce((a,b) => Math.min(a,b), Infinity));
+ const extentXY = dir==='custom'?Math.max(...['x','y','z'].map(k=>samples.reduce((a,s)=>Math.max(a,s[k]),-Infinity)-samples.reduce((a,s)=>Math.min(a,s[k]),Infinity))):
+  Math.max(xs.reduce((a,b) => Math.max(a,b), -Infinity) - xs.reduce((a,b) => Math.min(a,b), Infinity), ys.reduce((a,b) => Math.max(a,b), -Infinity) - ys.reduce((a,b) => Math.min(a,b), Infinity));
  let hi = colIdx('hole_id');
  const bh = betweenHoleStats(samples, hi);
  // Heuristic: maxH should be at least 2x between-hole P90 to capture spatial structure,
@@ -3526,6 +3630,11 @@ async function computeVariogram() {
  // atan2(dx, dy) gives 0=N, π/2=E, so EW(90°) uses π/2 and NS(0°) uses 0.
  const azRad = dir === 'EW'? Math.PI / 2 : dir === 'NS'? 0 : null;
  const tolRad = tol * Math.PI / 180;
+ const customAxis=dir==='custom'?[
+  Math.sin(customAz*Math.PI/180)*Math.cos(customDip*Math.PI/180),
+  Math.cos(customAz*Math.PI/180)*Math.cos(customDip*Math.PI/180),
+  -Math.sin(customDip*Math.PI/180)
+ ]:null,cosTolerance=Math.cos(tolRad);
 
  // Initialize bins
  const bins = Array.from({ length: nLag }, () => ({ sum: 0, n: 0 }));
@@ -3562,9 +3671,12 @@ async function computeVariogram() {
  for (let j = i + 1; j < m; j++) {
  const dx = pool[j].x - pool[i].x;
  const dy = pool[j].y - pool[i].y;
- const h = Math.hypot(dx, dy);
+ const dz=pool[j].z-pool[i].z;
+ const h = dir==='custom'?Math.hypot(dx,dy,dz):Math.hypot(dx, dy);
  if (h === 0 || h > maxH) continue;
- if (azRad!== null) {
+ if(dir==='custom'){
+  if(Math.abs((dx*customAxis[0]+dy*customAxis[1]+dz*customAxis[2])/h)+1e-12<cosTolerance)continue;
+ }else if (azRad!== null) {
  const az = Math.atan2(dx, dy); // 0=N, π/2=E
  let dAz = Math.abs(az - azRad) % Math.PI;
  dAz = Math.min(dAz, Math.PI - dAz); // anti-parallel allowed
@@ -3595,16 +3707,21 @@ async function computeVariogram() {
  }
 
  variogramState.direction = dir;
- variogramState.experimental = { lags, gammas, pairs, maxh: maxH, samplesUsed: m, totalPairs: pairsTotal };
+ const descriptor=currentVariogramDirectionDescriptor(maxH);
+ descriptor.sampleCount=n;
+ variogramState.directionDescriptor=descriptor;
+ variogramState.experimental = { lags, gammas, pairs, maxh: maxH, samplesUsed: m, totalPairs: pairsTotal,direction:descriptor };
  const computedMsg = t('res.variogram.status.computed')
  .replace('{bins}', `<strong>${lags.length}</strong>`)
  .replace('{pairs}', `<strong>${pairsTotal.toLocaleString('en-US')}</strong>`)
  .replace('{samples}', m.toLocaleString('en-US'));
- document.getElementById('varStatus').innerHTML = `<span style="color:var(--good-ink);"></span> ${computedMsg}${m < n? t('res.variogram.status.subsampled').replace('{n}', n.toLocaleString('en-US')) : ''}.`;
+ document.getElementById('varStatus').innerHTML = `<span style="color:var(--good-ink);"></span> ${computedMsg}${m < n? t('res.variogram.status.subsampled').replace('{n}', n.toLocaleString('en-US')) : ''}. ${dir==='custom'?escapeHtml(formatVariogramDirection(descriptor)):''}`;
+ const applyDirection=document.getElementById('varApplyOrientation');
+ if(applyDirection)applyDirection.style.display=variogramDirectionNeedsApply()?'inline-block':'none';
 
  // Auto-suggest model
- autoFitVariogram(false);
- await plotVariogram();
+ if(dir!=='custom')autoFitVariogram(false);
+ else { saveResourceSession(); await plotVariogram(); }
 }
 
 async function autoFitVariogram(replot = true) {
@@ -3705,7 +3822,7 @@ async function autoFitVariogram(replot = true) {
  const boundNote = atBounds.length
    ? `<div class="hint warn" style="margin-top:6px;">${escapeHtml([
        t('res.vg.fitAtBounds').replace('{what}', atBounds.map(b => ({ nugget: t('res.vg.bound.nugget'), rangeMin: t('res.vg.bound.rangeMin'), rangeMax: t('res.vg.bound.rangeMax') })[b]).join(', ')),
-       fixedNug === null ? t('res.vg.fitAtBounds.noDownhole').replace('{lag}', (ex.lags.length > 1 ? (ex.lags[1] - ex.lags[0]) : ex.lags[0] * 2).toFixed(0)) : '',
+       fixedNug === null ? t('res.vg.fitAtBounds.noDownholeFit') : '',
        atBounds.includes('rangeMin') ? t('res.vg.fitAtBounds.short') : ''
      ].filter(Boolean).join(' '))}</div>`
    : '';
@@ -3729,6 +3846,8 @@ function updateModelInputs() {
  document.getElementById('varNugget').value = +m.nugget.toFixed(4);
  document.getElementById('varSill').value = +m.sill.toFixed(4);
  document.getElementById('varRange').value = +m.range.toFixed(1);
+ const applyDirection=document.getElementById('varApplyOrientation');
+ if(applyDirection)applyDirection.style.display=variogramDirectionNeedsApply()?'inline-block':'none';
  renderModelSummary();
 }
 
@@ -3834,8 +3953,10 @@ async function plotVariogram() {
  const maxX = Math.max(ex.maxh, range * 1.2);
  const xs = []; const ys = [];
  const step = maxX / 80;
+ const d=ex.direction,axis=d?.mode==='custom'?[Math.sin(d.azimuthDeg*Math.PI/180)*Math.cos(d.dipDeg*Math.PI/180),Math.cos(d.azimuthDeg*Math.PI/180)*Math.cos(d.dipDeg*Math.PI/180),-Math.sin(d.dipDeg*Math.PI/180)]:null;
  for (let h = 0; h <= maxX; h += step) {
- xs.push(h); ys.push(variogramModelEval(h, variogramState.model));
+ xs.push(h);
+ ys.push(axis&&variogramState.model.struct1?gammaAniso(axis[0]*h,axis[1]*h,axis[2]*h,variogramState.model,{azDeg:variogramState.model.azDeg??searchState.azDeg,dipDeg:variogramState.model.dipDeg??searchState.dipDeg}):variogramModelEval(h, variogramState.model));
  }
  traces.push({
  x: xs, y: ys, mode: 'lines', type: 'scatter',
@@ -3858,7 +3979,7 @@ async function plotVariogram() {
  const xRange = variogramState.model ? [0, variogramState.model.range * 3] : undefined;
  const layout = {
 ...plotTheme(),
- title: { text: `${plotLabel(elementLabelFor(setupState.element))} · ${variogramState.direction.toUpperCase()}`, font: { size: 14 } },
+ title: { text: `${plotLabel(elementLabelFor(setupState.element))} · ${formatVariogramDirection(ex.direction)}`, font: { size: 14 } },
  xaxis: {...plotTheme().xaxis, title: 'Lag distance h (m)', range: xRange },
  yaxis: {...plotTheme().yaxis, title: 'γ(h)' },
  showlegend: true,
@@ -3866,7 +3987,7 @@ async function plotVariogram() {
  // T8.2: point size encodes pair count (more pairs = more reliable), but
  // that encoding has no legend anywhere -- a reader can't tell which
  // points to trust. One caption line rather than a fake size-legend trace.
- plotCaption('varPlot', 'Point size ∝ pair count per lag — larger points are more reliable.');
+ plotCaption('varPlot', ex.direction?.mode==='custom'?`${t('res.vg.customPlotCaption')} ${t('res.vg.customDip')} ${ex.direction.dipDeg>0?'+':''}${ex.direction.dipDeg}° · ±${ex.direction.angularToleranceDeg}° · ${ex.totalPairs.toLocaleString('en-US')} pairs.`:'Point size ∝ pair count per lag — larger points are more reliable.');
  Plotly.newPlot('varPlot', traces, layout, { responsive: true, displayModeBar: false });
  renderModelSummary();
 }
@@ -4323,8 +4444,8 @@ async function computeVariogramMap() {
  if (maxHText === '') {
  const xs = samples.map(s => s.x), ys = samples.map(s => s.y);
  const span = Math.max(
- Math.max(...xs) - Math.min(...xs),
- Math.max(...ys) - Math.min(...ys));
+ xs.reduce((a,b)=>Math.max(a,b),-Infinity) - xs.reduce((a,b)=>Math.min(a,b),Infinity),
+ ys.reduce((a,b)=>Math.max(a,b),-Infinity) - ys.reduce((a,b)=>Math.min(a,b),Infinity));
  maxH = Math.max(lag * 8, Math.min(span * 0.5, lag * 20));
  } else {
  maxH = Number(maxHText);
@@ -4818,10 +4939,13 @@ function saveResourceSession() {
     struct1: variogramState.model.struct1 || null,
     struct2: variogramState.model.struct2 || null,
     azDeg: variogramState.model.azDeg,
+    dipDeg: variogramState.model.dipDeg,
     aniso: variogramState.model.aniso || null,
     covarianceMode: variogramState.model.struct1 ? undefined : (variogramState.model.covarianceMode || 'legacy-search')
    } : null,
    direction: variogramState.direction,
+   customDirection:{...variogramState.customDirection},
+   directionDescriptor:validVariogramDirectionDescriptor(variogramState.directionDescriptor)?{...variogramState.directionDescriptor}:null,
    blockSize: blockState.size,
    envelopeMode: blockState.envelopeMode, envelopeRadius: blockState.envelopeRadius,
    envelopeRadiusUserSet:!!blockState.envelopeRadiusUserSet,
@@ -4868,6 +4992,9 @@ function restoreResourceSession() {
      (savedDomain !== 'all' && !domains.has(savedDomain))) return null;
  setupState.element = p.element;
  setupState.domain = savedDomain;
+ if(['omni','NS','EW','vert','custom'].includes(p.direction))variogramState.direction=p.direction;
+ if(p.customDirection&&Number.isFinite(p.customDirection.azimuth)&&p.customDirection.azimuth>=0&&p.customDirection.azimuth<360&&Number.isFinite(p.customDirection.dip)&&p.customDirection.dip>=-90&&p.customDirection.dip<=90)variogramState.customDirection={azimuth:p.customDirection.azimuth,dip:p.customDirection.dip};
+ if(validVariogramDirectionDescriptor(p.directionDescriptor)&&p.directionDescriptor.mode===p.direction)variogramState.directionDescriptor={...p.directionDescriptor};
  if (Number.isInteger(p.declusterCell) && p.declusterCell >= 5 && p.declusterCell <= 2000) {
   setupState.declusterCell = p.declusterCell;
  }
@@ -4890,8 +5017,8 @@ function restoreResourceSession() {
   if (p.variogram.struct1) variogramState.model.struct1 = p.variogram.struct1;
   if (p.variogram.struct2) variogramState.model.struct2 = p.variogram.struct2;
   if (Number.isFinite(p.variogram.azDeg)) variogramState.model.azDeg = p.variogram.azDeg;
+  if (Number.isFinite(p.variogram.dipDeg)) variogramState.model.dipDeg = p.variogram.dipDeg;
   if (p.variogram.aniso) variogramState.model.aniso = p.variogram.aniso;
-  if (p.direction) variogramState.direction = p.direction;
   restored = true;
  }
  if (Array.isArray(p.blockSize) && p.blockSize.length === 3) {
@@ -8916,7 +9043,7 @@ ${t('res.renderKCMIReport.commercialJorcKcmiReportingCross')}
  <tr><td>Sill (C₀+C)</td><td>${fmtNum(m.sill)}</td></tr>
  <tr><td>Range (a)</td><td>${m.range.toFixed(1)} m</td></tr>
  <tr><td>${t('res.renderKCMIReport.nuggetRatio')}</td><td>${m.sill > 0 ? ((m.nugget / m.sill) * 100).toFixed(1) : '—'}%</td></tr>
- <tr><td>${t('res.renderKCMIReport.direction')}</td><td>${variogramState.direction || 'omni'}</td></tr>
+ <tr><td>${t('res.renderKCMIReport.direction')}</td><td>${escapeHtml(formatVariogramDirection())}</td></tr>
  ${cv ? `<tr><td>Cross-val R² (OK)</td><td>${cv.r2.toFixed(3)}</td></tr>
  <tr><td>Cross-val slope</td><td>${cv.slope.toFixed(3)}</td></tr>
  <tr><td>Cross-val RMSE</td><td>${cv.rmse.toFixed(2)}</td></tr>` : ''}
@@ -9445,7 +9572,7 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
  yPos += 4; pdf.line(15, yPos, W - 15, yPos); yPos += 5;
  const rows = [
  [t('res.pdfReport.variogramTable.modelType'), m.type],
- [t('res.pdfReport.variogramTable.direction'), variogramState.direction || 'omni'],
+ [t('res.pdfReport.variogramTable.direction'), formatVariogramDirection()],
  ['Nugget (C0)', m.nugget.toFixed(2)],
  ['Sill (C0+C)', m.sill.toFixed(2)],
  ['Range (a)', `${m.range.toFixed(1)} m`],
@@ -10725,6 +10852,7 @@ function exportVariogramJSON() {
  element: setupState.element,
  domain: setupState.domain,
  direction: variogramState.direction || 'omni',
+ directionDescriptor:validVariogramDirectionDescriptor(variogramState.directionDescriptor)?{...variogramState.directionDescriptor}:null,
  _provenance: {
  product: 'Orebit GeoSuite', version: window.OREBIT_VERSION,
  build: window.OREBIT_BUILD_ID || null,

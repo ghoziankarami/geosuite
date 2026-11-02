@@ -129,6 +129,12 @@ async function mainExperimental(pool,direction,tolerance){
   const context={DATA:{rows,cols},setupState:{element:'ni_pct',domain:'all'},
     rowsFiltered:()=>rows,colIdx:key=>cols.indexOf(key),asNum:x=>Number.isFinite(x)?x:null,
     document:{getElementById:id=>elements[id]},variogramState:{},ensurePlotly:async()=>{},
+    currentVariogramDirectionDescriptor:maxDistanceM=>({mode:direction,
+      azimuthDeg:direction==='EW'?90:direction==='NS'?0:null,dipDeg:direction==='vert'?90:0,
+      dipConvention:'positive-down',metric:direction==='vert'?'vertical-z':'horizontal-xy',
+      angularToleranceDeg:tolerance,horizontalBandwidthM:direction==='vert'?5:null,
+      verticalBandwidthM:null,lagWidthM:20,lagCount:10,maxDistanceM,
+      sampleCap:5000,seed:0x9e3779b9}),
     clearVariogramSamplingIssue:()=>{},setVariogramSamplingIssue:()=>{},
     autoFitVariogram:()=>{},plotVariogram:async()=>{},t:key=>key};
   vm.createContext(context);vm.runInContext(source.slice(mainStart,mainEnd),context);

@@ -151,6 +151,22 @@ def main():
                 page.locator("#fileInput").set_input_files(str(master))
                 page.wait_for_function("(n)=>DATA.rows.length===n&&DATA.name==='native-assay-master.csv'", arg=N, timeout=60000)
                 page.evaluate("window.__largeExtentRaw=JSON.stringify(DATA.rows)")
+                nav(page, 4)
+                page.locator('#variogramSampling > summary').click()
+                page.locator('#varDir').select_option('custom')
+                page.locator('#varMaxH').fill('')
+                page.locator('#varComputeBtn').click()
+                page.wait_for_function("()=>Number(document.querySelector('#varMaxH').value)===2250", timeout=60000)
+                check(not page.audit_errors and page.evaluate('DATA.rows.length') == N,
+                      'Custom variogram calculates automatic distance for the full uploaded population without changing it')
+                page.locator('#variogramAdvanced > summary').click()
+                page.locator('#variogramMapTool > summary').click()
+                page.locator('#vmapMaxH').fill('')
+                page.locator('button[onclick="computeVariogramMap()"]:visible').click()
+                page.wait_for_function('()=>variogramState.variogramMap!==null', timeout=60000)
+                map_result = page.evaluate('variogramState.variogramMap')
+                check(map_result['maxH'] == 1000 and map_result['samplesUsed'] == 5000 and not page.audit_errors,
+                      'Variogram map uses the full uploaded extent before its documented display subsampling')
                 # Real navigation catches failures that safeRender deliberately swallows.
                 nav(page, 5)
                 failures = page.evaluate("__largeExtentFailures")

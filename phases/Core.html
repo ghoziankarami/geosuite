@@ -1225,7 +1225,7 @@ const AutoSave = {
 
   async _doSave() {
     try {
-      const bundle = await sealProjectCapsule(buildBundle(STATE.currentProjectName));
+      const bundle = await OrebitProject.snapshot(STATE.currentProjectName);
       // Preserve created date from existing record
       const existing = await dbGet(STATE.currentProjectName);
       if (existing && existing.created) bundle.created = existing.created;
@@ -3157,7 +3157,8 @@ function _crsTag() {
 
 function _coreLoadTable(cls, mapped, headers, rows, opts = {}) {
   window.OrebitCoreRepair?.reset();
-  window.OrebitCoreDomain?.reset();
+  if (opts.sourceChange === 'correction') window.OrebitCoreDomain?.invalidate('Source table corrected: ' + cls);
+  else window.OrebitCoreDomain?.reset();
   window.OrebitCoreScope?.reset(); STATE.desurvey = null; STATE.merged = null; STATE.mergeAudit = null; STATE.composite = null;
   // Undo entries refer to row indices in the replaced source table.
   UNDO.stack = UNDO.stack.filter(action => action.table !== cls && action.type !== 'validation-repair');
@@ -10045,8 +10046,13 @@ document.addEventListener('keydown', (e) => {
   // IndexedDB helpers (openDB, dbPut, dbGet, dbGetAll, dbDelete) → src/shared/io/index.js (inlined at build via @orebit-inline)
 
   /* ---- CSV serialisation (reuses TABLE_SCHEMA + csvEscape from outer scope) ---- */
-  function tableToCSV(tableName) {
-    const rows = STATE[tableName];
+  function projectTableRows(tableName) {
+    return STATE[tableName].map(row => Object.fromEntries(Object.entries(row).map(([key,value]) => {
+      const midpoint = tableName === 'assay' && window._coreUseProvidedXYZ && ['midx','midy','midz','x','y','z'].includes(key);
+      return [key, midpoint && STATE.lengthUnitSource === 'ft' && value != null && String(value).trim() !== '' && Number.isFinite(Number(value)) ? Number(value)*_FT_TO_M : value];
+    })));
+  }
+  function tableToCSV(tableName, rows = projectTableRows(tableName)) {
     if (!rows || !rows.length) return '';
     // Use actual column names from data (not hardcoded schema) so
     // exported CSV only contains columns that exist — no empty schema slots
@@ -10065,9 +10071,7 @@ document.addEventListener('keydown', (e) => {
     rows.forEach(r => {
       lines.push(cols.map(c => {
         const v = r[c];
-        // Bundles contain metre coordinates, just like the canonical master.
-        const midpoint = tableName === 'assay' && window._coreUseProvidedXYZ && ['midx','midy','midz','x','y','z'].includes(c);
-        return csvEscape(midpoint && STATE.lengthUnitSource === 'ft' && v != null && String(v).trim() !== '' && Number.isFinite(Number(v)) ? Number(v)*_FT_TO_M : v);
+        return csvEscape(v);
       }).join(','));
     });
     return lines.join('\n');
@@ -10112,6 +10116,7 @@ document.addEventListener('keydown', (e) => {
       created: now,
       modified: now,
       phase1: {
+        source_rows: Object.fromEntries(['collar','survey','assay','geology'].map(table => [table,projectTableRows(table)])),
         collar_csv:   tableToCSV('collar'),
         survey_csv:   tableToCSV('survey'),
                 assay_csv:   tableToCSV('assay'),
@@ -10199,7 +10204,7 @@ document.addEventListener('keydown', (e) => {
   }
 
   /* ---- Load bundle data into STATE ---- */
-  async function applyBundle(bundle) {
+  async function applyBundle(bundle, {duringStartup = false} = {}) {
     // Stage all four source tables before touching the active project. A bad
     // later CSV field must not leave an earlier table, audit or scope replaced.
     // Reuse the ordinary parser/mapping owners and keep legacy optional tables.
@@ -10240,6 +10245,15 @@ document.addEventListener('keydown', (e) => {
     for (const table of tables) {
       const rows = parseCSVText(bundle.phase1[csvKeys[table]] || '');
       staged[table] = { rows, mapped: typeof remapRows === 'function' ? remapRows(rows, table) : rows };
+      if (bundle.phase1.source_rows != null) {
+        const exact = bundle.phase1.source_rows[table];
+        if (tableToCSV(table, exact) !== bundle.phase1[csvKeys[table]]) {
+          const error = new Error('PROJECT_SOURCE_ROWS_MISMATCH:' + table);
+          error.code = 'PROJECT_SOURCE_ROWS_MISMATCH';
+          throw error;
+        }
+        staged[table].mapped = JSON.parse(JSON.stringify(exact));
+      }
     }
     window.OrebitCoreRepair?.reset();
     const audit = bundle.metadata?.audit;
@@ -10290,11 +10304,11 @@ document.addEventListener('keydown', (e) => {
     STATE.units = Object.fromEntries(Object.entries(bundle.metadata?.units || {}).filter(([key,value]) => typeof value === 'string'));
     STATE.unitsLocked = Object.fromEntries(Object.keys(STATE.units).filter(key => STATE.units[key] !== 'auto' && (!bundle.metadata?.units_locked || bundle.metadata.units_locked[key])).map(key => [key,true]));
     window.OrebitCoreScope.restore(audit?.validationScope);
-    if (bundle.geologicalDomain) window.OrebitCoreDomain.restore(bundle.geologicalDomain).catch(error => {
+    if (bundle.geologicalDomain) await window.OrebitCoreDomain.restore(bundle.geologicalDomain).catch(error => {
       console.warn('Domain interpretation not restored', error.message);
       toast(t('core.domain.invalidState'), 'warn');
     });
-    await window.OrebitCoreEDAReference?.restore(bundle.edaReference || null);
+    await window.OrebitCoreEDAReference?.restore(bundle.edaReference || null, {duringStartup});
 
     refreshDemoBanner();
     updateDataTag();
@@ -10476,6 +10490,7 @@ document.addEventListener('keydown', (e) => {
 
   /* ---- Export to window ---- */
   window.OrebitProject = { save, load, exportBundle, importBundle, list, remove,
+    snapshot: async name => sealProjectCapsule(buildBundle(name)),
     currentCapsuleRevision: async function () { return (await sealProjectCapsule(buildBundle(STATE.currentProjectName || 'Current Core project'))).sourceCapsule.revision; },
     currentProjectStateRevision: async function () {
       const project = await sealProjectCapsule(buildBundle(STATE.currentProjectName || 'Current Core project'));
@@ -10530,7 +10545,10 @@ document.addEventListener('keydown', (e) => {
         localStorage.removeItem('orebit-current-project');
         return;
       }
-      await applyBundle(bundle);
+      const previousName = STATE.currentProjectName;
+      STATE.currentProjectName = lastName;
+      try { await applyBundle(bundle, {duringStartup: true}); }
+      catch (error) { STATE.currentProjectName = previousName; throw error; }
       STATE.currentProjectName = lastName;
       updateProjectNameDisplay();
     } catch (e) {

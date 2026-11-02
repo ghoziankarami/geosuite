@@ -1321,6 +1321,7 @@
   "asy.workflow.estimation.approved": "Persetujuan populasi saat ini: {status}; {elements} unsur; {parents} interval induk. Nilai sumber tidak berubah.",
   "asy.workflow.estimation.counts": "Pratinjau: {retain} dipertahankan, {split} dipecah, {reject} ditolak, {ambiguous} interval induk ambigu.",
   "asy.workflow.openCoreDomain": "Buka ruang kerja Domain di Core",
+  "asy.workflow.openCoreFailed": "Proyek Core yang sesuai tidak dapat dibuka. Tetap gunakan tab ini lalu coba tautannya lagi.",
   "asy.workflow.estimation.edaInspect": "Periksa domain yang direview di EDA",
   "asy.workflow.estimation.edaActive": "EDA: sampel induk domain geologi yang direview",
   "asy.workflow.estimation.edaClear": "Kembali ke cakupan label sumber",

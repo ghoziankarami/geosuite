@@ -141,4 +141,10 @@ ok(fragmented.status==='invalid'&&fragmented.shellError==='DOMAIN_SOLID_TOPOLOGY
 ok(fragmented.meshDiagnostics.nonManifoldEdges===1,'diagnostic identifies the non-manifold vertical edge');
 ok(fragmented.validation.topology===false&&fragmented.validation.selfIntersection===null,'unreached intersection check stays untested rather than falsely failed');
 close(fragmented.commonArea,200,'both measured patches retained without gap filling');close(fragmented.volume,2000,'candidate volume is diagnostic only, not accepted material');
+ok(fragmented.separation?.parts.length===2,'point-touching patches offer an explicit two-body separation proposal');
+for(const part of fragmented.separation.parts){
+ ok(part.validation.topology&&part.validation.selfIntersection&&!part.validation.geologistReview,'each proposed body independently passes the unchanged shell validator without approval');
+ close(part.volume,1000,'each separated measured patch retains its analytic prism volume');
+}
+close(fragmented.separation.parts.reduce((sum,p)=>sum+p.volume,0),fragmented.volume,'separation preserves every supported cell and total volume');
 console.log(`domain between S7: ${checks} known answers passed`);

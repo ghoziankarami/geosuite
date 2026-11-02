@@ -28,6 +28,26 @@ await sealProjectCapsule(core);
 const valid = await validateProjectCapsule(core);
 check(!valid.legacy && valid.revision === core.sourceCapsule.revision, 'Core tables seal and validate with a content revision');
 check(core.sourceCapsule.sources.length === 4 && core.schemaVersion === 4, 'New Core capsule declares all source table roles and current version');
+const exactCore = structuredClone(core);
+exactCore.phase1.source_rows = {
+  collar:[{hole_id:'H1',x:10,y:20,z:30,depth:40,comment:''}],
+  survey:[{hole_id:'H1',depth:0,dip:-90,azimuth:0}],
+  assay:[{hole_id:'H1',from_m:0,to_m:1,ni_pct:1.2}],
+  geology:[{hole_id:'H1',from_m:0,to_m:1,lithology:'SAP'}]
+};
+await sealProjectCapsule(exactCore);
+check((await validateProjectCapsule(exactCore)).revision === exactCore.sourceCapsule.revision &&
+  exactCore.sourceCapsule.revision !== core.sourceCapsule.revision,
+  'Optional exact source cells are content-bound, while legacy CSV-only capsules remain valid');
+const changedExact = structuredClone(exactCore);changedExact.phase1.source_rows.assay[0].ni_pct=1.3;
+await rejects(validateProjectCapsule(changedExact),'PROJECT_SOURCE_REVISION_MISMATCH:assay','Changed exact source cells cannot inherit the saved source revision');
+for(const [label,change] of [
+  ['missing table',v=>delete v.collar], ['wrong row count',v=>v.assay.push({...v.assay[0]})],
+  ['nested cell',v=>v.collar[0].comment={hidden:1}], ['nonfinite measurement',v=>v.assay[0].ni_pct=Infinity]
+]) {
+  const invalid=structuredClone(exactCore);change(invalid.phase1.source_rows);
+  await rejects(sealProjectCapsule(invalid),'PROJECT_SOURCE_ROWS_INVALID','Exact source cells reject '+label);
+}
 const modified = structuredClone(core); modified.phase1.collar_csv = modified.phase1.collar_csv.replace('10,20', '11,20');
 await rejects(validateProjectCapsule(modified), 'PROJECT_SOURCE_REVISION_MISMATCH:collar', 'Modified source is rejected by its role revision');
 const missingRole = structuredClone(core); missingRole.sourceCapsule.sources.pop();

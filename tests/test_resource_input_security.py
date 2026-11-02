@@ -15,6 +15,13 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
+def open_task_options(page, disclosure):
+    target = page.locator('#' + disclosure)
+    if not target.evaluate('e=>e.open'):
+        target.locator(':scope > summary').click()
+    assert target.evaluate('e=>e.open'), 'Parameter editing must follow the native task Options'
+
+
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "build/build.mjs").exists())
 SITE = Path(os.environ.get("RESOURCE_SECURITY_TEST_SITE", ROOT / "dist"))
 PAYLOAD = '</textarea><img src=x onerror="window.__resourceInputMarker=(window.__resourceInputMarker||0)+1">DOMAIN<&\'"'
@@ -103,14 +110,65 @@ def calculate(page):
     page.locator("#bmGenBtn").click()
     page.wait_for_function("()=>!!blockState.blocks?.length")
     nav(page, 6)
+    open_task_options(page,"resourceSearchOptions")
     for selector in ["#srMaj", "#srSemi", "#srMin"]:
         page.locator(selector).fill("100")
     page.locator("#resourceRunEstimate").click()
     page.wait_for_function("()=>estimState.done", timeout=30000)
     check(page.evaluate("estimState.results.estimated>0"), "real uploaded samples produce an estimate through existing controls")
+    check(page.evaluate("Array.from(estimState.results.ok).filter(Number.isFinite).length>=20"), "uploaded sensitivity fixture has at least twenty estimated blocks")
+    before_sensitivity = page.evaluate("JSON.stringify({rows:DATA.rows,model:variogramState.model,search:searchState,ok:Array.from(estimState.results.ok),signature:estimState.appliedSignature})")
+    page.locator('button[onclick="runVariogramSensitivity()"]:visible').click()
+    try:
+        page.wait_for_function("()=>document.getElementById('sensTornado')?.data?.length===6")
+    except Exception:
+        print('Sensitivity browser errors:', page.audit_errors, flush=True)
+        raise
+    check(page.locator('#sensResults tbody tr').count()==6, "native sensitivity click renders all six perturbation scenarios")
+    check('Ni (%)' in page.locator('#sensResults thead').inner_text(), "sensitivity output labels the actual selected grade and unit")
+    check(page.evaluate("document.getElementById('sensTornado').data.every(t=>t.x.every(Number.isFinite))"), "sensitivity tornado contains finite changes, not an empty success message")
+    check(page.evaluate("JSON.stringify({rows:DATA.rows,model:variogramState.model,search:searchState,ok:Array.from(estimState.results.ok),signature:estimState.appliedSignature})")==before_sensitivity, "optional variogram sensitivity preserves uploaded source, model, search and accepted estimates")
+    check(not page.audit_errors and not page.evaluate("window.__resourceInputFailures"), "sensitivity completes without uncaught or swallowed rendering failures")
+    nav(page, 7)
+    open_task_options(page, 'resourceCVOptions')
+    cv_help = page.locator('#tab7').inner_text()
+    check('R² > 0.4' not in cv_help and 'no universal R² acceptance threshold' in cv_help,
+          'native LOO help avoids a universal R squared acceptance threshold')
+    check('reproducible subsample' in cv_help and 'Same-drillhole neighbours may remain' in cv_help,
+          'native LOO help distinguishes limited targets and within-hole validation leakage')
+    page.locator('#resourceRunCrossval').click()
+    page.wait_for_function('()=>!!crossvalState.metrics&&!crossvalState._running')
     nav(page, 9)
     page.locator('#tab9 button[onclick="runClassification()"]').click()
     page.wait_for_function("()=>!!classState.labels")
+    badges = page.locator('#tab9 .quick-insight .class-badge').all_text_contents()
+    check(badges == ['H', 'M', 'L'], 'native confidence summary uses computational H/M/L labels, not Mineral Resource categories')
+    insight = page.locator('#tab9 .quick-insight').inner_text()
+    check('Resource:' not in insight and 'Recommended method:' not in insight,
+          'confidence insight does not imply a Mineral Resource or choose an estimator from R squared alone')
+    check(not any(word in insight.lower() for word in ['reliable', 'andal']),
+          'estimation coverage is not labelled scientific reliability')
+    check('R² alone does not select an estimator' in insight,
+          'actual completed LOO comparison requires errors, bias and spatial validation')
+    before_language = page.evaluate('JSON.stringify({rows:DATA.rows,results:estimState.results,labels:classState.labels,metrics:crossvalState.metrics})')
+    page.locator('#lang-switch').click()
+    if page.locator('.lang-picker-overlay').is_visible():
+        page.locator('.lang-picker-overlay [data-pick="id"]').click()
+    page.wait_for_function('()=>document.documentElement.lang==="id"')
+    insight_id = page.locator('#tab9 .quick-insight').inner_text()
+    check(page.locator('#tab9 .quick-insight .class-badge').all_text_contents()==['H','M','L']
+          and 'R² saja tidak menentukan estimator' in insight_id and 'andal' not in insight_id.lower(),
+          'native Indonesian language change retains H/M/L and the LOO limitation')
+    check(page.evaluate('JSON.stringify({rows:DATA.rows,results:estimState.results,labels:classState.labels,metrics:crossvalState.metrics})')==before_language,
+          'confidence language-only redraw preserves all raw rows, estimates, class assignments and CV metrics')
+    nav(page, 7)
+    check('Tidak ada ambang penerimaan R² universal' in page.locator('#tab7').inner_text(),
+          'Indonesian LOO help preserves the same acceptance limitation')
+    nav(page, 9)
+    page.locator('#lang-switch').click()
+    if page.locator('.lang-picker-overlay').is_visible():
+        page.locator('.lang-picker-overlay [data-pick="en"]').click()
+    page.wait_for_function('()=>document.documentElement.lang==="en"')
     marker = page.evaluate("window.__resourceInputMarker")
     nav(page, 12)
     literal_boundary(page, "#kcmiNarrative", marker, "report textarea preserves the complete domain without a closing-tag injection")

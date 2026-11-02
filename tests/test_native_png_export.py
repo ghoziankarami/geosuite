@@ -21,6 +21,13 @@ from pathlib import Path
 import fitz
 from playwright.sync_api import sync_playwright
 
+def open_task_options(page, disclosure):
+    target = page.locator('#' + disclosure)
+    if not target.evaluate('e=>e.open'):
+        target.locator(':scope > summary').click()
+    assert target.evaluate('e=>e.open'), 'Parameter editing must follow the native task Options'
+
+
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "build/build.mjs").is_file())
 SITE = Path(os.environ.get("OREBIT_TEST_DIST", ROOT / "dist"))
 spec = importlib.util.spec_from_file_location("png_controls", Path(__file__).with_name("test_resource_large_extent.py"))
@@ -45,7 +52,7 @@ def source_files(folder):
     tables = {
         "collar": (["hole_id", "x", "y", "z", "depth"], []),
         "survey": (["hole_id", "depth", "dip", "azimuth"], []),
-        "assay": (["hole_id", "from_m", "to_m", "au_gpt"], []),
+        "assay": (["hole_id", "from_m", "to_m", "au_gpt", "fe_pct"], []),
         "geology": (["hole_id", "from_m", "to_m", "lithology", "domain"], []),
     }
     for h in range(6):
@@ -54,7 +61,7 @@ def source_files(folder):
         tables["survey"][1].extend([[hole, 0, -90, 0], [hole, 8, -90, 0]])
         tables["geology"][1].append([hole, 0, 8, "HOST", "ORE"])
         for depth in range(8):
-            tables["assay"][1].append([hole, depth, depth + 1, 1 + (h + depth) % 5])
+            tables["assay"][1].append([hole, depth, depth + 1, 1 + (h + depth) % 5, 50 - h - depth])
     for name, (header, rows) in tables.items():
         path = folder / (name + ".csv")
         with path.open("w", newline="") as handle:
@@ -124,14 +131,18 @@ def export_png(page, chart, selector, path, clearance=True):
 
 
 def resource_view(page):
-    page.locator("#tab1 .workflow-actions [data-action-role='next']").first.click()
-    page.locator("#resourceSetupNext").click()
+    # Traverse the actual uploaded-data workflow: continuity, variogram, grid,
+    # estimation, validation, then the report's linked result viewer.
+    controls.nav(page, 3)
+    page.locator("#tab3 .workflow-stage-bar-next").click()
+    page.wait_for_function('()=>document.getElementById("tab4").classList.contains("active")')
     page.locator('#variogramSampling > summary').click()
     for selector, value in [("#varLag", "2"), ("#varN", "12"), ("#varMaxH", "30")]:
         page.locator(selector).fill(value)
     page.locator('#varMaxH').press('Tab')
-    page.locator("#tab4 .workflow-actions [data-workflow-next]").click()
-    page.wait_for_selector("#bmX")
+    page.locator("#tab4 .workflow-stage-bar-next").click()
+    page.wait_for_function('()=>document.getElementById("tab5").classList.contains("active")', timeout=120000)
+    controls.nav(page, 5)
     extents = page.evaluate("_resourceExtents(getSamples())")
     sizes = [max(1, math.ceil((high - low) / 4)) for low, high in extents]
     for selector, value in zip(["#bmX", "#bmY", "#bmZ"], sizes):
@@ -140,18 +151,15 @@ def resource_view(page):
     page.locator("#bmEnvelopeRadius").press("Tab")
     page.locator("#bmDens").fill("2.7")
     page.locator("#bmDens").press("Tab")
-    page.locator("#bmGenBtn").click()
-    page.wait_for_function("()=>blockState.blocks?.length>0")
-    controls.nav(page, 6)
-    for selector in ["#srMaj", "#srSemi", "#srMin"]:
-        page.locator(selector).fill("50")
-    for selector, value in [("#sMinN", "3"), ("#sMaxN", "12"), ("#sMaxHole", "4")]:
-        page.locator(selector).fill(value)
-    page.locator("#sOctant").uncheck()
-    page.locator("#sSecondPass").uncheck()
-    page.locator("#resourceRunEstimate").click()
+    page.locator("#tab5 .workflow-stage-bar-next").click()
+    page.wait_for_function('()=>document.getElementById("tab6").classList.contains("active")')
+    page.locator("#tab6 .workflow-stage-bar-next").click()
     page.wait_for_function("()=>estimState.done===true", timeout=60000)
-    page.locator("#tab6 .workflow-related [data-related-stage='11']").click()
+    page.locator("#tab7 .workflow-stage-bar-next").click()
+    page.wait_for_function('()=>document.getElementById("tab10").classList.contains("active")', timeout=60000)
+    page.locator("#tab10 .workflow-stage-bar-next").click()
+    page.wait_for_function('()=>document.getElementById("tab12").classList.contains("active")')
+    page.locator("#tab12 [data-related-stage='11']").click()
     page.wait_for_selector("#d3PlotExportPngBtn")
     page.locator("#d3Scale").select_option("linear")
     page.locator("#d3Palette").select_option("viridis")
@@ -179,11 +187,14 @@ def main():
                 core.locator("#fileInput").set_input_files([str(p) for p in files.values()])
                 core.wait_for_function("()=>STATE.assay.length===48&&!STATE.isSample.assay")
                 controls.nav(core, 7)
-                core.locator("#tab7 .workflow-actions [data-workflow-next]").click()
+                core.locator("#tab7 .workflow-stage-bar-next").click()
                 core.wait_for_function("()=>document.getElementById('tab10').classList.contains('active')&&STATE.desurvey")
-                core.locator("#tab10 .workflow-actions [data-workflow-next]").click()
+                core.locator("#tab10 .workflow-stage-bar-next").click()
+                core.wait_for_function("()=>document.getElementById('tab11').classList.contains('active')")
+                if not core.evaluate("()=>STATE.merged?.length"):
+                    core.locator('#computeMergeBtn').click()
                 core.wait_for_function("()=>document.getElementById('tab11').classList.contains('active')&&STATE.merged?.length===48")
-                core.locator("#tab11 .workflow-actions [data-workflow-next]").click()
+                core.locator("#tab11 .workflow-stage-bar-next").click()
                 master = download(core, '#tab13 button[onclick="exportMasterCSV()"]', folder / "core-master.csv")
                 observe(core)
                 check(core.evaluate("typeof plotlyToImageWhiteBg==='function'"), "Core loads the shared export owner")
@@ -209,6 +220,19 @@ def main():
                 assay.wait_for_function("()=>statHist._fullLayout&&!_plotQueueRunning&&!_plotQueue.length")
                 observe(assay)
                 proof.append(export_png(assay, "statHist", "#statHistExportPngBtn", folder / "assay-histogram.png"))
+                if not assay.locator('nav.tabs .tab[onclick="showTab(4)"]').is_visible():
+                    assay.locator('#assayAdvancedToggle').click()
+                controls.nav(assay, 4)
+                assay.wait_for_function("()=>document.getElementById('pairResidPlot')?._fullLayout&&!_plotQueueRunning&&!_plotQueue.length")
+                for chart in ["pairScatterPlot", "pairResidPlot"]:
+                    button = assay.locator('#' + chart + 'ExportPngBtn')
+                    button.scroll_into_view_if_needed()
+                    check(button.evaluate("e=>{const r=e.getBoundingClientRect();return e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}"), chart + " export button receives a native pointer without overlap")
+                    proof.append(export_png(assay, chart, '#' + chart + 'ExportPngBtn', folder / (chart + '.png')))
+                assay.locator('#tab4').get_by_role('button', name='Refresh analysis', exact=True).click()
+                assay.wait_for_function("()=>document.getElementById('pairResidPlot')?._fullLayout&&!_plotQueueRunning&&!_plotQueue.length")
+                check(all(assay.locator('#' + chart + 'ExportPngBtn').count() == 1 for chart in ['pairScatterPlot', 'pairResidPlot']), 'Native chart refresh retains exactly one export action per graph')
+                proof.append(export_png(assay, 'pairScatterPlot', '#pairScatterPlotExportPngBtn', folder / 'pair-scatter-refreshed.png'))
                 controls.nav(assay, 13)
                 composites = download(assay, "#tab13 button[onclick='exportMasterForEstimation()']", folder / "assay-composites.csv")
                 check(not assay.audit_errors and not assay.evaluate('__largeExtentFailures.length'), "Assay native exports have no page or swallowed-render failure")

@@ -45,6 +45,8 @@ a particular editor, assistant or a maintainer infrastructure account.
    npm test
    ```
    and, for anything touching estimation, `tests/test_pipeline_known_answer.py`.
+   Its [browser prerequisites and local server commands](docs/DEVELOPMENT.md#run-tests)
+   are documented separately; these checks require Playwright and Chromium.
 5. User-visible text goes in `src/locales/<module>/en.json` **and** `id.json`.
 6. Never ship a price, trial or paywall — GeoSuite is free by design.
 7. Describe *why* in the commit message (`fix(assay): …`, `feat(resource): …`).

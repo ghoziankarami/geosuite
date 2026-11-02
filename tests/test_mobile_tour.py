@@ -29,7 +29,9 @@ server = http.server.ThreadingHTTPServer(
 threading.Thread(target=server.serve_forever, daemon=True).start()
 passed = 0
 STAGES = {
-    "Core": [2, 7, 10, 11],
+    # Domain stage14 is a visible main-workflow destination after Export.
+    # Export remains its own final bottom-nav group (stage13).
+    "Core": [2, 7, 10, 11, 14],
     "Assay": [2, 3, 8, 11, 7],
     "Resource": [2, 3, 4, 5, 6, 7, 10],
 }
@@ -67,10 +69,39 @@ def fits(page, locator):
     )
 
 
+def drawer_settled(page):
+    # The test immediately selects an advanced stage after opening this drawer.
+    # Playwright correctly refuses to click a node whose transform is still
+    # moving; wait on the actual CSS transition instead of guessing a delay.
+    page.wait_for_function(
+        '''()=>{const e=document.getElementById("mobileNavDrawer");return !!e?.classList.contains("show")&&!e.getAnimations().some(a=>a.playState==="running")}'''
+    )
+
+
 def raw(page):
     return page.evaluate(
         'JSON.stringify(typeof DATA!=="undefined"?DATA.rows:[STATE.collar,STATE.survey,STATE.assay,STATE.geology])'
     )
+
+
+def tour_has_no_side_effects(page, name):
+    if name == "Resource":
+        check(
+            page.evaluate(
+                "!blockState.blocks?.length && !estimState.done && !variogramState.model"
+            ),
+            "Resource tour does not create a grid, fit a model or run an estimate",
+        )
+    if name == "Core":
+        check(
+            page.evaluate("STATE.desurvey===null && STATE.merged===null"),
+            "Core tour does not calculate geometry or merge invalid records",
+        )
+    if name == "Assay":
+        check(
+            page.evaluate("!Object.keys(window._capLog||{}).length"),
+            "Assay tour does not apply a top-cut",
+        )
 
 
 def tour(page, name, language):
@@ -143,23 +174,51 @@ def tour(page, name, language):
         name + " Done closes the tour and returns to the original stage",
     )
     check(raw(page) == before, name + " full tour preserves every raw row")
-    if name == "Resource":
+    tour_has_no_side_effects(page, name)
+
+
+def tour_smoke(page, name, language):
+    """Check responsive localized rendering without replaying every tour step."""
+    start = active(page)
+    before = raw(page)
+    stage = TOUR[name][0]
+    page.locator("#mobileTourBtn").click()
+    page.wait_for_function(
+        '()=>document.getElementById("tourStepInfo").textContent.includes("1")'
+    )
+    check(active(page) == stage, f"{name} {language} tour opens its described stage")
+    check(fits(page, page.locator("#tourCard")), f"{name} {language} tour card fits")
+    for control in page.locator("#tourCard button:visible").all():
         check(
-            page.evaluate(
-                "!blockState.blocks?.length && !estimState.done && !variogramState.model"
-            ),
-            "Resource tour does not create a grid, fit a model or run an estimate",
+            fits(page, control) and control.bounding_box()["height"] >= 43,
+            f"{name} {language} tour controls fit and have touch-sized targets",
         )
-    if name == "Core":
-        check(
-            page.evaluate("STATE.desurvey===null && STATE.merged===null"),
-            "Core tour does not calculate geometry or merge invalid records",
+    title = page.locator("#tourTitle").inner_text()
+    body = page.locator("#tourBody").inner_text()
+    check(
+        title and body and "tour.p" not in title + body,
+        f"{name} {language} tour has translated copy",
+    )
+    target = page.evaluate("()=>window.TOUR_STEPS[0].target")
+    check(
+        page.locator(target).evaluate(
+            "e=>{const r=e.getBoundingClientRect();return r.width>0&&r.left>=-1&&r.right<=innerWidth+1}"
         )
-    if name == "Assay":
-        check(
-            page.evaluate("!Object.keys(window._capLog||{}).length"),
-            "Assay tour does not apply a top-cut",
-        )
+        and page.locator(target).is_visible(),
+        f"{name} {language} tour points to an actual visible stage control",
+    )
+    check(
+        page.locator("#tourCard").evaluate("e=>e.contains(document.activeElement)"),
+        f"{name} {language} tour keeps keyboard focus inside the dialog",
+    )
+    page.locator("#tourCard .tour-skip").click()
+    check(
+        not page.locator("#tourOverlay").evaluate('e=>e.classList.contains("open")')
+        and active(page) == start,
+        f"{name} {language} tour Skip closes and restores the starting stage",
+    )
+    check(raw(page) == before, f"{name} {language} tour Skip preserves every raw row")
+    tour_has_no_side_effects(page, name)
 
 
 try:
@@ -233,6 +292,10 @@ try:
                         not page.locator("#mobileBottomNav").is_visible(),
                         name + " desktop uses only the sidebar",
                     )
+                    check(
+                        not page.locator("#mobileTourBtn").is_visible(),
+                        name + " mobile-only Tour stays out of the desktop rail",
+                    )
                     page.set_viewport_size({"width": 390, "height": 844})
                 check(
                     page.locator("#mobileBottomNav").is_visible(),
@@ -292,9 +355,17 @@ try:
                     == STAGES[name],
                     name + " mobile stages match the desktop guided order",
                 )
-                page.wait_for_timeout(
-                    250
-                )  # drawer slide-in must finish before measuring bounds
+                if name == "Core":
+                    page.locator("#mobileNavDrawer .drawer-close").click()
+                    page.wait_for_function("()=>!document.getElementById('mobileNavDrawer').classList.contains('show')")
+                    page.locator('#mobileBottomNav [data-group="export"]').click()
+                    check(
+                        active(page) == 13,
+                        "Core mobile Export group opens stage13 while Domain remains a visible analysis route",
+                    )
+                    page.locator('#mobileBottomNav [data-group="analysis"]').click()
+                    drawer_settled(page)
+                drawer_settled(page)
                 check(
                     fits(page, page.locator("#mobileNavDrawer .drawer-close")),
                     name + " drawer has an accessible close control",
@@ -308,6 +379,7 @@ try:
                     name + " drawer selection navigates and closes",
                 )
                 page.locator('#mobileBottomNav [data-group="results"]').click()
+                drawer_settled(page)
                 advanced = page.locator("#mobileNavDrawer .sub-tab").evaluate_all(
                     "els=>els.map(e=>Number(e.dataset.tab))"
                 )
@@ -329,6 +401,32 @@ try:
                     == "page",
                     name + " directly opened advanced stage stays highlighted",
                 )
+                if name == "Assay" and advanced[0] == 4:
+                    compact = page.evaluate("""() => ({
+                      rows: document.getElementById('bvScatter')?.layout?.grid?.rows,
+                      heatmapVariables: document.getElementById('bvHeatmap')?.data?.[0]?.x?.length,
+                      note: document.querySelector('[data-bv-scatter-compact]')?.textContent,
+                      shown: Number(document.querySelector('[data-bv-scatter-compact]')?.dataset.shown),
+                      total: Number(document.querySelector('[data-bv-scatter-compact]')?.dataset.total) || document.getElementById('bvHeatmap')?.data?.[0]?.x?.length,
+                      viewportWidth: innerWidth
+                    })""")
+                    expected_rows = min(
+                        3 if compact["viewportWidth"] <= 600 else 5,
+                        compact["heatmapVariables"],
+                    )
+                    check(
+                        compact["rows"] == expected_rows
+                        and compact["heatmapVariables"] == compact["total"]
+                        and (
+                            compact["viewportWidth"] <= 600
+                            and compact["shown"] == 3
+                            and compact["total"] > compact["shown"]
+                            and bool(compact["note"])
+                            or compact["viewportWidth"] > 600
+                            and compact["note"] is None
+                        ),
+                        "Assay scatter matrix follows the phone breakpoint while the heatmap retains every variable: " + str(compact),
+                    )
                 page.locator('#mobileBottomNav [data-group="home"]').click()
                 check(
                     before == raw(page), name + " mobile navigation preserves raw data"
@@ -352,7 +450,13 @@ try:
                     )
                     check(install.get_attribute("aria-label")==("Install app" if language=="en" else "Install aplikasi"),name + " install accessible label follows EN/ID")
                     check(menu.get_attribute("aria-label")==("Steps" if language=="en" else "Alur"),name + " header menu accessible label follows EN/ID")
-                    tour(page, name, language)
+                    if width == 390:
+                        # Tour is a mobile-only entry. Exercise its full flow in both
+                        # locales once at the canonical phone width; other phone and
+                        # tablet breakpoints still exercise its responsive contract.
+                        tour(page, name, language)
+                    elif width != 1440:
+                        tour_smoke(page, name, language)
                 page.locator("#mobileTourBtn").click()
                 page.set_viewport_size({"width": 568, "height": 320})
                 page.wait_for_timeout(100)

@@ -74,3 +74,14 @@ const kriging=ctx.ordinaryKriging([{idx:0,eu:5},{idx:1,eu:5}],5,0,0,symmetric,
 assert.ok(Math.abs(kriging.value-3)<1e-7);
 assert.ok(Math.abs(kriging.variance-1.1677734375)<1e-7);
 console.log('PASS: legacy search, hole caps/octants, sparse geometry/volume/limits; both mutation controls detected');
+
+// Distinct queried lattice cells may share a 32-bit hash. The bucket stores
+// both cells' candidates; visiting it twice must not duplicate observations.
+const collisionSamples=[{x:-5,y:5,z:-5,v:1,rid:'H1'},{x:15,y:5,z:15,v:9,rid:'H2'}];
+assert.equal(ctx._cellHash(-1,0,-1),ctx._cellHash(1,0,1),'fixture has an actual spatial-hash collision');
+const collisionSearch={rMaj:50,rSemi:50,rMin:50,azDeg:0,dipDeg:0,maxNeighbors:8,useOctant:false};
+function collisionAnswer(owner,extra={}){return Array.from(owner.neighborsAround(index(owner,collisionSamples),0,0,0,collisionSamples,{...collisionSearch,...extra}),n=>n.idx).sort((a,b)=>a-b);}
+for(const extra of [{},{useOctant:true},{maxPerHole:2}])assert.deepEqual(collisionAnswer(ctx,extra),[0,1],'each measured source row is selected once despite colliding cell hashes');
+const repeatedBucket=engine(code.replace('if (visitedBuckets.has(k)) continue;','if (false) continue;'));
+assert.notDeepEqual(collisionAnswer(repeatedBucket),[0,1],'removing bucket deduplication reintroduces duplicated observations');
+console.log('PASS: spatial-hash collisions never duplicate observations, including octant and per-hole search; removed-fix control fails');

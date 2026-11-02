@@ -10,15 +10,23 @@
       <label style="display:block;margin:6px 0;"><input type="checkbox" id="rpeCutoffCheck"> <span data-i18n="kcmi.checkCutoff">Cut-off and economic assumptions documented externally</span></label>
       <label style="display:block;margin:6px 0;"><input type="checkbox" id="rpeMiningCheck"> <span data-i18n="kcmi.checkMining">Mining method / pit or underground constraint reviewed</span></label>
       <label style="display:block;margin:6px 0;"><input type="checkbox" id="rpeMetCheck"> <span data-i18n="kcmi.checkMet">Metallurgy, recovery, dilution and density reviewed</span></label>
-      <p style="font-size:12px;color:var(--warn);margin-top:8px;" data-i18n="kcmi.checklistWarn">This checklist records handoff readiness only. It does not certify a JORC/KCMI Mineral Resource.</p>
+      <p style="font-size:12px;color:var(--warn-ink);margin-top:8px;" data-i18n="kcmi.checklistWarn">This checklist records handoff readiness only. It does not certify a JORC/KCMI Mineral Resource.</p>
     </div>
     <div class="card" style="margin-top:10px;">
-      <h3 data-i18n="kcmi.exportReportTitle"> Export Report</h3>
+      <div id="reportExportSettings" class="resource-report-preflight" role="group" aria-labelledby="kcmiExportSettingsTitle">
+      <h3 id="kcmiExportSettingsTitle" data-i18n="kcmi.exportReportTitle"> Export Report</h3>
       <label style="display:block;margin:8px 0;" for="reportCutoff" data-i18n="res.reportInsight.cutoffLabel">PDF headline cutoff (native grade unit)</label>
       <input type="number" id="reportCutoff" min="0" step="any" style="width:140px;" aria-label="PDF headline cutoff" onchange="setReportCutoff(this.value)">
       <p data-i18n="res.reportInsight.cutoffHint">Blank = all estimated blocks. Enter a comparison cutoff explicitly. The current grade-tonnage confidence filter also applies.</p>
       <label for="reportCutoffNote" style="display:block;margin:8px 0;" data-i18n="res.reportInsight.noteLabel">Cutoff basis / comparison purpose (optional)</label>
-      <textarea id="reportCutoffNote" rows="2" maxlength="5000" style="width:100%;" onchange="setupState.reportCutoffNote=this.value;saveResourceSession()"></textarea>
+      <textarea id="reportCutoffNote" rows="2" maxlength="5000" style="width:100%;" onchange="setupState.reportCutoffNote=this.value;saveResourceSession();renderResourceReportPreflight()"></textarea>
+      <div class="resource-report-scope-summary" aria-labelledby="resourceReportScopeTitle">
+        <h4 id="resourceReportScopeTitle" data-i18n="res.reportSummary.scope">Scope and assumptions</h4>
+        <p id="resourceReportScopeSummary"></p>
+        <p id="resourceReportSelectionSummary"></p>
+        <p id="resourceReportBasisSummary"></p>
+      </div>
+      </div>
       <button class="btn" id="pdf-export-btn" onclick="exportPDF()" data-i18n="kcmi.exportPdfBtn">Generate Handoff PDF Report</button>
       <button class="btn secondary" onclick="saveAllPlotsZip()" title="Download all rendered charts as a single ZIP file" data-i18n-attr="title:kcmi.savePlotsZipTitle" data-i18n="kcmi.savePlotsZipBtn">📦 Save All Plots (ZIP)</button>
     <p style="font-size:12px;color:var(--fg-mute);margin-top:8px;" data-i18n="kcmi.pdfHint">8-page PDF: cover, variogram, block model, grade estimation, swath validation, classification, cut-off sensitivity, and KCMI commentary.</p>

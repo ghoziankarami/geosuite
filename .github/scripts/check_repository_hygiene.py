@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Check tracked source boundaries without printing credential values."""
+
 import argparse
 import re
 import subprocess
@@ -44,7 +45,9 @@ def check(root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[2])
+    parser.add_argument(
+        "--root", type=Path, default=Path(__file__).resolve().parents[2]
+    )
     args = parser.parse_args()
     problems = check(args.root.resolve())
     for path, reason in problems:

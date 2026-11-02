@@ -231,7 +231,7 @@ Deciding not to cap is as much a decision as capping, and it **must be written**
 
 ### Domain: a 1 % Zn grade shell, because there is no lithology
 
-**Domain** tab → method **Grade shell (cut-off)**, cut-off **1** (% Zn).
+**Domain** tab → method **Grade shell (cut-off)**, cut-off **1** (% Zn). Enter the population rationale, then click **Apply reviewed population**. Changing a dropdown/cutoff only updates the preview; original source labels are retained and the decision travels with the project/report.
 
 ![1 % Zn grade-shell domain](../img/thalanga-07-assay-domain.png)
 

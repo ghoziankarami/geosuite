@@ -9,11 +9,35 @@ body.screening-guided,body.screening-guided .wrap{overflow-x:clip!important;over
 .workflow-purpose,.workflow-recommendation{font-size:13px;line-height:1.6;color:var(--fg-mute);max-width:85ch}
 .workflow-insight{padding:12px 16px;margin:14px 0;border-radius:9px;border-left:3px solid var(--accent,#008c83);background:rgba(0,140,131,.06)}
 .workflow-insight strong{font-size:12px}.workflow-insight p{margin:5px 0 0;line-height:1.6;font-size:14px;color:var(--fg)}
+/* Validation leads with the real cause and affected population, before details. */
+.workflow-validation-summary{border:1px solid var(--border);border-left:4px solid var(--warn-ink);background:var(--warn-soft);padding:20px}
+.workflow-validation-summary[data-validation-state="ready"]{border-left-color:var(--good-ink);background:var(--good-soft)}
+.workflow-validation-summary h3{font-size:22px;line-height:1.4;margin:0 0 10px;color:var(--fg)}
+.validation-summary-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:18px 0 0}
+.validation-summary-metrics dt{font-size:12px;line-height:1.5;color:var(--fg-body,var(--fg));overflow-wrap:anywhere}
+.validation-summary-metrics dd{font-size:28px;font-weight:700;line-height:1.35;color:var(--fg);margin:4px 0 0}
+.workflow-next-action{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;padding:12px 16px;border:1px solid var(--border);border-radius:9px;background:var(--bg-panel)}
+.workflow-next-action h3{font-size:15px;margin:0}.workflow-next-action .btn{max-width:100%;white-space:normal}
 .workflow-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.workflow-actions>[hidden]{display:none!important}
+.workflow-actions>.btn,.workflow-related .btn{min-width:0;max-width:100%;white-space:normal!important;overflow-wrap:anywhere}
 .workflow-notes{border-top:1px solid var(--border);padding-top:10px;font-size:12px}
 .workflow-notes summary,.workflow-review-list summary{cursor:pointer;color:var(--fg-mute);min-height:30px}
 .workflow-notes label{display:block;margin:8px 0}.workflow-notes textarea{width:100%;box-sizing:border-box;min-height:72px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg)}
 .workflow-status{font-size:11px;color:var(--fg-mute);margin:10px 0 0}
+.workflow-estimation-spec{margin:1rem 0;padding:1rem 0;border-top:1px solid var(--border)}
+.workflow-estimation-spec h3{font-size:1.25rem;line-height:1.3;margin:0 0 .75rem}
+.workflow-estimation-spec :is(p,label,legend,input,select,textarea){font-size:1rem;line-height:1.5}
+.workflow-estimation-spec>p{max-width:70ch}
+.workflow-estimation-spec :is(select,button){min-height:44px}
+.workflow-estimation-domains{padding:.75rem 0;border:0;min-width:0}
+.workflow-estimation-domains legend{font-weight:600}
+.workflow-estimation-domains label{display:inline-flex;align-items:center;gap:.5rem;min-height:44px;margin-right:1rem;overflow-wrap:anywhere}
+.workflow-estimation-review-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin:1rem 0}
+.workflow-estimation-review-fields label{display:flex;flex-direction:column;gap:.5rem;min-width:0}
+.workflow-estimation-review-fields :is(input,textarea){width:100%;box-sizing:border-box;padding:.625rem;border:1px solid var(--border);border-radius:var(--radius-sm,6px);background:var(--bg);color:var(--fg)}
+.workflow-estimation-review-fields textarea{resize:vertical;min-height:5rem}
+@media(max-width:600px){.workflow-estimation-review-fields{grid-template-columns:minmax(0,1fr)}}
 .workflow-review-list{margin:0 0 20px;padding:16px;border:1px solid var(--border);border-radius:10px}
 .workflow-review-row{padding:12px 0;border-top:1px solid var(--border);font-size:12px;line-height:1.5}
 .workflow-review-row pre{white-space:pre-wrap;overflow-wrap:anywhere}
@@ -22,6 +46,7 @@ body.screening-guided,body.screening-guided .wrap{overflow-x:clip!important;over
 .assay-optional-tools{margin:16px 0;border:1px solid var(--border);border-radius:10px;padding:14px}
 .assay-optional-tools>summary{cursor:pointer;font-size:13px;color:var(--fg-mute);min-height:28px}
 @media(max-width:600px){.assay-workflow-card{padding:16px;margin-bottom:14px}.assay-workflow-card h2{font-size:21px}.workflow-actions .btn{flex:1 1 145px;white-space:normal;min-height:42px}}
+@media(max-width:600px){.workflow-next-action{align-items:stretch;flex-direction:column}.workflow-next-action .btn{width:100%;min-height:42px}}
 
 body.screening-guided nav.tabs .tab-group-label,body.screening-guided nav.tabs .sidebar-section-label{display:none!important}
 body.screening-guided nav.tabs .tab[data-workflow-advanced="true"]{display:none!important}
@@ -31,6 +56,15 @@ body.screening-guided.screening-advanced-open nav.tabs .tab[data-workflow-advanc
 .workflow-step-links{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;margin:12px 0;padding-bottom:4px}
 .workflow-step-links button{flex:none;white-space:nowrap;padding:7px 11px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--fg);font-size:12px;min-height:36px;cursor:pointer}
 .workflow-step-links button[aria-current="step"]{border-color:var(--accent);background:rgba(0,140,131,.08);font-weight:650}
+.schema-keyboard-scroll{max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
+.schema-keyboard-scroll table{min-width:max-content}
+.schema-keyboard-scroll:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.resource-report-preflight{margin:12px 0;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--bg-alt,var(--bg))}
+.resource-report-preflight h3{margin:0 0 8px;font-size:16px}
+.resource-report-preflight p{margin:6px 0;font-size:13px;line-height:1.55;color:var(--fg-mute)}
+.resource-report-scope-summary{margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:8px;overflow-wrap:anywhere}
+.resource-report-scope-summary h4{margin:0 0 6px;font-size:14px}
+.resource-report-preflight textarea{box-sizing:border-box;max-width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg)}
 .assay-workflow-card.workflow-dashboard{padding:18px 22px}
 .workflow-dashboard .workflow-insight{margin:10px 0;padding:8px 12px}
 .workflow-dashboard .workflow-actions{margin-bottom:0}
@@ -49,7 +83,7 @@ body.screening-guided.screening-advanced-open nav.tabs .tab[data-workflow-advanc
 .workflow-nav-disclosure::before{content:'▸';font-size:14px;color:var(--fg-mute)}
 .workflow-nav-disclosure[aria-expanded="true"]::before{content:'▾'}
 @media(min-width:1080px){
-  body.screening-guided .wrap{grid-template-columns:216px minmax(0,1fr)!important}
+  body.screening-guided .wrap{grid-template-columns:240px minmax(0,1fr)!important}
   body.screening-guided .wrap>nav.tabs{padding:14px 10px!important}
   body.screening-guided .wrap>nav.tabs .tab{min-height:44px!important;font-size:13px!important;line-height:1.4;gap:9px!important}
   body.screening-guided .wrap>nav.tabs .tab[data-workflow-step]::after{content:attr(data-workflow-step);display:grid;place-items:center;flex:none;width:22px;height:22px;margin-left:auto;border:1px solid var(--border);border-radius:50%;font-size:11px;font-weight:600;line-height:1;color:var(--fg-mute);background:var(--bg)}
@@ -65,6 +99,24 @@ body.screening-guided.screening-advanced-open nav.tabs .tab[data-workflow-advanc
 .screening-guided:not(.assay-guided) nav.tabs .tab-done::after{display:none}
 
 .workflow-related{border-top:1px solid var(--border);margin-top:12px;padding-top:10px}.workflow-related-title{font-size:12px;color:var(--fg-mute);margin:0 0 8px}.workflow-related-actions{display:flex;gap:8px;flex-wrap:wrap}.workflow-related .btn{font-size:12px;white-space:normal;min-height:40px}.workflow-gate{font-size:13px;line-height:1.6;border-left:3px solid var(--warn,#d97706);padding:8px 12px}
+
+/* Sticky Back/Continue bar at the foot of a stage; the card above keeps the full action set. */
+.workflow-stage-bar{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;gap:12px;margin:24px 0 0;padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--border);background:var(--bg)}
+.workflow-stage-bar .btn{min-height:44px}
+.workflow-stage-bar-why{flex:1;min-width:0;font-size:12px;line-height:1.4;color:var(--fg-mute);text-align:right}
+/* The tall Domain workspace has its own sticky step navigation; keep its
+   return action in document flow so it never masks the plot or inspector. */
+body.core-guided #tab14 .workflow-stage-bar{position:static;flex-wrap:wrap}
+body.core-guided #tab14 .workflow-stage-bar .btn{min-width:0;flex-shrink:1;white-space:normal!important;overflow-wrap:anywhere}
+body.core-guided #tab14 .workflow-stage-bar-next{margin-left:auto}
+@container(max-width:340px){body.core-guided #tab14 .workflow-stage-bar .btn{flex-basis:100%}}
+/* Strip Log is a tall, scrollable plot: keep its stage actions after the plot
+   in document flow so they never mask the depth tracks while scrolling. */
+body.core-guided #tab8 .workflow-stage-bar{position:static;flex-wrap:wrap}
+@media(max-width:600px){.workflow-stage-bar{flex-wrap:wrap;gap:8px}.workflow-stage-bar-why{order:-1;flex-basis:100%;text-align:left}.workflow-stage-bar-why:empty{display:none}.workflow-stage-bar .btn{flex:1 1 0;min-width:0;white-space:normal!important;overflow-wrap:anywhere;text-align:center;justify-content:center}}
+body.workflow-stage-bar-on #toast,body.workflow-stage-bar-on .toast,body.workflow-stage-bar-on .toast-container{bottom:calc(84px + env(safe-area-inset-bottom,0px))!important}
+/* Phones and tablets: sit on the fixed 65px bottom nav (v194 shell), not under it. */
+@media(max-width:768px){.workflow-stage-bar{bottom:calc(65px + env(safe-area-inset-bottom,0px));padding-bottom:12px}body.workflow-stage-bar-on #toast,body.workflow-stage-bar-on .toast,body.workflow-stage-bar-on .toast-container{bottom:calc(150px + env(safe-area-inset-bottom,0px))!important}}
 
 /* A tour card must fit the actual viewport, including landscape phones. */
 .tour-card{box-sizing:border-box;width:min(380px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow-y:auto;padding:18px}
@@ -101,6 +153,12 @@ body.screening-guided.screening-advanced-open nav.tabs .tab[data-workflow-advanc
 .core-repair-record{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border,#dce4ee)}
 .core-repair-record span{overflow-wrap:anywhere;min-width:0;flex:1;font-size:13px}
 .core-repair-record .btn{flex-shrink:0;min-height:44px}
+.core-repair-hole-details{margin-top:8px}
+.core-repair-hole-details>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600}
+.core-repair-hole-details input[type=search]{box-sizing:border-box;width:min(100%,32rem);min-height:44px;margin:8px 0;padding:8px 12px}
+.core-repair-hole-pager{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:8px 0}
+.core-repair-hole-pager span{flex:1 1 14rem;font-size:13px}
+.core-repair-hole-details [data-repair-download]{display:inline-flex;align-items:center;min-height:44px;margin:8px 0}
 .core-repair-context{padding:18px;border:1px solid var(--warn,#c97700);border-radius:10px;background:var(--bg-panel);margin-bottom:16px}
 .core-repair-context p{font-size:13px;max-width:80ch}
 .editable-table td.cell-validation-focus{outline:2px solid var(--warn,#c97700);outline-offset:-2px;background:rgba(245,158,11,.13)}
@@ -111,3 +169,64 @@ body.screening-guided.screening-advanced-open nav.tabs .tab[data-workflow-advanc
 .core-correction-guide{padding:14px;margin-bottom:14px}.core-correction-guide .workflow-eyebrow{margin-bottom:8px}
 
 [data-core-scope-preview] textarea{display:block;width:100%;box-sizing:border-box;min-height:88px;margin:8px 0;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg)}
+
+/* Assay: the stage card's labelled element choice already drives these panel
+   selects through chooseElement(), so only that one is shown. Renderers still read them. */
+.assay-guided #statsElementSelect,.assay-guided #tcElementSelect,.assay-guided #lithoElementSelect,.assay-guided label:has(>#domainElementSelect){display:none}
+
+/* S8: geological domain received from Core with the handoff CSV. */
+.domain-handoff-note{margin:12px 0;padding:10px 12px;border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.domain-handoff-note:not([data-readiness="validated"]){border-left-color:var(--warn)}
+.domain-handoff-note p{margin:4px 0 0;color:var(--fg-mute);font-size:12px}
+/* S9: Resource reconciliation of the received solid against the block model. */
+.domain-clip{margin-top:14px}
+.domain-clip-scroll{overflow-x:auto;max-width:100%}
+.domain-clip-scroll table{font-variant-numeric:tabular-nums}
+.domain-clip-scroll td{text-align:right;white-space:nowrap}
+
+/* Compact stage toolbar: results and remedy take precedence over tutorial prose. */
+.workflow-compact{padding:14px 18px;box-shadow:none;margin-bottom:16px}
+.workflow-compact:not(.workflow-optional) .workflow-insight{padding:8px 12px;margin:10px 0}
+.workflow-compact:not(.workflow-optional) .workflow-validation-summary{padding:20px;margin:16px 0}
+.workflow-compact .workflow-actions{margin:8px 0}
+.workflow-compact>.workflow-purpose{font-size:14px;line-height:1.5;max-width:64ch;margin:6px 0 14px}
+/* One visible onward action. The footer invokes the existing owner control,
+   retaining its real gating/parameters without a second competing Next above. */
+body.workflow-stage-bar-on .panel.active .assay-workflow-card>.workflow-actions>[data-action-role="next"]{display:none!important}
+/* The final footer already invokes the complete-data handoff. Keep the
+   distinct cropped-data handoff and advanced exports available. */
+body.workflow-stage-bar-on #tab13 button[data-handoff="Assay"][onclick*="exportMasterCSV"],
+body.workflow-stage-bar-on #tab13 button[data-handoff="Resource"]{display:none!important}
+.workflow-compact .workflow-step-links{margin:8px 0;gap:4px}
+.workflow-compact .workflow-step-links button[data-action-role]{padding:6px 10px!important;border:0!important;min-height:44px;font-weight:500}
+.workflow-compact .workflow-step-links button[aria-current="step"]{background:rgba(0,140,131,.1)!important;color:var(--accent);font-weight:700}
+.workflow-help{font-size:12px;color:var(--fg-mute);margin-top:8px}
+.workflow-help>summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+.workflow-help>summary::before{content:'▸';margin-right:6px}.workflow-help[open]>summary::before{content:'▾'}
+.workflow-compact .workflow-related{margin-top:8px;padding-top:8px}
+.workflow-compact .workflow-related .btn[data-action-role]{border:0!important;padding:6px 8px!important;text-decoration:underline;text-underline-offset:3px;min-height:44px}
+.workflow-compact .workflow-gate{padding:6px 10px;margin:8px 0}
+@media(max-width:600px){.workflow-compact{padding:12px}.workflow-compact .workflow-step-links button[data-action-role]{padding:6px 8px!important}}
+
+/* Owner Stage Mock: a quiet stage heading, bounded result canvas and numbered
+   rail. The calculation owners and their controls remain in the live panels. */
+body.screening-guided .assay-workflow-card.workflow-compact,
+body.screening-guided .assay-workflow-card.workflow-dashboard{border:0;border-radius:0;box-shadow:none;padding:0;background:transparent}
+body.screening-guided .workflow-insight:not(.workflow-validation-summary){border:1px solid var(--accent);border-left-width:4px;background:rgba(0,140,131,.06)}
+@media(min-width:1080px){
+  body.screening-guided .wrap>nav.tabs .tab[data-workflow-step]::after{order:-1;margin-left:0}
+  html:not(.orebit-rail-collapsed) body.screening-guided .wrap>nav.tabs .tab[data-workflow-step]>.lucide-icon{display:none}
+  body.screening-guided .orebit-rail-toggle{min-height:44px}
+}
+
+/* Native task Options retain their renderer and values; no proxy input clones. */
+details[data-workflow-options]{border:1px solid var(--border);border-radius:8px;padding:0 12px;margin:10px 0}
+details[data-workflow-options]>summary{cursor:pointer;min-height:44px;display:list-item;align-content:center;font-weight:600;color:var(--fg)}
+details[data-workflow-options][open]{padding-bottom:12px}
+details[data-workflow-options]>summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+/* One primary reading column across modules; metric cards and the Domain
+   tree/viewport/inspector workspace retain their own dedicated layouts. */
+body.screening-guided .panel :is(.grid-2,.grid-3,.fb-grid):has(.plot-container,.js-plotly-plot){grid-template-columns:minmax(0,1fr)!important}
+
+.workflow-inspection>summary{cursor:pointer;min-height:44px;align-content:center;font-weight:600;color:var(--fg)}
+.workflow-inspection{margin:12px 0;border:1px solid var(--border);border-radius:8px;padding:12px}

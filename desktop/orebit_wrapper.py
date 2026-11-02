@@ -10,7 +10,6 @@ import os
 import re
 import json
 import base64
-import socket
 import errno
 import subprocess
 import tempfile
@@ -37,13 +36,35 @@ class FileAPI:
     def __init__(self, module):
         self.module = module
 
-    def send_handoff(self, target, filename, text):
-        """Store one CSV for the next module; optionally start its sibling EXE."""
+    def send_handoff(self, target, filename, text, domain=None, source=None):
+        """Store one CSV with optional parent source JSON for the next module."""
         next_module = {"Core": "Assay", "Assay": "Resource"}.get(self.module)
-        if target != next_module or not isinstance(filename, str) or not isinstance(text, str):
+        if (
+            target != next_module
+            or not isinstance(filename, str)
+            or not isinstance(text, str)
+        ):
             return {"ok": False, "error": "Invalid module handoff"}
-        if not filename.lower().endswith(".csv") or len(text.encode("utf-8")) > 32 * 1024 * 1024:
+        if (
+            not filename.lower().endswith(".csv")
+            or len(text.encode("utf-8")) > 32 * 1024 * 1024
+        ):
             return {"ok": False, "error": "CSV handoff must be at most 32 MB"}
+        if domain is not None and (
+            not isinstance(domain, str) or len(domain.encode("utf-8")) > 8 * 1024 * 1024
+        ):
+            return {
+                "ok": False,
+                "error": "Domain handoff must be JSON text of at most 8 MB",
+            }
+        if source is not None and (
+            not isinstance(source, str)
+            or len(source.encode("utf-8")) > 32 * 1024 * 1024
+        ):
+            return {
+                "ok": False,
+                "error": "Source context must be JSON text of at most 32 MB",
+            }
         try:
             folder = _handoff_dir()
             path = os.path.join(folder, target + ".json")
@@ -51,16 +72,29 @@ class FileAPI:
             try:
                 with os.fdopen(fd, "w", encoding="utf-8") as f:
                     json.dump(
-                        {"name": os.path.basename(filename), "text": text, "ts": time.time()},
-                        f, ensure_ascii=False,
+                        {
+                            "name": os.path.basename(filename),
+                            "text": text,
+                            "domain": domain,
+                            "source": source,
+                            "ts": time.time(),
+                        },
+                        f,
+                        ensure_ascii=False,
                     )
                 os.replace(temp, path)
             finally:
                 if os.path.exists(temp):
                     os.unlink(temp)
-            exe = os.path.join(os.path.dirname(sys.executable), "Orebit-" + target + ".exe")
+            exe = os.path.join(
+                os.path.dirname(sys.executable), "Orebit-" + target + ".exe"
+            )
             launched = False
-            if sys.platform == "win32" and getattr(sys, "frozen", False) and os.path.isfile(exe):
+            if (
+                sys.platform == "win32"
+                and getattr(sys, "frozen", False)
+                and os.path.isfile(exe)
+            ):
                 subprocess.Popen([exe], cwd=os.path.dirname(exe), close_fds=True)
                 launched = True
             return {"ok": True, "launched": launched}
@@ -78,13 +112,141 @@ class FileAPI:
             os.unlink(path)
             if not isinstance(rec, dict):
                 return None
-            if time.time() - rec.get("ts", 0) > 30 * 60 or rec.get("ts", 0) > time.time() + 60:
+            if (
+                time.time() - rec.get("ts", 0) > 30 * 60
+                or rec.get("ts", 0) > time.time() + 60
+            ):
                 return None
-            if not isinstance(rec.get("text"), str) or not isinstance(rec.get("name"), str):
+            if not isinstance(rec.get("text"), str) or not isinstance(
+                rec.get("name"), str
+            ):
                 return None
             if len(rec["text"].encode("utf-8")) > 32 * 1024 * 1024:
                 return None
+            if (
+                not isinstance(rec.get("domain"), str)
+                or len(rec["domain"].encode("utf-8")) > 8 * 1024 * 1024
+            ):
+                rec["domain"] = None
+            if rec.get("source") is not None and (
+                not isinstance(rec["source"], str)
+                or len(rec["source"].encode("utf-8")) > 32 * 1024 * 1024
+            ):
+                rec["source"] = None
             return rec
+        except (OSError, ValueError, TypeError):
+            return None
+
+    def send_eda_reference(self, text):
+        """Queue a bounded Assay EDA review reference for the Core EXE."""
+        if self.module != "Assay" or not isinstance(text, str):
+            return {"ok": False, "error": "Invalid EDA reference handoff"}
+        if len(text.encode("utf-8")) > 4 * 1024 * 1024:
+            return {"ok": False, "error": "EDA reference must be at most 4 MB"}
+        try:
+            folder = _handoff_dir()
+            path = os.path.join(folder, "Core-eda.json")
+            fd, temp = tempfile.mkstemp(dir=folder, prefix="Core-eda-", suffix=".tmp")
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump({"text": text, "ts": time.time()}, f, ensure_ascii=False)
+                os.replace(temp, path)
+            finally:
+                if os.path.exists(temp):
+                    os.unlink(temp)
+            exe = os.path.join(os.path.dirname(sys.executable), "Orebit-Core.exe")
+            launched = False
+            if (
+                sys.platform == "win32"
+                and getattr(sys, "frozen", False)
+                and os.path.isfile(exe)
+            ):
+                subprocess.Popen([exe], cwd=os.path.dirname(exe), close_fds=True)
+                launched = True
+            return {"ok": True, "launched": launched}
+        except OSError as exc:
+            return {"ok": False, "error": str(exc)}
+
+    def take_eda_reference(self):
+        """Consume one recent Assay reference in Core; no source data is activated."""
+        if self.module != "Core":
+            return None
+        try:
+            path = os.path.join(_handoff_dir(), "Core-eda.json")
+            with open(path, "r", encoding="utf-8") as f:
+                record = json.load(f)
+            os.unlink(path)
+            if (
+                not isinstance(record, dict)
+                or time.time() - record.get("ts", 0) > 30 * 60
+            ):
+                return None
+            text = record.get("text")
+            return (
+                text
+                if isinstance(text, str)
+                and len(text.encode("utf-8")) <= 4 * 1024 * 1024
+                else None
+            )
+        except (OSError, ValueError, TypeError):
+            return None
+
+    def send_assay_checkpoint_return(self, text):
+        """Queue a bounded Core→Assay return without a CSV payload."""
+        if self.module != "Core" or not isinstance(text, str):
+            return {"ok": False, "error": "Invalid Assay checkpoint return"}
+        if len(text.encode("utf-8")) > 8 * 1024 * 1024:
+            return {
+                "ok": False,
+                "error": "Assay checkpoint return must be at most 8 MB",
+            }
+        try:
+            folder = _handoff_dir()
+            path = os.path.join(folder, "Assay-return.json")
+            fd, temp = tempfile.mkstemp(
+                dir=folder, prefix="Assay-return-", suffix=".tmp"
+            )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump({"text": text, "ts": time.time()}, f, ensure_ascii=False)
+                os.replace(temp, path)
+            finally:
+                if os.path.exists(temp):
+                    os.unlink(temp)
+            exe = os.path.join(os.path.dirname(sys.executable), "Orebit-Assay.exe")
+            launched = False
+            if (
+                sys.platform == "win32"
+                and getattr(sys, "frozen", False)
+                and os.path.isfile(exe)
+            ):
+                subprocess.Popen([exe], cwd=os.path.dirname(exe), close_fds=True)
+                launched = True
+            return {"ok": True, "launched": launched}
+        except OSError as exc:
+            return {"ok": False, "error": str(exc)}
+
+    def take_assay_checkpoint_return(self):
+        """Consume a fresh Core checkpoint return once in Assay."""
+        if self.module != "Assay":
+            return None
+        try:
+            path = os.path.join(_handoff_dir(), "Assay-return.json")
+            with open(path, "r", encoding="utf-8") as f:
+                record = json.load(f)
+            os.unlink(path)
+            if (
+                not isinstance(record, dict)
+                or time.time() - record.get("ts", 0) > 30 * 60
+            ):
+                return None
+            text = record.get("text")
+            return (
+                text
+                if isinstance(text, str)
+                and len(text.encode("utf-8")) <= 8 * 1024 * 1024
+                else None
+            )
         except (OSError, ValueError, TypeError):
             return None
 
@@ -180,7 +342,9 @@ class _ExclusiveServer(HTTPServer):
 
 
 def _module_from_html(html):
-    match = re.search(r'<meta name="product-stage" content="(Core|Assay|Resource)"', html)
+    match = re.search(
+        r'<meta name="product-stage" content="(Core|Assay|Resource)"', html
+    )
     if not match:
         raise ValueError("Unknown GeoSuite module in bundled HTML")
     return match.group(1)

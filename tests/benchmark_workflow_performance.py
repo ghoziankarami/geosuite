@@ -282,7 +282,7 @@ def run_workload(browser, base, folder, item, index, args, core, controls):
             run["invariants"]["core_validation_failures"] = 0
 
             def desurvey():
-                page.locator("#tab7 .workflow-actions [data-workflow-next]").click()
+                page.locator("#tab7 .workflow-stage-bar-next").click()
                 page.wait_for_function(
                     "()=>document.querySelector('#tab10.panel.active')&&STATE.desurvey",
                     timeout=90000,
@@ -295,7 +295,7 @@ def run_workload(browser, base, folder, item, index, args, core, controls):
             )
 
             def merge():
-                page.locator("#tab10 .workflow-actions [data-workflow-next]").click()
+                page.locator("#tab10 .workflow-stage-bar-next").click()
                 page.wait_for_function(
                     "()=>document.querySelector('#tab11.panel.active')&&STATE.merged?.length",
                     timeout=90000,

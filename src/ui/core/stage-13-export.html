@@ -4,6 +4,7 @@
     <p>Final output: master drillhole CSV ready for input into the <strong>EDA Suite (Assay)</strong> or commercial estimation software. Format compatible with commercial 3D mining software.</p>
   </div>
   <div id="exportPanel"></div>
+  <p class="hint" style="font-size:14px;" id="coreExportPopulationHelp"><span data-i18n="core.ex.populationHelp">This screen exports the current merged intervals, with their recorded edits and analysis scope. Optional Core composites have a separate download in Composite. Continue in Assay sends merged intervals for EDA; final domain-constrained compositing is reviewed in Assay before Resource.</span> <a data-docs="ref/tabs" data-docs-find="Export" data-i18n="core.ex.populationHelpDocs">Review export details →</a></p>
   <div class="card">
     <h3 data-i18n="core.processingLog">Processing Log</h3>
     <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;"><span data-i18n="core.ex.transformLogFull">Every transform applied this session (BDL, compositing, crop). Embedded in the PDF report, so the exported numbers stay traceable.</span></p>
@@ -12,7 +13,7 @@
   <div id="cropPanel"></div>
   <div class="card">
     <h3><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> <span data-i18n="core.pdfReport">PDF Report</span></h3>
-    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;" data-i18n="core.pdfReportHint">Single-file PDF (4 A4 pages): cover, validation results, hole inventory, per-element stats + KCMI Section 1 manual checklist. Embedded in this artifact, no connection required.</p>
+    <p style="font-size:13px;color:var(--fg-mute);margin-bottom:8px;" data-i18n="core.pdfReportHint">Single-file A4 PDF; pages expand with the current results and audit record. Generated here, no connection required.</p>
     <button class="btn" id="pdf-export-btn" onclick="exportPDF(event)" data-i18n="btn.downloadPdf">Download PDF Report</button>
   </div>
   <div class="card">

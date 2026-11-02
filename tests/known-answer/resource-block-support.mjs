@@ -1,0 +1,51 @@
+// P5.01: sparse filled support records are unique, geometry-bound and never default to full cells.
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import {createHash} from 'node:crypto';
+import {existsSync} from 'node:fs';
+const ctx=vm.createContext({});
+const base=existsSync(new URL('../../../src/shared/io/project-capsule.js',import.meta.url))?'../../../':'../../';
+vm.runInContext(readFileSync(new URL(base+'src/shared/io/project-capsule.js',import.meta.url),'utf8')+'\nglobalThis.hasCurrentGeologicalReview=hasCurrentGeologicalReview;',ctx);
+vm.runInContext(readFileSync(new URL(base+'src/shared/geostat/resource-block-support.js',import.meta.url),'utf8'),ctx);
+const owner=ctx.OrebitResourceBlockSupport;let checks=0;
+const ok=(value,message)=>{assert.ok(value,message);checks++;};
+const validation={topology:true,selfIntersection:true,topography:true,surfaceCrossings:true,overlap:true,honouring:true,geologistReview:true};
+const terrainSurface={kind:'reviewed-collar-tin',v:[[0,0,1],[1,0,1],[0,1,1]],triangles:[[0,1,2]]};
+// Analytic disjoint prisms occupy 1/2 and 1/4 of the first unit cell.
+const canonical=v=>v===null||typeof v!=='object'?JSON.stringify(v):Array.isArray(v)?'['+v.map(canonical).join(',')+']':'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canonical(v[k])).join(',')+'}';
+const digest=v=>createHash('sha256').update(canonical(v)).digest('hex');
+const sourceHash=digest('synthetic support protocol');
+function seal(code,z0,z1,inputs={terrainSurface,topographyAudit:{type:'reviewed-collar-tin',fullSurfaceClipping:true}}){
+  const mesh={v:[[0,0,z0],[1,0,z0],[1,1,z0],[0,1,z0],[0,0,z1],[1,0,z1],[1,1,z1],[0,1,z1]],f:[[0,2,1],[0,3,2],[4,5,6],[4,6,7],[0,1,5],[0,5,4],[1,2,6],[1,6,5],[2,3,7],[2,7,6],[3,0,4],[3,4,7]]};
+  inputs={...inputs,material:{density:1.6,unit:'t/m3',source:'Core declared material'}};
+  const volume=z1-z0,meshHash=digest(mesh),inputsHash=digest(inputs);
+  const review={reviewer:'Protocol fixture reviewer',reason:'Analytic disjoint unit-cell prisms',at:'2026-10-20T00:00:00Z',code,volume,sourceHash,meshHash,inputsHash};
+  return {code,density:1.6,build:{mesh,volume,meshHash,inputsHash,stale:false,validation,inputs,review,reviewHash:digest(review)}};
+}
+const domains=[seal('SAP',0,.5),seal('LIM',.5,.75)];
+const received={schemaVersion:1,source:{sha256:sourceHash},crs:{kind:'local',units:'m'},domains,handoff:{readiness:'validated',volume:.75}};
+const model={origin:[0,0,0],size:[1,1,1],dims:[2,1,1],blocks:[{cx:.5,cy:.5,cz:.5,idx:0},{cx:1.5,cy:.5,cz:.5,idx:1}]};
+const measurements=[{code:'SAP',filled:[.5,0]},{code:'LIM',filled:[.25,0]}];
+const result=owner.build(received,model,measurements,['SAP','LIM'],{reviewer:'reviewer',reason:'Reviewed synthetic support'});
+ok(result.schema==='orebit-resource-block-support'&&result.records.length===2,'The accepted snapshot contains only measured nonempty parent-cell/domain support records');
+ok(result.records.every(row=>row.blockIndex===0&&row.filledVolume<1)&&result.supportedBlockIndexes.length===1,'Partial support stays attached to one unique parent block without a full-cell fallback');
+ok(result.records.map(row=>row.filledVolume).reduce((a,b)=>a+b,0)===.75&&result.counts.partialRecords===2,'Partial geology across domains sums without duplicating the cell volume');
+ok(result.terrainBasis.includes('clips')&&result.review.reason==='Reviewed synthetic support','The terrain clipping basis and explicit reviewer reason persist with the snapshot');
+assert.throws(()=>owner.build({...received,handoff:{readiness:'stale'}},model,measurements,['SAP'],{reviewer:'r',reason:'x'}),/BLOCK_SUPPORT_GEOMETRY_NOT_VALIDATED/);checks++;
+const noTerrain={...received,domains:[seal('SAP',0,.5,{topographyAudit:{fullSurfaceClipping:false}})],handoff:{readiness:'validated',volume:.5}};
+assert.throws(()=>owner.build(noTerrain,model,measurements,['SAP'],{reviewer:'r',reason:'x'}),/BLOCK_SUPPORT_TERRAIN_REVIEW_REQUIRED/);checks++;
+assert.throws(()=>owner.build(received,model,measurements,['SAP'],{reviewer:'',reason:'x'}),/BLOCK_SUPPORT_REVIEW_REQUIRED/);checks++;
+assert.throws(()=>owner.build(received,model,[{code:'SAP',filled:[1.01,0]}],['SAP'],{reviewer:'r',reason:'x'}),/BLOCK_SUPPORT_VOLUME_INVALID/);checks++;
+assert.throws(()=>owner.build(received,model,[{code:'SAP',filled:[.75,0]},{code:'LIM',filled:[.5,0]}],['SAP','LIM'],{reviewer:'r',reason:'x'}),/BLOCK_SUPPORT_DOMAIN_OVERLAP/);checks++;
+const duplicate={...model,blocks:[...model.blocks,{cx:.5,cy:.5,cz:.5,idx:2}]};
+assert.throws(()=>owner.build(received,duplicate,measurements,['SAP'],{reviewer:'r',reason:'x'}),/BLOCK_SUPPORT_CELL_ALIGNMENT_INVALID|BLOCK_SUPPORT_DOMAIN_OVERLAP|BLOCK_SUPPORT_PARENT_DUPLICATE/);checks++;
+const importedSurface={...terrainSurface,kind:'imported-dxf-3dface-tin',units:'m',crs:'EPSG:32751',provenance:{sourceHash:digest('synthetic DXF fixture'),sourceUnits:'m',targetCRS:'EPSG:32751',transform:'identity'}};
+const imported={...received,domains:[seal('SAP',0,.5,{terrainSurface:importedSurface,topographyAudit:{fullSurfaceClipping:true}})],handoff:{readiness:'validated',volume:.5}};
+const importedResult=owner.build(imported,model,measurements,['SAP'],{reviewer:'r',reason:'Reviewed imported terrain'});
+ok(importedResult.terrainBasis.includes('imported DXF')&&importedResult.records[0].filledVolume===.5,'Imported reviewed TIN applies the same exact partial support with its own provenance label');
+const invalidImported={...imported,domains:[seal('SAP',0,.5,{terrainSurface:{...importedSurface,provenance:{...importedSurface.provenance,targetCRS:'EPSG:32750'}},topographyAudit:{fullSurfaceClipping:true}})]};
+assert.throws(()=>owner.build(invalidImported,model,measurements,['SAP'],{reviewer:'r',reason:'x'}),/BLOCK_SUPPORT_TERRAIN_REVIEW_REQUIRED/);checks++;
+const hollow={...received,domains:[{code:'SAP',build:{...domains[0].build,review:null}}]};
+assert.throws(()=>owner.build(hollow,model,measurements,['SAP'],{reviewer:'r',reason:'x'}),/BLOCK_SUPPORT_DOMAIN_REVIEW_STALE/);checks++;
+console.log(`resource filled-block support P5.01: ${checks} checks passed`);

@@ -59,7 +59,7 @@ vm.runInContext(fs.readFileSync(PARSE_JS, 'utf8'), sandbox, { filename: PARSE_JS
 
 const {
   parseDrillholeCSV, parseResultToObjectRows, parseResultToArrayRows, parseResultToColsRows,
-  parseDrillholeCSVTokens, detectDecimalConvention, coerceTokenRows,
+  parseDrillholeCSVTokens, detectDecimalConvention, coerceTokenRows, coerceTokenRowsToColumns, cellNumber,
 } = sandbox;
 if (typeof parseDrillholeCSV !== 'function') {
   console.error('FATAL: parseDrillholeCSV did not load from parse.js');
@@ -262,6 +262,18 @@ section('adapters: each phase\'s current contract shape');
     Array.isArray(asCols.cols) && asCols.cols[0] === 'hole_id');
   assert('toColsRows: numeric values stay numeric',
     typeof asCols.rows[0][3] === 'number' && asCols.rows[0][3] === 2.5);
+  const tokens = parseDrillholeCSVTokens(readCorpus('01-comma-standard.csv'));
+  const direct = coerceTokenRowsToColumns(tokens, detectDecimalConvention(tokens.tokenRows));
+  assert('direct column coercion exactly matches object-adapter values',
+    JSON.stringify(direct) === JSON.stringify({cols:asCols.cols,rows:asCols.rows,schemaMeta:r.schemaMeta,decimal:r.decimal,rejected:r.rejected}));
+}
+
+// cellNumber: a missing cell is never a zero measurement.
+{
+  for (const blank of [null, undefined, '', '   ']) assert(`cellNumber(${JSON.stringify(blank)}) is NaN, not 0`, Number.isNaN(cellNumber(blank)));
+  assert('cellNumber keeps a true zero', cellNumber(0) === 0 && cellNumber('0') === 0);
+  assert('cellNumber reads numbers and numeric text', cellNumber(2.5) === 2.5 && cellNumber(' -1.25 ') === -1.25);
+  assert('cellNumber leaves non-numeric text NaN', Number.isNaN(cellNumber('n/a')));
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

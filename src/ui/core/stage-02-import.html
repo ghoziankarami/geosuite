@@ -3,35 +3,37 @@
 
   <div class="hint">
     <p><strong>Drop all 4 CSV files at once</strong> (Collar + Survey + Assay + Geology). The system auto-classifies by filename first (looks for <code>collar</code>/<code>survey</code>/<code>assay</code>/<code>geology|litho</code>), falling back to header signature.</p>
-    <p style="margin-top:6px;font-size:13px;">If you skip the upload, the system uses the embedded Thalanga VMS sample. If you upload only some files, the rest stay as sample data.</p>
+    <p style="margin-top:6px;font-size:13px;" data-i18n="core.imp.sampleGuidance">The built-in example is a synthetic nickel laterite dataset. To work with your own drillholes, import the four matching tables and check the validation results before proceeding.</p>
   </div>
 
   <div class="card">
-    <h3 data-i18n="core.columnFormat">Column Format (auto-detected)</h3>
-    <table>
+    <h3 id="coreColumnFormatTitle" data-i18n="core.columnFormat">Column Format (auto-detected)</h3>
+    <div class="schema-keyboard-scroll" tabindex="0" role="region" aria-labelledby="coreColumnFormatTitle">
+    <table aria-labelledby="coreColumnFormatTitle">
       <tr><th data-i18n="core.cols.file">File</th><th data-i18n="core.required">Required</th><th data-i18n="core.optional">Optional</th></tr>
       <tr><td><strong>Collar</strong></td><td><code>hole_id</code>, <code>x</code>/<code>easting</code>/<code>GDA94_E</code>, <code>y</code>/<code>northing</code>/<code>GDA94_N</code>, <code>z</code>/<code>RL</code>, <code>depth</code>/<code>final_depth</code></td><td>prospect, drill_type, comment</td></tr>
       <tr><td><strong>Survey</strong></td><td><code>hole_id</code>, <code>depth</code>, <code>dip</code>, <code>azimuth</code></td><td>—</td></tr>
       <tr><td><strong>Assay</strong></td><td><code>hole_id</code>, <code>from_m</code>/<code>from_depth</code>, <code>to_m</code>/<code>to_depth</code>, <span data-i18n="core.imp.gradeColumn">at least 1 grade column</span></td><td>sample_id, multi-element (Au, Cu, Pb, Zn, ...)</td></tr>
       <tr><td><strong>Geology</strong></td><td><code>hole_id</code>, <code>from_m</code>, <code>to_m</code>, <code>lith</code>/<code>lith1</code>/<code>lithology</code></td><td>weathering, lith2, color, lith_desc</td></tr>
     </table>
+    </div>
   </div>
 
   <div class="card">
     <h3 data-i18n="core.uploadFiles">Upload Files</h3>
-    <div style="margin-bottom:12px; padding:10px; background:#fff3cd; border:1px solid #ffc107; border-radius:4px;">
-      <p style="margin:0 0 8px 0; font-size:13px; font-weight:600; color:#333;"><span data-i18n="core.imp.csvFormatTitle">📋 Required CSV format:</span></p>
-      <div style="font-size:12px; color:#555; line-height:1.6;">
-        <p style="margin:6px 0;"><strong><span data-i18n="core.imp.delimiterLabel">Delimiter:</span></strong> <span data-i18n="core.imp.delimiterPick">Choose below (usually</span> <code style="background:#f0f0f0; padding:2px 4px; border-radius:2px;">Semicolon (;)</code> <span data-i18n="core.imp.forEuroData">for data from Europe)</span></p>
-        <p style="margin:6px 0;"><strong><span data-i18n="core.imp.exampleLine">Example line:</span></strong><br><code style="background:#f0f0f0; padding:4px; border-radius:2px; display:block; overflow-x:auto; margin-top:2px;">APKL01;572720.46;9,841,220;-26</code></p>
-        <p style="margin:6px 0; color:#d9534f;"><strong><span data-i18n="core.imp.uploadFails">⚠️ If the upload fails:</span></strong> <span data-i18n="core.imp.uploadFailsHint">pick the correct delimiter below before uploading again</span></p>
+    <div style="margin-bottom:12px; padding:10px; background:var(--warn-soft); border:1px solid var(--warn); border-radius:4px;">
+      <p style="margin:0 0 8px 0; font-size:13px; font-weight:600; color:var(--fg);"><span data-i18n="core.imp.csvFormatTitle">📋 Required CSV format:</span></p>
+      <div style="font-size:12px; color:var(--fg-body); line-height:1.6;">
+        <p style="margin:6px 0;"><strong><span data-i18n="core.imp.delimiterLabel">Delimiter:</span></strong> <span data-i18n="core.imp.delimiterPick">Choose below (usually</span> <code style="background:var(--bg-alt); padding:2px 4px; border-radius:2px;">Semicolon (;)</code> <span data-i18n="core.imp.forEuroData">for data from Europe)</span></p>
+        <p style="margin:6px 0;"><strong><span data-i18n="core.imp.exampleLine">Example line:</span></strong><br><code style="background:var(--bg-alt); padding:4px; border-radius:2px; display:block; overflow-x:auto; margin-top:2px;">APKL01;572720.46;9,841,220;-26</code></p>
+        <p style="margin:6px 0; color:var(--bad-ink);"><strong><span data-i18n="core.imp.uploadFails">⚠️ If the upload fails:</span></strong> <span data-i18n="core.imp.uploadFailsHint">pick the correct delimiter below before uploading again</span></p>
       </div>
       <label style="font-size:13px; font-weight:600; display:block; margin-top:10px; margin-bottom:6px;"><span data-i18n="core.imp.selectDelimiter">Choose your delimiter:</span></label>
       <div style="display:flex; gap:12px; flex-wrap:wrap;">
-        <label style="font-size:12px;"><input type="radio" name="csvDelim" value="auto" checked onchange="window._userDelim=this.value"> <span data-i18n="core.imp.autoDetect">Auto-detect</span></label>
-        <label style="font-size:12px;"><input type="radio" name="csvDelim" value=";" onchange="window._userDelim=this.value"> <strong>Semicolon (;)</strong> <span data-i18n="core.imp.euroFormat">— European format</span></label>
-        <label style="font-size:12px;"><input type="radio" name="csvDelim" value="," onchange="window._userDelim=this.value"> <span data-i18n="core.imp.usFormat">Comma (,) — US format</span></label>
-        <label style="font-size:12px;"><input type="radio" name="csvDelim" value="\t" onchange="window._userDelim=this.value"> Tab</label>
+        <label style="font-size:12px;"><input type="radio" name="csvDelim" value="auto" checked onchange="applyDelimiterOverride(this.value)"> <span data-i18n="core.imp.autoDetect">Auto-detect</span></label>
+        <label style="font-size:12px;"><input type="radio" name="csvDelim" value=";" onchange="applyDelimiterOverride(this.value)"> <strong>Semicolon (;)</strong> <span data-i18n="core.imp.euroFormat">— European format</span></label>
+        <label style="font-size:12px;"><input type="radio" name="csvDelim" value="," onchange="applyDelimiterOverride(this.value)"> <span data-i18n="core.imp.usFormat">Comma (,) — US format</span></label>
+        <label style="font-size:12px;"><input type="radio" name="csvDelim" value="tab" onchange="applyDelimiterOverride(this.value)"> Tab</label>
       </div>
     </div>
     <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
@@ -60,7 +62,7 @@
           <option value="auto">Auto-detect</option>
           <option value=",">Comma (,)</option>
           <option value=";">Semicolon (;)</option>
-          <option value="\t">Tab (→)</option>
+          <option value="tab">Tab (→)</option>
         </select>
         <span id="coreDelimiterDetected" style="font-size:12px;color:var(--fg-mute);margin-left:6px;"></span>
       </label>

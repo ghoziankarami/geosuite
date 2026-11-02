@@ -1,5 +1,6 @@
 <div class="panel" id="tab3" role="tabpanel">
   <h2><span data-i18n="asy.pt.data">Data — Well Log &amp; Samples</span></h2>
+  <p class="hint" style="font-size:14px;" data-i18n="asy.data.arrivalHelp">Core handoff and CSV import open this row-review screen so you can inspect the received population before EDA. The Dashboard tab provides the overview. You do not need to upload the same data a second time.</p>
   <div class="hint" id="dataHeader">Embedded dataset: <strong>1,241 composites · 40 holes · 16 columns</strong> · Thalanga VMS (RGMWP prospect, output of Core).</div>
 
   <div class="card">
@@ -29,6 +30,7 @@
       <input type="text" id="tableFilter" placeholder="Filter (hole_id, lithology...)" data-i18n-attr="placeholder:placeholder.filterTable,aria-label:aria.filterTableRows" oninput="filterTable()" aria-label="Filter table rows">
       <span id="tableInfo" style="font-size:12px;color:var(--fg-mute);"></span>
       <button class="btn secondary" onclick="exportTableCSV()" data-i18n="asy.exportCsv">Export CSV</button>
+      <span id="tableExportScope" role="status" aria-live="polite" style="font-size:12px;color:var(--fg-mute);"></span>
     </div>
     <div style="max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:6px;">
       <table id="tbl"></table>

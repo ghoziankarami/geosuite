@@ -231,7 +231,7 @@ Keputusan tidak memangkas sama pentingnya dengan keputusan memangkas, dan **haru
 
 ### Domain: *grade shell* 1 % Zn, karena tidak ada litologi
 
-Tab **Domain** → metode **Grade shell (cut-off)**, cut-off **1** (% Zn).
+Tab **Domain** → metode **Grade shell (cut-off)**, cut-off **1** (% Zn). Isi alasan pemilihan populasi, lalu klik **Terapkan populasi yang ditinjau**. Mengubah dropdown/cutoff hanya memperbarui pratinjau; label sumber tetap tersimpan dan keputusan ikut project/report.
 
 ![Domain grade shell 1 % Zn](img/thalanga-07-assay-domain.png)
 

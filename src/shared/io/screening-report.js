@@ -25,33 +25,43 @@
  function cards(pdf,module,rows,opts={}){
    const W=pdf.internal.pageSize.getWidth(),H=pdf.internal.pageSize.getHeight();let y=49,index=opts.afterPage||0;
    const newPage=()=>{opts.insert?pdf.insertPage(++index):pdf.addPage();if(opts.insert)pdf.setPage(index);header(pdf,module,opts.title,opts.subtitle);y=49;};
-   newPage();
+   const tail=pdf._orebitCardsTail,reuse=!opts.insert&&tail&&tail.module===module&&tail.title===opts.title&&tail.page===pdf.internal.getNumberOfPages();
+   let numbering=reuse?tail.nextNumber:0;
+   if(reuse){pdf.setPage(tail.page);y=tail.y;}
+   else if(!opts.insert&&Number.isFinite(opts.startY)&&opts.startY>=49&&opts.startY<H-55){
+     pdf.setPage(pdf.internal.getNumberOfPages());y=opts.startY;
+     pdf.setFont('helvetica','bold');pdf.setFontSize(15);pdf.setTextColor(...teal);pdf.text(ascii(opts.title),15,y);y+=12;
+     const context=pdf.internal.getCurrentPageInfo().pageContext;
+     context.orebitSectionTitle=(context.orebitSectionTitle||module)+' / '+ascii(opts.title);
+   }else newPage();
    rows.forEach(([label,value],rowIndex)=>{
-     const first=!!opts.executive&&rowIndex===0,bodySize=first?11:9.5,lineHeight=first?5.6:4.7;
+     const first=!!opts.executive&&rowIndex===0,bodySize=11,lineHeight=5.2;
      pdf.setFont('helvetica','normal');pdf.setFontSize(bodySize);
-     const lines=pdf.splitTextToSize(readable(value,label),W-46);
+     const labelWidth=44,valueX=69,valueWidth=W-valueX-20;
+     const lines=pdf.splitTextToSize(readable(value,label),valueWidth);
      pdf.setFont('helvetica','bold');pdf.setFontSize(10);
-     const labels=pdf.splitTextToSize(ascii(label).replace(/^\d+\.\s*/,''),W-55);let at=0,continued=false;
+     const labels=pdf.splitTextToSize(ascii(label).replace(/^\d+\.\s*/,''),labelWidth);let at=0,continued=false;
      do{
-       const titleHeight=labels.length*4.8+5;
-       if(H-22-y<titleHeight+lineHeight+14)newPage();
-       const count=Math.max(1,Math.min(lines.length-at,Math.floor((H-22-y-titleHeight-14)/lineHeight)));
-       const height=titleHeight+count*lineHeight+10;
+       const labelHeight=labels.length*4.8;
+       if(H-22-y<Math.max(labelHeight,lineHeight)+10)newPage();
+       const count=Math.max(1,Math.min(lines.length-at,Math.floor((H-22-y-10)/lineHeight)));
+       const height=Math.max(labelHeight,count*lineHeight)+10;
        pdf.setFillColor(...(first?[230,245,242]:[245,248,249]));pdf.roundedRect(15,y,W-30,height,2,2,'F');
        pdf.setFillColor(...teal);pdf.roundedRect(15,y,1.2,height,0.5,0.5,'F');
-       pdf.setFont('helvetica','bold');pdf.setFontSize(9);pdf.setTextColor(...teal);pdf.text(String(rowIndex+1).padStart(2,'0'),20,y+8);
-       pdf.setFontSize(10);pdf.text(labels,29,y+8);
-       if(continued){pdf.setFontSize(7);pdf.text('(continued)',W-22,y+7,{align:'right'});}
+       pdf.setFont('helvetica','bold');pdf.setFontSize(10);pdf.setTextColor(...teal);pdf.text(labels,20,y+8);
+       if(continued){pdf.setFontSize(7);pdf.text('(continued)',W-20,y+4,{align:'right'});}
        pdf.setFont('helvetica','normal');pdf.setFontSize(bodySize);pdf.setTextColor(...ink);
-       let lineY=y+titleHeight+4;for(const line of lines.slice(at,at+count)){pdf.text(line,23,lineY);lineY+=lineHeight;}
-       y+=height+6;at+=count;continued=true;if(at<lines.length)newPage();
+       let lineY=y+8;for(const line of lines.slice(at,at+count)){pdf.text(line,valueX,lineY);lineY+=lineHeight;}
+       y+=height+3;at+=count;continued=true;if(at<lines.length)newPage();
      }while(at<lines.length);
+     numbering++;
    });
+   pdf._orebitCardsTail={module,title:opts.title,page:pdf.internal.getNumberOfPages(),y,nextNumber:numbering};
    pdf.setPage(pdf.internal.getNumberOfPages());
  }
- function append(pdf,module,rows){
+ function append(pdf,module,rows,opts={}){
    window._reportAuditSnapshot={module,rows:rows.map(row=>row.map(ascii)),generated:new Date().toISOString()};
-   cards(pdf,module,window._reportAuditSnapshot.rows,{title:'Screening due-diligence insight',subtitle:'Data, assumptions and calculation audit | Orebit '+module});
+   cards(pdf,module,window._reportAuditSnapshot.rows,{title:'Screening due-diligence insight',subtitle:'Data, assumptions and calculation audit | Orebit '+module,startY:opts.startY});
  }
  function quantity(value,digits=6){
    if(value==null||!Number.isFinite(Number(value)))return null;
@@ -168,6 +178,25 @@
      const body=[status,r.reviewedAt?'Reviewed at: '+r.reviewedAt:'',r.insight||'',r.note?'Interpretation: '+r.note:'Interpretation: no note provided',r.parameters?'Recorded settings (at review):\n'+formatParameters(r.parameters):'No reviewed settings recorded'].filter(Boolean).join('\n\n');
      return [r.title,body];
    });
+   const spec=record.estimationSpec,approval=spec?.approval;
+   if(approval){
+     const say=(en,id)=>document.documentElement.lang==='id'?id:en;
+     const status=record.estimationReadiness||{status:'unverified',reason:null};
+     const population=spec.elements.map(element=>{
+       const counts=element.decisions.reduce((out,row)=>{out[row.action]=(out[row.action]||0)+1;return out;},{});
+       return element.elementId+' ('+element.unit+') | '+say('Domains: ','Domain: ')+(element.geologicalDomainIds||[]).join(', ')+' | '+
+         say('Boundary: ','Batas: ')+element.boundaryPolicy+' | '+JSON.stringify(counts);
+     });
+     rows.unshift([say('Estimation population review','Tinjauan populasi estimasi'),[
+       say('Current source check: ','Pemeriksaan sumber saat ini: ')+status.status+(status.reason?' | '+status.reason:''),
+       say('Reviewer: ','Peninjau: ')+approval.reviewer+' | '+approval.at,
+       say('Review rationale: ','Alasan tinjauan: ')+approval.reason,...population,
+       say('Assay source revision: ','Revisi sumber Assay: ')+spec.sourceRevision,
+       say('Geological revision: ','Revisi geologi: ')+spec.geologicalRevision,
+       say('Measured membership revision: ','Revisi keanggotaan terukur: ')+spec.membershipRevision,
+       say('This is a recorded population decision. A stale or invalid source check requires a new review before Resource export.','Ini rekaman keputusan populasi. Pemeriksaan sumber stale atau tidak valid memerlukan tinjauan ulang sebelum ekspor Resource.')
+     ].join('\n')]);
+   }
    if(pending.length)rows.push([tr('notReviewed'),pending.map(r=>r.title).join(', ')]);
    rows.unshift([tr('reviewRecord'),'Dataset: '+ascii(record.dataset?.name)+' | '+(record.dataset?.rows||0)+' rows. Only an explicit review records settings. Stale reviews refer to an earlier data/parameter state; re-review before relying on them. Optional tools are not a prerequisite for export.']);
    cards(pdf,module,rows,{title:tr('reviewRecord'),subtitle:'Orebit Assay | Stage decisions, notes and actual recorded settings'});

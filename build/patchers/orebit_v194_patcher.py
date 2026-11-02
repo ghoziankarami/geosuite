@@ -66,7 +66,7 @@ PATCHER_CONFIG = {
     # origin to resolve against, so it needs this absolute base.
     "product_base_url": "https://geosuite.orebit.id",
     # Address the in-app feedback button writes to.
-    "feedback_email": "orebit.id@gmail.com",
+    "feedback_email": "contact@orebit.id",
 }
 
 # Convenience aliases used inside build_block()'s f-string.

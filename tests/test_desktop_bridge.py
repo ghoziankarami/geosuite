@@ -69,6 +69,21 @@ class DesktopBridgeTests(unittest.TestCase):
         self.assertEqual(got["text"], "hole_id,grade\\nA,1\\n")
         self.assertIsNone(assay.take_handoff())
 
+    def test_domain_rides_with_the_handoff(self):
+        core, assay = wrapper.FileAPI("Core"), wrapper.FileAPI("Assay")
+        self.assertFalse(
+            core.send_handoff("Assay", "a.csv", "x", {"not": "text"})["ok"]
+        )
+        self.assertFalse(
+            core.send_handoff("Assay", "a.csv", "x", "d" * (8 * 1024 * 1024 + 1))["ok"]
+        )
+        self.assertTrue(
+            core.send_handoff("Assay", "a.csv", "x", '{"schemaVersion":1}')["ok"]
+        )
+        self.assertEqual(assay.take_handoff()["domain"], '{"schemaVersion":1}')
+        self.assertTrue(core.send_handoff("Assay", "a.csv", "x")["ok"])
+        self.assertIsNone(assay.take_handoff()["domain"])
+
     def test_stale_handoff_is_discarded(self):
         wrapper.FileAPI("Core").send_handoff("Assay", "a.csv", "x")
         path = Path(wrapper._handoff_dir()) / "Assay.json"
@@ -79,6 +94,12 @@ class DesktopBridgeTests(unittest.TestCase):
         self.assertFalse(path.exists())
         path.write_text("[]", encoding="utf-8")
         self.assertIsNone(wrapper.FileAPI("Assay").take_handoff())
+
+    def test_malformed_checkpoint_return_is_discarded(self):
+        path = Path(wrapper._handoff_dir()) / "Assay-return.json"
+        path.write_text("[]", encoding="utf-8")
+        self.assertIsNone(wrapper.FileAPI("Assay").take_assay_checkpoint_return())
+        self.assertFalse(path.exists())
 
 
 if __name__ == "__main__":

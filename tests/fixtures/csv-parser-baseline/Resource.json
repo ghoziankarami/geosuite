@@ -9,6 +9,8 @@
     "au_gpt",
     "cu_pct"
    ],
+   "decimal": ".",
+   "rejected": [],
    "rows": [
     [
      "DH001",
@@ -31,7 +33,9 @@
      1.8,
      0.4
     ]
-   ]
+   ],
+   "schemaMeta": null,
+   "upstreamTopcutLines": []
   },
   "schemaMeta": null
  },
@@ -45,6 +49,8 @@
     "au_gpt",
     "cu_pct"
    ],
+   "decimal": ",",
+   "rejected": [],
    "rows": [
     [
      "DH001",
@@ -67,7 +73,9 @@
      1.8,
      0.4
     ]
-   ]
+   ],
+   "schemaMeta": null,
+   "upstreamTopcutLines": []
   },
   "schemaMeta": null
  },
@@ -81,6 +89,8 @@
     "au_gpt",
     "cu_pct"
    ],
+   "decimal": ".",
+   "rejected": [],
    "rows": [
     [
      "DH001",
@@ -103,7 +113,9 @@
      1.8,
      0.4
     ]
-   ]
+   ],
+   "schemaMeta": null,
+   "upstreamTopcutLines": []
   },
   "schemaMeta": null
  },
@@ -117,6 +129,8 @@
     "au_gpt",
     "tonnage_kg"
    ],
+   "decimal": ".",
+   "rejected": [],
    "rows": [
     [
      "DH001",
@@ -139,7 +153,9 @@
      1.8,
      987.65
     ]
-   ]
+   ],
+   "schemaMeta": null,
+   "upstreamTopcutLines": []
   },
   "schemaMeta": null
  },
@@ -154,6 +170,8 @@
     "Kedalaman",
     "Deskripsi"
    ],
+   "decimal": ".",
+   "rejected": [],
    "rows": [
     [
      "DH001",
@@ -179,7 +197,9 @@
      1,
      "Pasir lepas"
     ]
-   ]
+   ],
+   "schemaMeta": null,
+   "upstreamTopcutLines": []
   },
   "schemaMeta": null
  },
@@ -195,6 +215,8 @@
     "YCOLLAR",
     "ZCOLLAR"
    ],
+   "decimal": ".",
+   "rejected": [],
    "rows": [
     [
      "DH001",
@@ -223,7 +245,9 @@
      7749050,
      338
     ]
-   ]
+   ],
+   "schemaMeta": null,
+   "upstreamTopcutLines": []
   },
   "schemaMeta": null
  },
@@ -237,6 +261,8 @@
     "au_gpt",
     "cu_pct"
    ],
+   "decimal": ".",
+   "rejected": [],
    "rows": [
     [
      "DH001",
@@ -259,7 +285,9 @@
      1.8,
      0.4
     ]
-   ]
+   ],
+   "schemaMeta": null,
+   "upstreamTopcutLines": []
   },
   "schemaMeta": null
  },
@@ -273,6 +301,8 @@
     "litho",
     "notes"
    ],
+   "decimal": ".",
+   "rejected": [],
    "rows": [
     [
      "DH001",
@@ -288,7 +318,9 @@
      "QTZ",
      "thin vein"
     ]
-   ]
+   ],
+   "schemaMeta": null,
+   "upstreamTopcutLines": []
   },
   "schemaMeta": null
  },
@@ -302,6 +334,8 @@
     "au_gpt",
     "cu_pct"
    ],
+   "decimal": ".",
+   "rejected": [],
    "rows": [
     [
      "DH001",
@@ -331,7 +365,9 @@
      null,
      0.1
     ]
-   ]
+   ],
+   "schemaMeta": null,
+   "upstreamTopcutLines": []
   },
   "schemaMeta": null
  },
@@ -344,6 +380,14 @@
     "to_m",
     "au_gpt",
     "cu_pct"
+   ],
+   "decimal": ".",
+   "rejected": [
+    {
+     "line": 3,
+     "raw": "DH001,1,2,3.1",
+     "reason": "expected 5 column(s), found 4"
+    }
    ],
    "rows": [
     [
@@ -360,7 +404,9 @@
      1.8,
      0.4
     ]
-   ]
+   ],
+   "schemaMeta": null,
+   "upstreamTopcutLines": []
   },
   "schemaMeta": null
  },
@@ -374,6 +420,8 @@
     "au_gpt",
     "cu_pct"
    ],
+   "decimal": ".",
+   "rejected": [],
    "rows": [
     [
      "DH001",
@@ -396,7 +444,22 @@
      1.8,
      0.4
     ]
-   ]
+   ],
+   "schemaMeta": {
+    "notes": "exported from Orebit Core desurvey pipeline",
+    "raw": [
+     "orebit-schema=composite-v1 source=core-p1",
+     "units: au=g/t, cu=pct",
+     "notes: exported from Orebit Core desurvey pipeline"
+    ],
+    "schema": "composite-v1",
+    "source": "core-p1",
+    "units": {
+     "au": "g/t",
+     "cu": "pct"
+    }
+   },
+   "upstreamTopcutLines": []
   },
   "schemaMeta": {
    "notes": "exported from Orebit Core desurvey pipeline",
@@ -419,6 +482,8 @@
    "cols": [
     "hole_id"
    ],
+   "decimal": ".",
+   "rejected": [],
    "rows": [
     [
      "DH001"
@@ -429,7 +494,9 @@
     [
      "DH002"
     ]
-   ]
+   ],
+   "schemaMeta": null,
+   "upstreamTopcutLines": []
   },
   "schemaMeta": null
  }

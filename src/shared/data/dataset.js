@@ -9,9 +9,11 @@
 // moment anyone copies the object, which is exactly what D12 required them to
 // do.
 //
-// createDataset() returns a fresh, normalised copy. Callers never share the
-// bundled sample's object, and never have to remember that cols/columns/headers
-// are three names for one list — letting those drift apart is the root of the
+// createDataset() returns a fresh, normalised dataset. By default it copies
+// rows; an explicit takeRows ownership transfer avoids a redundant copy for
+// short-lived parser output. Callers never share the bundled sample's object,
+// and never have to remember that cols/columns/headers are three names for one
+// list — letting those drift apart is the root of the
 // D10/D11/D15 bug family (a derived column reads DATA.cols while an uploaded
 // dataset only ever set `columns`, so the write threw on undefined.indexOf
 // after the tab had already painted).
@@ -50,13 +52,15 @@ function _dsRows(rows) {
   return rows.map(function (r) { return Array.isArray(r) ? r.slice() : r; });
 }
 
-// createDataset(input, opts) -> frozen dataset
+// createDataset(input, opts) -> normalized dataset
 //   input.rows | input.data.rows   the row array (required in practice)
 //   input.cols | input.columns | input.headers
 //   input.name, input.units, input.schemaMeta
 //   opts.source   one of DATASET_SOURCE.* (defaults to UPLOAD: an
 //                 unspecified dataset is user data, never the sample)
 //   opts.name, opts.units, opts.schemaMeta  override the input's
+//   opts.takeRows  explicit ownership transfer for a caller that will never
+//                 use/mutate its input rows again; default remains a row copy.
 //
 // Always returns a NEW object with NEW rows and a NEW column array. Throws only
 // when called without a row array at all — a dataset with no rows is a caller
@@ -69,7 +73,7 @@ function createDataset(input, opts) {
   }
   var cols = _dsColumnList(input);
   var ds = {
-    rows: _dsRows(input.rows),
+    rows: opts.takeRows === true ? input.rows : _dsRows(input.rows),
     cols: cols,
     // Aliases, deliberately pointing at the same array so they cannot drift.
     columns: cols,

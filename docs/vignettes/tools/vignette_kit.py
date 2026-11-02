@@ -60,7 +60,8 @@ class Site:
             s.bind(("127.0.0.1", 0))
             port = s.getsockname()[1]
         self.httpd = http.server.ThreadingHTTPServer(
-            ("127.0.0.1", port), functools.partial(Quiet, directory=str(self.dir)))
+            ("127.0.0.1", port), functools.partial(Quiet, directory=str(self.dir))
+        )
         threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
         self.base = f"http://localhost:{port}"
 
@@ -71,12 +72,18 @@ class Site:
 
 def ready(page, lang="en"):
     """Wait for the app, dismiss the first-run language picker and tour, auto-confirm dialogs."""
-    page.wait_for_function("() => typeof showTab === 'function' && typeof safeRender === 'function'", timeout=60000)
-    page.evaluate("""(lang) => {
+    page.wait_for_function(
+        "() => typeof showTab === 'function' && typeof safeRender === 'function'",
+        timeout=60000,
+    )
+    page.evaluate(
+        """(lang) => {
         document.querySelectorAll('.lang-picker-overlay,#tourOverlay').forEach(e => e.remove());
         window.orebitConfirm = async () => true; window.confirm = () => true; window.alert = () => {};
         try { if (typeof setLanguage === 'function') setLanguage(lang); } catch (e) {}
-    }""", lang)
+    }""",
+        lang,
+    )
 
 
 def download(page, js: str, dest: Path) -> Path:
@@ -100,8 +107,13 @@ def shot(page, name: str, selector: str | None = None, full=False):
 
 def read_csv(path: Path):
     """CSV written by GeoSuite: skips '# ...' schema lines, returns (header, rows as dicts)."""
-    lines = [ln for ln in path.read_text(encoding="utf-8").splitlines() if ln and not ln.startswith("#")]
+    lines = [
+        ln
+        for ln in path.read_text(encoding="utf-8").splitlines()
+        if ln and not ln.startswith("#")
+    ]
     import csv
+
     rdr = csv.DictReader(lines)
     return rdr.fieldnames, list(rdr)
 
@@ -114,11 +126,44 @@ def num(v):
         return None
 
 
+def regression_metrics(actual, predicted):
+    """Recompute app CV summary metrics independently from exported prediction arrays."""
+    if len(actual) != len(predicted):
+        raise ValueError("CV actual/prediction arrays differ in length")
+    pairs = [
+        (a, p)
+        for a, p in zip(actual, predicted)
+        if num(a) is not None and num(p) is not None
+    ]
+    n = len(pairs)
+    if n < 3:
+        return None
+    ma = sum(a for a, _ in pairs) / n
+    mp = sum(p for _, p in pairs) / n
+    sxx = sum((a - ma) ** 2 for a, _ in pairs)
+    syy = sum((p - mp) ** 2 for _, p in pairs)
+    sxy = sum((a - ma) * (p - mp) for a, p in pairs)
+    errors = [a - p for a, p in pairs]
+    return {
+        "n": n,
+        "mae": sum(abs(e) for e in errors) / n,
+        "rmse": (sum(e * e for e in errors) / n) ** 0.5,
+        "r2": (sxy * sxy / (sxx * syy)) if sxx > 0 and syy > 0 else 0,
+        "slope": sxy / sxx if sxx > 0 else 0,
+        "meanAct": ma,
+        "meanPred": mp,
+        "bias": mp - ma,
+    }
+
+
 def write_results(name: str, data: dict):
     """Write data/<name>.json -- or into $VIGNETTE_OUT_DIR, which test_vignettes.py
     uses so a verification run never overwrites the committed numbers."""
     out_dir = Path(os.environ.get("VIGNETTE_OUT_DIR") or DATA)
     out_dir.mkdir(parents=True, exist_ok=True)
     p = out_dir / f"{name}.json"
-    p.write_text(json.dumps(data, indent=2, ensure_ascii=False, sort_keys=False) + "\n", encoding="utf-8")
+    p.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False, sort_keys=False) + "\n",
+        encoding="utf-8",
+    )
     return p

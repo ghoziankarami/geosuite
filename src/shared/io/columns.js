@@ -79,9 +79,10 @@ const ALIASES = {
   // Density is its own role -- the three phases' grade regex already
   // excludes anything matching /density|berat|volume/i from being
   // mis-typed as a grade, but nothing on the other side ever captured it
-  // as a role of its own (D11: measured SG/BD never reaches tonnage).
-  density: ['density', 'sg', 'bd', 'bd_tm3', 'density_t_m3', 'density_tm3', 'berat_jenis',
-    'bobot_isi', 'bulk_density', 'specific_gravity'],
+  // as a role of its own. Dimensionless SG/specific_gravity are retained as
+  // auxiliary measurements; neither declares dry bulk density for tonnage.
+  density: ['density', 'bd', 'bd_tm3', 'density_t_m3', 'density_tm3', 'berat_jenis',
+    'bobot_isi', 'bulk_density'],
   qc: ['qc', 'qaqc', 'sample_type', 'batch', 'standard_id', 'is_standard', 'is_blank',
     'is_duplicate', 'field_dup', 'lab_dup', 'sample_id', 'sample'],
 };

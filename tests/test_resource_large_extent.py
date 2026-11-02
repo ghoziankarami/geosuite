@@ -151,6 +151,22 @@ def main():
                 page.locator("#fileInput").set_input_files(str(master))
                 page.wait_for_function("(n)=>DATA.rows.length===n&&DATA.name==='native-assay-master.csv'", arg=N, timeout=60000)
                 page.evaluate("window.__largeExtentRaw=JSON.stringify(DATA.rows)")
+                nav(page, 4)
+                page.locator('#variogramSampling > summary').click()
+                page.locator('#varDir').select_option('custom')
+                page.locator('#varMaxH').fill('')
+                page.locator('#varComputeBtn').click()
+                page.wait_for_function("()=>Number(document.querySelector('#varMaxH').value)===2250", timeout=60000)
+                check(not page.audit_errors and page.evaluate('DATA.rows.length') == N,
+                      'Custom variogram calculates automatic distance for the full uploaded population without changing it')
+                page.locator('#variogramAdvanced > summary').click()
+                page.locator('#variogramMapTool > summary').click()
+                page.locator('#vmapMaxH').fill('')
+                page.locator('button[onclick="computeVariogramMap()"]:visible').click()
+                page.wait_for_function('()=>variogramState.variogramMap!==null', timeout=60000)
+                map_result = page.evaluate('variogramState.variogramMap')
+                check(map_result['maxH'] == 1000 and map_result['samplesUsed'] == 5000 and not page.audit_errors,
+                      'Variogram map uses the full uploaded extent before its documented display subsampling')
                 # Real navigation catches failures that safeRender deliberately swallows.
                 nav(page, 5)
                 failures = page.evaluate("__largeExtentFailures")
@@ -187,6 +203,17 @@ def main():
                 dims = [math.ceil((hi-lo)/size)+1 for (lo,hi),size in zip(bounds,[75,75,8])]
                 check(grid["dims"] == dims and grid["origin"] == [a[0] for a in bounds] and grid["size"] == [75,75,8] and 0 < grid["count"] <= math.prod(dims) and grid["aligned"], "Generate Grid executes the existing owner with the chosen dimensions, origin and cell centres")
                 check(grid["unchanged"] and grid["unit"] == "g/t" and not grid["failures"] and not page.audit_errors, "grid generation retains all raw grades/coordinates and units without hidden failures")
+                page.evaluate("() => { window.__resourceBeforeRepeat=DATA; window.__resourceOldGrid=blockState.blocks; }")
+                nav(page, 2)
+                page.locator("#fileInput").set_input_files([])
+                page.locator("#fileInput").set_input_files(str(master))
+                page.wait_for_function("n=>DATA!==window.__resourceBeforeRepeat&&DATA.rows.length===n&&currentTab===2", arg=N, timeout=60000)
+                repeated=page.evaluate("""()=>({rows:DATA.rows.length,oldRows:window.__resourceBeforeRepeat.rows.length,
+                  replaced:DATA!==window.__resourceBeforeRepeat,blocks:blockState.blocks,estimate:estimState.done,
+                  failures:__largeExtentFailures})""")
+                check(repeated["replaced"] and repeated["rows"] == repeated["oldRows"] == N, "repeat upload replaces the prior large dataset without truncating the full population")
+                nav(page, 5)
+                check(repeated["blocks"] is None and not repeated["estimate"] and page.locator("#bmGenBtn").is_visible() and not page.evaluate("__largeExtentFailures") and not page.audit_errors, "repeat large upload releases stale grid/results and revisiting Block Model stays clean")
                 context.close()
                 complete = True
             finally:

@@ -67,13 +67,52 @@ try:
             if name == "Core":
                 page.evaluate("showTab(3)")
                 page.locator(
-                    '#tab3 .assay-workflow-card button[data-action-role="next"]'
+                    '#tab3 .workflow-stage-bar-next'
                 ).first.wait_for()
                 check(
-                    page.locator('#tab3 .assay-workflow-card button[data-action-role="next"]').count()
+                    page.locator('#tab3 .workflow-stage-bar-next').count()
                     > 0,
                     "Core next action has an explicit shared role",
                 )
+            if name == "Core":
+                page.evaluate("showTab(7)")
+                check(not page.locator('#coreValidationInspect').evaluate('e=>e.open')
+                      and page.locator('#coreValidationResults').is_visible(),
+                      "Core supplementary inspection is closed while real findings stay first")
+                raw = page.evaluate("JSON.stringify({collar:STATE.collar,survey:STATE.survey,assay:STATE.assay,geology:STATE.geology})")
+                blocked = page.locator('#tab7 .workflow-stage-bar-next').is_disabled()
+                check(not page.locator('#coreValidationMapping').evaluate('e=>e.open'),
+                      "Core mapper is a closed task Options disclosure")
+                page.locator('#tab7 .assay-workflow-card').get_by_role('button', name='Options', exact=True).click()
+                check(page.locator('#coreValidationMapping').evaluate('e=>e.open'),
+                      "Core Options target the mapper instead of a map filter")
+                check(page.evaluate("document.activeElement===document.querySelector('#coreValidationMapping>summary')"),
+                      "Core Options navigation focuses its named disclosure")
+                check(page.locator('#tab7 .workflow-stage-bar-next').is_disabled() == blocked
+                      and page.evaluate("JSON.stringify({collar:STATE.collar,survey:STATE.survey,assay:STATE.assay,geology:STATE.geology})") == raw,
+                      "Opening Core Options changes neither validation gate nor measurements")
+                page.evaluate("applyLanguage('id')")
+                check(page.locator('#coreValidationMapping').evaluate('e=>e.open')
+                      and 'Opsi' in page.locator('#coreValidationMapping>summary').inner_text(),
+                      "Core Options retain view state and translate on locale redraw")
+                if evidence:
+                    page.evaluate('scrollTo(0,0)')
+                    page.wait_for_timeout(100)
+                    page.screenshot(path=str(evidence / 'core-options-desktop.png'), full_page=True)
+                page.set_viewport_size({'width':390,'height':900})
+                page.wait_for_timeout(200)
+                check(page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),
+                      "Core task Options do not widen the phone viewport")
+                if evidence:
+                    page.evaluate('scrollTo(0,0)')
+                    page.wait_for_timeout(100)
+                    page.screenshot(path=str(evidence / 'core-options-phone.png'), full_page=True)
+                page.set_viewport_size({'width':1440,'height':1000})
+                page.locator('#coreValidationMapping>summary').focus()
+                page.keyboard.press('Enter')
+                check(not page.locator('#coreValidationMapping').evaluate('e=>e.open'),
+                      "Core task Options close with the keyboard")
+                page.evaluate("applyLanguage('en')")
             if name == "Assay":
                 page.wait_for_function(
                     '() => document.body.classList.contains("assay-guided")'
@@ -87,7 +126,7 @@ try:
                     "Assay inspect action is separate from continue",
                 )
                 next_button = page.locator(
-                    '#tab8 .assay-workflow-card button[data-action-role="next"]'
+                    '#tab8 .workflow-stage-bar-next'
                 )
                 check(
                     next_button.count() == 1,
@@ -98,13 +137,51 @@ try:
                     page.screenshot(
                         path=str(evidence / "assay-actions-desktop.png"), full_page=True
                     )
-                page.locator(
-                    '#tab8 .assay-workflow-card button[data-action-role="custom"]'
-                ).click()
+                page.evaluate("showTab(9)")
+                check(not page.locator("#assayTopCutOptions").evaluate("e=>e.open"),
+                      "Assay task Options start closed without hiding the result")
+                page.locator('#tab9 .assay-workflow-card button[data-action-role="custom"]').click()
+                check(page.locator("#assayTopCutOptions").evaluate("e=>e.open"),
+                      "Assay Options open the threshold task rather than an element selector")
+                check(not page.locator('#assayTopCutMatrix').evaluate('e=>e.open')
+                      and not page.locator('#assayTopCutDiagnostics').evaluate('e=>e.open')
+                      and not page.locator('#assayTopCutImpact').evaluate('e=>e.open'),
+                      "Assay keeps one primary plot without removing inspection or diagnostics")
+                page.locator('#assayTopCutMatrix>summary').click()
+                check(page.locator('#assayTopCutMatrix table').is_visible(),
+                      "Full all-element comparison remains accessible through native inspection")
+                page.locator('#assayTopCutMatrix>summary').click()
+                page.locator('#assayTopCutDiagnostics>summary').focus()
+                page.keyboard.press('Enter')
+                check(page.locator('#tcLogProb').is_visible()
+                      and page.locator('#tcMeanVar').is_visible()
+                      and page.locator('#tcCumMetal').is_visible(),
+                      "Keyboard-open Advanced retains every actual diagnostic plot")
+                page.wait_for_function("()=>{const p=document.getElementById('tcLogProb');return p._fullLayout&&Math.abs(p._fullLayout.width-p.clientWidth)<=2}")
+                check(page.locator('#tcLogProb').evaluate('e=>Math.abs(e._fullLayout.width-e.clientWidth)<=2'),
+                      "An opened diagnostic plot uses its actual viewport width")
+                page.keyboard.press('Enter')
+                check(page.locator("#customCut").is_visible() and page.locator("#tcBox").is_visible(),
+                      "Threshold controls and actual diagnostic plot remain accessible")
                 check(
                     page.evaluate("JSON.stringify(window._capLog||{})") == old,
                     "Opening custom controls does not apply grade treatment",
                 )
+                check(page.locator('#tab9 :is(.grid-2,.grid-3):has(.js-plotly-plot)').evaluate_all("els=>els.every(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length===1)"),
+                      "Assay plots share the single primary reading column")
+                if evidence:
+                    page.evaluate('scrollTo(0,0)')
+                    page.wait_for_timeout(100)
+                    page.screenshot(path=str(evidence / 'assay-options-desktop.png'), full_page=True)
+                page.set_viewport_size({'width':390,'height':900})
+                page.wait_for_timeout(200)
+                check(page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),
+                      "Assay task Options do not widen the phone viewport")
+                if evidence:
+                    page.evaluate('scrollTo(0,0)')
+                    page.wait_for_timeout(100)
+                    page.screenshot(path=str(evidence / 'assay-options-phone.png'), full_page=True)
+                page.set_viewport_size({'width':1440,'height':1000})
                 check(
                     page.locator("#assayAdvancedToggle").get_attribute(
                         "data-action-role"
@@ -175,7 +252,7 @@ try:
                     )
                 page.evaluate("applyLanguage('id')")
                 check(
-                    "Variografi" in page.locator("#resourceSetupNext").inner_text(),
+                    "Variografi" in page.locator("#tab3 .workflow-stage-bar-next").inner_text(),
                     "Primary Resource CTA is translated",
                 )
                 page.set_viewport_size({"width": 320, "height": 900})
@@ -190,7 +267,7 @@ try:
                     page.screenshot(
                         path=str(evidence / "resource-setup-mobile.png"), full_page=True
                     )
-                page.locator("#resourceSetupNext").click()
+                page.locator("#tab3 .workflow-stage-bar-next").click()
                 check(
                     page.evaluate("currentTab") == 4,
                     "Primary next CTA opens the existing Variography stage",
@@ -203,6 +280,29 @@ try:
                     ),
                     "Variography uses one plot reading column before computation",
                 )
+                model = page.evaluate("JSON.stringify(variogramState.model)")
+                page.locator('#tab4 .assay-workflow-card').get_by_role('button', name='Opsi', exact=True).click()
+                check(page.locator('#variogramSampling').evaluate('e=>e.open')
+                      and page.locator('#varLag').is_visible(),
+                      "Resource task Options open real sampling controls")
+                check(page.evaluate("JSON.stringify(variogramState.model)") == model
+                      and not page.locator('#variogramAdvanced').evaluate('e=>e.open'),
+                      "Resource Options do not fit or start optional diagnostics")
+                page.locator('#variogramAdvanced>summary').focus()
+                page.keyboard.press('Enter')
+                for tool in ['variogramMapTool','variogramScanTool','variogramDownholeTool','variogramNestedTool']:
+                    disclosure=page.locator('#'+tool)
+                    check(not disclosure.evaluate('e=>e.open'),
+                          tool+' is a distinct optional investigation')
+                    disclosure.locator(':scope > summary').focus()
+                    page.keyboard.press('Enter')
+                    check(disclosure.evaluate('e=>e.open')
+                          and disclosure.locator('input').first.is_visible(),
+                          tool+' opens its own actual controls by keyboard')
+                    page.keyboard.press('Enter')
+                check(page.evaluate('JSON.stringify(variogramState.model)') == model
+                      and page.evaluate('variogramState.variogramMap===null && !variogramState.directionalScan.results && !variogramState.downhole.lags'),
+                      'Inspecting optional continuity tools neither calculates nor applies a model')
                 for stage in range(4, 13):
                     page.evaluate(f"showTab({stage})")
                     page.wait_for_timeout(180)

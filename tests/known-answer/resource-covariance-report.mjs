@@ -20,7 +20,7 @@ const v=c.summarizeBlocks([0,1],[1,3],1,[1,3],true);assert.equal(v.meanGrade,2);
 assert.equal(c.summarizeBlocks([0,1],[NaN,0],1,[1,3]).meanGrade,0);assert.equal(c.summarizeBlocks([0],[NaN],1,[1]).meanGrade,null);assert.throws(()=>c.summarizeBlocks([0],[1],1,[0]),/density/);
 // Tests must detect removal of physical-range semantics and density weighting.
 const noRange=engine(code.replace("if (model.covarianceMode === 'model-range')",'if (false)'));assert.notEqual(noRange.gammaAniso(20,0,0,m,search),.1+.9*.6875);
-const noMassWeight=engine(code.replace('volumetric ? volumePerBlock : mass','volumePerBlock'));assert.notEqual(noMassWeight.summarizeBlocks([0,1],[1,3],1,[1,3]).meanGrade,2.5);
+const noMassWeight=engine(code.replace('volumetric ? supportedVolume : mass','supportedVolume'));assert.notEqual(noMassWeight.summarizeBlocks([0,1],[1,3],1,[1,3]).meanGrade,2.5);
 console.log('PASS: physical covariance range, independent kriging known answer, search invariance, density/volume weighting and both mutation controls');
 
 // Display bounds and legend classes exercise the shipped pure module.

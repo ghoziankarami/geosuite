@@ -318,6 +318,24 @@ function coerceTokenRows(tokenized, decimal) {
   };
 }
 
+// Resource's native dataset shape is column-indexed arrays. Convert tokens
+// directly to that shape instead of allocating one temporary object per row
+// and immediately mapping each object back into an array (large uploads made
+// both populations coexist until collection). Core and Assay retain the
+// object-shaped API above.
+function coerceTokenRowsToColumns(tokenized, decimal) {
+  const cols = tokenized.headers.slice();
+  const rows = tokenized.tokenRows.map(fields => {
+    const row = new Array(cols.length);
+    for (let j = 0; j < cols.length; j++) {
+      const value = _parseCoerceCell(fields[j], decimal);
+      row[j] = value !== null && typeof value === 'object' ? value.value : value;
+    }
+    return row;
+  });
+  return { cols, rows, schemaMeta: tokenized.schemaMeta, decimal, rejected: tokenized.rejected };
+}
+
 // The one validated entry point for the single-file case: tokenize, detect
 // the decimal convention from THIS file's own tokens, coerce. text in,
 // structured + coerced result out; invalid rows are rejected at the door
@@ -417,4 +435,14 @@ function parseResultToCoreStringRows(parsed) {
     }
     return out;
   });
+}
+
+// One reading of a stored cell as a measurement. A missing cell (null,
+// undefined or blank text) is NaN, never 0: Number(null) and Number('') are 0,
+// which would count a missing sample as a zero grade or plot it at coordinate 0.
+function cellNumber(v) {
+  if (v === null || v === undefined) return NaN;
+  if (typeof v === 'number') return v;
+  const s = String(v).trim();
+  return s === '' ? NaN : Number(s);
 }

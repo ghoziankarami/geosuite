@@ -6,12 +6,15 @@ the independent destructive-Cancel regression against its existing Core UI.
 OREBIT_A11Y_CASE=stage-links runs the native top-stage Tab/Shift+Tab checks.
 """
 import functools
+import json
+import tempfile
 import http.server
 import os
 import re
 import threading
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+from domain_native_fixture import write_domain_fixture
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / 'build/build.mjs').exists())
 DIST = Path(os.environ.get('OREBIT_TEST_DIST', ROOT / 'dist'))
@@ -65,9 +68,11 @@ def raw(page):
 
 
 def assert_stage_context(page, message):
-    # Wait for actual finite transitions and smooth scrolling, then inspect geometry.
+    # Wait for scroll position to settle, then inspect geometry. Waiting on every
+    # finite animation in the document can hang here on unrelated transitions
+    # (e.g. browser/native overlay animations); the bounded rAF poll is the
+    # behavior this check needs and always completes within about two seconds.
     page.evaluate("""async()=>{
-      await Promise.all(document.getAnimations().filter(a=>a.effect.getTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{})));
       let previous='',stable=0;
       for(let i=0;i<120&&stable<10;i++){
         await new Promise(requestAnimationFrame);
@@ -207,6 +212,62 @@ def cancel_confirmation(page, phase, language, name, full=True):
                   phase + ' parent focus trap resumes after nested cancellation')
 
 
+def bundle_fallback(page, phase, language):
+    boot(page, phase)
+    stage(page, 2, page.viewport_size['width'] < 1080)
+    with tempfile.TemporaryDirectory() as folder:
+        if phase == 'Core':
+            paths = write_domain_fixture(Path(folder), measured_ends=True)
+            page.locator('#fileInput').set_input_files(paths)
+            page.wait_for_function('()=>STATE.collar[0]?.hole_id==="L00"&&STATE.assay.length===75')
+        else:
+            source = Path(folder) / 'synthetic-export.csv'
+            source.write_text('hole_id,from_m,to_m,midx,midy,midz,ni_pct,domain\nL00,0,1,700000,9800000,99,1.2,SAP\nL01,0,1,700020,9800000,99,1.8,SAP\n')
+            page.locator('#fileInput').set_input_files(source)
+            page.wait_for_function('()=>DATA.rows?.length===2')
+    before = raw(page)
+    page.evaluate("()=>{window.prompt=()=>{throw new Error('prompt() is not supported')}}")
+    downloads = []
+    page.on('download', lambda download: downloads.append(download))
+    page.locator('button.orebit-avatar').click()
+    page.locator('[data-act="export"]').click()
+    dialog = page.locator('#bundleFilenameDialog [role="dialog"]')
+    dialog.wait_for(state='visible', timeout=5000)
+    assert_dialog(page, dialog, phase + ' unsupported-prompt export')
+    field = page.locator('#bundleFilename')
+    check(field.input_value().endswith('-' + phase + '.orebit'), phase + ' retains its default bundle filename')
+    cancel = page.locator('#bundleFilenameCancel')
+    cancel.focus()
+    page.keyboard.press('Enter')
+    check(not page.locator('#bundleFilenameDialog').count() and not downloads, phase + ' focused Cancel + Enter does not export')
+    check(page.locator('button.orebit-avatar').evaluate('e=>e===document.activeElement'), phase + ' export cancel restores the visible profile trigger')
+    page.locator('button.orebit-avatar').click()
+    page.locator('[data-act="export"]').click()
+    page.locator('#bundleFilename').fill('')
+    page.locator('#bundleFilenameSave').click()
+    check(page.locator('#bundleFilenameDialog').is_visible() and not downloads, phase + ' blank filename does not export')
+    filename = 'review-"<literal>-' + language
+    page.locator('#bundleFilename').fill(filename)
+    with page.expect_download() as result:
+        page.locator('#bundleFilenameSave').click()
+    check(result.value.suggested_filename.endswith('.orebit'), phase + ' adds the native bundle extension')
+    check(raw(page) == before, phase + ' filename entry and download preserve raw measurements')
+    with tempfile.TemporaryDirectory() as folder:
+        saved = Path(folder) / 'roundtrip.orebit'
+        result.value.save_as(saved)
+        page.reload()
+        page.wait_for_function('()=>window.__i18nBooted===true')
+        page.locator('button.orebit-avatar').click()
+        with page.expect_file_chooser() as chooser:
+            page.locator('[data-act="import"]').click()
+        chooser.value.set_files(saved)
+        if phase == 'Resource':
+            page.wait_for_function('(name)=>document.getElementById("dashProjectName")?.textContent===name', arg=json.loads(saved.read_text())['name'])
+        else:
+            page.locator('.toast.toast-good').first.wait_for(state='visible')
+        check(json.loads(raw(page)) == json.loads(before), phase + ' native bundle import restores every raw value')
+
+
 try:
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
@@ -219,6 +280,18 @@ try:
                 errors = []
                 page.on('pageerror', lambda e: errors.append(str(e)))
                 mobile = width < 1080
+                if CASE in ('all', 'bundle'):
+                    bundle_fallback(page, phase, language)
+                    check(not errors, phase + ' unsupported-prompt fallback has no unhandled errors')
+                    context.close()
+                    if CASE == 'bundle':
+                        continue
+                    # Existing keyboard journeys retain their fresh-project precondition.
+                    context = browser.new_context(viewport={'width':width,'height':height},is_mobile=width<1080,has_touch=width<1080)
+                    context.add_init_script(f"localStorage.setItem('orebit.lang','{language}')")
+                    page = context.new_page()
+                    errors = []
+                    page.on('pageerror', lambda e: errors.append(str(e)))
                 if CASE != 'stage-links':
                     boot(page, 'Core')
                     stage(page, 2, mobile)
@@ -259,14 +332,14 @@ try:
                     check(page.locator('#tab3 .action-key').count() == 1,
                           'Resource Setup has one action-role legend')
                     check(page.locator('#setupElement').is_visible() and page.locator('#setupDomain').is_visible() and
-                          page.locator('#setupGradeUnit').is_visible() and page.locator('#resourceSetupNext').is_visible(),
+                          page.locator('#setupGradeUnit').is_visible() and page.locator('#tab3 .workflow-stage-bar-next').is_visible(),
                           'Resource Setup keeps essential parameter controls and continuation available')
-                    page.locator('#resourceSetupNext').focus()
+                    page.locator('#tab3 .workflow-stage-bar-next').focus()
                     page.keyboard.press('Enter')
                     check(active(page) == 4, 'Resource actual Setup continuation opens Variography')
                     check(page.evaluate('variogramState.model === null'),
                           'Resource begins continuation without a computed variogram model')
-                    page.locator('#tab4 .workflow-actions [data-workflow-next]').focus()
+                    page.locator('#tab4 .workflow-stage-bar-next').focus()
                     page.keyboard.press('Enter')
                     page.wait_for_function("()=>document.activeElement===document.querySelector('#tab5.panel.active')", timeout=5000)
                     check(active(page) == 5 and page.evaluate('!!variogramState.model && Number.isFinite(variogramState.model.range) && variogramState.model.range>0'),
@@ -285,7 +358,7 @@ try:
                           'Assay visiting Data does not mark analyst approval')
                     page.locator('#tab3 .workflow-notes>summary').click()
                     page.locator('#assay-stage-note-3').fill('Keyboard accessibility review')
-                    page.locator('#tab3 .workflow-actions [data-action-role="next"]').focus()
+                    page.locator('#tab3 .workflow-stage-bar-next').focus()
                     page.keyboard.press('Enter')
                     page.wait_for_function("()=>document.activeElement===document.querySelector('#tab8.panel.active')", timeout=3000)
                     check(active(page) == 8 and reviewed.evaluate('e=>e.classList.contains("workflow-reviewed")'),
@@ -311,7 +384,9 @@ try:
                     page.keyboard.press('Home')
                     check(active(page) == 1, phase + ' Home selects the first disclosed stage')
                     page.keyboard.press('End')
-                    check(active(page) == (12 if phase == 'Resource' else 13), phase + ' End selects the handoff stage')
+                    final_stage = {'Core':13,'Assay':13,'Resource':12}[phase]
+                    final_action = 'last visible workflow stage'
+                    check(active(page) == final_stage, phase + ' End selects the ' + final_action)
                     check(page.locator('nav.tabs .tab[tabindex="0"]').count() == 1,
                           phase + ' selected tab is the single tab-list stop')
                     panel = page.locator('.panel.active')

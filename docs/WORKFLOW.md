@@ -60,6 +60,28 @@ scope and derived results. Reopening a project revalidates its saved selection.
 Industry/raw exports still require full regional validation. **Return to full-data
 validation** clears scoped results without deleting source data.
 
+## Core Domain: geological solid
+
+Domain is a Core stage between Merge and Export. It has four steps:
+**Definition → Contacts or sections → Build → Review/handoff**.
+
+1. **Definition:** choose the domain code and a method.
+   - **Between two surfaces:** top and base surfaces from logged contacts or an
+     imported surface. Suits layered bodies such as laterite horizons.
+   - **Loft from sections:** draw one closed ring per parallel section, on at
+     least two sections, with a zero/half/pinch end rule. Suits bodies interpreted on sections.
+2. **Contacts or sections:** pick contacts or digitize rings. Snapped points keep the hole and depth.
+3. **Build:** the checklist above **Build** lists closed sections, end rule and
+   ground surface. The build checks topology, self-intersection, overlap and collar elevation.
+   A failure names the face, section or record to fix.
+4. **Review/handoff:** accepting a solid needs a reviewer name and a reason.
+   Changing the source data later marks the acceptance stale; rebuild and review again.
+
+Surfaces and solids are layers: rename, recolour, isolate or delete them; styling
+does not change the geometry or its review. Export the solid as DXF or OBJ and section
+outlines as CSV. **Continue in Assay** carries the accepted solid with the data.
+A closed mesh is not geological approval: check each solid against logs and sections.
+
 On phones the header keeps separate44px menu, install, language and profile
 controls. Install is an accessible icon; desktop downloads remain in the profile
 menu. Core, Assay and Resource share this shell and the real tour controls.
@@ -90,9 +112,11 @@ You can edit parameters; advanced navigation exposes all original tools.
    intervals, missing fields or invalid grades before relying on a result.
 3. **Stats:** examine element, units, missing/zero values and the distribution.
    The optional top-cut tool shows proposals; reviewing them applies no cap.
-4. **Domain:** choose source domains or an explicit grouping method. A grade rule
-   is a screening grouping, not a verified three-dimensional geological solid.
-5. **Composite:** use the suggested median interval length or edit it. Check
+4. **Domain:** with a solid from Core Domain, samples are assigned to it on the
+   actual trace. Without one, choose source domains or an explicit grouping method;
+   a grade rule is a screening grouping, not a geological solid.
+5. **Composite:** composites stop at hard domain boundaries. Use the suggested
+   median interval length or edit it. Check
    dropped tails, gaps and informed-length grade conservation before continuation.
 6. **Report:** export the PDF and continue in Resource. Optional controls let you
    export the stable composite CSV or the interpretation JSON.

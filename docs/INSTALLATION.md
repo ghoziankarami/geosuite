@@ -16,21 +16,26 @@ an account, a licence key, or a VPS.
 
 ## Windows executables
 
-1. Open [Releases](https://github.com/ghoziankarami/geosuite/releases/latest)
-   and expand **Assets**. Download the Core, Assay and Resource `.exe` files
-   from the same release, plus `SHA256SUMS.txt`.
-2. Compare each checksum before running it. In PowerShell use
-   `Get-FileHash .\Orebit-Core.exe -Algorithm SHA256`, substituting the actual
-   downloaded filename; compare with that file's line in `SHA256SUMS.txt`.
-3. Open Core. The dashboard should show its module/version and built-in sample.
-   Node/Python are not needed for these executables. Follow Import → validation
-   → master export, then import that file in Assay and its composite master in
-   Resource. Save project exports as backups.
+1. Open the [latest release](https://github.com/ghoziankarami/geosuite/releases/latest)
+   and expand **Assets**.
+2. Download `Orebit-Core.exe`, `Orebit-Assay.exe`, `Orebit-Resource.exe` and
+   `SHA256SUMS.txt` (about 57 MB in total) into **one folder**.
+   **Continue in Assay** and **Continue in Resource** open the next executable
+   from that folder and pass the data along.
+3. Check each file in PowerShell and compare with its line in `SHA256SUMS.txt`:
 
-Executables are unsigned; check source/release provenance rather than assuming
-an OS reputation warning proves either safety or a broken installation.
-**Code → Download ZIP** contains source, not the executables. macOS/Linux use
-web/PWA or the local source build below.
+   ```powershell
+   Get-FileHash .\Orebit-Core.exe -Algorithm SHA256
+   ```
+
+4. Run `Orebit-Core.exe`. The executables are unsigned, so Windows SmartScreen may
+   show **Windows protected your PC**; choose **More info → Run anyway** only after
+   the checksum matches.
+5. The Core dashboard shows the version and the built-in sample. Node and Python are not needed.
+
+To update, download the three files of the new release into the same folder and
+replace the old ones. Projects you exported as `.orebit` files open in the new version.
+**Code → Download ZIP** contains source code, not the executables.
 
 ## Build and run locally / Jalankan dari kode sumber
 
@@ -87,19 +92,19 @@ file processing and calculations then work offline; optional Google Drive,
 satellite maps and update checks need a connection. Source builds include the
 libraries locally. Export project backups before clearing site storage.
 
-Web caches, Windows executables and source checkouts can have different
-versions. Updating the web app does not update an EXE or a source checkout.
-Download a new EXE, or update the source and rebuild, for those routes.
+Updating the web app does not update an executable or a source checkout.
+Download the new release, or pull and rebuild the source. The Core dashboard shows
+which version you are running.
 
 ## Choose the matching tutorial
 
-Check the sample name and hole count in your build first. Builds carrying **Thalanga, 717 collars**, use the
+The built-in sample is a synthetic nickel laterite (349 collars). It matches the
+[10-minute quickstart](vignettes/en/00-quickstart.md)
+([Bahasa Indonesia](vignettes/00-quickstart.md)). For real public data use the
 [Thalanga tutorial](vignettes/en/01-thalanga-vms.md)
-([Bahasa Indonesia](vignettes/01-thalanga-vms.md)). The
-[10-minute tutorial](vignettes/en/00-quickstart.md) targets the newer 350-hole
-synthetic nickel sample. For a consistent training input across builds,
-download the [four CSV training files](https://github.com/ghoziankarami/orebit-datasets/blob/main/docs/USE_WITH_GEOSUITE.md)
-and import them yourself. Training outputs are preliminary screening results.
+([Bahasa Indonesia](vignettes/01-thalanga-vms.md)) and import its files.
+The [four CSV training files](https://github.com/ghoziankarami/orebit-datasets/blob/main/docs/USE_WITH_GEOSUITE.md)
+give the same input on every build. Training outputs are screening results.
 
 | Problem | Action |
 | --- | --- |

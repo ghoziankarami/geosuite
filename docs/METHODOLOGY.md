@@ -82,14 +82,18 @@ Anisotropy by azimuth/dip rotation of the search ellipsoid.
 
 ## Model support, quantities and display
 
-A new project uses a 3D sample-proximity screening envelope; its editable automatic
-radius is at least 25 m and half the cell diagonal. An explicit radius and older
-saved XY/3D settings are retained. The XY method fills vertical columns across the
-model elevation range and can include air or unmineralised rock. Neither method
-creates a closed geological solid, topographic clip or partial-cell fill fraction.
-A domain label restricts the samples; it does not itself define an ore volume.
+**With a domain solid from Core.** When Resource receives an accepted solid, blocks
+are clipped to it. Each block carries its filled volume inside the solid; a partly
+filled block contributes only that volume. Model mass is the sum of filled volume ×
+assigned density. The solid is re-checked at handoff; a changed or unreviewed solid is not applied.
 
-Model mass is the sum of full-cell volume × assigned density. The density source
+**Without a solid.** A new project uses a 3D sample-proximity screening envelope;
+its editable automatic radius is at least 25 m and half the cell diagonal. An explicit
+radius and older saved XY/3D settings are retained. The XY method fills vertical
+columns across the model elevation range and can include air or unmineralised rock.
+Envelopes do not clip to topography or fill partial cells, and a domain label alone
+restricts the samples without defining an ore volume. Model mass is then the sum of
+full-cell volume × assigned density. The density source
 and counts using uniform fallback are recorded. %, g/t and ppm grades are
 mass-weighted for aggregation; kg/m³ grades are volume-weighted. The latter report
 volume and metal directly, without assigning rock tonnage. Unit declarations

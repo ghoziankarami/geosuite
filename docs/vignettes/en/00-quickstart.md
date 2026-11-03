@@ -1,58 +1,62 @@
 # Quickstart: GeoSuite in 10 minutes
 
-**Check the build first.** This walkthrough targets the build with a **synthetic nickel laterite** sample. Published source, Windows releases and the hosted web modules can come from different revisions. Earlier builds use a Thalanga sample; installation alone does not replace it. Check the sample name and hole count before following the numbers below. If your build shows Thalanga, use the [Thalanga tutorial](01-thalanga-vms.md), which imports its own public dataset, or wait for the matching product build to be published.
-
-Each module opens with synthetic nickel laterite data (CC BY 4.0, credit Orebit.id). Core starts with 349 collars and deliberate source-link faults; Assay/Resource open prepared LIM/SAP intervals from the complete 350-hole sources. No separate exercise mode is needed. You can review the prepared Assay/Resource examples independently or correct Core before continuing through all three modules.
+This guide is for GeoSuite 3.2.0. All three modules open with a synthetic nickel laterite sample project (CC BY 4.0, credit Orebit.id). Core loads 349 collars with deliberate data errors. Assay and Resource load prepared LIM/SAP intervals from the complete 350-hole source. The sample is for practice, not field data.
 
 ## 1. Core: check the drillholes (3 minutes)
 
-[Open Orebit Core](https://geosuite.orebit.id/Core.html). Use **Start review** for the main path. **Advanced tools** in the sidebar opens the detailed table and section views directly.
+[Open Orebit Core](https://geosuite.orebit.id/Core.html) and click **Start review**. The main stages are in the sidebar: Import, Validation, Desurvey, Merge, Domain, Export. **Advanced tools** opens the tables, strip log and section views.
 
-- **Dashboard** shows 349 collars (one original collar is missing), 8,896 assay intervals and 8.8 km of drilling, with overburden, limonite, saprolite and bedrock logged; 10 holes stop before bedrock.
-- **Validation** checks every hole for missing surveys, overlapping or gapped intervals and holes without a geology log, and lists each finding with the reason.
-- **Fix the sample:** in Validation, inspect orphan records, the missing geology log and mismatched ID. Click **Download source CSVs**, unzip, import all four originals and revalidate. This corrects synthetic source links; never use example sources to repair field data. Desurvey remains blocked until failures are resolved.
-- **Section** draws the holes on a cross-section with grades and lithology.
-- **Desurvey** turns collar and survey into 3D hole traces.
+- **Dashboard** shows 349 collars, 8,896 assay intervals, 1,368 geology intervals and 8,796 m of total depth.
+- **Validation** lists every finding by hole: missing collars, missing surveys, overlapping or gapped intervals and mismatched IDs. Desurvey stays locked until the blocking findings are resolved.
+- **Fix the sample:** click **Download source CSVs**, extract them, import the four original tables and validate again. Use this only for the synthetic source.
+- **Desurvey** calculates each hole's 3D trace. **Merge** joins collar, survey, assay and geology into one master table.
 
-For a longer interpretation exercise, open **Domain** in Core after checking the data and traces. Contact surfaces and section lofts are two ways to create a candidate solid; review the contacts, geometry, ground-surface checks and geological decision before accepting it. Repeated SAP intervals need correlation on logs and sections, not automatic joining. Follow the [Core Domain → Assay → Resource guide](https://geosuite.orebit.id/docs/#/ref/domain-workflow); availability depends on the build in use. This exercise is outside the 10-minute orientation.
+## 2. Core: build a domain (optional, about 10 minutes)
 
-## 2. Assay: understand the grades (3 minutes)
+Open **Domain**. It has four tasks: **1 · Choose method**, **2 · Contacts**, **3 · Build & review**, **4 · Handoff**.
 
-[Open Orebit Assay](https://geosuite.orebit.id/Assay.html). It opens with nominal 1 m intervals from all 350 holes: Ni, Co, Fe, MgO, SiO2, Al2O3 and Cr2O3, split into a saprolite and a limonite domain.
+- **Between contact surfaces:** make a geological group from lithology codes (for example SAP), save its upper and lower contact surfaces, then build the solid between them.
+- **Digitized section rings:** draw a closed ring on several parallel sections, then build the loft.
+- After the build, check the volume, topology and the collar check. Enter a reviewer and a reason, then accept the solid. You can export it as DXF or OBJ.
+- **Continue in Assay →** carries the master table and the reviewed solid to Assay.
 
-- **Stats** gives mean, CV and percentiles per element and per domain.
-- **Top-Cut** shows where the upper tail breaks up and suggests a cap.
-- **Domain** compares the saprolite and limonite domains and can group samples using a cutoff; such a grouping is not a geological solid.
-- Method changes are previews. To use that population, enter a reason and click **Apply reviewed population**; Undo and project exports retain the decision history.
+Each step is described in the [Core Domain → Assay → Resource guide](https://geosuite.orebit.id/docs/#/ref/domain-workflow).
 
-## 3. Resource: estimate and report (4 minutes)
+## 3. Assay: understand the grades (3 minutes)
 
-[Open Orebit Resource](https://geosuite.orebit.id/Resource.html).
+[Open Orebit Assay](https://geosuite.orebit.id/Assay.html). The built-in sample holds 1 m intervals from 350 holes with Ni, Co, Fe, MgO, SiO2, Al2O3 and Cr2O3.
 
-- On the **Dashboard**, click **Start review**. In Setup choose Ni, percent units and one horizon such as saprolite; run limonite separately if justified.
-- **Variography:** click **Compute & fit**, inspect the experimental points, pair counts and model. Custom settings and optional directional/downhole tools are below.
-- **Block Model:** inspect cell dimensions, density and the support envelope before generating. Then estimate and inspect cross-validation and swath results.
-- **Grade-Tonnage** compares cutoffs. **Report** records your chosen cutoff or no-cutoff setting, methods and limitations. A screening estimate is not a certified resource.
-- **Advanced tools** opens optional views directly. The same top-stage actions and sidebar pattern apply in Core and Assay.
+- **Stats** shows the mean, CV and percentiles for each element.
+- **Top-Cut** shows the upper tail of the distribution and a suggested cap.
+- **Domain Statistics** compares populations by domain. Method changes are a preview. Enter a reason and click **Apply reviewed population** to use one.
+- **Composite** makes composites at the length you choose. When the data comes from Core Domain, composites stop at hard domain boundaries.
 
-## 4. Your own data
+## 4. Resource: estimate and report (4 minutes)
 
-In Core, open **Import** and drop in your collar, survey, assay and geology CSV files. Column names such as `Au (g/t)` or `Cu (%)` are recognised automatically, and lab codes such as `-0.005` (below detection) or `-999` (missing) are handled for you. CSV imports and calculations run locally. Optional Google Drive access, satellite maps and update checks need an internet connection.
+[Open Orebit Resource](https://geosuite.orebit.id/Resource.html) and click **Start review**.
 
-Export the validated master data from Core and load them on the **Upload** tab in Assay, then pass Assay's export to Resource the same way.
+- **Setup:** choose Ni, percent units and one horizon, for example saprolite.
+- **Variography:** click **Compute & fit variogram**. Check the experimental points, pair counts and model. A custom 3D direction (azimuth and dip) is in the variogram parameters.
+- **Block Model:** check the cell size and density, then click **Generate Grid**. When a Core domain solid is attached, the blocks are clipped to it.
+- **Estimation:** click **Run Estimation (IDW + OK + NN)**, then check **Cross-Val** and **Swath**.
+- **Grade-Tonnage** compares cut-offs. The **Handoff Report** records the cut-off, methods, density and limits. The result is a screening estimate, not a Mineral Resource.
+
+## 5. Your own data
+
+In Core, open **Import** and add your collar, survey, assay and geology CSV files. Column names such as `Au (g/t)` or `Cu (%)` are recognised. Lab codes such as `-0.005` (below detection) and `-999` (missing) are handled on import. Import and calculations run on your computer.
+
+Save the project from the profile menu (the avatar at the top right) as a `.orebit` file. You can reopen it in the same module.
+
+## Install and work offline
+
+The web version needs no installation. In Chrome or Edge, choose **Install app**; in Safari on macOS 14+, choose **File → Add to Dock**. Open Core, Assay and Resource once while online before using them offline. Google Drive, satellite maps and update checks still need internet.
+
+Windows users can download three executables from [GitHub Releases](https://github.com/ghoziankarami/geosuite/releases/latest). The executables are unsigned; compare them with the checksum list on the release page.
+
+Browser storage belongs to the browser profile. Clearing it can remove saved work, so keep `.orebit` files outside the browser. To build from source, follow the [repository installation guide](https://github.com/ghoziankarami/geosuite#run-from-source).
+
+On a phone or tablet, **Steps** opens the main stages and **Advanced** opens the optional tools.
 
 ## Next
 
-The [full Thalanga tutorial](01-thalanga-vms.md) uses a public dataset (Queensland, loaded from the tutorial's own data file) and follows it through every decision, from the raw government compilation to a grade-tonnage screen checked against 1989–1998 production. The [manual](https://geosuite.orebit.id/docs/) documents every screen and setting.
-
-## Install, work offline and keep backups
-
-No installation is required for the web version. On Chrome or Edge, use **Install app**; on Safari on macOS 14+, use **File → Add to Dock**. Open **Core, Assay and Resource** once while online before offline use. Google Drive, satellite maps and update checks still need a connection.
-
-Windows users can also download the three separate executables from [GitHub Releases](https://github.com/ghoziankarami/geosuite/releases/latest). The executables are unsigned; compare the files with the release checksum list.
-
-Export projects as backups. Browser storage belongs to the browser profile and site origin; clearing it can remove saved work. Save the exported files outside the browser. To build from source, follow the [repository installation guide](https://github.com/ghoziankarami/geosuite#run-from-source).
-
-The collar programme follows an irregular strike-oriented prospect with selective infill. Core retains all raw horizons; the initial Assay/Resource example selects LIM/SAP. Measured density is retained in handoffs. Synthetic nickel laterite CSVs are also available in the [public dataset repository](https://github.com/ghoziankarami/orebit-datasets/tree/main/02-nikel-laterit); read its README and validate the tables before use.
-
-On phones/tablets, **Steps / Alur** opens the main stages and **Advanced / Lanjutan** opens optional tools. The tour follows the same stage controls in each module.
+The [Thalanga tutorial](01-thalanga-vms.md) uses a public Queensland dataset and explains each decision, from the raw compilation to a grade-tonnage screen compared with 1989–1998 production. The [manual](https://geosuite.orebit.id/docs/) describes every screen and setting. The synthetic nickel laterite CSV files are in the [public dataset repository](https://github.com/ghoziankarami/orebit-datasets/tree/main/02-nikel-laterit).

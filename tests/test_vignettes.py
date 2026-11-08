@@ -1,0 +1,253 @@
+#!/usr/bin/env python3
+"""test_vignettes.py -- the tutorials in docs/vignettes/ may never go stale.
+
+Each vignette has a runner (docs/vignettes/tools/run_<name>.py) that drives the
+real dist/ build in Chromium step by step and writes every number the tutorial
+quotes to docs/vignettes/data/<name>.json. This suite:
+
+1. re-runs every runner (no screenshots) into a temp dir and compares the fresh
+   JSON with the committed one -- integers and strings exactly, floats to a
+   relative 1e-4 -- so an app change that moves a quoted number fails here,
+   not in a reader's hands;
+2. checks each runner's independent re-derivations against the app's own
+   numbers (e.g. the app's grade-tonnage curve vs. the one recomputed in
+   Python from the exported block model);
+3. checks that the numbers the prose quotes are the numbers in the JSON, in
+   both the Indonesian and English text.
+
+When an intended app change moves a number: re-run the runner (with
+screenshots), update the prose, commit all three together.
+
+Needs Playwright + Chromium and a built dist/ (run-tier.sh builds it).
+"""
+
+from __future__ import annotations
+
+import json
+import math
+import os
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+HERE = Path(__file__).resolve()
+ROOT = next(p for p in HERE.parents if (p / "build" / "build.mjs").exists())
+VIG = ROOT / "docs" / "vignettes"
+IGNORED_KEYS = {"runtime_s", "seconds"}
+
+failures: list[str] = []
+passes = 0
+
+
+def check(ok: bool, msg: str):
+    global passes
+    if ok:
+        passes += 1
+    else:
+        failures.append(msg)
+        print(f"  FAIL {msg}")
+
+
+def compare(want, got, path="$"):
+    if isinstance(want, dict):
+        if not isinstance(got, dict):
+            return check(False, f"{path}: expected object, got {type(got).__name__}")
+        for k, v in want.items():
+            # timings vary by machine (first public CI run: estimate_seconds 4 -> 5)
+            if k in IGNORED_KEYS or k.endswith("seconds") or k.startswith("img_"):
+                continue
+            if k not in got:
+                check(False, f"{path}.{k}: missing from fresh run")
+                continue
+            compare(v, got[k], f"{path}.{k}")
+    elif isinstance(want, list):
+        if not isinstance(got, list) or len(got) != len(want):
+            return check(False, f"{path}: list length {len(want)} -> {len(got) if isinstance(got, list) else got!r}")
+        for i, (a, b) in enumerate(zip(want, got)):
+            compare(a, b, f"{path}[{i}]")
+    elif want is None or got is None:
+        check(want is got, f"{path}: {want!r} -> {got!r}")
+    elif isinstance(want, float) or isinstance(got, float):
+        ok = isinstance(got, (int, float)) and math.isclose(float(want), float(got), rel_tol=1e-4, abs_tol=1e-6)
+        check(ok, f"{path}: {want} -> {got}")
+    else:
+        check(want == got, f"{path}: {want!r} -> {got!r}")
+
+
+def fmt(v: float, dec: int, lang: str) -> str:
+    s = f"{v:,.{dec}f}"
+    if lang == "id":
+        s = s.replace(",", "_").replace(".", ",").replace("_", ".")
+    return s
+
+
+def quoted(docs: dict[str, str], label: str, value: float, dec: int):
+    for lang, text in docs.items():
+        s = fmt(value, dec, lang)
+        check(s in text, f"{label}: prose ({lang}) does not quote {s}")
+
+
+def variogram_checks(r: dict, docs: dict[str, str], dec: int):
+    """The nugget comes from the down-hole variogram, and a fit on an edge of the
+    search grid is reported as one -- the two 2026-09-25 variogram fixes."""
+    fit, dh, vg = r["variogram_fit"], r["downhole"], r["variogram"]
+    check(fit["nugget_from"] == "downhole", f"auto-fit did not take the nugget from the down-hole variogram ({fit['nugget_from']})")
+    check(abs(vg["nugget"] - dh["nugget"]) < 1e-9, f"nugget {vg['nugget']} != down-hole nugget {dh['nugget']}")
+    check(dh["nugget"] == min(dh["gammas"][:3]), "down-hole nugget is not min(first three lags)")
+    check(vg["nugget"] / vg["sill"] < 0.59, "nugget/sill back at the old 60 % grid ceiling")
+    check(set(fit["at_bounds"]) <= {"nugget", "rangeMin", "rangeMax"}, f"unknown bound flag {fit['at_bounds']}")
+    check("rangeMin" in fit["at_bounds"], f"the text says the range is flagged as the shortest tried; flags are {fit['at_bounds']}")
+    quoted(docs, "down-hole pairs", dh["pairs"], 0)
+    quoted(docs, "nugget", vg["nugget"], dec)
+    quoted(docs, "first between-hole lag gamma", fit["first_lag_gamma"], dec)
+
+
+def crossval_oracle_checks(resource: dict):
+    """Validate app summaries against Python recomputation from held-out predictions."""
+    cv = resource["crossval"]
+    check(set(cv["independent_metrics"]) == {"idw", "ok", "nn"},
+          "CV independent metrics are missing an estimator")
+    for method, expected in cv["independent_metrics"].items():
+        actual = cv["metrics"].get(method) or {}
+        check(set(expected) == set(actual), f"{method} CV metric fields differ")
+        for key, value in expected.items():
+            check(key in actual and math.isclose(value, actual[key], rel_tol=1e-10, abs_tol=1e-10),
+                  f"{method} CV {key}: app {actual.get(key)} vs independent {value}")
+
+
+def thalanga_consistency(d: dict, docs: dict[str, str]):
+    r, gt = d["resource"], d["independent_gt"]
+    crossval_oracle_checks(r)
+    # app's computeGT vs the Python re-derivation from the exported block model
+    app = {round(x["cutoff_pct"], 2): x for x in r["gt_app"]["all_blocks"]}
+    for row in gt["curve"]:
+        a = app.get(round(row["cutoff_pct"], 2))
+        check(a is not None, f"gt_app lacks cutoff {row['cutoff_pct']}")
+        if a:
+            check(abs(a["tonnes_Mt"] - row["tonnes_Mt"]) <= 0.002,
+                  f"GT @ {row['cutoff_pct']}%: app {a['tonnes_Mt']} Mt vs independent {row['tonnes_Mt']} Mt")
+            check(abs(a["grade_pct"] - row["grade_pct"]) <= 0.01,
+                  f"GT @ {row['cutoff_pct']}%: app {a['grade_pct']}% vs independent {row['grade_pct']}%")
+    est = r["estimate"]
+    check(gt["blocks_estimated"] == est["ok"]["n"], "exported block count != estimated block count")
+    check(abs(gt["curve"][0]["tonnes_Mt"] - est["tonnes_Mt"]) < 0.002, "independent tonnage != app tonnage")
+    check(all(not d[s]["page_errors"] for s in ("core", "assay", "resource")), "page errors during the run")
+    check(d["assay"]["export"]["domains"]["M1-Mineralised"] == r["setup"]["samples"],
+          "Resource did not receive every M1 composite Assay exported")
+    check(d["core"]["crop"]["kept"] == d["independent"]["samples"], "cropped export row count != crop count")
+    check("ASSUMED" in (r.get("density_basis_text") or ""), "density is no longer flagged as assumed")
+
+    # the prose quotes the JSON
+    c, ind, a = d["core"], d["independent"], d["assay"]
+    check(c["fixes"].get("audit_verified") is True, "deleted source cells and the actual Au correction must survive the tutorial audit")
+    quoted(docs, "grade codes bdl", c["grade_codes"]["bdl"], 0)
+    quoted(docs, "cropped samples", c["crop"]["kept"], 0)
+    quoted(docs, "zn cv", ind["zn_cv"], 2)
+    quoted(docs, "metal share 1%", ind["metal_share_above_cutoff_pct"]["1.0"], 1)
+    quoted(docs, "shell cv", ind["shell"]["cv_in"], 2)
+    quoted(docs, "disintegration", a["topcut"]["disintegration"]["value"], 1)
+    quoted(docs, "composites", a["composites"]["n"], 0)
+    quoted(docs, "under-half composites", a["export"]["under_half_informed"], 0)
+    variogram_checks(r, docs, 1)
+    quoted(docs, "range", r["variogram"]["range"], 1)
+    quoted(docs, "spacing", r["spacing_note"]["median_m"], 0)
+    quoted(docs, "unconstrained blocks", r["estimate_unconstrained"]["ok"]["n"], 0)
+    quoted(docs, "unconstrained Mt", r["estimate_unconstrained"]["tonnes_Mt"], 0)
+    quoted(docs, "estimated blocks", est["ok"]["n"], 0)
+    bd = r["estimate_default_bounded"]
+    check(bd["domain_boundary"] and est["domain_boundary"] and not r["estimate_unconstrained"]["domain_boundary"],
+          "domain boundary on/off not as the text describes")
+    check(est["ok"]["n"] < bd["ok"]["n"] < r["estimate_unconstrained"]["ok"]["n"], "boundary/search did not shrink the estimate")
+    quoted(docs, "bounded default blocks", bd["ok"]["n"], 0)
+    quoted(docs, "bounded default removed", bd["outside_domain"], 0)
+    quoted(docs, "bounded default Mt", bd["tonnes_Mt"], 1)
+    quoted(docs, "bounded default grade", bd["ok"]["mean"], 2)
+    quoted(docs, "tonnes at 3.6", gt["tonnes_Mt_at_3_6"], 3)
+    check(abs(gt["tonnes_Mt_at_3_6"] - gt["curve"][0]["tonnes_Mt"] * 3.6 / gt["density_t_m3"]) < 0.002, "density sensitivity inconsistent")
+    quoted(docs, "OK grade", est["ok"]["mean"], 2)
+    quoted(docs, "NN grade", est["nn"]["mean"], 2)
+    quoted(docs, "tonnes", est["tonnes_Mt"], 3)
+    quoted(docs, "metal kt", est["zn_metal_kt"], 1)
+    quoted(docs, "OK slope", r["crossval"]["metrics"]["ok"]["slope"], 2)
+    quoted(docs, "crossval n", r["crossval"]["pairs"], 0)
+    for tier in ("high", "medium", "low"):
+        quoted(docs, f"confidence {tier}", r["confidence_screen"][tier], 0)
+    for row in gt["curve"]:
+        quoted(docs, f"GT {row['cutoff_pct']}% Mt", row["tonnes_Mt"], 3)
+        quoted(docs, f"GT {row['cutoff_pct']}% grade", row["grade_pct"], 2)
+    for row in r["gt_app"]["high_medium"]:
+        if row["cutoff_pct"] in (1, 2, 3, 5, 8):
+            quoted(docs, f"GT high+medium {row['cutoff_pct']}%", row["tonnes_Mt"], 3)
+
+
+CONSISTENCY = {"thalanga": ("01-thalanga-vms.md", thalanga_consistency)}
+
+
+def main():
+    if not (ROOT / "dist" / "Core.html").exists():
+        print("dist/ not built -- run `node build/build.mjs` first")
+        return 1
+    names = sorted(p.stem for p in (VIG / "data").glob("*.json"))
+    if not names:
+        print("no vignette data found")
+        return 1
+    with tempfile.TemporaryDirectory(prefix="vignette-verify-") as tmp:
+        # The runners are independent (each drives its own Chromium through
+        # Core -> Assay -> Resource), so start them all at once and collect
+        # the results in order: run one after another they were the slowest
+        # suite of the pr tier. Each gets its own output directory.
+        running = {}
+        for name in names:
+            runner = VIG / "tools" / f"run_{name}.py"
+            check(runner.exists(), f"{name}: no runner {runner.name}")
+            if not runner.exists():
+                continue
+            print(f"── {name}: re-running {runner.name}")
+            out_dir = Path(tmp) / name
+            out_dir.mkdir()
+            env = dict(os.environ, VIGNETTE_OUT_DIR=str(out_dir))
+            running[name] = (out_dir, subprocess.Popen(
+                [sys.executable, str(runner), "--no-shots"], env=env,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True))
+        for name, (out_dir, proc) in running.items():
+            try:
+                stdout, stderr = proc.communicate(timeout=900)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                stdout, stderr = proc.communicate()
+            if proc.returncode == 3:
+                print(f"  SKIP {name}: its public data is not available offline ({(stdout or '').strip()[-160:]})")
+                continue
+            fresh = out_dir / f"{name}.json"
+            check(proc.returncode == 0 and fresh.exists(),
+                  f"{name}: runner failed ({proc.returncode}): {(stderr or stdout)[-600:]}")
+            if not fresh.exists():
+                continue
+            committed = json.loads((VIG / "data" / f"{name}.json").read_text(encoding="utf-8"))
+            compare(committed, json.loads(fresh.read_text(encoding="utf-8")), name)
+            if name in CONSISTENCY:
+                md, fn = CONSISTENCY[name]
+                docs = {"id": (VIG / md).read_text(encoding="utf-8"),
+                        "en": (VIG / "en" / md).read_text(encoding="utf-8")}
+                fn(committed, docs)
+            for img in (v for k, v in _walk(committed) if k.startswith("img_")):
+                check((VIG / "img" / img).exists(), f"{name}: screenshot {img} missing")
+    print(f"\n{passes} passed, {len(failures)} failed")
+    return 1 if failures else 0
+
+
+def _walk(o):
+    if isinstance(o, dict):
+        for k, v in o.items():
+            if isinstance(v, (dict, list)):
+                yield from _walk(v)
+            else:
+                yield k, v
+    elif isinstance(o, list):
+        for v in o:
+            yield from _walk(v)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,40 @@
+{
+  "type": "FeatureCollection",
+  "name": "thalanga-deposit-area",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Thalanga deposit area (TH-series horizon, 250 m buffer)",
+        "note": "Projected metres, same coordinates as the collar table. Drawn for the GeoSuite vignette; not an official boundary."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              370200,
+              7750000
+            ],
+            [
+              372900,
+              7750000
+            ],
+            [
+              372900,
+              7750800
+            ],
+            [
+              370200,
+              7750800
+            ],
+            [
+              370200,
+              7750000
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

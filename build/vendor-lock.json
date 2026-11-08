@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "files": {
+    "jspdf.umd.min.js": {
+      "package": "jspdf",
+      "version": "4.2.1",
+      "sha256": "e6551fcdc32f09d6853b2c5126d18d01d9447e0da618a41a11ebeee0f6c20d54",
+      "bytes": 420165,
+      "npm_tarball": "https://registry.npmjs.org/jspdf/-/jspdf-4.2.1.tgz",
+      "npm_integrity": "sha512-YyAXyvnmjTbR4bHQRLzex3CuINCDlQnBqoSYyjJwTP2x9jDLuKDzy7aKUl0hgx3uhcl7xzg32agn5vlie6HIlQ=="
+    },
+    "jszip.min.js": {
+      "package": "jszip",
+      "version": "3.10.1",
+      "sha256": "acc7e41455a80765b5fd9c7ee1b8078a6d160bbbca455aeae854de65c947d59e",
+      "bytes": 97630,
+      "npm_tarball": "https://registry.npmjs.org/jszip/-/jszip-3.10.1.tgz",
+      "npm_integrity": "sha512-xXDvecyTpGLrqFrvkrUSoxxfJI5AH7U8zxxtVclpsUtMCq4JQ290LY8AW5c7Ggnr/Y/oK+bQMbqK2qmtk3pN4g=="
+    },
+    "html2canvas.min.js": {
+      "package": "html2canvas",
+      "version": "1.4.1",
+      "sha256": "669b68b0b6828272e5298a36f20a646b027b2cdf5b524ec05b2410009e75063e",
+      "bytes": 198690,
+      "npm_tarball": "https://registry.npmjs.org/html2canvas/-/html2canvas-1.4.1.tgz",
+      "npm_integrity": "sha512-fPU6BHNpsyIhr8yyMpTLLxAbkaK8ArIBcmZIRiBLiDhjeqvXolaEmDGmELFuX9I4xDcaKKcJl+TKZLqruBbmWA=="
+    },
+    "plotly.min.js": {
+      "package": "plotly.js-dist-min",
+      "version": "2.32.0",
+      "sha256": "dd93aca28c083f9a2010a1c2b402617fad743173ed73fb4d9732eefcffee8368",
+      "bytes": 3632288,
+      "npm_tarball": "https://registry.npmjs.org/plotly.js-dist-min/-/plotly.js-dist-min-2.32.0.tgz",
+      "npm_integrity": "sha512-UVznwUQVc7NeFih0tnIbvCpxct+Jxt6yxOGTYJF4vkKIUyujvyiTrH+XazglvcXdybFLERMu/IKt6Lhz3+BqMQ=="
+    }
+  }
+}

@@ -1,0 +1,50 @@
+// P5.01 independent closed-form terrain clipping oracle.
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
+import {fileURLToPath} from 'node:url';
+const here=path.dirname(fileURLToPath(import.meta.url));
+const root=fs.existsSync(path.join(here,'../../../src'))?path.resolve(here,'../../..'):path.resolve(here,'../..');
+const ctx=vm.createContext({setTimeout});
+for(const name of ['primitives','mesh','solid','convex-clip','terrain-clip'])vm.runInContext(fs.readFileSync(path.join(root,`src/shared/geom/${name}.js`),'utf8'),ctx);
+const clip=ctx.OrebitTerrainClip;
+const box={v:[[0,0,2],[2,0,2],[2,2,2],[0,2,2],[0,0,0],[2,0,0],[2,2,0],[0,2,0]],
+  f:[[0,1,2],[0,2,3],[4,6,5],[4,7,6],[0,4,5],[0,5,1],[1,5,6],[1,6,2],[2,6,7],[2,7,3],[3,7,4],[3,4,0]]};
+const grid={origin:[0,0,0],size:[2,2,2],count:[1,1,1]};
+const flat={v:[[0,0,1],[2,0,1],[2,2,1],[0,2,1]],triangles:[[0,1,2],[0,2,3]]};
+const flatBefore=JSON.stringify(flat);
+const one=(mesh,tin,g=grid)=>clip.fractions(mesh,tin,g);
+const close=(actual,expected,label)=>assert.ok(Math.abs(actual-expected)<1e-8,`${label}: ${actual} != ${expected}`);
+const result=one(box,flat);
+close(result.sourceSolid,8,'original cube volume');close(result.solid,4,'volume below z=1 terrain');
+close(result.total,4,'in-grid filled volume');close(result.terrainExcluded,4,'above-terrain volume excluded');
+close(result.filled[0],4,'cell support volume');close(result.outside,0,'no below-terrain volume outside grid');
+assert.equal(JSON.stringify(flat),flatBefore,'terrain input mesh remains unchanged');
+const slope={v:[[0,0,0],[2,0,2],[2,2,2],[0,2,0]],triangles:[[0,1,2],[0,2,3]]};
+close(one(box,slope).solid,4,'sloping terrain z=x integral');
+const partial={v:[[0,0,1],[2,0,1],[0,2,1]],triangles:[[0,1,2]]};
+const cut=one(box,partial);close(cut.solid,2,'half-footprint TIN coverage');close(cut.terrainExcluded,6,'outside TIN coverage and above terrain excluded');
+assert.throws(()=>one(box,null),/TERRAIN_CLIP_SURFACE_REQUIRED/);
+assert.throws(()=>one(box,flat,{...grid,count:[2000001,1,1]}),/DOMAIN_CLIP_GRID_INVALID/);
+const asyncResult=await clip.fractionsAsync(box,flat,grid,{schedule:fn=>setTimeout(fn,0)});
+close(asyncResult.total,4,'async result matches synchronous terrain clip');
+assert.equal(await clip.fractionsAsync(box,flat,grid,{cancelled:()=>true}),null);
+const tall={v:box.v.map(p=>[p[0],p[1],p[2]===2?1000:0]),f:box.f};
+const fine={origin:[0,0,0],size:[1,1,1],count:[2,2,1000]};
+const bounded=clip.fractions(tall,flat,fine,{maxIntersections:50});
+close(bounded.solid,4,'Tall shell below one-metre terrain retains four cubic metres');
+close(bounded.total,4,'Clipped bounds retain all filled support on a fine vertical grid');
+close(bounded.terrainExcluded,3996,'Excluded above-ground volume is not counted as resource support');
+assert.equal(bounded.filled.filter(value=>value>0).length,4,'Only the four genuinely intersected cells are filled');
+assert.throws(()=>clip.fractions(box,flat,{origin:[0,0,0],size:[1,1,1],count:[2,2,2]},{maxIntersections:1}),/TERRAIN_CLIP_INTERSECTION_BUDGET/,'A genuine intersection workload still obeys its unchanged budget');
+const fineSlope={origin:[0,0,0],size:[.25,.25,.25],count:[8,8,8]};
+const slopeCells=clip.fractions(box,slope,fineSlope);
+for(let k=0;k<8;k++)for(let j=0;j<8;j++)for(let i=0;i<8;i++){
+ const x0=i/4,x1=(i+1)/4,z0=k/4,z1=(k+1)/4;
+ const positive=(x,z)=>Math.max(x-z,0)**2;
+ const expected=.25*(positive(x1,z0)-positive(x0,z0)-positive(x1,z1)+positive(x0,z1))/2;
+ close(slopeCells.filled[i+8*(j+8*k)],expected,'Independent analytic integral of z=x terrain in each quarter-metre cell');
+}
+close(slopeCells.total,4,'Fine-grid integration conserves the original sloping-terrain volume');
+console.log('P5.01 terrain clip: 531 checks passed');

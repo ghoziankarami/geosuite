@@ -1,0 +1,246 @@
+#!/usr/bin/env node
+// Tahap 2 of docs/architecture-migration-plan.md.
+//
+// Reads exe-wrapper/pywebview/phases/$PHASE.html, resolves any
+// `/* @orebit-inline: <path relative to repo root> */` markers by
+// substituting the exact bytes of the referenced asset file, writes the
+// result to dist/$PHASE.html, then runs the v194 and help patchers against
+// that OUTPUT (Tahap 2.4) until they reach their joint fixed point. src/
+// never contains a generated block; everything generated happens here.
+//
+// Known Windows pitfall (see the plan doc): reading/writing through a text
+// layer can normalize line endings on a Windows checkout even when nothing
+// "changed". Everything here works on Buffers, not strings -- readFileSync
+// without an encoding argument returns a Buffer, and the marker
+// substitution below does byte-offset slicing on that Buffer rather than
+// decoding to a JS string first -- so there is no text layer for CRLF/LF or
+// encoding assumptions to enter. The marker syntax itself is plain ASCII,
+// so finding it with a byte-level search is safe regardless of the
+// surrounding file's actual encoding.
+//
+// Usage: node build/build.mjs [Core] [Assay] [Resource]   (default: all three)
+
+import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, readdirSync, cpSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { resolvePython } from "./python-launcher.mjs";
+import { verifyVendorAssets } from "./vendor-integrity.mjs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(HERE, "..");
+// Two layouts share this file: orebit-ops (phases under exe-wrapper/, patchers
+// under ops/scripts/) and the public GeoSuite tree produced by
+// ops/opensource/export-public.py (phases/ and build/patchers/ at the root).
+const firstDirWith = (file, ...dirs) => dirs.find(d => existsSync(path.join(d, file))) || dirs[dirs.length - 1];
+const SRC_DIR = firstDirWith("Core.html", path.join(ROOT, "phases"), path.join(ROOT, "exe-wrapper", "pywebview", "phases"));
+const DIST_DIR = path.join(ROOT, "dist");
+// @orebit-inline marker paths are relative to src/, matching where the
+// extracted assets actually live (src/assets/fonts/...).
+const ASSETS_ROOT = path.join(ROOT, "src");
+const VENDOR_DIR = firstDirWith("plotly.min.js", path.join(ROOT, "vendor"), path.join(ROOT, "exe-wrapper", "pywebview", "vendor"));
+verifyVendorAssets(VENDOR_DIR, path.join(HERE, "vendor-lock.json"));
+
+const ALL_PHASES = ["Core", "Assay", "Resource"];
+const requested = process.argv.slice(2);
+const phases = requested.length ? requested : ALL_PHASES;
+
+for (const name of phases) {
+  if (!ALL_PHASES.includes(name)) {
+    console.error(`FATAL: unknown phase "${name}" (expected one of ${ALL_PHASES.join(", ")})`);
+    process.exit(2);
+  }
+}
+
+mkdirSync(DIST_DIR, { recursive: true });
+
+const MARKER_OPEN = Buffer.from("/* @orebit-inline: ");
+const MARKER_CLOSE = Buffer.from(" */");
+
+function compactCss(buf) {
+  const source = buf.toString("utf8");
+  let out = "", quote = "", escaped = false, space = false, newlines = 0;
+  const flushSpace = () => {
+    if (newlines) {
+      out = out.replace(/ +$/, "") + "\n".repeat(newlines);
+      newlines = 0;
+      space = false;
+    } else if (space && out) {
+      out += " ";
+      space = false;
+    }
+  };
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i];
+    if (quote) {
+      out += ch;
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === quote) quote = "";
+    } else if (source.startsWith("/*", i)) {
+      const end = source.indexOf("*/", i + 2);
+      if (end < 0) throw new Error("unterminated CSS comment");
+      if (source[i + 2] === "!") {
+        flushSpace();
+        out += source.slice(i, end + 2);
+      } else {
+        space = true;
+        newlines += (source.slice(i, end + 2).match(/\n/g) || []).length;
+      }
+      i = end + 1;
+    } else if (ch === "'" || ch === '"') {
+      flushSpace();
+      out += ch; quote = ch; space = false;
+    } else if (ch === "\n") newlines++;
+    else if (/\s/.test(ch)) space = true;
+    else {
+      flushSpace();
+      out += ch; space = false;
+    }
+  }
+  if (quote) throw new Error("unterminated CSS string");
+  flushSpace();
+  return Buffer.from(out);
+}
+
+if (compactCss(Buffer.from(`/* note */ .x { content: "a  b"; color: red; } /*! license */`)).toString() !==
+    `.x { content: "a  b"; color: red; } /*! license */`)
+  throw new Error("CSS compaction self-check failed");
+if ((compactCss(Buffer.from(`.a {\n  --accent: #0d9488;\n  color: var(--accent, #0d9488);\n}`)).toString().match(/\n/g) || []).length !== 3)
+  throw new Error("CSS compaction changed source line numbers");
+
+// ─── Tahap 2.4: patchers run here, on build output ─────────────────────────
+// The v194 shell and help panel are generated content. They used to be
+// injected into the canonical source files by hand-run patchers, which is
+// how generated blocks ended up committed inside hand-edited files. src/ is
+// now block-free; this build owns the injection, in the documented order
+// (v194, then help -- stamp stays a release-time step on the source).
+//
+// Convergence: v194 anchors its block ABOVE the help panel when one is
+// present, while the help patcher inserts immediately before the last
+// </body>, so a single v194->help pass over a block-free file can leave one
+// newline of spacing that the next pass re-normalizes. Running the pair
+// until the bytes stop changing lands on the same joint fixed point from
+// any starting spacing; the cap only guards against a future anchor bug
+// looping forever.
+const { command: PY_EXE, args: PY_ARGS } = resolvePython();
+const PATCHER_DIR = firstDirWith("orebit_v194_patcher.py", path.join(ROOT, "build", "patchers"), path.join(ROOT, "ops", "scripts", "patchers"));
+const PATCHERS = [
+  path.join(PATCHER_DIR, "orebit_v194_patcher.py"),
+  path.join(PATCHER_DIR, "orebit_help_patcher.py"),
+];
+const MAX_PATCH_PASSES = 4;
+
+function runPatcher(script, target) {
+  const r = spawnSync(PY_EXE, [...PY_ARGS, script, target], {
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  if (r.status !== 0) {
+    throw new Error(
+      `patcher failed (exit ${r.status}): ${script} ${path.basename(target)}\n` +
+        `${r.stdout?.toString()}${r.stderr?.toString()}`
+    );
+  }
+}
+
+function patchToFixedPoint(dstPath, phaseName) {
+  let prev = readFileSync(dstPath);
+  for (let pass = 1; pass <= MAX_PATCH_PASSES; pass++) {
+    for (const script of PATCHERS) runPatcher(script, dstPath);
+    const now = readFileSync(dstPath);
+    if (now.equals(prev)) {
+      console.log(`  ${phaseName}: patchers at fixed point (after ${pass - 1} normalization pass(es))`);
+      return;
+    }
+    prev = now;
+  }
+  throw new Error(
+    `${phaseName}: patchers did not converge after ${MAX_PATCH_PASSES} passes -- ` +
+      `an anchor or template change has broken the fixed point; do not ship this output.`
+  );
+}
+
+// Replace every `/* @orebit-inline: <path> */` marker in `buf` with the raw
+// bytes of the file at ROOT/<path>. Pure Buffer slicing throughout -- never
+// decodes the surrounding HTML to a string, so nothing about it can
+// normalize whitespace/newlines/encoding in content this isn't touching.
+// Inlined files may carry markers of their own (src/ui/<phase>/styles.css
+// holds the font markers), so resolution recurses, bounded against cycles.
+function resolveInlineMarkers(buf, phaseName, depth = 0) {
+  if (depth > 4) throw new Error(`${phaseName}: @orebit-inline nesting deeper than 4 (cycle?)`);
+  const chunks = [];
+  let cursor = 0;
+  while (true) {
+    const openAt = buf.indexOf(MARKER_OPEN, cursor);
+    if (openAt === -1) {
+      chunks.push(buf.subarray(cursor));
+      break;
+    }
+    const pathStart = openAt + MARKER_OPEN.length;
+    const closeAt = buf.indexOf(MARKER_CLOSE, pathStart);
+    if (closeAt === -1) {
+      throw new Error(`${phaseName}: unterminated @orebit-inline marker at byte ${openAt}`);
+    }
+    const assetRelPath = buf.subarray(pathStart, closeAt).toString("utf-8").trim();
+    const assetAbsPath = path.join(ASSETS_ROOT, assetRelPath);
+    const assetBytes = readFileSync(assetAbsPath); // Buffer
+    chunks.push(buf.subarray(cursor, openAt));
+    const resolved = resolveInlineMarkers(assetBytes, phaseName, depth + 1);
+    chunks.push(assetRelPath.endsWith(".css") ? compactCss(resolved) : resolved);
+    cursor = closeAt + MARKER_CLOSE.length;
+  }
+  return Buffer.concat(chunks);
+}
+
+// Build IDs describe the exact inlined source bytes, independent of Git
+// availability (source ZIPs) and working-tree state. No stale "-dirty" stamp
+// from a maintainer's checkout may appear in a user's exported CSV/JSON.
+function replaceOnce(buf, from, to) {
+  const needle = Buffer.from(from);
+  const at = buf.indexOf(needle);
+  if (at < 0 || buf.indexOf(needle, at + needle.length) >= 0)
+    throw new Error(`expected exactly one build stamp: ${from}`);
+  return Buffer.concat([buf.subarray(0, at), Buffer.from(to), buf.subarray(at + needle.length)]);
+}
+
+function stampSourceDigest(buf, name) {
+  const head = buf.subarray(0, 2500).toString("utf8");
+  const version = head.match(/<meta name="product-version" content="(v[0-9.]+)"/)?.[1];
+  const existing = head.match(/window\.OREBIT_BUILD_ID="([^"]+)";/)?.[1];
+  if (!version || !existing || !existing.startsWith(name.toLowerCase() + "-"))
+    throw new Error(`${name}: missing version or invalid source build stamp`);
+  const digest = createHash("sha256").update(buf).digest("hex").slice(0, 12);
+  const id = `${name.toLowerCase()}-${version}-${digest}`;
+  return replaceOnce(replaceOnce(buf, `Build: ${existing}`, `Build: ${id}`),
+    `window.OREBIT_BUILD_ID="${existing}";`, `window.OREBIT_BUILD_ID="${id}";`);
+}
+
+for (const name of phases) {
+  const srcPath = path.join(SRC_DIR, `${name}.html`);
+  const dstPath = path.join(DIST_DIR, `${name}.html`);
+  const srcBytes = readFileSync(srcPath); // Buffer, no text decoding
+  const outBytes = stampSourceDigest(resolveInlineMarkers(srcBytes, name), name);
+  writeFileSync(dstPath, outBytes); // Buffer, no text encoding
+  patchToFixedPoint(dstPath, name);
+  const finalBytes = readFileSync(dstPath);
+  console.log(`  ${name}.html  ${srcBytes.length.toLocaleString("en-US")} bytes (src) -> ${finalBytes.length.toLocaleString("en-US")} bytes (dist, patched)`);
+}
+
+// The installable-app layer (src/pwa/: manifest, service worker, icons) so that
+// dist/ plus vendor/ is a complete, installable, offline web app on its own --
+// what the public repo's users self-host and what deploy-geosuite.py publishes.
+const PWA_DIR = path.join(ROOT, "src", "pwa");
+if (existsSync(PWA_DIR)) {
+  copyFileSync(path.join(PWA_DIR, "manifest.webmanifest"), path.join(DIST_DIR, "manifest.webmanifest"));
+  copyFileSync(path.join(PWA_DIR, "service-worker.js"), path.join(DIST_DIR, "service-worker.js"));
+  mkdirSync(path.join(DIST_DIR, "pwa"), { recursive: true });
+  for (const f of readdirSync(path.join(PWA_DIR, "icons"))) {
+    copyFileSync(path.join(PWA_DIR, "icons", f), path.join(DIST_DIR, "pwa", f));
+  }
+}
+
+if (!existsSync(VENDOR_DIR)) throw new Error(`Bundled vendor directory missing: ${VENDOR_DIR}`);
+cpSync(VENDOR_DIR, path.join(DIST_DIR, "vendor"), { recursive: true, force: true });
+
+console.log(`\nBuilt ${phases.length} phase(s) into ${path.relative(ROOT, DIST_DIR)}${path.sep}`);

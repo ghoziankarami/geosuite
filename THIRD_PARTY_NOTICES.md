@@ -1,0 +1,22 @@
+# Third-party components
+
+GeoSuite is GPL-3.0. It bundles the following components under their own licences,
+all compatible with GPL-3.0. Their licence headers are kept intact in the files.
+
+| Component | Version | Licence | File | Source |
+|---|---|---|---|---|
+| plotly.js | 2.32.0 | MIT | `vendor/plotly.min.js` | https://github.com/plotly/plotly.js |
+| jsPDF | 4.2.1 | MIT | `vendor/jspdf.umd.min.js` | https://github.com/parallax/jsPDF |
+| html2canvas | 1.4.1 | MIT | `vendor/html2canvas.min.js` | https://github.com/niklasvh/html2canvas |
+| JSZip | 3.10.1 | MIT or GPL-3.0 (used under MIT) | `vendor/jszip.min.js` | https://github.com/Stuk/jszip |
+| Inter (font) | — | SIL Open Font License 1.1 | `src/assets/fonts/*.face.css` | https://github.com/rsms/inter |
+
+# Data
+
+| Data | Where | Licence and attribution |
+|---|---|---|
+| Thalanga VMS drilling (collar, survey, assay, geology) | `docs/vignettes/data/` and tutorial 01 (optional public upload; not the built-in sample) | © State of Queensland (Geological Survey of Queensland), *NEQ Deposit Atlas – Thalanga*, dataset ds100103, <https://geoscience.data.qld.gov.au/dataset/ds100103>, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Loaded as published; GeoSuite converts laboratory codes on import (documented in docs/METHODOLOGY.md). Tutorial 01 blanks one Au value and deletes two duplicate spot samples, recorded in its text. |
+| `docs/vignettes/data/thalanga-deposit-area.geojson` | tutorial 01 | Made for this project; GPL-3.0 with the rest of the repository. |
+| Synthetic tutorial datasets | [orebit-datasets](https://github.com/ghoziankarami/orebit-datasets) | Generated for this project, CC BY 4.0. |
+
+Built-in Core, Assay and Resource samples are synthetic nickel laterite, CC BY 4.0, credit Orebit.id, from `ghoziankarami/orebit-datasets`. Core defaults include documented linkage faults; corrected original collar/geology sources accompany the sample for CSV reimport.

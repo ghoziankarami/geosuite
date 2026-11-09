@@ -1626,5 +1626,10 @@
   "rev.stale": "{src} changed since this import",
   "rev.update": "Update",
   "rev.updating": "Updating…",
-  "rev.noUpstream": "Open {src} in another tab, then press Update again."
+  "rev.noUpstream": "Open {src} in another tab, then press Update again.",
+  "panel.import.autoClassify": "Drop all 4 CSV files at once (Collar + Survey + Assay + Geology). Files are classified by filename first - collar, survey, assay, geology or litho - then by header signature.",
+  "panel.collar.standardsTitle": "Standards for collar records",
+  "panel.collar.standards": "Collar positions must be surveyed (GPS or local grid) per KCMI 2017 Ch1 1.1 and JORC 2012 1.15. The coordinate system must be stated. Collar elevation (Z/RL) should be surveyed, not estimated from topography.",
+  "panel.survey.standardsTitle": "Standards and survey method",
+  "panel.survey.standards": "Downhole surveys are required per JORC 2012 1.16-1.17. Survey intervals should be regular (typically every 30 m for diamond drill, every 10 m for RC) per KCMI Ch1 1.2. Minimum one survey per hole; multiple surveys for inclined or deflected holes. The survey method (single-shot, multi-shot, gyro) must be reported."
 }

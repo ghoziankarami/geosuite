@@ -1251,5 +1251,7 @@
   "asy.workflow.scopeChanged": "Domains changed: {removed} removed; {added} added.",
   "asy.reportInsight.noteLabel": "Method basis / notes (optional)",
   "asy.reportInsight.noteHint": "Explain grouping, cap and composite choices. A domain cutoff groups samples, not an economic Resource cutoff. The PDF records the actual controls.",
-  "tabgroup.tables": "Tables"
+  "tabgroup.tables": "Tables",
+  "nav.help": "Help",
+  "btn.saveAllPlotsZip": "📦 Save All Plots (ZIP)"
 }

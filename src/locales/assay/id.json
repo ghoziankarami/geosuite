@@ -1251,5 +1251,7 @@
   "asy.workflow.scopeChanged": "Domain berubah: {removed} dihapus; {added} ditambahkan.",
   "asy.reportInsight.noteLabel": "Dasar metode / catatan (opsional)",
   "asy.reportInsight.noteHint": "Jelaskan pengelompokan, top-cut, dan komposit. Cutoff domain mengelompokkan sampel, bukan cutoff ekonomis Resource. PDF mencatat pengaturan aktual.",
-  "tabgroup.tables": "Tabel"
+  "tabgroup.tables": "Tabel",
+  "nav.help": "Bantuan",
+  "btn.saveAllPlotsZip": "📦 Simpan Semua Plot (ZIP)"
 }

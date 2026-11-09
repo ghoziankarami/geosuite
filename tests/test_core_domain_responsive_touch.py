@@ -139,9 +139,19 @@ def main():
                         page.wait_for_function("()=>OrebitCoreDomainViewer.state().mode==='3d'||!!document.querySelector('#domain3dFallback:not([hidden])')")
                         if page.evaluate("OrebitCoreDomainViewer.state().mode==='3d'"):
                             page.wait_for_function("()=>!!document.getElementById('domainViewer3d')._fullLayout?.scene?._scene")
-                            # TEST-FLAKY-1: a gesture on a 0x0 canvas cannot move the camera; wait until the plot and its WebGL canvas have a real size.
-                            page.wait_for_function("()=>{const p=document.getElementById('domainViewer3d'),c=p.querySelector('canvas');return p.clientWidth>0&&p.clientHeight>0&&!!c&&c.clientWidth>0&&c.clientHeight>0}")
-                            plot=page.locator('#domainViewer3d');plot.scroll_into_view_if_needed();box=plot.bounding_box()
+                            # TEST-FLAKY-1: scrolling *after* the size wait re-lays out the
+                            # 320px page (drawer/sticky bar) and the canvas can collapse to
+                            # 0x0 under the gesture. Scroll first, then wait for a real size,
+                            # then take the box the gesture is computed from.
+                            sized="()=>{const p=document.getElementById('domainViewer3d'),c=p.querySelector('canvas');return p.clientWidth>0&&p.clientHeight>0&&!!c&&c.clientWidth>0&&c.clientHeight>0}"
+                            plot=page.locator('#domainViewer3d')
+                            for attempt in range(3):
+                                plot.scroll_into_view_if_needed()
+                                page.wait_for_function(sized)
+                                box=plot.bounding_box()
+                                if box and box['width']>0 and box['height']>0: break
+                            else:
+                                raise AssertionError('the 3D canvas never kept a usable size for the gesture')
                             page.wait_for_function("()=>{const c=JSON.stringify(document.getElementById('domainViewer3d')._fullLayout.scene._scene.getCamera());if(window.__domainLastCamera!==c){window.__domainLastCamera=c;return false}return true}")
                             camera=page.evaluate('JSON.stringify(document.getElementById("domainViewer3d")._fullLayout.scene._scene.getCamera())')
                             active_diagnostic.update(stage='native-3d-gesture',task='contacts',zoom=1)

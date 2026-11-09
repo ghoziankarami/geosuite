@@ -2,25 +2,19 @@
   <h2 data-i18n="panel.import.title"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Import — 4 CSV Files (auto-classify)</h2>
 
   <div class="hint">
-    <p><strong>Drop all 4 CSV files at once</strong> (Collar + Survey + Assay + Geology). The system auto-classifies by filename first (looks for <code>collar</code>/<code>survey</code>/<code>assay</code>/<code>geology|litho</code>), falling back to header signature.</p>
-    <p style="margin-top:6px;font-size:13px;" data-i18n="core.imp.sampleGuidance">The built-in example is a synthetic nickel laterite dataset. To work with your own drillholes, import the four matching tables and check the validation results before proceeding.</p>
-  </div>
-
-  <div class="card">
-    <h3 id="coreColumnFormatTitle" data-i18n="core.columnFormat">Column Format (auto-detected)</h3>
-    <div class="schema-keyboard-scroll" tabindex="0" role="region" aria-labelledby="coreColumnFormatTitle">
-    <table aria-labelledby="coreColumnFormatTitle">
-      <tr><th data-i18n="core.cols.file">File</th><th data-i18n="core.required">Required</th><th data-i18n="core.optional">Optional</th></tr>
-      <tr><td><strong>Collar</strong></td><td><code>hole_id</code>, <code>x</code>/<code>easting</code>/<code>GDA94_E</code>, <code>y</code>/<code>northing</code>/<code>GDA94_N</code>, <code>z</code>/<code>RL</code>, <code>depth</code>/<code>final_depth</code></td><td>prospect, drill_type, comment</td></tr>
-      <tr><td><strong>Survey</strong></td><td><code>hole_id</code>, <code>depth</code>, <code>dip</code>, <code>azimuth</code></td><td>—</td></tr>
-      <tr><td><strong>Assay</strong></td><td><code>hole_id</code>, <code>from_m</code>/<code>from_depth</code>, <code>to_m</code>/<code>to_depth</code>, <span data-i18n="core.imp.gradeColumn">at least 1 grade column</span></td><td>sample_id, multi-element (Au, Cu, Pb, Zn, ...)</td></tr>
-      <tr><td><strong>Geology</strong></td><td><code>hole_id</code>, <code>from_m</code>, <code>to_m</code>, <code>lith</code>/<code>lith1</code>/<code>lithology</code></td><td>weathering, lith2, color, lith_desc</td></tr>
-    </table>
-    </div>
+    <p style="font-size:13px;" data-i18n="core.imp.sampleGuidance">The built-in example is a synthetic nickel laterite dataset. To work with your own drillholes, import the four matching tables and check the validation results before proceeding.</p>
   </div>
 
   <div class="card">
     <h3 data-i18n="core.uploadFiles">Upload Files</h3>
+    <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+      <p style="margin:0 0 8px 0;"><svg class="lucide-icon" viewBox="0 0 24 24" style="width:48px;height:48px" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></p>
+      <p><strong><span data-i18n="core.imp.dropzone">Click, or drag and drop 4 CSV files</span></strong></p>
+      <p style="font-size:12px;color:var(--fg-mute);margin-top:6px;">Collar.csv · Survey.csv · Assay.csv · Geology.csv</p>
+    </div>
+    <input type="file" id="fileInput" accept=".csv" multiple style="display:none" onchange="handleUpload(event)" aria-label="Upload CSV files" data-i18n-attr="aria-label:a11y.uploadCsv">
+    <div id="uploadStatus" style="margin-top:14px;" aria-live="polite"></div>
+
     <div style="margin-bottom:12px; padding:10px; background:var(--warn-soft); border:1px solid var(--warn); border-radius:4px;">
       <p style="margin:0 0 8px 0; font-size:13px; font-weight:600; color:var(--fg);"><span data-i18n="core.imp.csvFormatTitle">📋 Required CSV format:</span></p>
       <div style="font-size:12px; color:var(--fg-body); line-height:1.6;">
@@ -36,13 +30,20 @@
         <label style="font-size:12px;"><input type="radio" name="csvDelim" value="tab" onchange="applyDelimiterOverride(this.value)"> Tab</label>
       </div>
     </div>
-    <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-      <p style="margin:0 0 8px 0;"><svg class="lucide-icon" viewBox="0 0 24 24" style="width:48px;height:48px" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></p>
-      <p><strong><span data-i18n="core.imp.dropzone">Click, or drag and drop 4 CSV files</span></strong></p>
-      <p style="font-size:12px;color:var(--fg-mute);margin-top:6px;">Collar.csv · Survey.csv · Assay.csv · Geology.csv</p>
+  </div>
+
+  <div class="card">
+    <h3 id="coreColumnFormatTitle" data-i18n="core.columnFormat">Column Format (auto-detected)</h3>
+    <p style="font-size:13px;color:var(--fg-mute);margin:8px 0;" data-i18n="panel.import.autoClassify">Drop all 4 CSV files at once (Collar + Survey + Assay + Geology). Files are classified by filename first - collar, survey, assay, geology or litho - then by header signature.</p>
+    <div class="schema-keyboard-scroll" tabindex="0" role="region" aria-labelledby="coreColumnFormatTitle">
+    <table aria-labelledby="coreColumnFormatTitle">
+      <tr><th data-i18n="core.cols.file">File</th><th data-i18n="core.required">Required</th><th data-i18n="core.optional">Optional</th></tr>
+      <tr><td><strong>Collar</strong></td><td><code>hole_id</code>, <code>x</code>/<code>easting</code>/<code>GDA94_E</code>, <code>y</code>/<code>northing</code>/<code>GDA94_N</code>, <code>z</code>/<code>RL</code>, <code>depth</code>/<code>final_depth</code></td><td>prospect, drill_type, comment</td></tr>
+      <tr><td><strong>Survey</strong></td><td><code>hole_id</code>, <code>depth</code>, <code>dip</code>, <code>azimuth</code></td><td>—</td></tr>
+      <tr><td><strong>Assay</strong></td><td><code>hole_id</code>, <code>from_m</code>/<code>from_depth</code>, <code>to_m</code>/<code>to_depth</code>, <span data-i18n="core.imp.gradeColumn">at least 1 grade column</span></td><td>sample_id, multi-element (Au, Cu, Pb, Zn, ...)</td></tr>
+      <tr><td><strong>Geology</strong></td><td><code>hole_id</code>, <code>from_m</code>, <code>to_m</code>, <code>lith</code>/<code>lith1</code>/<code>lithology</code></td><td>weathering, lith2, color, lith_desc</td></tr>
+    </table>
     </div>
-    <input type="file" id="fileInput" accept=".csv" multiple style="display:none" onchange="handleUpload(event)" aria-label="Upload CSV files" data-i18n-attr="aria-label:a11y.uploadCsv">
-    <div id="uploadStatus" style="margin-top:14px;" aria-live="polite"></div>
   </div>
 
   <div class="card">

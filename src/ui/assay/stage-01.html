@@ -9,11 +9,9 @@
     <p style="font-size:13px;color:var(--fg-mute);margin:0 auto 14px;max-width:420px;" id="dashEmptyHint">Import composites from Core, upload an assay CSV, or a saved .orebit project to begin.</p>
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
       <button class="btn" onclick="importBundle()" id="dashEmptyImport"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> <span id="dashEmptyImportLbl">Import data</span></button>
-        <button class="btn secondary" onclick="saveAllPlotsZip()" title="Download all rendered charts as a single ZIP file" data-i18n-attr="title:title.saveAllPlotsZip">📦 Save All Plots (ZIP)</button>
   </div>
 </div>
 
-  <!-- Data Summary -->
   <div class="kpi-grid">
     <div class="kpi-tile">
       <div class="label" data-i18n="asy.dash.composites">Composites</div>
@@ -72,7 +70,10 @@
     </div>
   </div>
 
-  <!-- Workflow guide + reference (collapsed — keeps dashboard clean) -->
+  <div style="display:flex;justify-content:flex-end;margin:0 0 12px;">
+    <button class="btn secondary" onclick="saveAllPlotsZip()" title="Download all rendered charts as a single ZIP file" data-i18n-attr="title:title.saveAllPlotsZip" data-i18n="btn.saveAllPlotsZip">📦 Save All Plots (ZIP)</button>
+  </div>
+
   <details class="card" style="margin-top:16px;">
     <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;">
 <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;vertical-align:-2px;">
@@ -94,12 +95,9 @@
   </div>
 </details>
 
-  <!-- Analysis Scope (collapsed) -->
   
 
-  <!-- Quick Start Tutorial (collapsed by default) -->
   
 
-  <!-- Sample Data Info (collapsed, bottom of dashboard — parity with Core) -->
   
 </div>

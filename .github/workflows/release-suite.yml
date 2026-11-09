@@ -100,11 +100,11 @@ jobs:
           set -eu
           cd desktop/dist
           if [ "${{ runner.os }}" = "Windows" ]; then
-            python verify-single-artifact.py Orebit-GeoSuite.exe "$TAG"
+            python ../verify-single-artifact.py Orebit-GeoSuite.exe "$TAG"
           else
             test -d Orebit-GeoSuite.app
             test -x Orebit-GeoSuite.app/Contents/MacOS/Orebit-GeoSuite
-            python verify-single-artifact.py Orebit-GeoSuite.app "$TAG"
+            python ../verify-single-artifact.py Orebit-GeoSuite.app "$TAG"
           fi
 
       - name: Attach to the release

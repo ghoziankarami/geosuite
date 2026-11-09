@@ -341,13 +341,235 @@ class _ExclusiveServer(HTTPServer):
     allow_reuse_address = False
 
 
+def inject_runtime(html):
+    """Insert the desktop marker (and optional default profile) into a page.
+
+    A single desktop origin serves Core, Assay and Resource, and every one of
+    them reads window.__OREBIT_RT__ before its own scripts run, so the marker
+    cannot be limited to index.html.
+    """
+    script = (
+        b"<script>window.__OREBIT_RT__="
+        + json.dumps(DESKTOP_RUNTIME, separators=(",", ":")).encode("utf-8")
+        + b";</script>"
+    )
+    profile_env = os.environ.get("__OREBIT_DEFAULT_PROFILE__")
+    if profile_env:
+        try:
+            profile_json = json.dumps(json.loads(profile_env), separators=(",", ":"))
+            script += (
+                b"<script>try{var p=" + profile_json.encode("utf-8") + b";"
+                b"if(!localStorage.getItem('orebit_profile'))"
+                b"{localStorage.setItem('orebit_profile',JSON.stringify(p));}"
+                b"}catch(e){}</script>"
+            )
+        except Exception:
+            pass
+    idx = html.find(b"<body>")
+    if idx == -1:
+        return html
+    return html[: idx + 6] + script + html[idx + 6 :]
+
+
+LEGACY_PORTS = {"Assay": 18768, "Resource": 18769}
+MIGRATION_FILE = "legacy-storage.json"
+
+
+def merge_legacy(existing, incoming):
+    """Merge a snapshot from an old per-module origin into the current one.
+
+    The rule the owner set: a project saved on the single origin is never
+    overwritten by an older module origin, and nothing is ever deleted. Local
+    keys are added only when absent; projects are appended only when their id
+    is unknown.
+    """
+    merged = {"localStorage": dict((existing or {}).get("localStorage") or {})}
+    for key, value in (incoming.get("localStorage") or {}).items():
+        merged["localStorage"].setdefault(key, value)
+    projects = list((existing or {}).get("projects") or [])
+    known = {str(p.get("id")) for p in projects if isinstance(p, dict)}
+    for project in incoming.get("projects") or []:
+        if not isinstance(project, dict):
+            continue
+        pid = str(project.get("id"))
+        if pid not in known:
+            known.add(pid)
+            projects.append(project)
+    merged["projects"] = projects
+    return merged
+
+
+def write_migration(base_dir, incoming, limit=8 * 1024 * 1024):
+    """Persist a merged snapshot beside the app; return what changed."""
+    path = os.path.join(base_dir, MIGRATION_FILE)
+    existing = {}
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+        except Exception:
+            existing = {}
+    merged = merge_legacy(existing, incoming)
+    text = json.dumps(merged, separators=(",", ":"))
+    if len(text.encode("utf-8")) > limit:
+        raise ValueError("legacy storage snapshot too large")
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(text)
+    os.replace(tmp, path)
+    return {
+        "ok": True,
+        "keys": len(merged.get("localStorage") or {}),
+        "projects": len(merged.get("projects") or []),
+        "added": len(merged.get("projects") or [])
+        - len(existing.get("projects") or []),
+    }
+
+
+def legacy_migration_page(target_port):
+    """Page served on an old module origin so it can hand its storage over."""
+    return """<!doctype html><meta charset="utf-8"><title>GeoSuite migration</title>
+<body style="font:15px system-ui;padding:32px">
+<p>Moving projects saved by an older GeoSuite window into the single app…</p>
+<pre id="out" style="white-space:pre-wrap"></pre>
+<script>
+(async () => {
+  const out = document.getElementById('out');
+  const localStorageData = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.indexOf('orebit') === 0) localStorageData[k] = localStorage.getItem(k);
+  }
+  const projects = [];
+  await new Promise(resolve => {
+    const req = indexedDB.open('orebit-projects');
+    req.onerror = () => resolve();
+    req.onsuccess = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.length) return resolve();
+      const tx = db.transaction(db.objectStoreNames[0], 'readonly');
+      const all = tx.objectStore(db.objectStoreNames[0]).getAll();
+      all.onerror = () => resolve();
+      all.onsuccess = () => { projects.push(...(all.result || [])); resolve(); };
+    };
+    req.onupgradeneeded = () => resolve();
+  });
+  try {
+    const res = await fetch('http://127.0.0.1:__TARGET_PORT__/__migrate', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({localStorage: localStorageData, projects})
+    });
+    const body = await res.json();
+    out.textContent = body.ok
+      ? 'Done. ' + body.projects + ' projects, ' + body.keys + ' settings kept. Nothing was deleted.'
+      : 'Migration refused: ' + (body.error || 'unknown error');
+  } catch (e) { out.textContent = 'Migration failed: ' + e.message; }
+})();
+</script>""".replace("__TARGET_PORT__", str(target_port))
+
+
+def legacy_handler(target_port, html=None):
+    """Serve only the migration page, from an old per-module origin."""
+    page = (html if html is not None else legacy_migration_page(target_port)).encode(
+        "utf-8"
+    )
+
+    class Handler(SimpleHTTPRequestHandler):
+        def log_message(self, format, *args):
+            pass
+
+        def do_GET(self):
+            if self.path.split("?", 1)[0] in ("", "/", "/index.html", "/migrate"):
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(page)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(page)
+                return
+            self.send_error(404)
+
+    return Handler
+
+
+def start_legacy_migration(target_port, ports=None, base=LEGACY_PORTS):
+    """Bind the old per-module origins so their storage can be handed over.
+
+    A port already in use belongs to another running app; it is skipped, never
+    stolen. Returns the servers that started (callers shut them down after the
+    migration window).
+    """
+    started = []
+    for name, port in (ports if ports is not None else base).items():
+        try:
+            server = _ExclusiveServer(("127.0.0.1", port), legacy_handler(target_port))
+        except OSError:
+            continue
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        started.append((name, server))
+    return started
+
+
+def make_handler(base_dir):
+    """Serve the bundled pages, marking every HTML response as desktop."""
+
+    root = os.path.realpath(base_dir)
+
+    class Handler(SimpleHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=base_dir, **kwargs)
+
+        def log_message(self, format, *args):
+            pass
+
+        def do_GET(self):
+            requested = self.path.split("?", 1)[0].split("#", 1)[0]
+            if requested in ("", "/"):
+                requested = "/index.html"
+            if requested.endswith(".html"):
+                path = os.path.realpath(os.path.join(root, requested.lstrip("/")))
+                if path.startswith(root + os.sep) and os.path.exists(path):
+                    with open(path, "rb") as f:
+                        html = inject_runtime(f.read())
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.send_header("Content-Length", str(len(html)))
+                    self.send_header("Cache-Control", "no-store")
+                    self.end_headers()
+                    self.wfile.write(html)
+                    return
+            return super().do_GET()
+
+        def do_POST(self):
+            if self.path.split("?", 1)[0] != "/__migrate":
+                self.send_error(404)
+                return
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+                if length <= 0 or length > 32 * 1024 * 1024:
+                    raise ValueError("empty or oversized snapshot")
+                payload = json.loads(self.rfile.read(length).decode("utf-8"))
+                result = write_migration(base_dir, payload)
+                body = json.dumps(result).encode("utf-8")
+                status = 200
+            except Exception as exc:  # a refused migration must not kill the app
+                body = json.dumps({"ok": False, "error": str(exc)}).encode("utf-8")
+                status = 400
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+    return Handler
+
+
 def _module_from_html(html):
+    """Which module page is this? A single-artifact launcher has no stage yet."""
     match = re.search(
         r'<meta name="product-stage" content="(Core|Assay|Resource)"', html
     )
-    if not match:
-        raise ValueError("Unknown GeoSuite module in bundled HTML")
-    return match.group(1)
+    return match.group(1) if match else "Core"
 
 
 def _handoff_dir():
@@ -734,60 +956,7 @@ def main():
     base_dir = get_base_dir()
     module = _module_from_html(html_content)
 
-    class Handler(SimpleHTTPRequestHandler):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, directory=base_dir, **kwargs)
-
-        def log_message(self, format, *args):
-            pass
-
-        def do_GET(self):
-            # Serve index.html with the desktop marker (and an optional default
-            # profile) as synchronous scripts, so they exist before the app's
-            # own scripts read them.
-            if self.path.rstrip("/") in ("", "/index.html"):
-                path = os.path.join(base_dir, "index.html")
-                if os.path.exists(path):
-                    with open(path, "rb") as f:
-                        html = f.read()
-                    runtime_script = (
-                        b"<script>"
-                        b"window.__OREBIT_RT__="
-                        + json.dumps(DESKTOP_RUNTIME, separators=(",", ":")).encode(
-                            "utf-8"
-                        )
-                        + b";</script>"
-                    )
-                    # Optional default profile from __OREBIT_DEFAULT_PROFILE__. This
-                    # runs before the app reads localStorage, so the user sees
-                    # that name instead of "Geologist" on first launch.
-                    profile_env = os.environ.get("__OREBIT_DEFAULT_PROFILE__")
-                    if profile_env:
-                        try:
-                            profile_json = json.dumps(
-                                json.loads(profile_env), separators=(",", ":")
-                            )
-                            runtime_script += (
-                                b"<script>"
-                                b"try{var p=" + profile_json.encode("utf-8") + b";"
-                                b"if(!localStorage.getItem('orebit_profile'))"
-                                b"{localStorage.setItem('orebit_profile',JSON.stringify(p));}"  # noqa: E501
-                                b"}catch(e){}</script>"
-                            )
-                        except Exception:
-                            pass
-                    idx = html.find(b"<body>")
-                    if idx != -1:
-                        html = html[: idx + 6] + runtime_script + html[idx + 6 :]
-                    self.send_response(200)
-                    self.send_header("Content-Type", "text/html; charset=utf-8")
-                    self.send_header("Content-Length", str(len(html)))
-                    self.send_header("Cache-Control", "no-store")
-                    self.end_headers()
-                    self.wfile.write(html)
-                    return
-            return super().do_GET()
-
+    Handler = make_handler(base_dir)
     server = _bind_server(Handler, module)
     port = server.server_port
     t = threading.Thread(target=server.serve_forever, daemon=True)

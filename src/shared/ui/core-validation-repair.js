@@ -287,7 +287,7 @@
         const preview=el('p',tr('sourcePreview'),'hint');
         const docs=el('a',tr('sourcePreviewDocs'));docs.href='#';docs.dataset.docs='ref/tabs';docs.dataset.docsFind='Validation';
         preview.append(' ',docs);host.append(preview);
-        const repair=button(tr('applySource'),applySource,true);repair.id='coreRepairSource';host.append(repair);
+        const repair=button(tr('applySource'),applySource);repair.id='coreRepairSource';host.append(repair);
       }
       if(undo&&undo.after===snapshot())host.append(button(tr('undo'),()=>undoLast()));
     }

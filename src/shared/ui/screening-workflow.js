@@ -145,8 +145,9 @@
     if(card)barSource=repair&&!repair.hidden?repair:card.querySelector('[data-workflow-next]')||card.querySelector('.workflow-actions [data-action-role="next"]');
     if(!barSource)return;
     onward.textContent=barSource.textContent;onward.disabled=barSource.disabled;
-    const gate=barSource.closest('.assay-workflow-card')?.querySelector('.workflow-gate');
-    why.textContent=barSource.disabled?(gate&&!gate.hidden?gate.textContent:tr('blocked')):'';
+    const gate=barSource.closest('.assay-workflow-card')?.querySelector('.workflow-gate'),gt=gate&&!gate.hidden?gate.textContent.trim():'';
+    const r=gt&&gt!==tr('calculating')&&gt!==tr('notAdvanced');
+    why.textContent=r?gt:(barSource.disabled?tr('blocked'):'');
   }
   function stageBar(module,stages,n,panel,card) {
     document.querySelectorAll('.workflow-stage-bar').forEach(el=>el.remove());barSource=null;

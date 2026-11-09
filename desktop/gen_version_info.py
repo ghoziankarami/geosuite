@@ -39,6 +39,10 @@ PRODUCTS = {
     "core": ("Orebit-Core", "Orebit GeoSuite Core - Geological Data Management"),
     "assay": ("Orebit-Assay", "Orebit GeoSuite Assay - Geochemical Analysis"),
     "resource": ("Orebit-Resource", "Orebit GeoSuite Resource - Resource Estimation"),
+    "suite": (
+        "Orebit-GeoSuite",
+        "Orebit GeoSuite - Core, Assay and Resource in one window",
+    ),
 }
 
 TEMPLATE = """# UTF-8

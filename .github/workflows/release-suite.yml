@@ -131,7 +131,7 @@ jobs:
           fi
 
       - name: Upload the workflow artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc2b253b379c7d1bc5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: single-${{ runner.os }}
           path: desktop/dist/${{ matrix.asset }}

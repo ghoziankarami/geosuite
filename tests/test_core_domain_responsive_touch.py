@@ -139,42 +139,48 @@ def main():
                         page.wait_for_function("()=>OrebitCoreDomainViewer.state().mode==='3d'||!!document.querySelector('#domain3dFallback:not([hidden])')")
                         if page.evaluate("OrebitCoreDomainViewer.state().mode==='3d'"):
                             page.wait_for_function("()=>!!document.getElementById('domainViewer3d')._fullLayout?.scene?._scene")
-                            # TEST-FLAKY-1: scrolling *after* the size wait re-lays out the
-                            # 320px page (drawer/sticky bar) and the canvas can collapse to
-                            # 0x0 under the gesture. Scroll first, then wait for a real size,
-                            # then take the box the gesture is computed from.
-                            sized="()=>{const p=document.getElementById('domainViewer3d'),c=p.querySelector('canvas');return p.clientWidth>0&&p.clientHeight>0&&!!c&&c.clientWidth>0&&c.clientHeight>0}"
-                            plot=page.locator('#domainViewer3d')
+                            # TEST-FLAKY-1: the viewer re-renders (hidden=true, then shown)
+                            # on layout changes, so at 320px the canvas can be 0x0 right
+                            # after a size wait or mid-gesture: rect [0,0,0,0] with a stale
+                            # bitmap is the signature in the public CI log. Redo the whole
+                            # gesture, re-measuring each time, instead of trusting one frame.
+                            sized="()=>{const p=document.getElementById('domainViewer3d');if(p.hidden)return false;const c=p.querySelector('canvas');return p.clientWidth>0&&p.clientHeight>0&&!!c&&c.clientWidth>0&&c.clientHeight>0}"
+                            stable="()=>{const c=JSON.stringify(document.getElementById('domainViewer3d')._fullLayout.scene._scene.getCamera());if(window.__domainLastCamera!==c){window.__domainLastCamera=c;return false}return true}"
+                            plot=page.locator('#domainViewer3d');gesture_ok=False
                             for attempt in range(3):
+                                active_diagnostic.update(stage='native-3d-gesture',task='contacts',zoom=1,attempt=attempt+1)
                                 plot.scroll_into_view_if_needed()
                                 page.wait_for_function(sized)
+                                page.wait_for_function(stable)
+                                camera=page.evaluate('JSON.stringify(document.getElementById("domainViewer3d")._fullLayout.scene._scene.getCamera())')
                                 box=plot.bounding_box()
-                                if box and box['width']>0 and box['height']>0: break
-                            else:
-                                raise AssertionError('the 3D canvas never kept a usable size for the gesture')
-                            page.wait_for_function("()=>{const c=JSON.stringify(document.getElementById('domainViewer3d')._fullLayout.scene._scene.getCamera());if(window.__domainLastCamera!==c){window.__domainLastCamera=c;return false}return true}")
-                            camera=page.evaluate('JSON.stringify(document.getElementById("domainViewer3d")._fullLayout.scene._scene.getCamera())')
-                            active_diagnostic.update(stage='native-3d-gesture',task='contacts',zoom=1)
-                            page.evaluate("()=>{window.__domainCameraInputs=[];const plot=document.getElementById('domainViewer3d');for(const type of ['pointerdown','pointermove','pointerup','touchmove'])plot.addEventListener(type,e=>{if(e.isTrusted)__domainCameraInputs.push({type:e.type,pointer:e.pointerType||(e.type==='touchmove'?'touch':null)});},true);}")
-                            x=box['x']+box['width']*.45;y=max(90,min(height-100,box['y']+box['height']*.5))
-                            check(page.evaluate('([x,y])=>!!document.elementFromPoint(x,y)?.closest("#domainViewer3d")',[x,y]),tag+': native gesture starts on the actual3D view')
-                            if touch:
-                                session=page.context.new_cdp_session(page)
-                                session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y,'id':1}]})
-                                for step in range(1,6):
-                                    session.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x+step*6,'y':y+step*2,'id':1}]})
-                                    page.evaluate('()=>new Promise(requestAnimationFrame)')
-                                # Plotly's 3D controller consumes touchmove, not
-                                # pointermove. Confirm delivery before ending
-                                # the gesture; keep the camera assertion below.
-                                page.wait_for_function("()=>__domainCameraInputs.some(e=>e.type==='touchmove'&&e.pointer==='touch')")
-                                session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});session.detach()
-                            else:
-                                page.mouse.move(x,y);page.mouse.down();page.mouse.move(x+30,y+10,steps=5);page.mouse.up()
-                            if os.environ.get('OREBIT_DOMAIN_TOUCH_DEBUG'):print('CAMERA INPUT',tag,page.evaluate('([x,y])=>({hit:document.elementFromPoint(x,y)?.outerHTML?.slice(0,300),events:__domainCameraInputs,camera:document.getElementById("domainViewer3d")._fullLayout.scene._scene.getCamera(),scrollY})',[x,y]),'before',camera,flush=True)
-                            page.wait_for_function('(before)=>JSON.stringify(document.getElementById("domainViewer3d")._fullLayout.scene._scene.getCamera())!==before',arg=camera)
-                            page.wait_for_function("()=>__domainCameraInputs.some(e=>e.type==='pointermove')")
-                            check(page.evaluate('(pointer)=>__domainCameraInputs.some(e=>e.type==="pointermove"&&e.pointer===pointer)', 'touch' if touch else 'mouse') and native.accepted(page)==model and page.evaluate('JSON.stringify([STATE.collar,STATE.survey,STATE.assay,STATE.geology])')==raw,tag+': trusted native pointer/camera input preserves raw and reviewed mesh')
+                                page.evaluate("()=>{window.__domainCameraInputs=[];const plot=document.getElementById('domainViewer3d');for(const type of ['pointerdown','pointermove','pointerup','touchmove'])plot.addEventListener(type,e=>{if(e.isTrusted)__domainCameraInputs.push({type:e.type,pointer:e.pointerType||(e.type==='touchmove'?'touch':null)});},true);}")
+                                x=box['x']+box['width']*.45;y=max(90,min(height-100,box['y']+box['height']*.5))
+                                if not page.evaluate('([x,y])=>!!document.elementFromPoint(x,y)?.closest("#domainViewer3d")',[x,y]):
+                                    continue
+                                if touch:
+                                    session=page.context.new_cdp_session(page)
+                                    session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y,'id':1}]})
+                                    for step in range(1,6):
+                                        session.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x+step*6,'y':y+step*2,'id':1}]})
+                                        page.evaluate('()=>new Promise(requestAnimationFrame)')
+                                    # Plotly's 3D controller consumes touchmove, not
+                                    # pointermove. Confirm delivery before ending
+                                    # the gesture; keep the camera assertion below.
+                                    try:page.wait_for_function("()=>__domainCameraInputs.some(e=>e.type==='touchmove'&&e.pointer==='touch')",timeout=8000)
+                                    except Exception:
+                                        session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});session.detach();continue
+                                    session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});session.detach()
+                                else:
+                                    page.mouse.move(x,y);page.mouse.down();page.mouse.move(x+30,y+10,steps=5);page.mouse.up()
+                                if os.environ.get('OREBIT_DOMAIN_TOUCH_DEBUG'):print('CAMERA INPUT',tag,page.evaluate('([x,y])=>({hit:document.elementFromPoint(x,y)?.outerHTML?.slice(0,300),events:__domainCameraInputs,camera:document.getElementById("domainViewer3d")._fullLayout.scene._scene.getCamera(),scrollY})',[x,y]),'before',camera,flush=True)
+                                try:
+                                    page.wait_for_function('(before)=>JSON.stringify(document.getElementById("domainViewer3d")._fullLayout.scene._scene.getCamera())!==before',arg=camera,timeout=10000)
+                                    page.wait_for_function("()=>__domainCameraInputs.some(e=>e.type==='pointermove')",timeout=10000)
+                                    gesture_ok=True;break
+                                except Exception:
+                                    continue
+                            check(gesture_ok and page.evaluate('(pointer)=>__domainCameraInputs.some(e=>e.type==="pointermove"&&e.pointer===pointer)', 'touch' if touch else 'mouse') and native.accepted(page)==model and page.evaluate('JSON.stringify([STATE.collar,STATE.survey,STATE.assay,STATE.geology])')==raw,tag+': trusted native pointer/camera input preserves raw and reviewed mesh')
                         else:check(native.accepted(page)==model,tag+': honest graphics fallback retains accepted model')
                         active_diagnostic.update(stage='pointer-and-digitize')
                         digitize=None

@@ -21,6 +21,7 @@ this file. Unsigned.
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -105,6 +106,32 @@ a.card span{color:#4b5b68;font-size:13px}
     )
 
 
+def _stamp_macos_version(app: Path) -> None:
+    """PyInstaller writes 0.0.0; set the version the release actually is."""
+    import plistlib
+
+    version = "0.0.0"
+    for candidate in (
+        ROOT / "ops/scripts/orebit/geosuite-changelog.json",
+        ROOT / "package.json",
+    ):
+        if candidate.is_file():
+            data = json.loads(candidate.read_text())
+            raw = data.get("current") or data.get("version") or ""
+            if raw:
+                version = str(raw).lstrip("v")
+                break
+    info = app / "Contents" / "Info.plist"
+    if not info.is_file() or version == "0.0.0":
+        return
+    with info.open("rb") as f:
+        meta = plistlib.load(f)
+    meta["CFBundleShortVersionString"] = version
+    meta["CFBundleVersion"] = version
+    with info.open("wb") as f:
+        plistlib.dump(meta, f)
+
+
 def build_single() -> Path:
     """One artifact carrying Core, Assay and Resource on a single origin.
 
@@ -160,6 +187,8 @@ def build_single() -> Path:
             built = app
         else:
             sys.exit(f"ERROR: PyInstaller did not produce {built}")
+    if built.suffix == ".app":
+        _stamp_macos_version(built)
     print(f"  {built.name}: {built.stat().st_size:,} bytes\n", flush=True)
     return built
 

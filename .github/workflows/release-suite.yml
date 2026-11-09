@@ -102,6 +102,15 @@ jobs:
           rm -rf dmg-root
           ls -l Orebit-GeoSuite-macos.dmg
 
+      - name: Windows version resource matches the tag (authoritative)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $found = (Get-Item "desktop\dist\Orebit-GeoSuite.exe").VersionInfo.FileVersion
+          $want = "${{ env.TAG }}".TrimStart("v")
+          if ($found -notlike "$want*") { throw "FileVersion $found does not start with $want" }
+          Write-Host "ok: FileVersion $found"
+
       - name: Verify the artifact
         shell: bash
         run: |

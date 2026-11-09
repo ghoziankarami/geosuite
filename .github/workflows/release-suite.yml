@@ -2,7 +2,7 @@ name: Release (single app, Windows + macOS)
 
 # SHELL-1: one artifact per platform instead of three module EXEs.
 #   Windows : Orebit-GeoSuite.exe
-#   macOS   : Orebit-GeoSuite.app (zipped, since a .app is a directory)
+#   macOS   : Orebit-GeoSuite-macos.dmg (the bundle plus an Applications link)
 #
 # Pushing a tag vX.Y.Z is the whole release step. Standard GitHub-hosted runners
 # in a public repository are free and do not draw the private included compute
@@ -34,7 +34,7 @@ jobs:
             asset: Orebit-GeoSuite.exe
             retention: 7
           - os: macos-latest
-            asset: Orebit-GeoSuite-macos.zip
+            asset: Orebit-GeoSuite-macos.dmg
             retention: 7
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
@@ -92,7 +92,15 @@ jobs:
           set -eu
           cd desktop/dist
           test -d Orebit-GeoSuite.app
-          ditto -c -k --sequesterRsrc --keepParent Orebit-GeoSuite.app Orebit-GeoSuite-macos.zip
+          # A disk image is what a Mac user expects: open it, drag the app to
+          # Applications. The bundle is copied as-is; the image is compressed.
+          rm -rf dmg-root && mkdir dmg-root
+          cp -R Orebit-GeoSuite.app dmg-root/
+          ln -s /Applications dmg-root/Applications
+          hdiutil create -quiet -volname "Orebit GeoSuite" -srcfolder dmg-root \
+            -ov -format UDZO Orebit-GeoSuite-macos.dmg
+          rm -rf dmg-root
+          ls -l Orebit-GeoSuite-macos.dmg
 
       - name: Verify the artifact
         shell: bash

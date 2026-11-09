@@ -132,9 +132,11 @@ def build_single() -> Path:
             sys.executable, "-m", "PyInstaller",
             "--onefile", "--windowed", "--clean", "--noconfirm",
             "--name", exe,
-            "--icon", str(HERE / "orebit.ico"),
             "--version-file", str(WORK / "version_info_suite.txt"),
         ]  # fmt: skip
+        icon = HERE / ("orebit.ico" if os.name == "nt" else "orebit.icns")
+        if icon.is_file():
+            args += ["--icon", str(icon)]
         args += ["--add-data", f"{index}{sep}."]
         for page in pages:
             args += ["--add-data", f"{page}{sep}."]
@@ -176,7 +178,6 @@ def build_one(module: str) -> Path:
             sys.executable, "-m", "PyInstaller",
             "--onefile", "--windowed", "--clean", "--noconfirm",
             "--name", exe,
-            "--icon", str(HERE / "orebit.ico"),
             "--version-file", str(WORK / f"version_info_{key}.txt"),
             "--add-data", f"{index}{sep}.",
             "--add-data", f"{product}{sep}.",

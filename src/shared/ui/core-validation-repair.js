@@ -11,9 +11,9 @@
     return tables.every(name => STATE.isSample[name] && !STATE.edits[name].size && !STATE.newRows[name].length && !STATE.deletedIdx[name].size) &&
       tables.every(name => JSON.stringify(STATE[name]) === JSON.stringify(SAMPLE_DATA[name]));
   }
-  function entry(action, detail, diffs = []) {
+  function entry(action, detail, diffs = [], automatic = false) {
     const at = new Date().toISOString();
-    STATE.CHANGE_LOG.push({table:'validation', timestamp:at, summary:detail, diffs});
+    STATE.CHANGE_LOG.push({table:'validation', timestamp:at, summary:detail, diffs, automatic});
     logPipeline(action, detail);
   }
   function refresh() {
@@ -42,7 +42,7 @@
       STATE[name].forEach((row,idx)=>{if(!beforeRows.has(JSON.stringify(row)))Object.entries(row).forEach(([col,value])=>diffs.push({table:name,idx,col,old:null,new:value,kind:'source-restoration-added'}));});
       prior[name].rows.forEach((row,idx)=>{if(!afterRows.has(JSON.stringify(row)))Object.entries(row).forEach(([col,value])=>diffs.push({table:name,idx,col,old:value,new:null,kind:'source-restoration-removed'}));});
     }
-    entry('Validation repair', 'Restored collar and geology from the bundled synthetic source; no assay or survey measurements changed.',diffs);
+    entry('Validation repair', 'Restored collar and geology from the bundled synthetic source; no assay or survey measurements changed.',diffs,true);
     undo = {before:prior, after:snapshot()};
     UNDO.push({type:'validation-repair'});
     refresh(); toast(tr('applied'), 'good'); return true;
@@ -129,7 +129,8 @@
     const failedChecks=checks.filter(c=>c.severity==='fail').length,warnings=checks.filter(c=>c.severity==='warn').length;
     return {sourceRevision:sourceRevision(),state:failedChecks?'blocked':warnings?'warning':'ready',
       title:failedChecks?(blocking.length?issueTitle(blocking[0]):tr('blocked')):tr('ready'),blockingCauses:blocking.length,
-      affectedHoles:holes.size,failedChecks,warnings};
+      affectedHoles:holes.size,failedChecks,warnings,
+      automaticChanges:(STATE.CHANGE_LOG||[]).filter(item=>item.automatic).length};
   }
   function reason(issue){return tr('reason.'+issue.code).replace('{table}',window.__t('core.table.'+issue.table)).replace('{hole}',String(issue.hole_id||''));}
   function currentContext(){

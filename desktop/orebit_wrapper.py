@@ -368,8 +368,30 @@ def inject_runtime(html):
     idx = html.find(b"<body>")
     if idx == -1:
         return html
-    return html[: idx + 6] + script + html[idx + 6 :]
+    return html[: idx + 6] + script + MIGRATION_IMPORT_JS + html[idx + 6 :]
 
+
+MIGRATION_IMPORT_JS = b"""<script>(async()=>{try{
+ const r=await fetch('/legacy-storage.json',{cache:'no-store'});if(!r.ok)return;
+ const snap=await r.json();
+ for(const k of Object.keys(snap.localStorage||{})){
+   if(localStorage.getItem(k)===null)localStorage.setItem(k,snap.localStorage[k]);
+ }
+ const rows=snap.projects||[];if(!rows.length)return;
+ const db=await new Promise(res=>{const q=indexedDB.open('orebit-projects',1);
+   q.onupgradeneeded=()=>{const d=q.result;if(!d.objectStoreNames.contains('projects'))d.createObjectStore('projects',{keyPath:'name'});};
+   q.onsuccess=()=>res(q.result);q.onerror=()=>res(null);});
+ if(!db)return;
+ if(!db.objectStoreNames.contains('projects')){db.close();return;}
+ const existing=new Set(await new Promise(res=>{const g=db.transaction('projects').objectStore('projects').getAllKeys();
+   g.onsuccess=()=>res(g.result||[]);g.onerror=()=>res([]);}));
+ const tx=db.transaction('projects','readwrite'),store=tx.objectStore('projects');
+ for(const row of rows){
+   if(!row||typeof row.name!=='string'||!row.name||existing.has(row.name))continue;
+   store.put(row);
+ }
+ await new Promise(res=>{tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);});
+}catch(e){}})();</script>"""
 
 LEGACY_PORTS = {"Assay": 18768, "Resource": 18769}
 MIGRATION_FILE = "legacy-storage.json"
@@ -508,6 +530,17 @@ def start_legacy_migration(target_port, ports=None, base=LEGACY_PORTS):
         threading.Thread(target=server.serve_forever, daemon=True).start()
         started.append((name, server))
     return started
+
+
+LEGACY_WINDOW_SECONDS = 180
+
+
+def _single_origin(base_dir):
+    """True when this bundle carries the other module pages beside index.html."""
+    return all(
+        os.path.exists(os.path.join(base_dir, name))
+        for name in ("Core.html", "Assay.html", "Resource.html")
+    )
 
 
 def make_handler(base_dir):
@@ -961,6 +994,22 @@ def main():
     port = server.server_port
     t = threading.Thread(target=server.serve_forever, daemon=True)
     t.start()
+
+    # SHELL-1: a single-origin bundle also carries the other module pages. For a
+    # short window after launch the old per-module origins are opened so their
+    # saved projects can be handed over; a port in use is skipped, and the
+    # servers stop on their own so the window is not left listening.
+    if _single_origin(base_dir):
+        legacy = start_legacy_migration(port)
+        if legacy:
+
+            def _close_legacy(servers=legacy):
+                time.sleep(LEGACY_WINDOW_SECONDS)
+                for _, old in servers:
+                    old.shutdown()
+                    old.server_close()
+
+            threading.Thread(target=_close_legacy, daemon=True).start()
 
     url = f"http://127.0.0.1:{port}/index.html"
 

@@ -229,6 +229,8 @@
         if(details.isConnected&&source===optionsSource)optionsOpen.set(details.id,details.open);
       });
     });
+    const opts=[...panel.querySelectorAll('details[data-workflow-options]')];
+    if(opts.length>1&&!panel.querySelector('.workflow-reference')){const box=node('section',null,'workflow-reference');opts[0].before(box);box.append(node('p',tr('options'),'workflow-eyebrow'),...opts);}
   }
   function customize(panel) {
     const options=panel.querySelector('details[data-workflow-options]');
@@ -294,6 +296,7 @@
     text('h3',report.title);text('p',facts(7));
     text('[data-validation-metric="causes"]',report.blockingCauses);
     text('[data-validation-metric="holes"]',report.affectedHoles);
+    text('[data-validation-metric="auto"]',report.automaticChanges);
   }
   function sync() {
     if(resource())validateResourceCalculationContext();
@@ -374,7 +377,7 @@
     const card=node('section',null,'assay-workflow-card');card.setAttribute('aria-label',tr('guide'));
     if(resource()&&n===11){const close=button(tr('viewerClose'),'inspect',closeViewer);close.classList.add('resource-viewer-close');card.append(close);}
     const stages=main(),F=flow(),step=F?.stepOf(n),i=F?F.STEPS.indexOf(step):stages.indexOf(n);
-    card.classList.toggle('workflow-optional',i<0);card.append(node('p',i<0?tr('optional'):tr('step',{n:i+1,total:F?F.STEPS.length:stages.length}),'workflow-eyebrow'),node('h2',label(step?step.panels[0]:n)));
+    card.classList.toggle('workflow-optional',i<0);card.append(node('p',i<0?tr('optional'):(resource()?'RESOURCE':assay()?'ASSAY':'CORE')+' · '+tr('step',{n:i+1,total:F?F.STEPS.length:stages.length}),'workflow-eyebrow'),node('h2',label(step?step.panels[0]:n)));
     const purpose=window.__t('flow.purpose'+n);if(purpose!=='flow.purpose'+n)card.append(node('p',purpose,'workflow-purpose'));
     card.append(links(stages,n));
     const subTabs=stepTabs(n);if(subTabs){card.append(subTabs);
@@ -386,7 +389,7 @@
       const heading=node('h3');heading.id='coreValidationSummaryTitle';summary.setAttribute('aria-labelledby',heading.id);
       summary.append(heading,node('p',facts(n)));
       const metrics=node('dl',null,'validation-summary-metrics');
-      for(const [key,title] of [['causes','validationBlockingCauses'],['holes','validationAffectedHoles']]){
+      for(const [key,title] of [['causes','validationBlockingCauses'],['holes','validationAffectedHoles'],['auto','validationAuto']]){
         const group=node('div'),value=node('dd');value.dataset.validationMetric=key;
         group.append(node('dt',tr(title)),value);metrics.append(group);
       }

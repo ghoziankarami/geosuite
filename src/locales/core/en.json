@@ -1631,5 +1631,6 @@
   "panel.collar.standardsTitle": "Standards for collar records",
   "panel.collar.standards": "Collar positions must be surveyed (GPS or local grid) per KCMI 2017 Ch1 1.1 and JORC 2012 1.15. The coordinate system must be stated. Collar elevation (Z/RL) should be surveyed, not estimated from topography.",
   "panel.survey.standardsTitle": "Standards and survey method",
-  "panel.survey.standards": "Downhole surveys are required per JORC 2012 1.16-1.17. Survey intervals should be regular (typically every 30 m for diamond drill, every 10 m for RC) per KCMI Ch1 1.2. Minimum one survey per hole; multiple surveys for inclined or deflected holes. The survey method (single-shot, multi-shot, gyro) must be reported."
+  "panel.survey.standards": "Downhole surveys are required per JORC 2012 1.16-1.17. Survey intervals should be regular (typically every 30 m for diamond drill, every 10 m for RC) per KCMI Ch1 1.2. Minimum one survey per hole; multiple surveys for inclined or deflected holes. The survey method (single-shot, multi-shot, gyro) must be reported.",
+  "flow.validationAuto": "Automatic source changes"
 }

@@ -1631,5 +1631,6 @@
   "panel.collar.standardsTitle": "Standar untuk catatan collar",
   "panel.collar.standards": "Posisi collar wajib disurvei (GPS atau grid lokal) sesuai KCMI 2017 Bab 1 butir 1.1 dan JORC 2012 butir 1.15. Sistem koordinat wajib dinyatakan. Elevasi collar (Z/RL) harus disurvei, bukan ditaksir dari topografi.",
   "panel.survey.standardsTitle": "Standar dan metode survei",
-  "panel.survey.standards": "Survei lubang ke bawah wajib sesuai JORC 2012 butir 1.16-1.17. Jarak survei sebaiknya teratur (umumnya tiap 30 m untuk diamond drill, tiap 10 m untuk RC) sesuai KCMI Bab 1 butir 1.2. Minimal satu survei per lubang; beberapa survei untuk lubang miring atau terdefleksi. Metode survei (single-shot, multi-shot, gyro) wajib dilaporkan."
+  "panel.survey.standards": "Survei lubang ke bawah wajib sesuai JORC 2012 butir 1.16-1.17. Jarak survei sebaiknya teratur (umumnya tiap 30 m untuk diamond drill, tiap 10 m untuk RC) sesuai KCMI Bab 1 butir 1.2. Minimal satu survei per lubang; beberapa survei untuk lubang miring atau terdefleksi. Metode survei (single-shot, multi-shot, gyro) wajib dilaporkan.",
+  "flow.validationAuto": "Perubahan sumber otomatis"
 }

@@ -78,7 +78,6 @@
   }
   function chooseElement(n,value){
     if(!availableElements().includes(value))return;
-    // Select the view/report target without applying a domain or grade treatment.
     window._primaryElement=value;
     Object.values(ELEMENT_IDS).forEach(id=>{const el=document.getElementById(id);if(el&&Array.from(el.options).some(o=>o.value===value))el.value=value;});
     const origin=document.getElementById(ELEMENT_IDS[n]);
@@ -111,8 +110,7 @@
     if(n===8||n===9)semantic.reviewedGeometryEDA=p.reviewedGeometryEDA;
     if(n===7||n===13)semantic.composite=p.composite;
     if(n===11){
-      // Population review depends on accepted/draft science, not on optional
-      // diagnostic controls mounting asynchronously or display filters.
+      // Population review depends on accepted science, not optional controls.
       semantic.controls={};semantic.scope='All loaded rows';
       semantic.domain=p.actualDomain;
       semantic.proposal=window._domainPreviewAudit?clone(window._domainPreviewAudit):null;
@@ -310,7 +308,6 @@
     const codebook=context.geologicalDomainIds||[];if(!codebook.length){host.append(node('p',text('estimation.blockedGeology'),'hint warn'));return;}
     if(pendingDomainChange)host.append(node('p',text('scopeChanged',{removed:pendingDomainChange.removed.join(', ')||'—',added:pendingDomainChange.added.join(', ')||'—'}),'hint warn'));
     const applied=!!estimationSpec&&currentStatus.status==='approved',form=applied?node('details',null,'workflow-estimation-change'):host;
-    // Applied once: show the result first and keep the same controls under a closed disclosure.
     if(applied){form.append(node('summary',text('estimation.change')));host.append(form);}
     const domainField=node('fieldset',null,'workflow-estimation-domains'),legend=node('legend',text('estimation.domains'));domainField.append(legend,node('p',text('estimation.chooseDomain')));
     const choices=[];codebook.forEach((code,index)=>{const label=node('label',code),checkBox=node('input');checkBox.type='checkbox';checkBox.value=code;checkBox.id='assay-estimation-domain-'+index;label.htmlFor=checkBox.id;label.prepend(checkBox);choices.push(checkBox);domainField.append(label);});form.append(domainField);
@@ -365,7 +362,6 @@
     if(n===7){
       const raw=_reportMedianRawIntervalLength();if(!Number.isFinite(raw)||raw<=0)return;
       const el=document.getElementById('compLength');if(!el)return;
-      // The existing UI accepts 0.5-10 m. Keep values outside that range for custom review.
       if(raw<0.5||raw>10){toast(text('customLength'), 'warn');el.focus();return;}
       el.value=String(raw);el.dispatchEvent(new Event('change',{bubbles:true}));refresh(n);return;
     }
@@ -380,7 +376,6 @@
     nav.querySelectorAll('.tab').forEach((el,i)=>{
       const tab=i+1;el.dataset.workflowAdvanced=String(tab!==1&&!MAIN.includes(tab));
       el.style.order=String(tab===1?0:MAIN.includes(tab)?MAIN.indexOf(tab)+1:100+tab);
-      // Visits remain available to old readiness checks, but do not claim analyst approval.
       el.classList.remove('tab-done');
       const r=entries[tab];el.classList.toggle('workflow-reviewed',!!r&&r.context===context(tab));
     });
@@ -404,7 +399,7 @@
     OrebitScreeningWorkflow.stageBar();
     if(n===1){const loaded=!!data()?.rows?.length,first=!loaded?2:lastMainStage>1?lastMainStage:3;OrebitScreeningWorkflow.dashboard(panel,insight(1),text('purpose1'),first,loaded&&lastMainStage>1);return;}
     if(card)card.remove();card=node('section',null,'assay-workflow-card');card.setAttribute('aria-label',text('guide'));
-    const step=MAIN.indexOf(n);card.classList.toggle('workflow-optional',step<0);card.append(node('p',step>=0?text('step',{n:step+1,total:MAIN.length}):text('optional'),'workflow-eyebrow'));
+    const step=MAIN.indexOf(n);card.classList.toggle('workflow-optional',step<0);card.append(node('p',step>=0?'ASSAY · '+text('step',{n:step+1,total:MAIN.length}):text('optional'),'workflow-eyebrow'));
     card.append(node('h2',label(n)),node('p',text('purpose'+n),'workflow-purpose'));
     card.append(OrebitScreeningWorkflow.links(MAIN,n));
     if(data()&&[3,7,8,9,10,11,13].includes(n)&&availableElements().length){

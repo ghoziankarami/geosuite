@@ -1,0 +1,130 @@
+name: Release (single app, Windows + macOS)
+
+# SHELL-1: one artifact per platform instead of three module EXEs.
+#   Windows : Orebit-GeoSuite.exe
+#   macOS   : Orebit-GeoSuite.app (zipped, since a .app is a directory)
+#
+# Pushing a tag vX.Y.Z is the whole release step. Standard GitHub-hosted runners
+# in a public repository are free and do not draw the private included compute
+# usage; no larger runner is used.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and attach, e.g. v3.2.1"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-suite-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  single:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            asset: Orebit-GeoSuite.exe
+            retention: 7
+          - os: macos-latest
+            asset: Orebit-GeoSuite-macos.zip
+            retention: 7
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      checks: read
+      actions: read
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - name: Tag matches package.json version
+        shell: bash
+        run: |
+          set -eu
+          want=$(python -c "import json;print(json.load(open('package.json'))['version'])")
+          test "v$want" = "$TAG" || { echo "tag $TAG != package.json v$want"; exit 1; }
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 20
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+
+      - name: Build the three module pages
+        shell: bash
+        run: |
+          set -eu
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Install the desktop build inputs
+        shell: bash
+        run: |
+          set -eu
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller pywebview
+
+      - name: Build the single artifact
+        shell: bash
+        run: |
+          set -eu
+          cd desktop
+          python build_exe.py --single --skip-html
+
+      - name: Package for macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -eu
+          cd desktop/dist
+          test -d Orebit-GeoSuite.app
+          ditto -c -k --sequesterRsrc --keepParent Orebit-GeoSuite.app Orebit-GeoSuite-macos.zip
+
+      - name: Verify the artifact
+        shell: bash
+        run: |
+          set -eu
+          cd desktop/dist
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            python verify-single-artifact.py Orebit-GeoSuite.exe "$TAG"
+          else
+            test -d Orebit-GeoSuite.app
+            test -x Orebit-GeoSuite.app/Contents/MacOS/Orebit-GeoSuite
+            python verify-single-artifact.py Orebit-GeoSuite.app "$TAG"
+          fi
+
+      - name: Attach to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          cd desktop/dist
+          asset="${{ matrix.asset }}"
+          ls -l "$asset"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$asset" --clobber
+          else
+            gh release create "$TAG" "$asset" --title "GeoSuite ${TAG#v}" --generate-notes
+          fi
+
+      - name: Upload the workflow artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc2b253b379c7d1bc5
+        with:
+          name: single-${{ runner.os }}
+          path: desktop/dist/${{ matrix.asset }}
+          retention-days: ${{ matrix.retention }}

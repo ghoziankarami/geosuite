@@ -149,6 +149,10 @@ def main():
                             plot=page.locator('#domainViewer3d');gesture_ok=False
                             for attempt in range(3):
                                 active_diagnostic.update(stage='native-3d-gesture',task='contacts',zoom=1,attempt=attempt+1)
+                                # A zero-sized element cannot be scrolled to, so scroll its
+                                # stage panel first; that is what leaves the canvas off
+                                # screen (and display:none) for every retry.
+                                page.evaluate("()=>document.getElementById('tab14')?.scrollIntoView({block:'start'})")
                                 plot.scroll_into_view_if_needed()
                                 page.wait_for_function(sized)
                                 page.wait_for_function(stable)

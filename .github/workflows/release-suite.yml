@@ -68,7 +68,7 @@ jobs:
         shell: bash
         run: |
           set -eu
-          npm ci --no-audit --no-fund
+          # package.json has no dependencies; the build only needs node.
           npm run build
 
       - name: Install the desktop build inputs

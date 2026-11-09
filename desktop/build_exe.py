@@ -180,13 +180,15 @@ def build_single() -> Path:
     finally:
         for target in staged:
             target.unlink(missing_ok=True)
-    built = OUT / (exe + ".exe" if os.name == "nt" else exe)
-    if not built.is_file():
+    if os.name == "nt":
+        built = OUT / (exe + ".exe")
+    else:
+        # A windowed macOS build carries the binary *inside* the bundle; publish
+        # and stamp the bundle, not the bare executable beside it.
         app = OUT / (exe + ".app")
-        if app.is_dir():
-            built = app
-        else:
-            sys.exit(f"ERROR: PyInstaller did not produce {built}")
+        built = app if app.is_dir() else OUT / exe
+    if not (built.is_file() or built.is_dir()):
+        sys.exit(f"ERROR: PyInstaller did not produce {built}")
     if built.suffix == ".app":
         _stamp_macos_version(built)
     print(f"  {built.name}: {built.stat().st_size:,} bytes\n", flush=True)

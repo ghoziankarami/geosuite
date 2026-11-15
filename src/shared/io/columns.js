@@ -159,7 +159,7 @@ function canonicalGradeName(header) {
  */
 function planGradeRenames(headers) {
   const lower = new Set(headers.map(h => String(h).trim().toLowerCase()));
-  const plan = {}, claimed = {};
+  const plan = Object.create(null), claimed = Object.create(null);
   for (const h of headers) {
     const c = canonicalGradeName(h);
     if (!c || String(h).trim().toLowerCase() === c) continue;
@@ -175,7 +175,7 @@ function planGradeRenames(headers) {
 // Reverse index: normalised alias -> role. Built once; every phase's old
 // per-function alias table becomes one lookup here instead of N copies.
 const ALIAS_INDEX = (() => {
-  const idx = {};
+  const idx = Object.create(null);
   for (const role of Object.keys(ALIASES)) {
     for (const alias of ALIASES[role]) idx[_norm(alias)] = role;
   }

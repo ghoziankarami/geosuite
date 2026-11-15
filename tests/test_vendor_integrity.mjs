@@ -42,7 +42,7 @@ try {
 
   // Exercise the real build entry in a source-ZIP-shaped root: rejection must
   // happen before a partial dist/ exists, even without Git or a phase tree.
-  for (const name of ['build.mjs', 'python-launcher.mjs', 'vendor-integrity.mjs'])
+  for (const name of ['build.mjs', 'python-launcher.mjs', 'strip-comments.mjs', 'vendor-integrity.mjs'])
     cpSync(path.join(root, 'build', name), path.join(work, 'build', name));
   writeFileSync(path.join(vendor, 'jspdf.umd.min.js'), 'unreviewed replacement');
   const build = spawnSync(process.execPath, ['build/build.mjs', 'Core'], { cwd: work, encoding: 'utf8' });

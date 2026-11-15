@@ -57,7 +57,8 @@ def assign(pg,table,mapping):
     for key,val in mapping.items():
         pg.locator(f'#map_{table}_{key}').select_option(val)
     action=group.locator(f"button[onclick=\"applyColumnMapping('{table}')\"]")
-    action.scroll_into_view_if_needed()
+    # Centre it: a control that is merely inside the viewport can sit under the fixed stage bar.
+    action.evaluate("e=>e.scrollIntoView({block:'center'})")
     check(action.evaluate("e=>{const r=e.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return hit===e||e.contains(hit)}"), 'Mapping Apply has a real pointer target in task Options')
     action.click()
 

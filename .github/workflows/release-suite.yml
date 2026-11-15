@@ -32,10 +32,8 @@ jobs:
         include:
           - os: windows-latest
             asset: Orebit-GeoSuite.exe
-            retention: 7
           - os: macos-latest
             asset: Orebit-GeoSuite-macos.dmg
-            retention: 7
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     permissions:
@@ -144,4 +142,4 @@ jobs:
         with:
           name: single-${{ runner.os }}
           path: desktop/dist/${{ matrix.asset }}
-          retention-days: ${{ matrix.retention }}
+          retention-days: 7

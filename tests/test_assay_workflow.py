@@ -3,6 +3,7 @@ import csv,functools,http.server,io,json,tempfile,threading,os,shutil
 import fitz
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+from journey_test_helpers import ensure_detailed_mode, open_detailed_tab
 from geological_review_fixture import reviewed_packet
 
 def _workflow_options(page, disclosure):
@@ -23,7 +24,7 @@ def check(condition,message):
  assert condition,message
  passed+=1;print('PASS:',message,flush=True)
 def stage(p,n):
- p.locator(f'nav.tabs .tab[onclick="showTab({n})"]').click();p.wait_for_timeout(180)
+ open_detailed_tab(p,n);p.wait_for_timeout(180)
 def status(p,n):return p.evaluate('(n)=>OrebitAssayWorkflow.snapshot().find(r=>r.stage===n).status',n)
 try:
  with tempfile.TemporaryDirectory() as tmp,sync_playwright() as pw:
@@ -33,6 +34,7 @@ try:
   p.goto(f'http://127.0.0.1:{server.server_port}/Assay.html');p.wait_for_function('() => window.OrebitAssayWorkflow && document.body.classList.contains("assay-guided")')
   check(p.evaluate("typeof OrebitEstimationSpec==='object'&&typeof OrebitEstimationSpec.approve==='function'"),'Assay exposes the versioned per-element estimation review owner')
   if p.locator('.tour-skip').is_visible():p.locator('.tour-skip').click()
+  ensure_detailed_mode(p)
   p.evaluate('''() => {window.__workflowFailures=[];const old=safeRender;window.safeRender=(name,fn)=>old(name,()=>{try{return fn()}catch(e){window.__workflowFailures.push(name+':'+e.message);throw e}});safeRender('canary',()=>{throw Error('workflow-canary')});}''')
   check(p.evaluate("window.__workflowFailures.some(e=>e.includes('workflow-canary'))"),'Swallowed renderer detector is live')
   p.evaluate('window.__workflowFailures=[]')

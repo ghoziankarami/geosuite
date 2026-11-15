@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <!-- OREBIT_BUILD_START
-Orebit Assay — GeoSuite v3.2.2
+Orebit Assay — GeoSuite v3.2.3
 Copyright (c) 2026 Orebit (Ghozian Islam Karami). GPL-3.0-only.
-Build: assay-v3.2.2-source
+Build: assay-v3.2.3-source
 Terms: https://geosuite.orebit.id/terms
 -- OREBIT_BUILD_END -->
-<script>window.OREBIT_BUILD_ID="assay-v3.2.2-source";</script>
+<script>window.OREBIT_BUILD_ID="assay-v3.2.3-source";</script>
+
+
 
 
 
@@ -27,7 +29,7 @@ Terms: https://geosuite.orebit.id/terms
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="product-version" content="v3.2.2"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
+<meta name="product-version" content="v3.2.3"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
 <meta name="product-name" content="Orebit Assay">
 <meta name="product-stage" content="Assay">
 <!-- CSP: data remains local; optional online services and release checks use explicit origins. -->
@@ -100,8 +102,8 @@ body.assay-guided.assay-advanced-open nav.tabs .tab[data-workflow-advanced="true
   </div>
   <button class="mobile-menu-toggle" aria-label="Open menu" data-i18n-attr="aria-label:aria.openMenu" onclick="toggleMobileMenu()" type="button"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
   <div class="toolbar" id="orebitToolbar">
-    <a href="Core.html" target="_blank" rel="noopener" data-orebit-collapse-mobile data-phase-switch hidden class="orebit-link" title="Switch to Orebit Core" data-i18n-attr="title:hdr.switchToCoreTitle" data-i18n="hdr.switchToCore">Core ↗</a>
-    <a href="Resource.html" target="_blank" rel="noopener" data-orebit-collapse-mobile data-phase-switch hidden class="orebit-link" title="Switch to Orebit Resource" data-i18n-attr="title:hdr.switchToResourceTitle" data-i18n="hdr.switchToResource">Resource ↗</a>
+    <a href="Core.html" rel="noopener" data-orebit-collapse-mobile data-phase-switch hidden class="orebit-link" title="Switch to Orebit Core" data-i18n-attr="title:hdr.switchToCoreTitle" data-i18n="hdr.switchToCore">Core ↗</a>
+    <a href="Resource.html" rel="noopener" data-orebit-collapse-mobile data-phase-switch hidden class="orebit-link" title="Switch to Orebit Resource" data-i18n-attr="title:hdr.switchToResourceTitle" data-i18n="hdr.switchToResource">Resource ↗</a>
     <!-- Theme toggle removed 2026-09-04: it lived in the header, the help
          bubble menu AND the profile menu at the same time. Theme is a
          preference, so its single home is now the profile menu. -->
@@ -517,6 +519,16 @@ let DATA = EMBEDDED_DATA;
 /* @orebit-inline: shared/io/project-capsule.js */
 /* @orebit-inline: shared/io/screening-report.js */
 /* @orebit-inline: shared/io/domain-report.js */
+/* @orebit-inline: shared/ui/journey.js */
+/* @orebit-inline: shared/ui/quick-run.js */
+// Quick run pass-through: forward the dataset Core handed over with the same
+// export the Report stage sends. No treatment, top-cut or population is applied.
+OrebitQuickRun.on('Assay', async function () {
+  await OrebitHandoff.domainReady();
+  toast(t('quick.assayPassing'), 'info');
+  OrebitQuickRun.expect('Resource');
+  if (!(await sendResourceHandoff(false, true))) OrebitQuickRun.clear();
+});
 /* @orebit-inline: shared/ui/screening-workflow.js */
 /* @orebit-inline: shared/ui/assay-workflow.js */
 /* @orebit-inline: shared/io/parse.js */
@@ -5730,12 +5742,12 @@ async function exportReviewedBoundaryComposites(opts){
     return file.result;
   }catch(error){const message=t('asy.prep.boundaryBlocked').replace('{reason}',error.code||error.message||'EXPORT_FAILED');if(mount){mount.textContent=message;mount.dataset.status='blocked';}toast(message,'warn');return false;}
 }
-async function sendResourceHandoff(quiet){
+async function sendResourceHandoff(quiet,sameWindow,panel){
   if(!DATA?.rows?.length)return false;
   if(typeof OrebitRevision!=='undefined')OrebitRevision.register('Resource',()=>sendResourceHandoff(true));
   const dataset=DATA,geology=OrebitHandoff.domain(),key=_assayHandoffSourceKey(),reviewKey=JSON.stringify(window.OrebitAssayWorkflow?.serialise().estimationSpec);
   let pendingWindow;
-  if(!window.__OREBIT_RT__&&quiet!==true){try{pendingWindow=window.open('','_blank');}catch(error){pendingWindow=null;}}
+  if(!window.__OREBIT_RT__&&quiet!==true&&sameWindow!==true){try{pendingWindow=window.open('','_blank');}catch(error){pendingWindow=null;}}
   try{
     const spec=window.OrebitAssayWorkflow?.serialise().estimationSpec;
     // A stale/invalid approved review must block, never silently fall back to
@@ -5749,7 +5761,7 @@ async function sendResourceHandoff(quiet){
     if(!current())throw Error('HANDOFF_SOURCE_CHANGED');
     file.isCurrent=current;
     window.__orebitDomainReviewText=window.OrebitAssayWorkflow?.scopeText?.()||'';
-    return await OrebitHandoff.sendFile('Resource',file,quiet===true?null:pendingWindow,quiet===true);
+    return await OrebitHandoff.sendFile('Resource',file,quiet===true||sameWindow===true?null:pendingWindow,quiet===true,panel);
   }catch(error){
     if(pendingWindow)try{pendingWindow.close();}catch(closeError){}
     toast(t('asy.prep.boundaryBlocked').replace('{reason}',error.code||error.message||'HANDOFF_FAILED'),'warn');
@@ -6455,8 +6467,18 @@ function _topcutDiagnostics(sortedAsc) {
   };
 }
 
+window._topCutDrafts=window._topCutDrafts||Object.create(null);
+function setTopCutDraft(elemCol,field,value){
+  const prior=window._topCutDrafts[elemCol]||Object.create(null);
+  window._topCutDrafts[elemCol]=Object.assign(Object.create(null),prior,{[field]:String(value)});
+}
+
 function renderTopCut() {
   if (!DATA) return;
+  // A redraw that lands while the user is typing must not take their focus or caret with it.
+  const refocus=(()=>{const e=document.activeElement;return e&&(e.id==='customCut'||e.id==='topcutDecisionReason')?{id:e.id,start:e.selectionStart,end:e.selectionEnd}:null;})();
+  const optionsWereOpen=document.getElementById('assayTopCutOptions')?.open===true; // a redraw must not fold the Options the user is working in
+  window.OrebitAssayWorkflow?.prepareTopCutOptions?.();
   const elems = availableElements();
   if (!elems.length) {
     document.getElementById('tc').innerHTML = '<div class="hint warn">No assay columns found.</div>';
@@ -6506,6 +6528,15 @@ function renderTopCut() {
   // Resolve current element from selector, fallback to first
   const sel = document.getElementById('tcElementSelect');
   const elemCol = (sel && elems.includes(sel.value)) ? sel.value : primaryElement();
+  const priorElement=window._topCutRenderedElement;
+  if(priorElement&&elems.includes(priorElement)&&document.getElementById('customCut')){
+    const priorDraft=window._topCutDrafts[priorElement]||Object.create(null);
+    window._topCutDrafts[priorElement]=Object.assign(Object.create(null),priorDraft,{
+      cut:document.getElementById('customCut').value,
+      reason:document.getElementById('topcutDecisionReason')?.value||''
+    });
+  }
+  const topCutDraft=window._topCutDrafts[elemCol]||{};
   const i = colIdx(elemCol);
   // A1: same scoping as renderStats -- see _scopedRows()'s docstring. A
   // single top-cut threshold across mixed domain populations is the
@@ -6675,11 +6706,11 @@ function renderTopCut() {
   // leaving the plots and complete impact matrices as supporting detail below.
   // It remains a native collapsed disclosure; this changes only findability.
   const topCutOptions = `
-    <details class="card workflow-inspection" id="assayTopCutOptions" data-workflow-options>
+    <details class="card workflow-inspection" id="assayTopCutOptions" data-workflow-options${optionsWereOpen?' open':''}>
       <summary>${t('flow.options')} · ${t('asy.renderTopCut.customThreshold')}</summary>
       <div class="row-controls">
-        <label>${t('asy.renderTopCut.cutValue')}: <input type="number" id="customCut" value="${s.p99.toFixed(4)}" step="0.001" min="0" oninput="renderTopCutCustom('${escapeHtml(elemCol)}')"></label>
-        <label>${t('asy.treatment.reason')}: <input type="text" id="topcutDecisionReason" maxlength="1000" aria-label="${escapeHtml(t('asy.treatment.reason'))}" value="${escapeHtml(window._treatmentDecisions?.[elemCol]?.reviewReason||window._capLog?.[elemCol]?.reviewReason||'')}"></label>
+        <label>${t('asy.renderTopCut.cutValue')}: <input type="number" id="customCut" value="${escapeHtml(topCutDraft.cut??s.p99.toFixed(4))}" step="0.001" min="0" oninput="setTopCutDraft('${escapeHtml(elemCol)}','cut',this.value);renderTopCutCustom('${escapeHtml(elemCol)}')"></label>
+        <label>${t('asy.treatment.reason')}: <input type="text" id="topcutDecisionReason" maxlength="1000" aria-label="${escapeHtml(t('asy.treatment.reason'))}" value="${escapeHtml(topCutDraft.reason??window._treatmentDecisions?.[elemCol]?.reviewReason??window._capLog?.[elemCol]?.reviewReason??'')}" oninput="setTopCutDraft('${escapeHtml(elemCol)}','reason',this.value)"></label>
         <button class="btn small" onclick="applyTopCutReviewed('${escapeHtml(elemCol)}')">${t('asy.renderTopCut.applyCut')}</button>
         <button class="btn small secondary" onclick="recordNoCapDecision('${escapeHtml(elemCol)}')" ${window._capLog?.[elemCol]?.cut!=null?'disabled':''}>${t('asy.treatment.recordNoCap')}</button>
       </div>
@@ -6838,6 +6869,7 @@ function renderTopCut() {
         <p style="font-size:11px;color:var(--fg-mute);margin-top:8px;">${t('asy.tc.diagNotApproved')}</p>
       ` : `<div class="hint">${t('asy.tc.tooFewForCurves').replace('{n}', vals.length).replace('{min}', 30)}</div>`}
     </details>`;
+  window.OrebitAssayWorkflow?.positionTopCutOptions?.();
 
   // Impact curves
   // Impact curves — left axis: loss logam %, right axis: absolute Δ-mean (grade units)
@@ -6968,6 +7000,8 @@ function renderTopCut() {
   }, { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false });
 
   renderTopCutCustom(elemCol);
+  window._topCutRenderedElement=elemCol;
+  if(refocus){const e=document.getElementById(refocus.id);if(e&&e!==document.activeElement){e.focus({preventScroll:true});try{if(refocus.start!=null)e.setSelectionRange(refocus.start,refocus.end);}catch(_){/* number inputs have no selection range */}}}
 }
 
 function setTopCutElement(col) {
@@ -7030,7 +7064,7 @@ function _recordTreatmentDecision(elemCol,kind,reason,details,reviewed) {
 function applyTopCutReviewed(elemCol){
   const reason=document.getElementById('topcutDecisionReason')?.value.trim()||'';
   if(!reason){toast(t('asy.treatment.reasonRequired'),'warn');return false;}
-  applyTopCut(elemCol,reason);return true;
+  return applyTopCut(elemCol,reason)===true;
 }
 function recordNoCapDecision(elemCol){
   if(!DATA?.rows?.length){toast(t('asy.applyTopCut.noDataLoaded'),'warn');return false;}
@@ -7043,9 +7077,9 @@ function recordNoCapDecision(elemCol){
 }
 function applyTopCut(elemCol,reviewReason) {
   if(window.OrebitAssayWorkflow?.reviewedEDAStatus?.()){toast(t('asy.workflow.estimation.edaTreatment'),'warn');return false;}
-  if (!DATA || !DATA.rows) { toast(t('asy.applyTopCut.noDataLoaded'), 'warn'); return; }
+  if (!DATA || !DATA.rows) { toast(t('asy.applyTopCut.noDataLoaded'), 'warn'); return false; }
   const cutEl = document.getElementById('customCut');
-  if (!cutEl) return;
+  if (!cutEl) return false;
   const cut = parseFloat(cutEl.value);
   if (isNaN(cut) || cut <= 0) { toast(t('asy.applyTopCut.enterValidCutValue'), 'warn'); return; }
   const idx = typeof colIdx === 'function' ? colIdx(elemCol) : DATA.cols.indexOf(elemCol);
@@ -7077,6 +7111,7 @@ function applyTopCut(elemCol,reviewReason) {
   if (typeof showTab === 'function') showTab(typeof currentTab !== 'undefined' ? currentTab : 9);
   const meta = typeof elementMeta === 'function' ? elementMeta(elemCol) : { label: elemCol };
   toast(t('asy.applyTopCut.cappedAt').replace('{elem}', meta.label || elemCol).replace('{n}', affected).replace('{cut}', cut), 'good');
+  return true;
 }
 
 // Undo a top-cut: restore the pristine column from the snapshot and clear the log.
@@ -12502,8 +12537,6 @@ body header.orebit-header .orebit-phase-pill {
      process per phase with no sibling file on disk, so a relative link would
      404 there -- window.__OREBIT_RT__ (injected by the EXE wrapper) is the
      existing signal used to tell the two builds apart at runtime. -->
-<script>/* FLOW-320-1: header Core link carries the active project instead of opening the bundled sample. */
-document.addEventListener('DOMContentLoaded',function(){try{if(window.__OREBIT_RT__)return;document.querySelectorAll('a[data-phase-switch][href="Core.html"]').forEach(function(a){a.addEventListener('click',function(ev){var project=window.OrebitHandoff&&window.OrebitHandoff.contexts&&window.OrebitHandoff.contexts()[0]&&window.OrebitHandoff.contexts()[0].project;if(!project)return;ev.preventDefault();var popup=window.open('about:blank','_blank');if(!popup){window.location.href=a.href;return;}popup.opener=null;window.OrebitHandoff.sendCoreProject(project,popup).catch(function(e){console.warn('[Assay header Core link]',e);popup.location.href=new URL(a.href,window.location.href).href;});});});}catch(e){}});</script>
 <script>document.addEventListener('DOMContentLoaded',function(){try{if(!window.__OREBIT_RT__){document.querySelectorAll('[data-phase-switch],[data-desktop-cta]').forEach(function(el){el.hidden=false;});}}catch(e){}});</script>
 
 

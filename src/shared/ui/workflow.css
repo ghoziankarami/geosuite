@@ -250,3 +250,83 @@ body.resource-viewer-open .resource-viewer-backdrop{display:block;position:fixed
 .orebit-rev[data-state="stale"]{border-color:var(--warn,#b7791f);background:color-mix(in srgb,var(--warn,#b7791f) 12%,transparent)}
 .orebit-rev[data-state="current"]{color:var(--good,#2f855a)}
 .orebit-rev button{padding:1px 10px;font-size:12px}
+/* NAV-01: journey strip shared by the three modules */
+#journeyBar{margin:0 0 12px;overflow-x:auto;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+#journeyBar ol{display:flex;flex-wrap:wrap;gap:4px;list-style:none;margin:0;padding:2px}
+/* Phone: only the current stage is shown, as one line of text. */
+@media (max-width:820px){#journeyBar li:not(.is-current){display:none}#journeyBar{margin-bottom:8px}#journeyBar .journey-stage{padding:3px 8px}}
+#journeyBar li{margin:0;padding:0}
+#journeyBar .journey-stage{display:flex;align-items:center;gap:5px;min-height:0;margin:0;padding:3px 8px;border:1px solid var(--border);border-radius:999px;background:var(--bg-card);color:var(--fg-body);box-shadow:none;font:inherit;font-size:12px;font-weight:500;line-height:1.3;white-space:nowrap}
+#journeyBar button.journey-stage{cursor:pointer}
+#journeyBar button.journey-stage:hover{border-color:var(--accent)}
+#journeyBar button.journey-stage:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#journeyBar span.journey-stage{color:var(--fg-mute);border-style:dashed;background:transparent}
+#journeyBar .is-current .journey-stage{border-color:var(--accent);background:var(--accent);color:var(--fg-on-dark,#fff);font-weight:600}
+#journeyBar .is-current .journey-module{color:inherit;opacity:.85}
+/* Touch: every command target reaches 44 px (WCAG 2.5.8 target size, and the Core Domain touch suite). */
+@media (pointer:coarse){#journeyBar ol{align-items:center}#journeyBar button.journey-stage{min-width:44px;min-height:44px;justify-content:center}}
+#journeyBar .journey-num{display:inline-grid;place-items:center;min-width:16px;height:16px;border-radius:50%;border:1px solid currentColor;font-size:10.5px}
+#journeyBar .journey-module{font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:var(--fg-mute)}
+
+#journeyMode{display:flex;width:max-content;max-width:100%;margin-top:8px;gap:2px;align-items:center;border:1px solid var(--border);border-radius:999px;padding:2px;background:var(--bg-card)}
+#journeyMode button{min-height:44px;border:0;border-radius:999px;padding:5px 9px;background:transparent;color:var(--fg-body);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+#journeyMode button[aria-pressed="true"]{background:var(--accent);color:var(--fg-on-dark,#fff)}
+#journeyBar.is-quick ol{justify-content:center}
+#journeyBar.is-quick .journey-module{display:none}
+/* Quick has its own four-step journey; keep upload and Advanced available, but
+   don't show the six detailed stage links as a competing workflow rail. */
+.journey-quick .workflow-nav-heading,
+.journey-quick nav.tabs .tab[data-workflow-step]::after{display:none!important}
+@media(max-width:820px){.orebit-header .toolbar{gap:6px}#journeyMode button{min-height:44px;padding:6px 8px}}
+
+/* Quick: Check offers one forward action (Continue to estimate). Prepare is done by it; Assay, Export and the stage bar lead into the Detailed workflow. */
+.journey-quick #coreCheckSummary [data-check-action="prepare"],.journey-quick #coreCheckSummaryImport [data-check-action="prepare"],
+.journey-quick #coreCheckSummary [data-check-action="assay"],.journey-quick #coreCheckSummaryImport [data-check-action="assay"],
+.journey-quick #coreCheckSummary [data-check-action="export"],.journey-quick #coreCheckSummaryImport [data-check-action="export"],
+.journey-quick #resultSummary [data-summary-detail]{display:none}
+/* Import: the stage bar's Continue to Validation leads into Detailed once data is ready; while blocked it carries the repair action and stays. */
+.journey-quick.core-guided.core-own-data #tab2:has(#coreCheckSummaryImport[data-state="ready"],#coreCheckSummaryImport[data-state="prepared"]) .workflow-stage-bar{display:none}
+#journeyBar [aria-disabled="true"]{opacity:.55;cursor:not-allowed}
+#journeyBar.is-quick .journey-stage{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.orebit-header .title-block{position:relative}
+#journeyMode{position:static;margin:0}
+@media(max-width:768px){.orebit-header .brand{gap:6px}header.orebit-header .brand #journeyMode{flex:none}}
+@media(max-width:768px){html body .wrap{padding-top:0!important}html body .wrap>.panel{padding-top:0!important;margin-top:-2px!important}#journeyBar{margin-bottom:0}}
+@media(max-width:768px){body>#journeyMode,body .wrap>#journeyMode{position:static;width:max-content;max-width:calc(100vw - 24px);margin:6px auto 8px;transform:none}}
+#journeyBar.is-quick li:not(.is-current){display:list-item}
+#journeyBar.is-quick ol{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+#journeyBar.is-quick .journey-stage{white-space:normal;overflow-wrap:anywhere;justify-content:center;text-align:center;min-height:44px}
+@media(max-width:820px){#journeyBar.is-quick ol{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Desktop Quick has one primary journey, as in the approved mock. Detailed
+   module tools remain reachable through Advanced or the mode switch. */
+@media(min-width:1080px){
+ .journey-quick nav.tabs #journeyBar{order:-1;width:100%;margin:12px 0;flex:none;overflow:visible}
+ .journey-quick nav.tabs #journeyBar ol{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+ .journey-quick nav.tabs #journeyBar .journey-stage{width:100%;justify-content:flex-start;text-align:left;border-radius:8px;padding:10px 12px}
+ .journey-quick:not(.screening-advanced-open):not(.assay-advanced-open) nav.tabs .tab{display:none!important}
+}
+
+/* Quick mode follows the owner mock: one path, one primary action per screen.
+   Dashboard leads with Import your data; Start review / Resume are Detailed entries. */
+/* Only the Import screen (Add data / Check in the mock) folds the Detailed stage links; on a stage page they remain the way between stages. */
+.journey-quick.core-guided:not(.screening-advanced-open):not(.assay-advanced-open) #tab2 .workflow-step-links{display:none}
+/* The Import stage card keeps repair actions (role apply); its plain Import duplicate and related checks are Detailed aids. */
+.journey-quick.core-guided #tab2 .assay-workflow-card .workflow-actions [data-action-role="next"],.journey-quick.core-guided #tab2 [data-stage-import],.journey-quick.core-guided #tab2 .assay-workflow-card .workflow-related{display:none}
+/* The built-in sample's blocked check is shown on the dashboard; Import leads with the drop target. */
+.journey-quick.core-guided:not(.core-own-data) #tab2 > #coreCheckSummaryImport{display:none}
+/* Estimating: the pipeline renders each stage behind one Estimating card instead of showing stage pages. */
+.journey-quick.quick-compute .panel.active{visibility:hidden}
+.journey-quick.quick-compute .panel.active #journeyBar{visibility:visible}
+.journey-quick.quick-compute #computeOverlay{top:42%!important;bottom:auto!important;transform:translate(-50%,-50%)!important;min-width:min(480px,92vw)!important;padding:20px 22px!important;font-size:14px!important}
+.journey-quick.quick-compute #computeOverlay::before{content:attr(data-title);display:block;line-height:1.45;color:var(--fg-mute,#64748b);margin-bottom:12px}
+/* Quick Resource with the user's own data: the review/result card is the screen; the Detailed dashboard below it
+   (resume action, KPI tiles, next-step card, rich grid, Compute All) is reachable through Refine or Advanced tools. */
+.journey-quick.resource-own-data #tab1:has(> #resultSummary:not([hidden])) > :is(.workflow-dashboard,.kpi-grid,#uxNextStepResource,#dashRichGrid,div.card:not(#resourceDashEmptyCTA)){display:none}
+/* Quick Import with the built-in sample: the way forward is adding data, not Continue to Validation. */
+.journey-quick.core-guided:not(.core-own-data) #tab2 .workflow-stage-bar{display:none}
+
+/* Short explanation of Quick and Detailed under the step rail, with the way to the other mode. */
+.journey-explain{margin:10px 0 0;padding:10px 12px;border:1px solid var(--border,#d8dee6);border-radius:8px;background:var(--bg-alt,#f6f8fa);font-size:12.5px;line-height:1.45;color:var(--fg-body,#44546a)}
+.journey-explain p{margin:0 0 6px}.journey-explain .journey-explain-hint{color:var(--fg-mute,#6b7a90)}
+.journey-explain-switch{border:0;background:none;padding:2px 0;min-height:32px;color:var(--accent,#0b736d);font-size:12.5px;font-weight:600;font-family:inherit;text-decoration:underline;cursor:pointer}
+@media(max-width:820px){.journey-explain{margin:8px 0}}

@@ -182,7 +182,8 @@
   }
   function receiveDesktop() { if (typeof OrebitHandoff === 'object') OrebitHandoff.receiveDesktopAssayReference(); }
   async function receiveCoreProject() {
-    if (!/[?&]coreHandoff=/.test(location.search) || window.__OREBIT_RT__) return;
+    if (!/[?&]coreHandoff=/.test(location.search) || (window.__OREBIT_RT__ && !window.__OREBIT_RT__.single)) return;
+    const journeyStage = Number(new URLSearchParams(location.search).get('journeyStage'));
     try {
       if (window.__orebitCoreProjectReady) await window.__orebitCoreProjectReady;
       const project=await window.OrebitHandoff.takeCoreProject();
@@ -190,7 +191,7 @@
       await window.applyBundle(project);
       STATE.currentProjectName=null;STATE.saveStatus='unsaved';
       if(typeof updateProjectNameDisplay==='function')updateProjectNameDisplay();
-      window.showTab(14);
+      window.showTab(journeyStage === 2 || journeyStage === 14 ? journeyStage : 14);
     } catch(error) {
       console.warn('[Core project return]',error);
       toast(t('core.edaReference.projectReturnRejected')+' '+(error.code||error.message||'CORE_PROJECT_HANDOFF_REJECTED'),'bad');

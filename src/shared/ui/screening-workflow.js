@@ -117,7 +117,7 @@
     // The Resource viewer's primary already returns to the report. Retain one
     // return path rather than a second row of the same destination above its plot.
     const hasReturn=origin&&origin!==n&&!(module==='resource'&&n===11&&origin===12);
-    if(hasReturn){row.append(button(tr('return',{stage:label(origin)}),'inspect',()=>go(origin)));}
+    if(hasReturn){const back=button(module==='resource'&&origin===1?window.__t('res.summary.backToSummary'):tr('return',{stage:label(origin)}),'inspect',()=>go(origin));back.dataset.workflowReturn=String(origin);row.append(back);}
     const tools=RELATED[module]?.[n]||[];
     if(tools.length){row.append(node('p',tr('related'),'workflow-related-title'));
       const actions=node('div',null,'workflow-related-actions');
@@ -165,7 +165,13 @@
     const card=node('section',null,'assay-workflow-card workflow-dashboard');card.setAttribute('aria-label',tr('guide'));
     card.append(node('h2',label(1)),node('p',purpose,'workflow-purpose'));
     const facts=node('div',null,'workflow-insight');facts.append(node('strong',tr('quickInsight')),node('p',insight));card.append(facts);
-    const actions=node('div',null,'workflow-actions');actions.append(button(resume?tr('resume',{stage:label(first)}):tr(first===2?'import':'start'),'next',()=>navigate(first)));if(first!==2)actions.append(button(tr('import'),'inspect',()=>navigate(2)));card.append(actions);
+    const actions=node('div',null,'workflow-actions');
+    // Quick (the default) leads with adding data, as in the owner mock; Start review / Resume
+    // are the Detailed workflow's entries. Read the stored choice so load order cannot matter.
+    let quick=true;try{quick=localStorage.getItem('orebit.journeyMode.v1')!=='detailed';}catch(e){}
+    if(quick&&first!==2&&!assay()&&!resource()){const importData=button(tr('import'),'next',()=>navigate(2));importData.dataset.dashboardAction='import';actions.append(importData);}
+    else{const lead=button(resume?tr('resume',{stage:label(first)}):tr(first===2?'import':'start'),'next',()=>navigate(first));lead.dataset.dashboardAction=first===2?'import':'start';actions.append(lead);if(first!==2){const importData=button(tr('import'),'inspect',()=>navigate(2));importData.dataset.dashboardAction='import';actions.append(importData);}}
+    card.append(actions);
     card.append(related('core',1,navigate));panel.prepend(card);
     document.body.classList.add('screening-guided','workflow-on-dashboard');
     return card;
@@ -175,6 +181,15 @@
       if(typeof DATA==='undefined'||!DATA?.rows?.length)return tr('empty');
       if(n===4){const m=variogramState.model,number=v=>Number.isFinite(v)?String(Number(v.toPrecision(4))):'—';return m?tr('varReady',{type:m.type,nugget:number(m.nugget),sill:number(m.sill),range:number(m.range)}):tr('varPending');}
       if(n===5)return blockState.blocks?tr('gridReady',{blocks:blockState.blocks.length.toLocaleString()}):tr('gridPending');
+      // Once an estimate exists the insight states it, from the report's own owners.
+      const head=[6,7,8,9,10,12].includes(n)&&typeof resourceEstimateHeadline==='function'?resourceEstimateHeadline():null;
+      if(head?.stale)return tr('resultStale');
+      if(head){
+        const q=(v,d)=>OrebitScreeningReport.quantity(v,d)??'—';
+        return tr('result',{quantity:q(head.quantity,3),qunit:head.quantityUnit,grade:q(head.grade,3),unit:OrebitScreeningReport.unitLabel(head.unit),element:head.elementLabel,
+          metal:q(head.metalTonnes,0),estimated:head.estimatedBlocks.toLocaleString(),blocks:head.blocks.toLocaleString(),pct:q(head.estimatedBlocks/head.blocks*100,0)})
+          +' '+tr(head.solid?'resultSolid':'resultEnvelope')+(head.densitySource==='assumed-uniform'?' '+tr('resultDensityAssumed'):'');
+      }
       if(n===6)return tr('estimated',{status:tr(estimState.done?'complete':'notComplete')});
       return tr('loaded',{rows:DATA.rows.length.toLocaleString()});
     }
@@ -365,7 +380,7 @@
     restoreActions();stageBar();current=n;navigation(n);if(resource())viewerPanel(n);const panel=document.getElementById('tab'+n);if(!panel)return;
     const source=resource()?DATA:[STATE.collar,STATE.survey,STATE.assay,STATE.geology];
     const changed=resource()?source!==lastSource:!lastSource||source.some((rows,index)=>rows!==lastSource[index]);
-    if(changed){lastSource=source;lastMainStage=1;}
+    if(changed){lastSource=source;lastMainStage=1;origins.clear();}
     const mainStages=main();if(n!==1&&mainStages.includes(n))lastMainStage=n;
     decorateOptions(panel);
     if(!resource()&&n===7)validation=_p1RunValidationChecks();
@@ -376,8 +391,8 @@
     if(n===1){const loaded=resource()?!!DATA?.rows?.length:!!STATE.collar.length&&!!STATE.assay.length;const first=!loaded?2:lastMainStage>1?lastMainStage:resource()?3:7;dashboard(panel,facts(n),tr('purpose1'),first,loaded&&lastMainStage>1);return;}
     const card=node('section',null,'assay-workflow-card');card.setAttribute('aria-label',tr('guide'));
     if(resource()&&n===11){const close=button(tr('viewerClose'),'inspect',closeViewer);close.classList.add('resource-viewer-close');card.append(close);}
-    const stages=main(),F=flow(),step=F?.stepOf(n),i=F?F.STEPS.indexOf(step):stages.indexOf(n);
-    card.classList.toggle('workflow-optional',i<0);card.append(node('p',i<0?tr('optional'):(resource()?'RESOURCE':assay()?'ASSAY':'CORE')+' · '+tr('step',{n:i+1,total:F?F.STEPS.length:stages.length}),'workflow-eyebrow'),node('h2',label(step?step.panels[0]:n)));
+    const stages=main(),F=flow(),step=F?.stepOf(n),stage=window.OrebitJourney?.stageOf(n),i=F?F.STEPS.indexOf(step):stages.indexOf(n);
+    card.classList.toggle('workflow-optional',i<0);card.append(node('p',i<0?tr('optional'):(resource()?'RESOURCE':assay()?'ASSAY':'CORE')+' · '+tr('step',{n:stage||i+1,total:stage?7:F?F.STEPS.length:stages.length}),'workflow-eyebrow'),node('h2',label(step?step.panels[0]:n)));
     const purpose=window.__t('flow.purpose'+n);if(purpose!=='flow.purpose'+n)card.append(node('p',purpose,'workflow-purpose'));
     card.append(links(stages,n));
     const subTabs=stepTabs(n);if(subTabs){card.append(subTabs);
@@ -400,7 +415,7 @@
     }
     card.append(summary);
     const actions=node('div',null,'workflow-actions');
-    if(n===2)actions.append(button(tr('import'),'apply',()=>document.getElementById('fileInput').click()));
+    if(n===2){const importFiles=button(tr('import'),'apply',()=>document.getElementById('fileInput').click());importFiles.dataset.stageImport='';actions.append(importFiles);}
     if(!resource()&&!assay()&&n===14){const nextTask=button(window.__t('dom.workflow.nextContacts'),'next',()=>{});nextTask.id='domainWorkflowNext';actions.append(nextTask);}
     const target=next(n);if(target&&!(resource()&&n===3)){const returning=resource()&&n===11&&origins.get('resource:'+n)===target;const onward=button(tr(returning?'return':'next',{stage:label(target)}),'next',()=>continueStage(n,target));onward.dataset.workflowNext='true';onward.disabled=!canContinue(n);actions.append(onward);}
     if(!resource()&&[10,11].includes(n)&&!_coreAnalysisReady()){
@@ -558,6 +573,7 @@
     if(new URLSearchParams(window.location.search).get('workflow')==='domain')window.showTab(14);
     else refresh(typeof currentTab==='number'?currentTab:1);
   }
-  window.OrebitScreeningWorkflow={customize,decorateOptions,dashboard,links,related,sidebar,stageBar,mirror,compact,refresh,reset:()=>{failedAttempt=null;}};
+  function inspect(module,stage,origin) {origins.set(module+':'+stage,origin);navigate(stage);}
+  window.OrebitScreeningWorkflow={customize,decorateOptions,dashboard,links,related,sidebar,stageBar,mirror,compact,refresh,inspect,reset:()=>{failedAttempt=null;origins.clear();}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else setTimeout(boot,0);
 })();

@@ -271,6 +271,10 @@ try:
                     name + " an inline live status is not styled as a floating toast",
                 )
                 if width == 1440:
+                    check(page.locator('nav.tabs #journeyBar [data-journey-stage]').count() == 4
+                          and page.locator('nav.tabs .tab:visible').count() == 0,
+                          name + ' fresh Quick has one four-step sidebar, without competing stage links')
+                    page.locator('#journeyMode [data-journey-mode="detailed"]').click()
                     rail = page.locator("nav.tabs .tab:visible").all()
                     positions = sorted([b.bounding_box()["y"] for b in rail])
                     heading = page.locator(".workflow-nav-heading")
@@ -298,6 +302,7 @@ try:
                         not page.locator("#mobileTourBtn").is_visible(),
                         name + " mobile-only Tour stays out of the desktop rail",
                     )
+                    page.locator('#journeyMode [data-journey-mode="quick"]').click()
                     page.set_viewport_size({"width": 390, "height": 844})
                 check(
                     page.locator("#mobileBottomNav").is_visible(),
@@ -334,7 +339,8 @@ try:
                 check(menu.get_attribute("aria-expanded")=="false",name + " closing the menu resets the real hamburger")
                 page.wait_for_function("()=>{const e=document.getElementById('mobileNavDrawer');return e.inert&&e.getBoundingClientRect().right<=0;}")
                 primary = page.locator('#tab1 .workflow-actions [data-action-role="next"]')
-                primary.scroll_into_view_if_needed()
+                # Centre it: merely being inside the viewport can leave it under the fixed bottom bar.
+                primary.evaluate("e=>e.scrollIntoView({block:'center'})")
                 check(
                     primary.evaluate("e=>{const r=e.getBoundingClientRect();return [.1,.5,.9].every(x=>[.2,.5,.8].every(y=>e.contains(document.elementFromPoint(r.x+x*r.width,r.y+y*r.height))))}")
                     and page.locator("#mobileTourBtn").is_visible()
@@ -372,7 +378,7 @@ try:
                     fits(page, page.locator("#mobileNavDrawer .drawer-close")),
                     name + " drawer has an accessible close control",
                 )
-                page.locator("#mobileNavDrawer .sub-tab").first.click()
+                page.locator("#mobileNavDrawer .sub-tab").first.click(no_wait_after=True)
                 check(
                     active(page) == 2
                     and not page.locator("#mobileNavDrawer").evaluate(
@@ -394,7 +400,7 @@ try:
                     advanced == expected and advanced,
                     name + " Advanced lists every optional owner independently",
                 )
-                page.locator("#mobileNavDrawer .sub-tab").first.click()
+                page.locator("#mobileNavDrawer .sub-tab").first.click(no_wait_after=True)
                 check(
                     active(page) == advanced[0]
                     and page.locator(
@@ -481,6 +487,10 @@ try:
                         path=str(folder / f"{name}-{width}-mobile-tour.png")
                     )
                 page.set_viewport_size({"width": 1440, "height": 1000})
+                page.locator('nav.tabs #journeyBar').wait_for(state='visible')
+                check(page.locator('nav.tabs #journeyBar [aria-current="step"]').count() == 1,
+                      name + ' resize back restores the single current Quick desktop journey')
+                page.locator('#journeyMode [data-journey-mode="detailed"]').click()
                 check(
                     not page.locator("#mobileBottomNav").is_visible()
                     and page.locator("nav.tabs .tab.active").is_visible(),

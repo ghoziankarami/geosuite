@@ -944,12 +944,12 @@ body.dark .orebit-quickstart p {{ color: #cbd5e1; }}
   .mobile-nav-drawer {{
     position:fixed; top:0; bottom:0; left:0; width:min(78vw, 300px);
     background:var(--bg-card); z-index:1002; box-shadow:2px 0 16px rgba(0,0,0,0.18);
-    transform:translateX(-100%); transition:transform .22s ease;
+    transform:translateX(-100%); visibility:hidden; transition:transform .22s ease, visibility 0s linear .22s;
     display:flex!important; flex-direction:column; padding:16px 10px;
     padding-top:calc(16px + env(safe-area-inset-top, 0px));
     overflow-y:auto; box-sizing:border-box;
   }}
-  .mobile-nav-drawer.show {{ transform:translateX(0); }}
+  .mobile-nav-drawer.show {{ transform:translateX(0); visibility:visible; transition:transform .22s ease; }}
   .mobile-nav-drawer .drawer-title {{
     font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
     color:var(--fg-mute); padding:4px 10px 10px;

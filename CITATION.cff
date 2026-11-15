@@ -6,8 +6,8 @@ authors:
   - family-names: Karami
     given-names: Ghozian Islam
     affiliation: Orebit
-version: "3.2.2"
-date-released: "2026-10-29"
+version: "3.2.3"
+date-released: "2026-11-15"
 license: GPL-3.0-only
 repository-code: "https://github.com/ghoziankarami/geosuite"
 url: "https://geosuite.orebit.id"

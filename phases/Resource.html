@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <!-- OREBIT_BUILD_START
-Orebit Resource — GeoSuite v3.2.2
+Orebit Resource — GeoSuite v3.2.3
 Copyright (c) 2026 Orebit (Ghozian Islam Karami). GPL-3.0-only.
-Build: resource-v3.2.2-source
+Build: resource-v3.2.3-source
 Terms: https://geosuite.orebit.id/terms
 -- OREBIT_BUILD_END -->
-<script>window.OREBIT_BUILD_ID="resource-v3.2.2-source";</script>
+<script>window.OREBIT_BUILD_ID="resource-v3.2.3-source";</script>
+
 
 
 
@@ -27,7 +28,7 @@ Terms: https://geosuite.orebit.id/terms
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="product-version" content="v3.2.2"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
+<meta name="product-version" content="v3.2.3"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
 <meta name="product-name" content="Orebit Resource">
 <meta name="product-stage" content="Resource">
 <!-- CSP: data remains local; optional online services and release checks use explicit origins. -->
@@ -76,6 +77,55 @@ Terms: https://geosuite.orebit.id/terms
 .resource-inspect-grid,.resource-advanced-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;min-width:0}
 .resource-inspect-grid .metric-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}
 .resource-inspect-grid .card,.resource-advanced-grid .card{margin-top:0!important;min-width:0}
+/* UX-QUICK-1: dashboard estimate summary */
+.result-summary{margin-top:16px;border:1px solid var(--accent);border-radius:var(--radius-lg,12px);background:var(--accent-soft);padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.result-summary.is-pending{border-color:var(--border);background:var(--bg-card)}
+.result-summary[data-state="failed"]{border-color:var(--bad-ink)}
+.result-summary[data-state="partial"],.result-summary[data-state="empty"]{border-color:var(--warn-ink)}
+.result-summary h3{margin:0;font-size:15px}
+.result-summary-headline{margin:0;font-size:22px;font-weight:700;line-height:1.25;color:var(--fg);overflow-wrap:anywhere}
+.result-summary-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0}
+.result-summary-metrics>div{min-width:0;padding:12px;border:1px solid var(--border);border-radius:var(--radius,8px);background:var(--bg-card,var(--bg))}
+.result-summary-metrics dt{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--fg-mute)}
+.result-summary-metrics dd{margin:4px 0 0;font-size:18px;font-weight:700;color:var(--fg);overflow-wrap:anywhere}
+.result-summary-metrics small{display:block;margin-top:3px;color:var(--fg-mute);font-size:11px;line-height:1.35}
+.result-summary-notice{margin:0;padding:10px 12px;border-radius:var(--radius,8px);background:var(--warn-soft);color:var(--warn-ink);font-size:13px}
+.result-summary-analysis{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:14px;align-items:start;min-width:0}
+.result-summary-settings,.result-summary-curve{min-width:0;padding:12px;border:1px solid var(--border);border-radius:var(--radius,8px);background:var(--bg-card,var(--bg))}
+.result-summary-settings h3,.result-summary-curve h3{margin:0 0 8px;font-size:14px}
+.result-summary-curve p{margin:0 0 8px;color:var(--fg-mute);font-size:12px;line-height:1.4}
+.result-summary-curve .plot-container{height:300px;min-height:260px}
+.result-summary-table-wrap{overflow-x:auto}
+.result-summary table{width:100%;border-collapse:collapse;font-size:13px}
+.result-summary th,.result-summary td{text-align:left;padding:7px 8px;border-top:1px solid var(--border);vertical-align:top}
+.result-summary th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--fg-mute);border-top:0}
+.result-summary td:nth-child(2){font-weight:600;color:var(--fg)}
+.result-summary-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.result-summary-note{margin:0;font-size:12.5px;color:var(--fg-mute)}
+@media(min-width:601px){
+ .result-summary table,.result-summary tbody{display:block;min-width:0}
+ .result-summary thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ .result-summary tbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
+ .result-summary tbody tr{display:grid;grid-template-columns:minmax(92px,.65fr) minmax(0,1.35fr);align-content:start;border:1px solid var(--border);border-radius:var(--radius,8px);padding:7px}
+ .result-summary tbody td{min-width:0;border:0;padding:4px;overflow-wrap:anywhere}
+ .result-summary tbody td:first-child{grid-column:1;grid-row:1/span 2;color:var(--fg-mute);font-size:12px}
+ .result-summary tbody td:nth-child(2){grid-column:2;grid-row:1/span 2}
+ .result-summary tbody td:nth-child(3){grid-column:2;grid-row:3;text-align:left}
+}
+@media(max-width:600px){
+ .result-summary-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .result-summary-metrics>div{padding:10px}
+ .result-summary-metrics dd{font-size:16px}
+ .result-summary-analysis{grid-template-columns:minmax(0,1fr)}
+ .result-summary-curve .plot-container{height:270px;min-height:240px}
+ .result-summary-table-wrap{overflow:visible}
+ .result-summary table,.result-summary tbody{display:block;min-width:0}
+ .result-summary thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ .result-summary tbody tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);border-top:1px solid var(--border);padding:8px 0}
+ .result-summary td{display:block;min-width:0;border:0;padding:4px 6px;overflow-wrap:anywhere}
+ .result-summary td:nth-child(3){grid-column:1/-1;text-align:right}
+ .result-summary td button{max-width:100%;min-height:44px;white-space:normal;text-align:left}
+}
 .panel :is(.grid-2,.grid-3,.fb-grid):has(.plot-container,.js-plotly-plot){grid-template-columns:minmax(0,1fr)!important}
 .panel .js-plotly-plot{min-width:0;max-width:100%}
 @media(max-width:650px){.resource-setup-main .row-controls,.resource-quick-insight{grid-template-columns:minmax(0,1fr)}.resource-setup-target,.resource-disclosure{padding:16px!important}.resource-inspect-grid .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.resource-setup-actions button{width:100%}.resource-inspect-grid .thin{font-size:11px;table-layout:fixed;overflow-wrap:anywhere}}
@@ -117,8 +167,8 @@ Terms: https://geosuite.orebit.id/terms
   </div>
   <button class="mobile-menu-toggle" aria-label="Open menu" data-i18n-attr="aria-label:attr.openMenu" onclick="toggleMobileMenu()" type="button"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
   <div class="toolbar" id="orebitToolbar">
-    <a href="Core.html" target="_blank" rel="noopener" data-orebit-collapse-mobile data-phase-switch hidden class="orebit-link" title="Switch to Orebit Core" data-i18n-attr="title:hdr.switchToCoreTitle" data-i18n="hdr.switchToCore">Core ↗</a>
-    <a href="Assay.html" target="_blank" rel="noopener" data-orebit-collapse-mobile data-phase-switch hidden class="orebit-link" title="Switch to Orebit Assay" data-i18n-attr="title:hdr.switchToAssayTitle" data-i18n="hdr.switchToAssay">Assay ↗</a>
+    <a href="Core.html" rel="noopener" data-orebit-collapse-mobile data-phase-switch hidden class="orebit-link" title="Switch to Orebit Core" data-i18n-attr="title:hdr.switchToCoreTitle" data-i18n="hdr.switchToCore">Core ↗</a>
+    <a href="Assay.html" rel="noopener" data-orebit-collapse-mobile data-phase-switch hidden class="orebit-link" title="Switch to Orebit Assay" data-i18n-attr="title:hdr.switchToAssayTitle" data-i18n="hdr.switchToAssay">Assay ↗</a>
     <!-- Theme toggle removed 2026-09-04: it lived in the header, the help
          bubble menu AND the profile menu at the same time. Theme is a
          preference, so its single home is now the profile menu. -->
@@ -531,6 +581,17 @@ const EMBEDDED_DATA = /* @orebit-inline: assets/sample/resource.json */;
 /* @orebit-inline: shared/io/import.js */
 /* @orebit-inline: shared/ui/column-mapper.js */
 /* @orebit-inline: shared/ui/pwa.js */
+/* @orebit-inline: shared/ui/journey.js */
+/* @orebit-inline: shared/ui/quick-run.js */
+// Quick run arrival: expose the received Resource inputs for review. The
+// summary's explicit Estimate action starts the existing calculation owner.
+OrebitQuickRun.on('Resource', function () {
+  resourceQuickElementConfirmation=null;
+  showTab(1);
+  // The handoff only prepares the Resource input. Let the user inspect the
+  // actual element, units, support, grid and search values on the dashboard;
+  // the dashboard action starts the existing calculation owner explicitly.
+});
 /* @orebit-inline: shared/ui/resource-flow.js */
 /* @orebit-inline: shared/ui/screening-workflow.js */
 /* @orebit-inline: shared/data/dataset.js */
@@ -1266,7 +1327,7 @@ function _coreBundleToResource(bundle) {
   } catch (e) { console.warn('[loadBundle] core transform failed', e); return null; }
 }
 
-async function loadBundle(bundle) {
+async function loadBundle(bundle, options = {}) {
   const previousDataset = DATA;
   const capsuleCheck = await validateProjectCapsule(bundle);
   if (capsuleCheck.legacy) await sealProjectCapsule(bundle, bundle?.phase1 ? 'Core' : 'Resource');
@@ -1308,25 +1369,57 @@ async function loadBundle(bundle) {
     // the declared grade unit, resets the downstream estimation state, and renders
     // the data preview. Without this, a loaded project lands in DATA un-normalized
     // and the estimation tabs can't read it ("data gak keload sempurna").
-    if (!bundle.data.rows || !bundle.data.cols) {
+    const sourceColumns = Array.isArray(bundle.data.cols) ? bundle.data.cols : bundle.data.columns;
+    if (!Array.isArray(bundle.data.rows) || !Array.isArray(sourceColumns)) {
       toast(t('res.loadBundle.projectHasNoCompositeData'), 'bad');
       return;
     }
     // Carry forward user-assigned units from P2 so ingest/element detection respects
     // the unit choice. ingestDataset → finalizeUploadLoad reads _lastSchemaMeta.units.
+    const previousSchemaMeta = _lastSchemaMeta;
     _lastSchemaMeta = bundle.schemaMeta || (bundle.units && Object.keys(bundle.units).length ? {units:bundle.units} : null);
     if(bundle.units&&Object.keys(bundle.units).length)_lastSchemaMeta={..._lastSchemaMeta,units:bundle.units};
     window._lastSchemaMeta = _lastSchemaMeta;
+    let mapping;
+    try {
+      mapping = await _resourceProjectMapping(bundle, sourceColumns);
+      if (DATA !== previousDataset) throw Error('PROJECT_SOURCE_CHANGED');
+      if (Object.prototype.hasOwnProperty.call(bundle, 'resourceColumnMapping') && !mapping)
+        throw Error(t('res.importBundle.mappingInvalid'));
+    } catch (err) {
+      if (DATA === previousDataset) window._lastSchemaMeta = _lastSchemaMeta = previousSchemaMeta;
+      throw err;
+    }
     const parsed = {
-      cols: bundle.data.cols.slice(),
+      cols: mapping ? mapping.mappedColumns.slice() : sourceColumns.slice(),
       rows: bundle.data.rows.map(r => Array.isArray(r) ? r.slice() : r),
       projectContexts: bundle.sourcePhase === 'Resource' ? bundle.parentContexts : [],
       projectDomain: bundle.sourcePhase === 'Resource' ? bundle.geologicalDomain : null,
       declaredCrs: bundle.declaredCrs
     };
-    ingestDataset(parsed, bundle.data.name || bundle.name || 'Loaded Project');
-    if (DATA === previousDataset) return; // A pending mapping has not activated this project.
+    try {
+      ingestDataset(parsed, bundle.data.name || bundle.name || 'Loaded Project', undefined, mapping?.unit);
+    } catch (err) {
+      if (DATA === previousDataset) window._lastSchemaMeta = _lastSchemaMeta = previousSchemaMeta;
+      throw err;
+    }
+    if (DATA === previousDataset) {
+      // An imported project is persisted only after its mapping is applied.
+      if (_pendingUpload) {
+        _pendingUpload.schemaMetaForApply = _lastSchemaMeta;
+        _pendingUpload.hasSchemaMetaForApply = true;
+        if (options.saveAfterMapping) _pendingUpload.projectToSave = bundle;
+      }
+      window._lastSchemaMeta = _lastSchemaMeta = previousSchemaMeta;
+      return false;
+    }
     const activatedDataset = DATA;
+    if (mapping && DATA.cols.includes(mapping.gradeColumn)) {
+      setupState.element = mapping.gradeColumn;
+      setupState.gradeUnit = mapping.unit === 'auto'
+        ? resourceDeclaredUnit(DATA.units?.[mapping.gradeColumn] ?? DATA.units?.[mapping.gradeColumn.toLowerCase()]) || null
+        : resourceDeclaredUnit(mapping.unit) || null;
+    }
     await OrebitHandoff.domainReady();
     if (DATA !== activatedDataset) throw Error('PROJECT_SOURCE_CHANGED');
     _restoreResourceProjectDecision(bundle);
@@ -1337,6 +1430,25 @@ async function loadBundle(bundle) {
   if (nameEl) nameEl.textContent = bundle.name;
 
   // project loaded
+  return true;
+}
+
+// Mapping belongs to the exact source revision and never changes its rows.
+async function _resourceProjectMapping(bundle, columns) {
+  const m = bundle?.resourceColumnMapping;
+  if (!m || m.schema !== 'orebit-resource-column-mapping' || m.version !== 1 ||
+      m.sourceRevision !== bundle.sourceCapsule?.revision ||
+      !Array.isArray(m.sourceColumns) || JSON.stringify(m.sourceColumns) !== JSON.stringify(columns) ||
+      !Array.isArray(m.mappedColumns) || m.mappedColumns.length !== columns.length ||
+      m.mappedColumns.some(c => typeof c !== 'string' || !c || c.length > 512) ||
+      new Set(m.mappedColumns).size !== m.mappedColumns.length ||
+      typeof m.gradeColumn !== 'string' || !m.mappedColumns.includes(m.gradeColumn) ||
+      (m.unit !== 'auto' && !resourceDeclaredUnit(m.unit)) ||
+      typeof m.digest !== 'string' || !/^[a-f0-9]{64}$/.test(m.digest)) return null;
+  const material = {schema:m.schema, version:m.version, sourceRevision:m.sourceRevision,
+    sourceColumns:m.sourceColumns, mappedColumns:m.mappedColumns, gradeColumn:m.gradeColumn, unit:m.unit};
+  if (await _opcSha256(material) !== m.digest) return null;
+  return m;
 }
 
 // Portable Resource decisions are deliberately smaller than a session snapshot:
@@ -1553,13 +1665,12 @@ function importBundle() {
         return;
       }
 
-      // Save to IndexedDB
-      await dbPut(bundle);
-
-      // Load into app
-      await loadBundle(bundle);
+      // Keep any same-name saved project until this import actually activates.
+      const loaded = await loadBundle(bundle, {saveAfterMapping:true});
 
       document.getElementById('projectManagerModal')?.remove();
+      if (!loaded) return;
+      await dbPut(bundle);
       // project imported
     } catch (err) {
       console.error('Import failed:', err);
@@ -1709,6 +1820,7 @@ function newResourceVariography() { return {
 let variogramState = newResourceVariography();
 let _directionalScanSequence = 0;
 function resetResourceVariography(preserveControls = false) {
+ resourceMarkAcceptedResultStale();
  const previous = variogramState, next = newResourceVariography();
  if (preserveControls) {
    next.direction = previous.direction;
@@ -1904,7 +2016,9 @@ function containedMetalFmt(tonsMt, grade, elKey, volMm3) {
 // toggleTheme, initTheme → src/shared/ui/index.js (inlined at build via @orebit-inline); plotTheme, plotLabel → src/shared/plots/plot-theme.js
 // Phase-specific re-render callback:
 window.__onThemeChange = function() {
- if (typeof currentTab !== 'undefined' && currentTab === 4 && typeof renderVariography === 'function') renderVariography();
+ if (typeof currentTab !== 'undefined' && currentTab === 4 && typeof renderVariography === 'function') {
+  captureResourceControlDraft(4);renderDraftedResourceStage(4,()=>renderVariography());
+ }
 };
 
 // Phase-specific tab router for P3 (12 tabs: Tutorial→KCMI Report).
@@ -1913,10 +2027,24 @@ window.__onThemeChange = function() {
 function resourceCalculationSignature() {
  return JSON.stringify({model:variogramState.model,search:searchState,element:setupState.element,domain:setupState.domain,unit:gradeUnitFor(setupState.element),filledSupport:window.__resourceBlockSupport?.revision||null});
 }
+const resourceDataIdentities=new WeakMap();let resourceDataIdentityNext=0;
+function resourceDataIdentity(data=DATA){
+ if(!data||typeof data!=='object')return null;
+ let id=resourceDataIdentities.get(data);if(!id){id=++resourceDataIdentityNext;resourceDataIdentities.set(data,id);}
+ return id;
+}
+function resourceMarkAcceptedResultStale(snapshot=window.__resourceResultSnapshot){
+ const current=resourceDataIdentity();
+ if(snapshot&&snapshot.dataIdentity===current)window.__resourceStaleResult={revision:snapshot.revision,dataIdentity:current};
+}
+function resourceHasStaleAcceptedResult(){
+ const stale=window.__resourceStaleResult;
+ return !!stale&&stale.dataIdentity===resourceDataIdentity();
+}
 function validateResourceCalculationContext() {
  const signature=resourceCalculationSignature();
  if(!estimState._running&&!estimState._confirming&&estimState.appliedSignature && estimState.appliedSignature!==signature){
-  estimState={results:null,done:false};classState={thresholds:null,labels:null};window._gtCurveSnapshot=null;window.__resourceResultSnapshot=null;window._resourceReportSnapshot=null;window.__resourceReportSelectionSnapshot=null;
+  resourceMarkAcceptedResultStale();estimState={results:null,done:false};classState={thresholds:null,labels:null};window._gtCurveSnapshot=null;window.__resourceResultSnapshot=null;window._resourceReportSnapshot=null;window.__resourceReportSelectionSnapshot=null;
  }
  if(!crossvalState._running&&crossvalState.appliedSignature && crossvalState.appliedSignature!==signature)crossvalState={results:null,metrics:null};
 }
@@ -1927,11 +2055,55 @@ function resourceAcceptedSnapshot(){
  if(!estimState.done||estimState.results!==snapshot.results||blockState.blocks!==snapshot.blocks||
    blockState.size!==snapshot.gridSize||blockState.origin!==snapshot.gridOrigin||blockState.blockDensities!==snapshot.blockDensityVector||blockState.density!==snapshot.uniformDensity||
    resourceCalculationSignature()!==snapshot.calculationSignature||window.__resourceBlockSupport!==snapshot.supportOwner){
+  resourceMarkAcceptedResultStale(snapshot);
   window.__resourceResultSnapshot=null;window._resourceReportSnapshot=null;window.__resourceReportSelectionSnapshot=null;return null;
  }
  return snapshot;
 }
+// View drafts never apply parameters. Bind them to the rendered dataset and
+// applied context so a replacement import or model cannot inherit old controls.
+const resourceControlDrafts=new Map(),resourceRenderedControls=new Map();
+let resourceControlEditRevision=0;
+function resourceControlContext() {
+ return JSON.stringify([resourceCalculationSignature(),blockState.size,blockState.density,blockState.envelopeMode,blockState.envelopeRadius]);
+}
+function captureResourceControlDraft(stage) {
+ const owner=resourceRenderedControls.get(stage);
+ if(!owner||owner.data!==DATA||owner.rows!==DATA.rows||owner.context!==resourceControlContext())return;
+ const panel=document.getElementById('tab'+stage);
+ resourceControlDrafts.set(stage,{data:DATA,rows:DATA.rows,context:owner.context,
+  densityDraft:window._resourceDensityDraftSet,
+  fields:Array.from(panel.querySelectorAll('input[id],select[id],textarea[id]')).filter(e=>!['file','hidden','button','submit'].includes(e.type)).map(e=>({id:e.id,type:e.type,value:e.value,checked:e.checked})),
+  disclosures:Array.from(panel.querySelectorAll('details[id]')).map(e=>({id:e.id,open:e.open}))});
+}
+function restoreResourceControlDraft(owner) {
+ const draft=resourceControlDrafts.get(owner.stage);
+ if(resourceRenderedControls.get(owner.stage)!==owner||currentTab!==owner.stage||owner.editRevision!==resourceControlEditRevision||
+  owner.data!==DATA||owner.rows!==DATA.rows||owner.context!==resourceControlContext()||!draft||draft.data!==DATA||draft.rows!==DATA.rows||draft.context!==owner.context)return;
+ const panel=document.getElementById('tab'+owner.stage);
+ for(const field of draft.fields){const e=document.getElementById(field.id);if(!e||!panel.contains(e)||e.type!==field.type)continue;
+  if(e.tagName==='SELECT'&&!Array.from(e.options).some(o=>o.value===field.value))continue;
+  e.value=field.value;e.checked=field.checked;}
+ for(const item of draft.disclosures){const e=document.getElementById(item.id);if(e&&panel.contains(e))e.open=item.open;}
+ if(owner.stage===5){window._resourceDensityDraftSet=draft.densityDraft;if(typeof updateBlockPreview==='function')updateBlockPreview();}
+}
+function renderDraftedResourceStage(stage,render) {
+ if(![4,5,6,7].includes(stage))return render();
+ const owner={stage,data:DATA,rows:DATA.rows,context:resourceControlContext(),editRevision:resourceControlEditRevision};
+ resourceRenderedControls.set(stage,owner);
+ const result=render();restoreResourceControlDraft(owner);
+ if(result?.then)result.then(()=>restoreResourceControlDraft(owner));
+ return result;
+}
+document.addEventListener('input',event=>{if(event.target.closest?.('#tab4,#tab5,#tab6,#tab7'))resourceControlEditRevision++;});
 function showTab(n) {
+ captureResourceControlDraft(currentTab);
+ if(Array.from(resourceControlDrafts.values()).some(d=>d.data!==DATA||d.rows!==DATA.rows)){
+  resourceControlDrafts.clear();resourceRenderedControls.clear();
+ }
+ // Retire incompatible drafts permanently; returning to an earlier applied
+ // signature must not resurrect edits abandoned before a model replacement.
+ for(const [stage,draft] of resourceControlDrafts)if(draft.context!==resourceControlContext())resourceControlDrafts.delete(stage);
  validateResourceCalculationContext();
  if (n > 1) window.__p3Visited.add(n);
  currentTab = n;
@@ -1939,8 +2111,8 @@ function showTab(n) {
 
  if (n === 2) safeRender(t('tab.upload'), () => renderUploadTab());
  else if (n === 3) safeRender(t('tab.setup'), () => renderSetupTab());
- else if (n === 4) safeRender(t('tab.variography'), () => renderVariography());
- else if (n >= 5 && n <= 12) safeRender('Tab '+n, () => renderPlaceholder(n));
+ else if (n === 4) safeRender(t('tab.variography'), () => renderDraftedResourceStage(n,()=>renderVariography()));
+ else if (n >= 5 && n <= 12) safeRender('Tab '+n, () => renderDraftedResourceStage(n,()=>renderPlaceholder(n)));
  if (n === 1) {
    // Empty-state import CTA toggle (runs even with no data so the CTA can show).
    var _ecta = document.getElementById('resourceDashEmptyCTA');
@@ -2290,11 +2462,20 @@ function handleUploadEvent(ev) {
  if (!file) return;
  const reader = new FileReader();
  reader.onload = (e) => {
+ const previousDataset = DATA, previousSchemaMeta = _lastSchemaMeta;
  try {
  const parsed = parseCSV(e.target.result);
  OrebitHandoff.bindFileImport(parsed, file);
  ingestDataset(parsed, file.name, window._lastRejected || []);
+ if (DATA === previousDataset) {
+   if (_pendingUpload) {
+     _pendingUpload.schemaMetaForApply = _lastSchemaMeta;
+     _pendingUpload.hasSchemaMetaForApply = true;
+   }
+   window._lastSchemaMeta = _lastSchemaMeta = previousSchemaMeta;
+ }
  } catch (err) {
+ if (DATA === previousDataset) window._lastSchemaMeta = _lastSchemaMeta = previousSchemaMeta;
  setUploadStatus(`<div class="hint bad"><span style="color:var(--bad-ink);"></span> Parse error: ${escapeHtml(err.message)}</div>`);
  }
  };
@@ -2307,7 +2488,7 @@ function handleUploadEvent(ev) {
 // raw {cols, rows} dataset into the app correctly — a saved-project load MUST go through
 // here too, otherwise composites land in DATA un-normalized and the estimation pipeline
 // can't read them ("data gak keload sempurna").
-function ingestDataset(parsed, sourceName, rejected) {
+function ingestDataset(parsed, sourceName, rejected, manualUnit=null) {
  // Sprint F: relaxed schema with normalization. Accept Stage 02 master export
  // OR composite-Xm.csv OR raw P1/P2 with from_m/to_m. Normalize composite
  // aliases (comp_from/comp_to → from_m/to_m, *_comp → *) so downstream code
@@ -2334,7 +2515,7 @@ function ingestDataset(parsed, sourceName, rejected) {
  const smartGuess = (colName) => {
    const key = colName.toLowerCase().replace(/[^a-z0-9]/g, '');
    // Direct alias check
-   if (aliasMap[key]) return aliasMap[key];
+   if (Object.prototype.hasOwnProperty.call(aliasMap, key)) return aliasMap[key];
    // Substring patterns (order matters — more specific first)
    if (key.includes('midx') || key.includes('easting')) return 'midx';
    if (key.includes('midy') || key.includes('northing')) return 'midy';
@@ -2347,7 +2528,7 @@ function ingestDataset(parsed, sourceName, rejected) {
    return null;
  };
  // Apply smart guess for unmatched columns
- parsed.cols = parsed.cols.map(c => aliasMap[c] || smartGuess(c) || c);
+ parsed.cols = parsed.cols.map(c => (Object.prototype.hasOwnProperty.call(aliasMap, c) ? aliasMap[c] : null) || smartGuess(c) || c);
  // "Au (g/t)", "Ni %" -> au_gpt / ni_pct (shared/io/columns.js, audit 2026-09-25):
  // element and unit are read from the canonical name everywhere downstream.
  const gradeRenames = planGradeRenames(parsed.cols);
@@ -2397,7 +2578,7 @@ function ingestDataset(parsed, sourceName, rejected) {
  if (missingSoft.length) {
    parsed = autoFillSoftColumns(parsed, missingSoft);
  }
- finalizeUploadLoad(parsed, sourceName, elFound0, report);
+ finalizeUploadLoad(parsed, sourceName, elFound0, report, manualUnit);
 }
 
 // Report options + i18n bridge for the shared import report (shared/io/import.js).
@@ -2551,7 +2732,7 @@ function renderColumnMappingPanel(parsed, fileName, missing, elFound0, report, r
      midy: [/^(y|northing|north|utm.?y|lat)$/i, /northing/i, /utm.?y/i],
      midz: [/^(z|elevation|rl|elev|collarz)$/i, /elev/i, /rl$/i],
      from_m: [/^(from|samp.?from|depth.?from|start|top)$/i, /from/i],
-     to_m: [/^(to|samp.?to|depth.?to|end|bottom)$/i, /to(?!tal|ol|tal_)/i],
+     to_m: [/^(to|samp.?to|depth.?to|end|bottom)$/i, /(?:^|[_\s.\-])to(?:$|[_\s.\-])/i],
      domain: [/^(domain|zone|rock.?type|dom)$/i, /domain/i, /zone/i],
      lithology: [/^(litho|rock|geol|unit)$/i, /litho/i],
    };
@@ -2610,17 +2791,25 @@ function applyColumnMapping() {
  if (!_pendingUpload) return;
  const cols = _pendingUpload.cols.slice();
  // Build rename map: chosen original column → canonical key.
- const renames = {};
+ const renames = Object.create(null);
+ let duplicateSource = false;
  document.querySelectorAll('.colmap-sel').forEach(sel => {
  const target = sel.getAttribute('data-target');
  const chosen = sel.value;
- if (chosen) renames[chosen] = target;
+ if (chosen) {
+   if (Object.prototype.hasOwnProperty.call(renames, chosen)) duplicateSource = true;
+   renames[chosen] = target;
+ }
  });
  const gradeCol = (document.getElementById('colmapGrade') || {}).value || '';
  const unitSel = (document.getElementById('colmapUnit') || {}).value || 'auto';
 
  // Apply renames to a copy of cols (skip if chosen col already equals target name).
  const newCols = cols.map(c => renames[c] ? renames[c] : c);
+ if (duplicateSource || new Set(newCols).size !== newCols.length) {
+ toast(t('res.applyColumnMapping.duplicateColumns'), 'bad');
+ return;
+ }
 
  // Validate required after rename.
  const REQ_HARD = ['hole_id', 'midx', 'midy', 'midz'];
@@ -2639,7 +2828,19 @@ function applyColumnMapping() {
  }
 
  // Derive domain from lithology if domain unmapped.
+ const projectToSave = _pendingUpload.projectToSave;
+ const pendingSchemaMeta = _pendingUpload.schemaMetaForApply;
+ const hasPendingSchemaMeta = _pendingUpload.hasSchemaMetaForApply;
+ const projectSourceColumns = projectToSave && (projectToSave.data?.cols || projectToSave.data?.columns);
+ if (projectToSave && Array.isArray(projectSourceColumns)) {
+   projectToSave.resourceColumnMapping = {schema:'orebit-resource-column-mapping', version:1,
+     sourceRevision:projectToSave.sourceCapsule?.revision, sourceColumns:projectSourceColumns.slice(),
+     mappedColumns:newCols.slice(), gradeColumn:gradeKey, unit:unitSel};
+ }
  const parsed = { ..._pendingUpload, cols: newCols, rows: _pendingUpload.rows };
+ delete parsed.projectToSave;
+ delete parsed.schemaMetaForApply;
+ delete parsed.hasSchemaMetaForApply;
  parsed.upstreamTopcutLines=Array.isArray(_pendingUpload.upstreamTopcutLines)?_pendingUpload.upstreamTopcutLines.slice():[];
  if (!newCols.includes('domain')) {
  if (newCols.includes('lithology')) {
@@ -2667,10 +2868,20 @@ function applyColumnMapping() {
  OrebitHandoff.inheritImport(_pendingUpload, parsed);
  _pendingUpload = null;
  const elFound = [gradeKey];
+ if (hasPendingSchemaMeta) window._lastSchemaMeta = _lastSchemaMeta = pendingSchemaMeta;
  finalizeUploadLoad(parsed, loadName, elFound, mappedReport, unitSel);
  // finalizeUploadLoad resets setupState.element only if not present — re-assert.
  setupState.element = gradeKey;
  renderDataPreview();
+ const mappedDataset = DATA;
+ if (projectToSave) (async () => {
+   projectToSave.resourceColumnMapping.digest = await _opcSha256(projectToSave.resourceColumnMapping);
+   if (DATA !== mappedDataset) throw Error('PROJECT_SOURCE_CHANGED');
+   await dbPut(projectToSave);
+ })().catch(err => {
+   console.error('Failed to save mapped project:', err);
+   toast(t('res.importBundle.failed').replace('{msg}', err.message), 'bad');
+ });
 }
 
 function setUploadStatus(html) {
@@ -2975,6 +3186,7 @@ ${doms.map(d => `<option value="${escapeHtml(d)}" ${String(setupState.domain) ==
  `;
 
  document.getElementById('setupElement').addEventListener('change', e => {
+ resourceQuickElementConfirmation=null;
  const wasVolumetric=isVolumetricGrade(setupState.element);
  setupState.element = e.target.value;
  setupState.gradeUnit=resourceDeclaredUnit(DATA.units?.[String(setupState.element).toLowerCase()]);
@@ -3566,6 +3778,7 @@ async function applyVariogramDirectionToModel() {
  if(typeof estimState!=='undefined')estimState={results:null,done:false};
  if(typeof crossvalState!=='undefined')crossvalState={results:null,metrics:null};
  if(typeof classState!=='undefined')classState={thresholds:null,labels:null};
+ resourceMarkAcceptedResultStale();
  window.__resourceResultSnapshot=null;window._resourceReportSnapshot=null;window.__resourceReportSelectionSnapshot=null;
  if(typeof window._gtCurveSnapshot!=='undefined')window._gtCurveSnapshot=null;
  for(const id of ['estimResults','cvResults','gtResults'])document.getElementById(id)?.replaceChildren();
@@ -3719,6 +3932,7 @@ async function fitPrincipal3Axis() {
  if (typeof estimState !== 'undefined') estimState = { results: null, done: false };
  if (typeof crossvalState !== 'undefined') crossvalState = { results: null, metrics: null };
  if (typeof classState !== 'undefined') classState = { thresholds: null, labels: null };
+ resourceMarkAcceptedResultStale();
  window.__resourceResultSnapshot = null;
  window._resourceReportSnapshot = null;
  window.__resourceReportSelectionSnapshot = null;
@@ -5627,17 +5841,19 @@ function _domainBoundary() {
  return { samples, inDomain, nIn, nOut: samples.length - nIn };
 }
 
-function getSamples() {
+function getSamples({countOnly=false}={}) {
  const rows = rowsFiltered();
  const eli = colIdx(setupState.element);
  const xi = colIdx('midx'), yi = colIdx('midy'), zi = colIdx('midz');
  const hi = colIdx('hole_id'), fi = colIdx('from_m'), ti = colIdx('to_m');
  const out = [];
  const seen = new Map(); // "x,y,z" -> count
+ let validCount=0;
  for (const r of rows) {
  const v = asNum(r[eli]);
  const x = asNum(r[xi]), y = asNum(r[yi]), z = asNum(r[zi]);
  if (v === null || x === null || y === null || z === null) continue;
+ if(countOnly){validCount++;continue;}
  const key = `${x.toFixed(2)},${y.toFixed(2)},${z.toFixed(2)}`;
  const count = seen.get(key) || 0;
  seen.set(key, count + 1);
@@ -5647,7 +5863,7 @@ function getSamples() {
  const jz = z + count * 0.001;
  out.push({ x: jx, y: jy, z: jz, v, rid: r[hi], md:fi>=0&&ti>=0&&asNum(r[fi])!==null&&asNum(r[ti])!==null?(asNum(r[fi])+asNum(r[ti]))/2:null });
  }
- return out;
+ return countOnly?validCount:out;
 }
 
 function betweenHoleStats(samples, holeIdx) {
@@ -6064,6 +6280,9 @@ async function generateBlocks() {
  }
  if(!generationCurrent())return;
  if (blocks.length === 0) { toast(t('res.pass.envelopeMaskRemovedAllBlocks'), 'bad'); return; }
+ // Keep a truthful stale state on the dashboard when a fresh block grid
+ // supersedes an accepted estimate for this same uploaded dataset.
+ resourceMarkAcceptedResultStale();
  blockState.densityUserSet=!!blockState.densityUserSet||(!_volGrade&&(!!window._resourceDensityDraftSet||dens!==blockState.density));
  window._resourceDensityDraftSet=false;
  blockState.size = [bx,by,bz]; blockState.density = dens;
@@ -6748,7 +6967,8 @@ async function runEstimation() {
    nearestNeighborCoverage:OrebitResourceEstimateContract.coverage({grades:nn,supportedCount,totalCount:N})} };
  estimState.done = true;
  estimState.appliedSignature=estimationSignature;
- window.__resourceResultSnapshot=Object.freeze({schema:'orebit-resource-estimate-snapshot',version:1,revision:++resourceResultRevision,
+ window.__resourceStaleResult=null;
+ window.__resourceResultSnapshot=Object.freeze({schema:'orebit-resource-estimate-snapshot',version:1,revision:++resourceResultRevision,dataIdentity:resourceDataIdentity(),
   calculationSignature:estimationSignature,results:estimState.results,blocks:blockState.blocks,supportOwner:estimationSupport,
   support:estimationSupport?.snapshot||null,model:JSON.parse(JSON.stringify(model)),search:JSON.parse(JSON.stringify(searchState)),
   element:setupState.element,domain:setupState.domain,gradeUnit:gradeUnitFor(setupState.element),densitySource:blockState.densitySource||null,
@@ -7659,9 +7879,154 @@ async function renderCVResults() {
  Plotly.newPlot('cvScatter', traces, layout, { responsive: true, displayModeBar: false });
 }
 
+// ============= ESTIMATE SUMMARY ON THE DASHBOARD (UX-QUICK-1) =============
+// Presentation only. Before an estimate it lists the settings a run would use;
+// after one it states the accepted result, the settings behind it and the
+// screening boundary. It reads state and the report's owners; it never
+// calculates, applies, approves or records a selection.
+// Composite length as received: read from the intervals themselves (to_m - from_m), never assumed.
+function resourceCompositeLengthText() {
+ const fi=DATA.cols.indexOf('from_m'),ti=DATA.cols.indexOf('to_m');
+ if(fi<0||ti<0)return t('res.summary.compositeUnknown');
+ const counts=new Map();let total=0;
+ for(const r of DATA.rows){const len=Math.round((Number(r[ti])-Number(r[fi]))*1000)/1000;if(Number.isFinite(len)&&len>0){counts.set(len,(counts.get(len)||0)+1);total++;}}
+ let top=null,topCount=0;for(const [len,count] of counts)if(count>topCount){top=len;topCount=count;}
+ if(top==null)return t('res.summary.compositeUnknown');
+ const q=(v,d)=>OrebitScreeningReport.quantity(v,d)??'—';
+ return (topCount/total>=0.95?t('res.summary.compositeUniform'):t('res.summary.compositeMostly')).replace('{len}',q(top,3)).replace('{pct}',q(topCount/total*100,0));
+}
+let resourceQuickElementConfirmation=null;
+function inspectResourceSummaryStage(stage) {
+ if(window.OrebitScreeningWorkflow?.inspect)window.OrebitScreeningWorkflow.inspect('resource',stage,1);
+ else showTab(stage);
+}
+function resourceSummarySettings() {
+ const q=(v,d=3)=>OrebitScreeningReport.quantity(v,d)??'—',model=variogramState.model,volumetric=isVolumetricGrade(setupState.element);
+ const size=blockState.size;
+ const usable=setupState.element?getSamples({countOnly:true}):null;
+ const upstreamTreatment=Array.isArray(_importedTopcutLines)?_importedTopcutLines:[];
+ const densityText=volumetric?t('res.summary.densityVolumetric'):blockState.blockDensities?t('res.summary.densityVariable'):blockState.densityUserSet?t('res.summary.densityEntered'):t('res.summary.densityAssumed');
+ const treatmentText=upstreamTreatment.length
+  ?t('res.summary.treatmentRecorded').replace('{n}',String(upstreamTreatment.length)).replace('{records}',upstreamTreatment.slice(0,2).join('; ')+(upstreamTreatment.length>2?` · +${upstreamTreatment.length-2}`:''))
+  :t('res.summary.treatmentUnknown');
+ const appliedSolid=resourceSolidSupportApplied();
+ const supportValue=appliedSolid?t('res.summary.supportSolidDetails'):
+  t('res.summary.supportEnvelopeDetails').replace('{mode}',t(blockState.envelopeMode==='xyz'?'res.envelope.xyz':'res.envelope.xy')).replace('{radius}',q(blockState.envelopeRadius,1));
+ return [
+  {key:'element',label:t('res.summary.row.element'),value:setupState.element?plotLabel(elementLabelFor(setupState.element)):t('res.summary.notChosen'),stage:3},
+  {key:'population',label:t('res.summary.row.population'),value:usable==null?t('res.summary.populationChooseElement'):t('res.summary.populationValue').replace('{n}',usable.toLocaleString()).replace('{total}',DATA.rows.length.toLocaleString()).replace('{domain}',setupState.domain==='all'||!setupState.domain?t('res.summary.allDomains'):String(setupState.domain)),stage:3},
+  {key:'treatment',label:t('res.summary.row.treatment'),value:treatmentText,stage:null},
+  {key:'domain',label:t('res.summary.row.domain'),value:setupState.domain==='all'||!setupState.domain?t('res.summary.allDomains'):String(setupState.domain),stage:3},
+  {key:'composite',label:t('res.summary.row.composite'),value:resourceCompositeLengthText(),stage:null},
+  {key:'method',label:t('res.summary.row.method'),value:t('res.summary.methodValue'),stage:6},
+  {key:'model',label:t('res.summary.row.model'),value:model?t('res.summary.modelValue').replace('{type}',model.type).replace('{nugget}',q(model.nugget)).replace('{sill}',q(model.sill)).replace('{range}',q(model.range,1)):t('res.summary.modelPending'),stage:4},
+  {key:'block',label:t('res.summary.row.block'),value:size?size.map(v=>q(v,2)).join(' × ')+' m'+(blockState.blocks?.length?'':` · ${t('res.summary.notGenerated')}`):t('res.summary.blockPending'),stage:5},
+  {key:'density',label:t('res.summary.row.density'),value:densityText.replace('{value}',q(blockState.density,3)),stage:5},
+  {key:'support',label:t('res.summary.row.support'),value:t(appliedSolid?'res.summary.supportSolid':'res.summary.supportEnvelope')+' · '+supportValue,stage:5},
+  {key:'search',label:t('res.summary.row.search'),value:t('res.summary.searchValue').replace('{maj}',q(searchState.rMaj,1)).replace('{semi}',q(searchState.rSemi,1)).replace('{min}',q(searchState.rMin,1)).replace('{lo}',searchState.minNeighbors).replace('{hi}',searchState.maxNeighbors),stage:6},
+  {key:'cutoff',label:t('res.summary.row.cutoff'),value:setupState.reportCutoff==null?t('res.summary.cutoffNone'):q(setupState.reportCutoff)+' '+OrebitScreeningReport.unitLabel(gradeUnitFor(setupState.element)),stage:10},
+ ];
+}
+function renderResultSummary() {
+ const host=document.getElementById('resultSummary');
+ if(!host)return;
+ // Quick shows only the review/result for the user's own data; the built-in sample keeps the full dashboard.
+ document.body.classList.toggle('resource-own-data',!!DATA?.rows?.length&&!(typeof window.__isSampleData==='function'&&window.__isSampleData()));
+ const priorPlot=host.querySelector('#resultSummaryGtPlot');if(priorPlot&&window.Plotly)Plotly.purge(priorPlot);
+ const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n;};
+ const action=(label,run,role)=>{const b=el('button',label,'btn secondary');b.type='button';b.dataset.actionRole=role;b.addEventListener('click',run);return b;};
+ const stageName=n=>document.querySelectorAll('nav.tabs .tab')[n-1]?.textContent.trim()||_gateTabLabel(n);
+ host.replaceChildren();
+ if(typeof DATA==='undefined'||!DATA?.rows?.length){host.hidden=true;return;}
+ host.hidden=false;
+ const head=resourceEstimateHeadline(),ready=!!head&&!head.stale,stale=!!head?.stale||(!head&&resourceHasStaleAcceptedResult()),
+  attempt=window.__resourceEstimateAttempt,
+  currentAttempt=attempt&&attempt.dataIdentity===resourceDataIdentity()&&attempt.signature===resourceCalculationSignature()?attempt:null,
+  failed=!ready&&currentAttempt?.status==='failed',cancelled=!ready&&currentAttempt?.status==='cancelled',
+  empty=ready&&head.estimatedBlocks===0,partial=ready&&!empty&&head.estimatedBlocks<head.blocks,
+  q=(v,d=3)=>OrebitScreeningReport.quantity(v,d)??'—';
+ host.classList.toggle('is-pending',!ready&&!failed&&!cancelled&&!stale);host.dataset.state=ready?(empty?'empty':partial?'partial':'ready'):failed?'failed':cancelled?'cancelled':stale?'stale':'pending';
+ host.append(el('h3',t(empty?'res.summary.titleEmpty':partial?'res.summary.titlePartial':ready?'res.summary.titleReady':failed?'res.summary.titleFailed':cancelled?'res.summary.titleCancelled':stale?'res.summary.titleStale':'res.summary.titlePending')));
+ if(ready){
+  const supportBasis=el('p',t(head.solid?'res.summary.supportSolid':'res.summary.supportEnvelope'),'result-summary-note');
+  supportBasis.id='resultSummarySupportBasis';host.append(supportBasis);
+  const screeningNotice=el('p',t('res.summary.notice'),'result-summary-notice');
+  screeningNotice.id='resultSummaryScreeningNotice';host.append(screeningNotice);
+  if(!empty)host.append(el('p',t('res.summary.headline').replace('{quantity}',q(head.quantity)).replace('{qunit}',head.quantityUnit).replace('{grade}',q(head.grade))
+   .replace('{unit}',OrebitScreeningReport.unitLabel(head.unit)).replace('{element}',head.elementLabel).replace('{metal}',q(head.metalTonnes,0)),'result-summary-headline'));
+  if(!empty){const plain=el('p',t('res.summary.plain').replace('{quantity}',q(head.quantity)).replace('{qunit}',head.quantityUnit).replace('{grade}',q(head.grade))
+   .replace('{unit}',OrebitScreeningReport.unitLabel(head.unit)).replace('{element}',head.elementLabel).replace('{metal}',q(head.metalTonnes,0)),'result-summary-note');plain.id='resultSummaryPlain';host.append(plain);}
+  const metrics=el('dl',null,'result-summary-metrics'),metric=(label,value,basis)=>{const g=el('div');g.append(el('dt',label),el('dd',value));if(basis)g.append(el('small',basis));metrics.append(g);};
+  metric(t('res.summary.estimated'),head.estimatedBlocks.toLocaleString(),t('res.summary.metricOfBlocks').replace('{n}',head.blocks.toLocaleString()));
+  metric(t('res.summary.coverage'),q(head.estimatedBlocks/head.blocks*100,1)+'%',t('res.summary.coverageBasis'));
+  metric(t('res.summary.notEstimated'),(head.blocks-head.estimatedBlocks).toLocaleString(),t('res.summary.metricOfBlocks').replace('{n}',head.blocks.toLocaleString()));
+  const cv=crossvalState.metrics?.ok;
+  metric(t('res.summary.crossval'),cv?t('res.summary.crossvalValue').replace('{slope}',q(cv.slope,2)).replace('{bias}',q(cv.meanAct?cv.bias/cv.meanAct*100:null,1)):t('res.summary.crossvalPending'),cv?t('res.summary.crossvalBasis').replace('{n}',cv.n.toLocaleString()):null);
+  host.append(metrics);
+  if(partial||empty){
+   const status=el('p',t(empty?'res.summary.emptyNotice':'res.summary.partialNotice').replace('{estimated}',head.estimatedBlocks.toLocaleString()).replace('{blocks}',head.blocks.toLocaleString()),'result-summary-notice');
+   status.id='resultSummaryCoverageStatus';status.setAttribute('role','status');host.append(status);
+  }
+ }else{
+  const stateNote=el('p',failed?currentAttempt.message:cancelled?t('res.summary.cancelled'):t(stale?'flow.resultStale':'res.summary.pendingLead'),'result-summary-note');
+  if(failed)stateNote.setAttribute('role','alert');else if(cancelled)stateNote.setAttribute('role','status');
+  host.append(stateNote);
+ }
+ const analysis=ready?el('div',null,'result-summary-analysis'):host;
+ const settings=ready?el('section',null,'result-summary-settings'):analysis;
+ const wrap=el('div',null,'result-summary-table-wrap'),table=el('table'),body=el('tbody'),headRow=el('tr');
+ for(const text of [t('res.summary.colSetting'),t('res.summary.colValue'),t('res.summary.colWhere')])headRow.append(el('th',text));
+ const thead=el('thead');thead.append(headRow);table.append(thead,body);
+ for(const row of resourceSummarySettings()){
+  const tr=el('tr'),where=el('td');
+  if(row.stage==null)where.append(el('span',t('res.summary.inAssay'),'result-summary-note'));
+  else{const open=action(stageName(row.stage),()=>inspectResourceSummaryStage(row.stage),'inspect');open.classList.add('small');open.dataset.summaryStage=String(row.stage);where.append(open);}
+  tr.dataset.setting=row.key;tr.append(el('td',row.label),el('td',row.value),where);body.append(tr);
+ }
+ wrap.append(table);settings.append(el('h3',t(ready?'res.summary.settingsUsed':'res.summary.settingsNext')),wrap);
+ if(ready){analysis.append(settings);renderResourceSummaryCurve(analysis,resourceSummaryCurveSnapshot());host.append(analysis);}
+ const actions=el('div',null,'result-summary-actions');
+ if(ready){
+  if(partial||empty){
+   const status=document.getElementById('resultSummaryCoverageStatus');
+   const review=action(t('res.summary.reviewSettings'),()=>inspectResourceSummaryStage(6),'inspect');review.dataset.summaryReviewSettings='';
+   const recalculate=action(t('res.summary.recalculate'),()=>startComputePipeline({mode:'quick'}),'apply');recalculate.dataset.summaryRecalculate='';
+   if(status)recalculate.setAttribute('aria-describedby',status.id);
+   actions.append(review,recalculate);
+  }
+  const gradeTonnage=action(stageName(10),()=>showTab(10),'inspect'),handoffReport=action(stageName(12),()=>showTab(12),'inspect');gradeTonnage.dataset.summaryDetail='';handoffReport.dataset.summaryDetail='';
+  actions.append(action(t('res.summary.exportPdf'),()=>exportPDF(),'export'),gradeTonnage,handoffReport);
+  const save=action(t('res.summary.saveProject'),()=>exportBundle(),'save');save.dataset.summarySave='';actions.insertBefore(save,actions.children[1]);
+  const refine=action(t('journey.refine'),()=>{try{localStorage.setItem('orebit.journeyMode.v1','detailed')}catch(e){}window.OrebitJourney?.setMode('detailed');showTab(7);},'inspect');refine.id='journeyRefine';actions.append(refine);
+ }else{
+  if(failed&&Number.isInteger(currentAttempt.stage)){
+   const review=action(t('res.summary.reviewFailedStep'),()=>inspectResourceSummaryStage(currentAttempt.stage),'inspect');review.dataset.summaryReviewFailure='';actions.append(review);
+  }
+  const run=action(t(stale||failed?'res.summary.recalculate':'res.summary.estimate'),()=>startComputePipeline({mode:'quick'}),'apply');
+  const elements=detectActiveElements(),needsElementChoice=elements.length!==1||!setupState.element;
+  const elementConfirmed=elements.length>1&&resourceQuickElementConfirmation?.data===DATA&&resourceQuickElementConfirmation.element===setupState.element;
+  run.disabled=!setupState.element||(needsElementChoice&&!elementConfirmed);
+  run.id='resultSummaryEstimate';actions.append(run,el('span',t('res.summary.estimateNote'),'result-summary-note'));
+  if(needsElementChoice&&!elementConfirmed){
+   const note=el('p',t('res.summary.requiresElement'),'result-summary-note');note.id='resultSummaryElementNote';
+   const choose=action(t('res.summary.chooseElementAction'),()=>showTab(3),'custom');choose.dataset.summaryChooseElement='';choose.setAttribute('aria-describedby',note.id);
+   actions.append(note,choose);
+   if(elements.length>1&&setupState.element){
+    const confirm=action(t('res.summary.confirmElement').replace('{element}',plotLabel(elementLabelFor(setupState.element))),()=>{
+     resourceQuickElementConfirmation={data:DATA,element:setupState.element};
+     safeRender('result summary',renderResultSummary);
+    },'custom');confirm.dataset.summaryConfirmElement='';actions.append(confirm);
+   }
+  }
+ }
+ if(ready)host.insertBefore(actions,analysis);
+ else host.insertBefore(actions,host.children[2]||null);
+}
+
 // ============= FIRST-RUN DASHBOARD (Overview tab) =============
 function renderResourceDashboard() {
   if (typeof DATA === 'undefined' || !DATA || !DATA.rows || !DATA.cols) return;
+  safeRender('result summary', renderResultSummary);
   var ID = (document.documentElement.lang === 'id');
   var rows = DATA.rows;
 
@@ -8030,9 +8395,59 @@ function resourceDensityAudit(indices) {
  const assigned=indices.reduce((n,i)=>n+(mask[i]===1?1:0),0);
  return {source:blockState.densitySource,assigned,fallback:indices.length-assigned,unknown:0};
 }
-function resourceSupportDescription() {
+function resourceSolidSupportApplied() {
  const handoff=typeof OrebitHandoff==='object'?OrebitHandoff:null,support=window.__resourceBlockSupport;
- const applied=!!(support&&support.blocks===blockState.blocks&&support.received===handoff?.domain());
+ return !!(support&&support.blocks===blockState.blocks&&support.received===handoff?.domain());
+}
+// UX-QUICK-1: what the stage insight says once an estimate exists. Read-only: it
+// uses the report's own owners for the estimated population (no cutoff, all
+// classes) and records no selection, revision or report snapshot.
+function resourceEstimateHeadline() {
+ if(!estimState.done||!estimState.results?.ok||!blockState.blocks?.length)return null;
+ if(window.__resourceResultSnapshot&&!resourceAcceptedSnapshot())return {stale:true};
+ const grades=estimState.results.ok,estimated=[];
+ for(let i=0;i<grades.length;i++)if(Number.isFinite(grades[i]))estimated.push(i);
+ const summary=resourceBlockSummary(estimated),volumetric=isVolumetricGrade(setupState.element);
+ return {stale:false,quantity:volumetric?summary.volMm3:summary.mt,quantityUnit:resourceQuantityUnit(),
+  grade:summary.meanGrade,unit:gradeUnitFor(setupState.element),element:setupState.element,
+  elementLabel:plotLabel(elementLabelFor(setupState.element)).replace(/\s*\([^)]*\)\s*$/,''),
+  metalTonnes:summary.meanGrade==null?null:containedMetalTonnes(summary.mt,summary.meanGrade,setupState.element,summary.volMm3),
+  estimatedBlocks:estimated.length,blocks:blockState.blocks.length,solid:resourceSolidSupportApplied(),
+  densitySource:resourceDensityAudit(estimated).source};
+}
+function resourceSummaryCurveSnapshot() {
+ const curve=window._gtCurveSnapshot,accepted=resourceAcceptedSnapshot();
+ if(!curve||!Array.isArray(curve.cutoffs)||!Array.isArray(curve.tons)||!Array.isArray(curve.meanG)||!curve.cutoffs.length)return null;
+ if(accepted&&curve.resultRevision!==accepted.revision)return null;
+ if(accepted&&curve.calculationSignature!==accepted.calculationSignature)return null;
+ return curve;
+}
+function renderResourceSummaryCurve(host,curve) {
+ const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n;};
+ const section=el('section',null,'result-summary-curve');section.setAttribute('aria-labelledby','resultSummaryCurveTitle');
+ const title=el('h3',t('res.summary.curveTitle'));title.id='resultSummaryCurveTitle';
+ section.append(title,el('p',curve?t('res.summary.curveBasis').replace('{population}',t(curve.useClass?'res.summary.curveClass':'res.summary.curveAll')):t('res.summary.curvePending')));
+ if(!curve){section.append(el('p',t('res.summary.curveOpenStage'),'result-summary-note'));host.append(section);return;}
+ const plot=el('div',null,'plot-container');plot.id='resultSummaryGtPlot';plot.setAttribute('role','img');
+ plot.setAttribute('aria-label',t('res.summary.curveTitle')+' · '+plotLabel(elementLabelFor(setupState.element)));
+ section.append(plot);host.append(section);
+ const traces=[
+  {x:curve.cutoffs,y:curve.tons,mode:'lines',name:resourceQuantityLabel(),line:{color:'var(--plot-c1)',width:3},fill:'tozeroy',fillcolor:'rgba(15,118,110,0.12)',yaxis:'y'},
+  {x:curve.cutoffs,y:curve.meanG,mode:'lines',name:`${t('res.summary.curveMean')} ${plotLabel(elementLabelFor(setupState.element))}`,line:{color:'var(--plot-c3)',width:3,dash:'dash'},yaxis:'y2'}
+ ];
+ const theme=plotTheme(),layout={...theme,height:300,margin:{l:52,r:52,t:18,b:44},hovermode:'x unified',showlegend:true,
+  legend:{orientation:'h',y:1.12,x:0},xaxis:{...theme.xaxis,title:`${t('res.summary.curveCutoff')} (${elementLabelFor(setupState.element)})`},
+  yaxis:{...theme.yaxis,title:resourceQuantityLabel(),side:'left',rangemode:'tozero'},
+  yaxis2:{...theme.yaxis,title:{text:plotLabel(elementLabelFor(setupState.element)),standoff:8},automargin:true,side:'right',overlaying:'y',showgrid:false}};
+ try{Plotly.newPlot(plot,traces,layout,{responsive:true,displayModeBar:false}).then(()=>requestAnimationFrame(()=>{
+  if(!plot.isConnected||resourceSummaryCurveSnapshot()!==curve)return;
+  Plotly.Plots.resize(plot);
+  plot.querySelector('[data-export-png]')?.remove();
+ })).catch(e=>console.warn('[result summary curve]',e));}
+ catch(e){console.warn('[result summary curve]',e);}
+}
+function resourceSupportDescription() {
+ const applied=resourceSolidSupportApplied();
  return t(blockState.envelopeMode==='xyz'?'res.mass.xyz':'res.mass.xy').replace('{radius}',String(blockState.envelopeRadius))+' '+t(applied?'res.mass.domainApplied':'res.mass.domain');
 }
 function resourceQuantityUnit() {return isVolumetricGrade(setupState.element)?'Mm³':'Mt';}
@@ -11268,12 +11683,15 @@ window.addEventListener('DOMContentLoaded', () => {
  // user happens to be.
  function _computeOverlay(show, patch) {
    let el = document.getElementById('computeOverlay');
+   document.body.classList.toggle('compute-running', !!show);
+   document.body.classList.toggle('quick-compute', !!show && !!window.__quickComputeMode);
    if (!show) { if (el) el.remove(); return; }
    if (!el) {
      el = document.createElement('div');
      el.id = 'computeOverlay';
      el.setAttribute('role', 'status');
      el.setAttribute('aria-live', 'polite');
+     el.dataset.title = t('res.quick.estimatingTitle');
      el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:18px;'
        + 'z-index:99990;min-width:320px;max-width:min(560px,92vw);'
        + 'background:var(--bg,#fff);color:var(--fg,#111);border:1px solid var(--border,#cbd5e1);'
@@ -11320,7 +11738,8 @@ window.addEventListener('DOMContentLoaded', () => {
    _computeOverlay(true, {step: t('res.processChunk.cancelled').replace('{k}', '—').replace('{n}', '—')});
    if (reason !== 'source-changed' && typeof toast === 'function') toast(t('res.cancelComputePipeline.pipelineCancelledPlotsComputedSo'), 'warn');
  }
- function finishCancelledPipeline() {
+ function finishCancelledPipeline(attempt=null) {
+   if(attempt)window.__resourceEstimateAttempt=attempt;
    _pipelineRunning = false;
    window.OrebitResourceFlow?.end();
    const btn = document.getElementById('btnComputeAll');
@@ -11328,23 +11747,29 @@ window.addEventListener('DOMContentLoaded', () => {
    const prog = document.getElementById('computeProgress');
    if (prog) prog.style.display = 'none';
    _computeOverlay(false);
+   if(typeof showTab==='function')showTab(1);
  }
  // Expose to global scope for onclick handlers
  window.cancelComputePipeline = cancelComputePipeline;
 
- async function startComputePipeline() {
+ async function startComputePipeline({mode='all'}={}) {
    if (_pipelineRunning) return;
+   const quick=mode==='quick',runMode=quick?'quick':'all';
    // One gate list with guided Continue (UX-RES-5). Setup renders the element
    // choice in step 1 below, so only the element gate waits for that render.
    const Flow = window.OrebitResourceFlow;
-   const startGate = Flow.blocker(4, 'all');
+   const startGate = Flow.blocker(4, runMode);
    if (startGate && startGate.id !== 'element') { toast(Flow.reason(startGate), 'bad'); return; }
    _pipelineRunning = true;
-   Flow.begin('all');
+   Flow.begin(runMode);
+   window.__resourceEstimateAttempt=null;
    _pipelineCancelled = false;
    const pipelineDataset = DATA;
    const pipelineCurrent = () => DATA === pipelineDataset;
    const pipelineAborted = () => _pipelineCancelled || !pipelineCurrent();
+   const finishAbortedPipeline = () => finishCancelledPipeline(_pipelineCancelled&&pipelineCurrent()
+     ? {status:'cancelled',dataIdentity:resourceDataIdentity(pipelineDataset),signature:resourceCalculationSignature()}
+     : null);
 
    const btn = document.getElementById('btnComputeAll');
    const prog = document.getElementById('computeProgress');
@@ -11361,6 +11786,7 @@ window.addEventListener('DOMContentLoaded', () => {
    // user watches tabs switch with no visible progress anywhere, which reads as
    // "nothing is happening". Mirror every update into a fixed overlay that
    // survives tab changes.
+   window.__quickComputeMode = quick;
    _computeOverlay(true);
    const setStep = (step, pct) => {
      if (stepEl) stepEl.textContent = step;
@@ -11376,12 +11802,13 @@ window.addEventListener('DOMContentLoaded', () => {
    const t0 = performance.now();
 
    // Step 1: Setup
-   try { setStep(t('res.cancelComputePipeline.step110Setup'), 5); showTab(3); await new Promise(r => setTimeout(r, 200)); } catch(e) { console.warn('[pipeline] Setup:', e.message); }
-   if (pipelineAborted()) { finishCancelledPipeline(); return; }
+   try { setStep(t(quick?'res.quick.stepSetup':'res.cancelComputePipeline.step110Setup'), 5); showTab(3); await new Promise(r => setTimeout(r, 200)); } catch(e) { console.warn('[pipeline] Setup:', e.message); }
+   if (pipelineAborted()) { finishAbortedPipeline(); return; }
 
    // Steps 2-5: the calculation stages run through the shared orchestrator,
    // the same owner calls, gates and result checks as guided continuation.
    const stopPipeline = (message, pct) => {
+     window.__resourceEstimateAttempt={status:'failed',dataIdentity:resourceDataIdentity(pipelineDataset),signature:resourceCalculationSignature(),message,stage:currentTab};
      Flow.end();
      if (stepEl) stepEl.textContent = message;
      if (btn) { btn.innerHTML = t('res.cancelComputePipeline.retryComputeAllPlots'); btn.disabled = false; btn.style.opacity = ''; }
@@ -11389,6 +11816,7 @@ window.addEventListener('DOMContentLoaded', () => {
      toast(message, 'bad');
      _computeOverlay(false);
      _pipelineRunning = false;
+     if(typeof showTab==='function')showTab(1);
    };
    const calcSteps = [
      [4, 'res.cancelComputePipeline.step210Variography', 15, 'res.cancelComputePipeline.est40sRemaining', 200],
@@ -11397,16 +11825,17 @@ window.addEventListener('DOMContentLoaded', () => {
      [7, 'res.cancelComputePipeline.step510CrossValidation', 55, 'res.cancelComputePipeline.est15sRemaining', 400],
    ];
    for (const [stage, stepKey, pct, etaKey, settleMs] of calcSteps) {
-     setStep(t(stepKey), pct); setEta(t(etaKey));
+     const quickKey={4:'res.quick.stepModel',5:'res.quick.stepGrid',6:'res.quick.stepEstimate',7:'res.quick.stepValidation'}[stage];
+     setStep(t(quick?quickKey:stepKey), pct); setEta(quick?'':t(etaKey));
      showTab(stage); await new Promise(r => setTimeout(r, settleMs));
      let outcome;
      const waitStart = performance.now();
      try {
-       outcome = await Flow.run(stage, {mode: 'all', aborted: pipelineAborted, onWait: stage === 6 ? () => {
+       outcome = await Flow.run(stage, {mode: runMode, aborted: pipelineAborted, onWait: !quick&&stage === 6 ? () => {
          setEta(t('res.cancelComputePipeline.estRemainingMs').replace('{ms}', Math.max(0, Math.round(25000 - (performance.now() - waitStart) * 25))));
        } : null});
      } catch (e) { console.warn('[pipeline] stage ' + stage + ':', e.message); outcome = {ok: false, gate: {id: 'result', remedy: stage}}; }
-     if (pipelineAborted()) { finishCancelledPipeline(); return; }
+     if (pipelineAborted()) { finishAbortedPipeline(); return; }
      if (stage === 7 && typeof renderCVResults === 'function') { renderCVResults(); await new Promise(r => setTimeout(r, 300)); }
      if (outcome.ok) continue;
      // Honest feedback: stop at the first stage without a new result instead of
@@ -11426,13 +11855,26 @@ window.addEventListener('DOMContentLoaded', () => {
      return;
    }
 
+   if(quick){
+     // Grade–Tonnage is part of the result snapshot. Optional diagnostics,
+     // classification, viewer and report owners remain available on demand.
+     setStep(t('res.quick.stepResult'),90);setEta('');
+     showTab(10);
+     if(pipelineAborted()){finishAbortedPipeline();return;}
+     showTab(1);
+     if(btn){btn.textContent=t('res.cancelComputePipeline.computeAllPlots');btn.disabled=false;btn.style.opacity='1';}
+     if(prog)prog.style.display='none';
+     _computeOverlay(false);Flow.end();_pipelineRunning=false;
+     return;
+   }
+
    // Step 6: Swath
    try {
      setStep(t('res.cancelComputePipeline.step610SwathPlots'), 65); setEta(t('res.cancelComputePipeline.est10sRemaining'));
      showTab(8); await new Promise(r => setTimeout(r, 400));
      if (typeof renderSwath === 'function') { renderSwath(); await new Promise(r => setTimeout(r, 500)); }
    } catch(e) { console.warn('[pipeline] Swath:', e.message); }
-   if (pipelineAborted()) { finishCancelledPipeline(); return; }
+   if (pipelineAborted()) { finishAbortedPipeline(); return; }
 
    // Step 7: Classification
    try {
@@ -11446,7 +11888,7 @@ window.addEventListener('DOMContentLoaded', () => {
        await new Promise(r => setTimeout(r, 300)); clsWait += 300;
      }
    } catch(e) { console.warn('[pipeline] Classification:', e.message); }
-   if (pipelineAborted()) { finishCancelledPipeline(); return; }
+   if (pipelineAborted()) { finishAbortedPipeline(); return; }
 
    // Step 8: Grade-Tonnage
    try {
@@ -11454,7 +11896,7 @@ window.addEventListener('DOMContentLoaded', () => {
      showTab(10); await new Promise(r => setTimeout(r, 400));
      if (typeof renderGT === 'function') { renderGT(); await new Promise(r => setTimeout(r, 800)); }
    } catch(e) { console.warn('[pipeline] GT:', e.message); }
-   if (pipelineAborted()) { finishCancelledPipeline(); return; }
+   if (pipelineAborted()) { finishAbortedPipeline(); return; }
 
    // Step 9: 3D View
    try {
@@ -11463,7 +11905,7 @@ window.addEventListener('DOMContentLoaded', () => {
      if (typeof render3D === 'function') { render3D(); await new Promise(r => setTimeout(r, 1000)); }
      if (typeof render3DPlot === 'function') { render3DPlot(); await new Promise(r => setTimeout(r, 500)); }
    } catch(e) { console.warn('[pipeline] 3D:', e.message); }
-   if (pipelineAborted()) { finishCancelledPipeline(); return; }
+   if (pipelineAborted()) { finishAbortedPipeline(); return; }
 
    // Step 10: KCMI Report
    try {
@@ -11478,7 +11920,8 @@ window.addEventListener('DOMContentLoaded', () => {
    setStep((t('res.cancelComputePipeline.complete')) + elapsed + 's', 100);
    setEta(t('res.cancelComputePipeline.allPlotsReadyBrowseAny'));
    if (btn) { btn.innerHTML = t('res.cancelComputePipeline.reRunAllPlots'); btn.disabled = false; btn.style.opacity = '1'; }
-   setTimeout(() => { if (prog) prog.style.display = 'none'; _computeOverlay(false); }, 3000);
+   if (prog) prog.style.display = 'none';
+   _computeOverlay(false);
    console.log('[pipeline] Complete in', elapsed, 's');
    Flow.end();
    _pipelineRunning = false;

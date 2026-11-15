@@ -46,6 +46,8 @@ try:
     with tempfile.TemporaryDirectory() as tmp, sync_playwright() as pw:
         browser = pw.chromium.launch()
         page = browser.new_page(accept_downloads=True)
+        # This suite walks the Detailed review journey (Start review / Resume); Quick leads with Import.
+        page.add_init_script("try{localStorage.setItem('orebit.journeyMode.v1','detailed')}catch(e){}")
         page.goto(f"http://127.0.0.1:{server.server_port}/Core.html")
         page.wait_for_function("() => window.__i18nBooted===true")
         page.evaluate(

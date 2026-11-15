@@ -32,6 +32,15 @@ try:
             check(hero.bounding_box()['height']<300, name+' dashboard leaves space for actual results')
             rail=page.locator('nav.tabs')
             check(abs(rail.bounding_box()['width']-240)<2, name+' workflow rail matches the owner mock shared 240px width')
+            mode=page.locator('#journeyMode')
+            quick_rail=page.locator('#journeyBar [data-journey-stage]')
+            check(mode.locator('[aria-pressed=true]').inner_text()=='Quick' and quick_rail.count()==4,
+                  name+' defaults to the four-step Quick journey')
+            check(rail.locator('.workflow-nav-heading').is_hidden() and rail.locator('.tab:visible').count()==0 and
+                  rail.locator('.workflow-nav-disclosure').is_visible(),
+                  name+' Quick sidebar keeps Detailed stages collapsed while Advanced stays reachable')
+            mode.locator('[data-journey-mode="detailed"]').click()
+            check(mode.locator('[aria-pressed=true]').inner_text()=='Detailed', name+' can open Detailed navigation explicitly')
             check(rail.locator('.workflow-nav-heading:visible').count()==1, name+' groups the main workflow below Dashboard')
             sequence=rail.locator('.tab[data-workflow-step]').evaluate_all('(els)=>els.map(e=>Number(e.dataset.workflowStep)).sort((a,b)=>a-b)')
             check(sequence==list(range(1,len(sequence)+1)), name+' sidebar numbers describe every main stage in order')

@@ -45,7 +45,7 @@
     entry('Validation repair', 'Restored collar and geology from the bundled synthetic source; no assay or survey measurements changed.',diffs,true);
     undo = {before:prior, after:snapshot()};
     UNDO.push({type:'validation-repair'});
-    refresh(); toast(tr('applied'), 'good'); return true;
+    refresh(); toast(tr('applied'), 'good'); maybeReturnToQuick(); return true;
   }
   function undoSource() {
     if (!undo || undo.after !== snapshot()) { undo = null; toast(tr('changed'), 'warn'); return false; }
@@ -160,11 +160,29 @@
     card?.scrollIntoView({block:'start'});
     if(selected)focusCell(table,selected.idx,context.columns[0]);
   }
+  // Quick return intent: entering Validation/repair from the Quick Check arms it; once the user has repaired
+  // or revalidated, Quick takes them back to Check, which says "ready" or lists the next blocker.
+  let quickReturnArmed = false;
+  const armQuickReturn = () => { quickReturnArmed = document.body.classList.contains('journey-quick'); };
+  const disarmQuickReturn = () => { quickReturnArmed = false; };
+  function maybeReturnToQuick() {
+    if (!quickReturnArmed || !document.body.classList.contains('journey-quick')) { quickReturnArmed = false; return false; }
+    quickReturnArmed = false;
+    const own = document.body.classList.contains('core-own-data');
+    context = null;
+    showTab(own ? 2 : 1);
+    document.getElementById(own ? 'coreCheckSummaryImport' : 'coreCheckSummary')?.scrollIntoView({block:'start'});
+    const facts = typeof coreCheckFacts === 'function' ? coreCheckFacts() : null;
+    toast(facts && facts.ready ? tr('quickReady') : tr('quickBlocked').replace('{n}', String(facts ? facts.fail : '?')), facts && facts.ready ? 'good' : 'warn');
+    return true;
+  }
   function returnToResults(){
     const c=currentContext();
     if(c?.groupId)groupReturn={id:c.groupId,query:c.groupQuery,page:c.groupPage,openerHole:c.hole_id,open:true,source:c.source};
     else groupReturn=null;
-    context=null;showTab(7);document.getElementById('coreValidationResults')?.scrollIntoView({block:'start'});
+    context=null;showTab(7);
+    if(maybeReturnToQuick())return;
+    document.getElementById('coreValidationResults')?.scrollIntoView({block:'start'});
     if(groupReturn)requestAnimationFrame(()=>Array.from(document.querySelectorAll('[data-repair-hole]')).find(node=>node.dataset.repairHole===groupReturn.openerHole)?.focus());
   }
   function openMapping(table,columns){
@@ -293,7 +311,7 @@
       if(undo&&undo.after===snapshot())host.append(button(tr('undo'),()=>undoLast()));
     }
   }
-  window.OrebitCoreRepair={render,applySource,undoSource,candidate,findings,summary,locate,renderContext,cellFocused,rowVisible,activeTable:()=>currentContext()?.table||null,pendingFinding:table=>{const c=currentContext();return !!c&&c.table===table&&!c.applied;},columnsFor:table=>currentContext()?.table===table?context.columns:[],applied:table=>{if(context?.table===table){context.applied=true;context.groupRevision=sourceRevision();}},returnToResults,reset:()=>{undo=null;context=null;groupReturn=null;}};
+  window.OrebitCoreRepair={armQuickReturn,disarmQuickReturn,maybeReturnToQuick,render,applySource,undoSource,candidate,findings,summary,describe:issue=>({title:issueTitle(issue),reason:reason(issue)}),locate,renderContext,cellFocused,rowVisible,activeTable:()=>currentContext()?.table||null,pendingFinding:table=>{const c=currentContext();return !!c&&c.table===table&&!c.applied;},columnsFor:table=>currentContext()?.table===table?context.columns:[],applied:table=>{if(context?.table===table){context.applied=true;context.groupRevision=sourceRevision();}},returnToResults,reset:()=>{undo=null;context=null;groupReturn=null;}};
 })();
 
 /* An explicit, conservative screening scope. Raw tables are never rewritten.

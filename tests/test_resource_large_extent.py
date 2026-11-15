@@ -69,6 +69,14 @@ def ready(browser, base, module, viewport=None, language="en"):
             page.locator('.orebit-help-menu [data-action="tour"]').click()
     page.locator(".tour-skip").click()
     page.wait_for_function("()=>!window._tourActive&&!document.querySelector('.lang-picker-overlay')")
+    mode = page.locator('#journeyMode')
+    mode.locator('[data-journey-mode="detailed"]').click()
+    detailed_nav = mode.locator('[data-journey-mode="detailed"]').get_attribute('aria-pressed') == 'true' and \
+                   page.locator('#journeyBar [data-journey-stage]').count() == 7
+    if viewport['width'] >= 1080:
+        detailed_nav = detailed_nav and page.locator('nav.tabs .workflow-nav-heading').is_visible()
+    check(detailed_nav,
+          module + " opens Detailed navigation for its native stage journey")
     page.evaluate("""()=>{
       window.__largeExtentFailures=[];
       const owner=window.safeRender;

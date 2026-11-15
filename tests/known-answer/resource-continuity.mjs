@@ -97,9 +97,11 @@ assert.notEqual(removedGuard.results,undefined);checks++;
 const factoryStart=source.indexOf('function newResourceVariography()');
 const factoryEnd=source.indexOf('// Static seed list',factoryStart);
 assert.ok(factoryStart>0&&factoryEnd>factoryStart);
-const resetContext=vm.createContext({});
+let resetStaleMarks=0;
+const resetContext=vm.createContext({resourceMarkAcceptedResultStale(){resetStaleMarks++;}});
 vm.runInContext(source.slice(factoryStart,factoryEnd),resetContext);
 for (const preserve of [false,true]) {
+  const beforeReset=resetStaleMarks;
   vm.runInContext(`variogramState.experimental={lags:[1]};variogramState.model={nugget:99};
     variogramState.direction='EW';variogramState.variogramMap={z:[[99]]};
     variogramState.directionalScan={scanStep:10,tolHor:5,lagSize:30,maxDist:900,results:[{azimuth:90}],bestAzimuth:90};
@@ -113,6 +115,7 @@ for (const preserve of [false,true]) {
   assert.equal(reset.nestedModel.use2,false);checks++;
   assert.equal(reset.directionalScan.scanStep,preserve?10:22.5);checks++;
   assert.equal(reset.direction,preserve?'EW':'omni');checks++;
+  assert.equal(resetStaleMarks,beforeReset+1);checks++;
 }
 
 // The main E-W/N-S calculator must treat a sample pair as an undirected axis.

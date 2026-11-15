@@ -17,7 +17,7 @@
   const ORDER = STEPS.flatMap(s => s.panels);
   const stepOf = n => STEPS.find(s => s.panels.includes(n)) || null;
   const rows = () => (typeof DATA !== 'undefined' && DATA?.rows) || [];
-  let active = null; // 'guided' | 'all' while an orchestrated run owns the owners
+  let active = null; // 'guided' | 'quick' | 'all' while a run owns the owners
 
   const busy = () => !!(estimState._running || estimState._confirming || crossvalState._running);
   // The single gate list. `at`: the stage being continued from / calculated.
@@ -42,6 +42,7 @@
   // diagnostics it has always produced (down-hole nugget, auto-fit, map, scan).
   const OWNERS = {
     guided: {4: [call('computeVariogram')], 5: [call('generateBlocks')], 6: [call('runEstimation')], 7: [call('runCrossVal')]},
+    quick: {4: [call('computeVariogram')], 5: [call('generateBlocks')], 6: [call('runEstimation')], 7: [call('runCrossVal')]},
     all: {
       4: [call('computeDownholeVariogram'), call('computeVariogram'), call('autoFitVariogram'),
         async () => { if (typeof computeVariogramMap === 'function') { computeVariogramMap(); await pause(800); } },
@@ -63,6 +64,9 @@
   async function run(stage, {mode = 'guided', aborted, onWait} = {}) {
     const gate = blocker(stage, mode);
     if (gate) return {ok: false, gate};
+    // Quick uses the current applied model. Entry/element/domain owners retire
+    // incompatible models; a visit or an unapplied control draft does not.
+    if(mode==='quick'&&stage===4&&DONE[4]()&&!aborted?.())return {ok:true,reused:true};
     const source = rows(), before = RESULT[stage]();
     const outer = active; active = mode;
     try {

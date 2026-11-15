@@ -227,6 +227,13 @@ eq('planGradeRenames: renames notation headers', JSON.stringify(planGradeRenames
    JSON.stringify({ 'Au (g/t)': 'au_gpt', 'Cu (%)': 'cu_pct' }));
 eq('planGradeRenames: never overwrites an existing canonical column', JSON.stringify(planGradeRenames(['au_gpt', 'Au (g/t)'])), '{}');
 eq('planGradeRenames: two headers claiming one name -> neither renamed', JSON.stringify(planGradeRenames(['Cu %', 'Cu (%)'])), '{}');
+{
+  const names = ['constructor', '__proto__', 'Au (g/t)'];
+  const mapped = classifyColumns(names, [[101, 202, 3.5]]);
+  eq('literal prototype-like headers retain numeric roles', mapped.columns.map(c => c.role), ['other_numeric', 'other_numeric', 'grade']);
+  const plan = planGradeRenames(names);
+  eq('grade rename leaves literal prototype-like headers unchanged', names.map(c => plan[c] || c), ['constructor', '__proto__', 'au_gpt']);
+}
 
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

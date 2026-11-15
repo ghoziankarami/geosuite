@@ -5,12 +5,19 @@
     <p style="font-size:13px;" data-i18n="core.imp.sampleGuidance">The built-in example is a synthetic nickel laterite dataset. To work with your own drillholes, import the four matching tables and check the validation results before proceeding.</p>
   </div>
 
+  <section class="result-summary" id="coreCheckSummaryImport" aria-live="polite" hidden></section>
+
   <div class="card">
     <h3 data-i18n="core.uploadFiles">Upload Files</h3>
     <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
       <p style="margin:0 0 8px 0;"><svg class="lucide-icon" viewBox="0 0 24 24" style="width:48px;height:48px" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></p>
       <p><strong><span data-i18n="core.imp.dropzone">Click, or drag and drop 4 CSV files</span></strong></p>
       <p style="font-size:12px;color:var(--fg-mute);margin-top:6px;">Collar.csv · Survey.csv · Assay.csv · Geology.csv</p>
+    </div>
+    <div class="quick-add-actions">
+      <button type="button" class="btn primary" id="quickChooseFiles" onclick="document.getElementById('fileInput').click()" data-i18n="core.imp.chooseFiles">Choose files</button>
+      <button type="button" class="btn" id="quickOpenProject" onclick="document.getElementById('btnOpenProject').click()" data-i18n="core.imp.openProject">Open Project</button>
+      <span class="quick-add-note" data-i18n="core.imp.localOnly">Files stay on this computer. Nothing is uploaded.</span>
     </div>
     <input type="file" id="fileInput" accept=".csv" multiple style="display:none" onchange="handleUpload(event)" aria-label="Upload CSV files" data-i18n-attr="aria-label:a11y.uploadCsv">
     <div id="uploadStatus" style="margin-top:14px;" aria-live="polite"></div>

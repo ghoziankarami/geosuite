@@ -84,6 +84,9 @@ function ensurePlotly() {
 // trust. The Desktop EXEs use a short-lived file bridge through pywebview; the web
 // build keeps using same-origin IndexedDB.
 var OrebitHandoff = (function () {
+  // The old desktop (one EXE per module) hands data over through the wrapper's file bridge. The single-origin
+  // desktop (window.__OREBIT_RT__.single) keeps all three modules in one origin and uses the web's same-window path.
+  var LEGACY_DESKTOP = typeof window !== 'undefined' && !!window.__OREBIT_RT__ && !window.__OREBIT_RT__.single;
   var DB = 'orebit-handoff', STORE = 'handoff', MAX_AGE_MS = 30 * 60 * 1000, DOMAIN_MAX = 8 * 1024 * 1024, SOURCE_MAX = 32 * 1024 * 1024;
   // S8: an accepted geological-domain solid rides with the CSV. Core supplies it through
   // window.__orebitDomainHandoff; Assay forwards what it received. Receivers treat it as data to check.
@@ -119,6 +122,7 @@ var OrebitHandoff = (function () {
       boundDataset = dataset;
       acceptDomain(record.domain,record);
       if (record.source) receivedContexts = [record.source];
+      try { window.dispatchEvent(new CustomEvent('orebit-handoff-activated')); } catch (e) { /* ignore */ }
     } else if (projectDomain) {
       boundDataset = dataset;
       acceptDomain(JSON.stringify(projectDomain));
@@ -263,20 +267,27 @@ var OrebitHandoff = (function () {
   function send(target, exportFn, quiet) {
     // UX-REV-1: remember how this handoff was made so a downstream tab can ask for a refresh.
     if (typeof OrebitRevision !== 'undefined') OrebitRevision.register(target, function () { return send(target, exportFn, true); });
+    // A single-origin desktop window cannot open a second window for the next module: continue in this one.
+    if (window.__OREBIT_RT__ && window.__OREBIT_RT__.single && !quiet) return sendFile(target, capture(exportFn), null, false);
     return sendFile(target, capture(exportFn), quiet ? null : undefined, quiet);
   }
-  function sendCoreProject(project, openedWindow) {
-    if (!project || project.sourcePhase !== 'Core' || !openedWindow) return Promise.reject(Error('CORE_PROJECT_HANDOFF_INVALID'));
+  // UX-QUICK-1: the same handoff, continued in this window instead of a new tab.
+  function sendSameWindow(target, exportFn, panel) {
+    if (typeof OrebitRevision !== 'undefined') OrebitRevision.register(target, function () { return send(target, exportFn, true); });
+    return sendFile(target, capture(exportFn), null, false, panel);
+  }
+  function sendCoreProject(project, openedWindow, panel) {
+    if (!project || project.sourcePhase !== 'Core' || !openedWindow || (panel != null && ![2, 14].includes(panel))) return Promise.reject(Error('CORE_PROJECT_HANDOFF_INVALID'));
     return Promise.resolve().then(function () { return validateProjectCapsule(project); }).then(function () {
       var text=JSON.stringify(project);
       if(new TextEncoder().encode(text).length>SOURCE_MAX)throw Error('CORE_PROJECT_HANDOFF_TOO_LARGE');
       var bytes=new Uint8Array(24);window.crypto.getRandomValues(bytes);
       var token='core-'+Array.from(bytes,function(b){return b.toString(16).padStart(2,'0');}).join('');
       return put('CoreProject:'+token,{schema:'orebit-core-project-handoff',project:project,ts:Date.now()}).then(function(){
-        openedWindow.location.href='Core.html?coreHandoff='+encodeURIComponent(token);
+        openedWindow.location.href='Core.html?coreHandoff='+encodeURIComponent(token)+(panel?'&journeyStage='+encodeURIComponent(panel):'');
         return true;
       });
-    }).catch(function(error){try{openedWindow.close();}catch(e){/* closed popup */}throw error;});
+    }).catch(function(error){if(openedWindow!==window)try{openedWindow.close();}catch(e){/* closed popup */}throw error;});
   }
   function takeCoreProject() {
     var token=new URLSearchParams(location.search).get('coreHandoff');
@@ -288,12 +299,35 @@ var OrebitHandoff = (function () {
       return validateProjectCapsule(record.project).then(function(){return record.project;});
     });
   }
-  function sendFile(target,file,openedWindow,quiet) {
+  function sendProjectSameWindow(target, project, panel) {
+    if (LEGACY_DESKTOP || target !== 'Assay' || ![3, 7, 11].includes(panel) || !project || project.sourcePhase !== 'Assay') return Promise.resolve(false);
+    return validateProjectCapsule(project).then(function () {
+      var text = JSON.stringify(project);
+      if (new TextEncoder().encode(text).length > SOURCE_MAX) throw Error('PROJECT_STAGE_HANDOFF_TOO_LARGE');
+      var bytes = new Uint8Array(24); window.crypto.getRandomValues(bytes);
+      var token = 'stage-' + Array.from(bytes, function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+      return put('ProjectStage:' + token, { schema: 'orebit-project-stage-handoff', target: target, panel: panel, project: project, ts: Date.now() }).then(function () {
+        window.location.href = target + '.html?projectHandoff=' + encodeURIComponent(token);
+        return true;
+      });
+    });
+  }
+  function takeProjectSameWindow(target) {
+    var token = new URLSearchParams(location.search).get('projectHandoff');
+    if (!token) return Promise.resolve(null);
+    try { history.replaceState(null, '', location.pathname); } catch (e) { /* keep the token private from the address bar */ }
+    if (!/^stage-[a-f0-9]{48}$/.test(token)) return Promise.reject(Error('PROJECT_STAGE_HANDOFF_INVALID'));
+    return take('ProjectStage:' + token).then(function (record) {
+      if (!record || target !== 'Assay' || record.schema !== 'orebit-project-stage-handoff' || record.target !== target || ![3, 7, 11].includes(record.panel) || !record.project || record.project.sourcePhase !== 'Assay') throw Error('PROJECT_STAGE_HANDOFF_INVALID');
+      return validateProjectCapsule(record.project).then(function () { return { project: record.project, panel: record.panel }; });
+    });
+  }
+  function sendFile(target,file,openedWindow,quiet,panel) {
     if(!['Assay','Resource'].includes(target)||!file||typeof file.name!=='string'||typeof file.text!=='string'||!file.name||!file.text)return Promise.resolve(false);
     var job=domainJob,key=sourceStateKey();
     function current(){if(job!==domainJob||sourceStateKey()!==key||typeof file.isCurrent==='function'&&!file.isCurrent())throw Error('HANDOFF_SOURCE_CHANGED');}
 
-    if (window.__OREBIT_RT__) {
+    if (LEGACY_DESKTOP) {
       var api = window.pywebview && window.pywebview.api;
       if (!api || typeof api.send_handoff !== 'function') {
         downloadFile(file.name, file.text, 'text/csv');
@@ -320,7 +354,7 @@ var OrebitHandoff = (function () {
     }
     var w = openedWindow === undefined ? null : openedWindow;
     if(openedWindow === undefined && !quiet)try { w = window.open('', '_blank'); } catch (e) { w = null; }
-    var url = target + '.html?handoff=1';
+    var url = target + '.html?handoff=1' + (panel ? '&journeyStage=' + encodeURIComponent(panel) : '');
     return Promise.all([domainPayload(file), sourcePayload(file, target)]).then(function (payloads) {
       current();
       var rev = typeof OrebitRevision !== 'undefined' ? OrebitRevision.touch() : null;
@@ -353,7 +387,7 @@ var OrebitHandoff = (function () {
     return Promise.resolve().then(function () { return validateAssayCheckpointReturn(packet); }).then(function () {
       var text = JSON.stringify(packet);
       if (new TextEncoder().encode(text).length > DOMAIN_MAX) throw Error('ASSAY_CHECKPOINT_RETURN_TOO_LARGE');
-      if (window.__OREBIT_RT__) {
+      if (LEGACY_DESKTOP) {
         var api = window.pywebview && window.pywebview.api;
         if (!api || typeof api.send_assay_checkpoint_return !== 'function') throw Error('ASSAY_CHECKPOINT_RETURN_BRIDGE_UNAVAILABLE');
         return api.send_assay_checkpoint_return(text).then(function (result) {
@@ -380,7 +414,7 @@ var OrebitHandoff = (function () {
     });
   }
   function receiveDesktopAssayCheckpointReturn() {
-    if (!window.__OREBIT_RT__) return;
+    if (!LEGACY_DESKTOP) return;
     var tries=0,timer=setInterval(function(){
       var api=window.pywebview&&window.pywebview.api;
       if(api&&typeof api.take_assay_checkpoint_return==='function'){
@@ -418,7 +452,7 @@ var OrebitHandoff = (function () {
     window.addEventListener('load',receiveDesktopAssayCheckpointReturn,{once:true});
   }
   function transmitEDAReference(reference, text) {
-      if (window.__OREBIT_RT__) {
+      if (LEGACY_DESKTOP) {
         var api = window.pywebview && window.pywebview.api;
         if (!api || typeof api.send_eda_reference !== 'function') throw Error('EDA_REFERENCE_DESKTOP_BRIDGE_UNAVAILABLE');
         return api.send_eda_reference(text).then(function (result) {
@@ -454,7 +488,7 @@ var OrebitHandoff = (function () {
       });
   }
   function receiveDesktopAssayReference() {
-    if (!window.__OREBIT_RT__) return;
+    if (!LEGACY_DESKTOP) return;
     var tries = 0, timer = setInterval(function () {
       var api = window.pywebview && window.pywebview.api;
       if (api && typeof api.take_eda_reference === 'function') {
@@ -495,7 +529,7 @@ var OrebitHandoff = (function () {
   // Web consumes the IndexedDB record only when explicitly opened by handoff.
   // Desktop checks its own short-lived record once after pywebview is ready.
   function receive(target, force) {
-    if (window.__OREBIT_RT__) {
+    if (LEGACY_DESKTOP) {
       if (target !== 'Assay' && target !== 'Resource') return;
       var started = false, tries = 0;
       var timer = setInterval(function () {
@@ -522,7 +556,7 @@ var OrebitHandoff = (function () {
     else if (document.readyState === 'complete') setTimeout(go, 600);
     else window.addEventListener('load', function () { setTimeout(go, 600); });
   }
-  return { available: available, sourceStateKey: sourceStateKey, capture: capture, send: send, sendFile:sendFile, receive: receive,
+  return { available: available, sourceStateKey: sourceStateKey, capture: capture, send: send, sendSameWindow: sendSameWindow, sendProjectSameWindow: sendProjectSameWindow, takeProjectSameWindow: takeProjectSameWindow, sendFile:sendFile, receive: receive,
     bindTextImport:bindTextImport, bindFileImport:bindFileImport, inheritImport:inheritImport, activated:activated,
     domainReady:function(){return domainValidation;}, domain: currentDomain, contexts: function () { return receivedContexts.slice(); }, showDomain: showDomain,
     sendEDAReference: sendEDAReference, sendCoreProject:sendCoreProject, takeCoreProject:takeCoreProject, receiveDesktopAssayReference: receiveDesktopAssayReference,

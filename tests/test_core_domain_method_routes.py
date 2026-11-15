@@ -10,6 +10,7 @@ import tempfile
 import threading
 
 from playwright.sync_api import sync_playwright
+from journey_test_helpers import ensure_detailed_mode
 from domain_native_fixture import write_domain_fixture as fixtures
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / 'build/build.mjs').exists())
@@ -153,6 +154,7 @@ try:
                 if page.locator('.lang-picker-overlay').count():
                     page.locator(f'.lang-picker-overlay [data-pick="{lang}"]').click()
             page.wait_for_function('(lang)=>document.documentElement.lang===lang', arg=lang)
+            ensure_detailed_mode(page)
             if AXE:
                 page.add_script_tag(path=AXE)
             a11y = []

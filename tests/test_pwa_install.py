@@ -67,6 +67,9 @@ def serve(directory: Path):
     class Quiet(http.server.SimpleHTTPRequestHandler):
         def log_message(self, *args):
             pass
+        def send_response(self, code, message=None):
+            self._test_status_code = code
+            super().send_response(code, message)
         def end_headers(self):
             if urllib.parse.urlsplit(self.path).path.endswith('/service-worker.js'):
                 # Each registration.update() must observe the edited worker,
@@ -79,6 +82,7 @@ def serve(directory: Path):
             super().end_headers()
         def do_GET(self):
             path=urllib.parse.urlsplit(self.path)
+            is_worker_script = path.path.endswith('/service-worker.js')
             if self.server.test_root_routes and path.path in ['/try/'+mod+'.html' for mod in ('Core','Assay','Resource')]:
                 self.send_response(308)
                 self.send_header('Location',path.path.removeprefix('/try')+('?' + path.query if path.query else ''))
@@ -88,13 +92,22 @@ def serve(directory: Path):
             if failure:
                 status,body=failure
                 self.send_response(status);self.send_header('Content-Type','text/html');self.end_headers();self.wfile.write(body.encode());return
-            return super().do_GET()
+            try:
+                return super().do_GET()
+            finally:
+                if is_worker_script:
+                    self.server.test_worker_requests.append({
+                        'path': path.path,
+                        'exists': (Path(self.directory) / path.path.lstrip('/')).is_file(),
+                        'status': getattr(self, '_test_status_code', None),
+                    })
     handler = functools.partial(Quiet, directory=str(directory))
     # Bind port 0 directly: probing a free port and rebinding later races with
     # other test servers, and a stolen port serves another directory (404 worker).
     httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     port = httpd.server_address[1]
     httpd.test_responses={}
+    httpd.test_worker_requests=[]
     httpd.test_root_routes=False
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     return httpd, f"http://localhost:{port}"
@@ -131,7 +144,7 @@ def worker_upgrade(browser_type, site, new_worker):
         old_vendor = "window.__pwaVendorIdentity='legacy-v4';\n"
         new_vendor = "window.__pwaVendorIdentity='updated-v5';\n" + (site / "vendor/jspdf.umd.min.js").read_text()
         vendor = upgrade_site / "vendor/jspdf.umd.min.js"
-        vendor.write_text(old_vendor)
+        vendor.write_text(old_vendor, newline="\n")
         httpd, base = serve(upgrade_site)
         ctx = browser_type.launch_persistent_context(
             str(profile), headless=True, args=["--no-sandbox", "--disable-gpu"])
@@ -151,9 +164,14 @@ def worker_upgrade(browser_type, site, new_worker):
         # The reload starts a background soft update of the same worker. Let it
         # settle before the worker file is rewritten, or that in-flight fetch races
         # the rewrite and Chromium can discard the registration.
+        # Let the reload's automatic update check settle before replacing the
+        # fixture file. Calling update() again here can race Chromium's own
+        # check and discard the otherwise active worker. The real v4→v5 update
+        # below still calls update() and asserts failure, retry, activation,
+        # cache replacement and project preservation.
+        pg.wait_for_timeout(500)
         pg.wait_for_function("""async()=>{const r=await navigator.serviceWorker.getRegistration();
-            if(!r||r.installing||r.waiting||r.active?.state!=='activated'||!navigator.serviceWorker.controller)return false;
-            await r.update();return !r.installing&&!r.waiting}""", timeout=60000)
+            return !!r&&!r.installing&&!r.waiting&&r.active?.state==='activated'&&!!navigator.serviceWorker.controller}""", timeout=60000)
         check("upgrade fixture runs the cached legacy vendor", pg.evaluate("window.__pwaVendorIdentity==='legacy-v4'"))
         pg.evaluate("""async()=>{
             localStorage.setItem('pwa-upgrade-project','saved-project');
@@ -168,7 +186,7 @@ def worker_upgrade(browser_type, site, new_worker):
         }""")
         httpd.test_responses["/vendor/jspdf.umd.min.js"] = (503, "interrupted vendor download")
         (upgrade_site / "service-worker.js").write_text(new_worker)
-        vendor.write_text(new_vendor)
+        vendor.write_text(new_vendor, newline="\n")
         update = """async()=>{
             // getRegistration() can resolve undefined while the reloaded page re-registers;
             // serviceWorker.ready never settles without a registration, so poll with a deadline.
@@ -215,9 +233,11 @@ def worker_upgrade(browser_type, site, new_worker):
         if not has_v5:
             return
         first_vendor = pg.evaluate("async()=>(await fetch('/vendor/jspdf.umd.min.js')).text()")
-        check("first vendor response after activation is the new library", first_vendor == new_vendor)
+        check("first vendor response after activation is the new library", first_vendor == new_vendor,
+              f"actual={len(first_vendor)}:{first_vendor[:64]!r} expected={len(new_vendor)}:{new_vendor[:64]!r}")
         cached_vendor = pg.evaluate("async()=>(await (await caches.open('geosuite-app-v5:/')).match('/vendor/jspdf.umd.min.js')).text()")
-        check("v5 caches the new fixture marker and exact shipped jsPDF bytes", cached_vendor == new_vendor)
+        check("v5 caches the new fixture marker and exact shipped jsPDF bytes", cached_vendor == new_vendor,
+              f"actual={len(cached_vendor)}:{cached_vendor[:64]!r} expected={len(new_vendor)}:{new_vendor[:64]!r}")
         pg.reload(wait_until="load")
         check("updated page executes jsPDF 4.2.1 immediately",
               pg.evaluate("window.__pwaVendorIdentity==='updated-v5' && window.jspdf?.jsPDF.version==='4.2.1'"))
@@ -239,7 +259,19 @@ def worker_upgrade(browser_type, site, new_worker):
               "geosuite-app-v4:/" not in retained["keys"] and "geosuite-app-v5:/" in retained["keys"]
               and retained["other"] == "other-scope-shell" and retained["unrelated"] == "unrelated-shell", str(retained["keys"]))
     except Exception as exc:
-        check("real v4-to-v5 browser upgrade completes", False, str(exc).splitlines()[0][:250])
+        details = {'error': str(exc).splitlines()[0], 'workerRequests': httpd.test_worker_requests if httpd else []}
+        try:
+            details['browser'] = pg.evaluate("""async()=>{
+              const regs=await navigator.serviceWorker.getRegistrations();
+              const response=await fetch('./service-worker.js',{cache:'no-store'});
+              return {url:location.href,controller:navigator.serviceWorker.controller?.scriptURL,
+                registrations:regs.map(r=>({scope:r.scope,active:r.active?.scriptURL,state:r.active?.state,
+                  installing:r.installing?.scriptURL,waiting:r.waiting?.scriptURL})),
+                fetch:{status:response.status,url:response.url,type:response.headers.get('content-type')}};
+            }""")
+        except Exception as diagnostic_error:
+            details['diagnosticError'] = str(diagnostic_error).splitlines()[0]
+        check("real v4-to-v5 browser upgrade completes", False, str(details)[:1200])
     finally:
         if ctx:
             ctx.close()

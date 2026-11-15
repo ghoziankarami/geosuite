@@ -109,14 +109,26 @@ def main():
               and [s["role"] for s in parent["project"]["sourceCapsule"]["sources"]]
               == ["collar", "survey", "assay", "geology"])
         # FLOW-320-1: the header "Core ↗" link returns the active project, not the bundled 349-collar sample.
-        with ctx.expect_page(timeout=60000) as back:
-            assay.locator('a[data-phase-switch][href="Core.html"]').click()
-        core_back = back.value
+        pages_before_return = len(ctx.pages)
+        assay.locator('a[data-phase-switch][href="Core.html"]').click()
+        assay.wait_for_url("**/Core.html*", wait_until="domcontentloaded")
+        core_back = assay
         core_back.wait_for_load_state("load")
         ready(core_back)
         core_back.wait_for_function("() => STATE.collar.length === 350", timeout=60000)
         check("Assay header Core link opens the active project (collar count stays 350, not the 349 sample)",
-              core_back.evaluate("STATE.collar.length") == 350)
+              core_back.evaluate("STATE.collar.length") == 350
+              and len(ctx.pages) == pages_before_return)
+        core_back.close()
+        with ctx.expect_page(timeout=60000) as next_assay:
+            core.evaluate("OrebitHandoff.send('Assay', exportMasterCSV)")
+        assay = next_assay.value
+        assay.wait_for_load_state("load")
+        ready(assay)
+        assay.wait_for_function(f"() => DATA?.rows?.length === {len(exp_rows)}", timeout=90000)
+        assay.locator('#journeyMode [data-journey-mode="detailed"]').click()
+        check("Assay keeps Quick as default and exposes detailed controls on request",
+              assay.locator('#journeyMode [data-journey-mode="detailed"]').get_attribute('aria-pressed') == 'true')
         check("Core parent retains source units, CRS, correction audit and accepted scope",
               bool(parent) and bool(parent["project"]["metadata"].get("units"))
               and parent["project"]["metadata"].get("crs") == core.evaluate("STATE.crs")
@@ -135,14 +147,31 @@ def main():
         check("the ?handoff=1 marker is removed from the address", "handoff" not in assay.url, assay.url)
         assay.wait_for_function("() => OrebitHandoff.domain()?.handoff.readiness === 'validated'")
         check("Assay keeps the domain Core sent", assay.evaluate("OrebitHandoff.domain()") == DOMAIN)
-        assay.evaluate("showTab(2)")
+        # The received project loads asynchronously and Assay then lands on its data
+        # stage; a click made before that lands is overridden by it. Wait for the real
+        # completion signal (rows present, landing stage active) before navigating.
+        assay.wait_for_function(
+            "() => typeof DATA !== 'undefined' && DATA && DATA.rows && DATA.rows.length > 0 && document.querySelector('#tab3.panel.active')",
+            timeout=90000)
+        upload_tab = assay.locator('nav.tabs .tab[onclick="showTab(2)"]')
+        if not upload_tab.is_visible():
+            assay.locator('nav.tabs .screening-advanced-toggle').click()
+        upload_tab.click()
+        # Re-entering the populated Assay upload panel redraws a large imported
+        # project; allow the same 90-second budget as its real CSV import.
+        assay.wait_for_function("() => document.querySelector('#tab2.panel.active')", timeout=90000)
         note = assay.locator("#domainHandoffNote")
         text = note.inner_text()
         check("Assay's upload stage names the received domain, escaped, with its readiness",
               note.is_visible() and "SAP<b>" in text and "60,000 m³" in text and "validated at handoff" in text, text)
 
         print("\n── Assay → Resource ──")
-        assay.evaluate("showTab(11)")
+        domain_tab = assay.locator('nav.tabs .tab[onclick="showTab(11)"]')
+        if not domain_tab.is_visible():
+            assay.locator('nav.tabs .screening-advanced-toggle').click()
+        domain_tab.click()
+        assay.wait_for_function("() => document.querySelector('#tab11.panel.active')", timeout=90000)
+        assay.locator('#domainProposalReason').wait_for(state='visible')
         assay.locator('#domainProposalReason').fill('Synthetic population reviewed before handoff')
         assay.locator('#domainProposalApply').click()
         source_fingerprint = "async () => {const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([STATE.assay,STATE.geology])));return Array.from(new Uint8Array(b),x=>x.toString(16).padStart(2,'0')).join('');}"

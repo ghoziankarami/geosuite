@@ -113,6 +113,8 @@ def main():
             browser = pw.chromium.launch()
             for viewport in [{'width':1440,'height':960}, {'width':390,'height':844}]:
                 context = browser.new_context(viewport=viewport, accept_downloads=True)
+                # This suite walks the Detailed review journey (Start review / Resume); Quick leads with Import.
+                context.add_init_script("try{localStorage.setItem('orebit.journeyMode.v1','detailed')}catch(e){}")
                 errors = []
                 context.on('page', lambda p: p.on('pageerror', lambda e: errors.append(e.stack or str(e))))
                 page = ready(context, base)
@@ -384,6 +386,8 @@ def main():
                 check(page.evaluate('()=>document.documentElement.scrollWidth<=innerWidth+1'), 'Phone/desktop correction journey fits the viewport')
                 context.close()
                 context=browser.new_context(viewport=viewport,accept_downloads=True)
+                # This suite walks the Detailed review journey (Start review / Resume); Quick leads with Import.
+                context.add_init_script("try{localStorage.setItem('orebit.journeyMode.v1','detailed')}catch(e){}")
                 page=ready(context,base)
                 errors=[]
                 page.on('pageerror',lambda e:errors.append(str(e)))

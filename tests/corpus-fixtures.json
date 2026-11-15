@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "project": "Orebit synthetic drillhole datasets",
+      "commit": "6b93ac48df79264fda20e4ffc10716280bd2ee8a", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "licence": "CC BY 4.0",
+      "licenceURL": "https://github.com/ghoziankarami/orebit-datasets/blob/6b93ac48df79264fda20e4ffc10716280bd2ee8a/LICENSE"
+    },
+    {
+      "project": "NRRI Babbitt database distributed with pygslib Tutorial 1",
+      "commit": "c26c3bff20c7cc16583c94fb850e17600b9a610d", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "licence": "MIT distribution; NRRI/TR-2003/21 attribution",
+      "licenceURL": "https://github.com/opengeostat/pygslib/tree/c26c3bff20c7cc16583c94fb850e17600b9a610d"
+    }
+  ],
+  "files": [
+    {
+      "path": "01-emas-epitermal/collar.csv",
+      "url": "https://raw.githubusercontent.com/ghoziankarami/orebit-datasets/6b93ac48df79264fda20e4ffc10716280bd2ee8a/01-emas-epitermal/collar.csv",
+      "sha256": "5d1a111152cb3c0e2434ed925fcb059708e0d262a2025fe20e5cf8c5c9638399", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": []
+    },
+    {
+      "path": "01-emas-epitermal/survey.csv",
+      "url": "https://raw.githubusercontent.com/ghoziankarami/orebit-datasets/6b93ac48df79264fda20e4ffc10716280bd2ee8a/01-emas-epitermal/survey.csv",
+      "sha256": "981878447106d881632f4bdfff5943ec455b70db5b11e46ddf398035fb6c4c45", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": []
+    },
+    {
+      "path": "01-emas-epitermal/assay.csv",
+      "url": "https://raw.githubusercontent.com/ghoziankarami/orebit-datasets/6b93ac48df79264fda20e4ffc10716280bd2ee8a/01-emas-epitermal/assay.csv",
+      "sha256": "1da68eb3d90f769eec5118b020e41ca0f31e92a6c0fd57991964ff326cb29dc7", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": []
+    },
+    {
+      "path": "01-emas-epitermal/litho.csv",
+      "url": "https://raw.githubusercontent.com/ghoziankarami/orebit-datasets/6b93ac48df79264fda20e4ffc10716280bd2ee8a/01-emas-epitermal/litho.csv",
+      "sha256": "17325317f1a5b1dd83d1f6185a20114f8497027e2d0ae8c4bd7b641788c94747", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": []
+    },
+    {
+      "path": "02-nikel-laterit/collar.csv",
+      "url": "https://raw.githubusercontent.com/ghoziankarami/orebit-datasets/6b93ac48df79264fda20e4ffc10716280bd2ee8a/02-nikel-laterit/collar.csv",
+      "sha256": "2512dcd4a7c9581b408c33dd477e0d3db680ab56a43f2126d952d07b14549a22", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": []
+    },
+    {
+      "path": "02-nikel-laterit/survey.csv",
+      "url": "https://raw.githubusercontent.com/ghoziankarami/orebit-datasets/6b93ac48df79264fda20e4ffc10716280bd2ee8a/02-nikel-laterit/survey.csv",
+      "sha256": "467a21fd92d76471bd343db12d835e4b6bab41ac71f01476556bda12e5c20a15", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": []
+    },
+    {
+      "path": "02-nikel-laterit/assay.csv",
+      "url": "https://raw.githubusercontent.com/ghoziankarami/orebit-datasets/6b93ac48df79264fda20e4ffc10716280bd2ee8a/02-nikel-laterit/assay.csv",
+      "sha256": "6943671481e0bec6db142762479a9e06bd86029bedf7b453503281abaad9e33a", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": []
+    },
+    {
+      "path": "02-nikel-laterit/litho.csv",
+      "url": "https://raw.githubusercontent.com/ghoziankarami/orebit-datasets/6b93ac48df79264fda20e4ffc10716280bd2ee8a/02-nikel-laterit/litho.csv",
+      "sha256": "449f27e865992935dbfd8de22d8025aa1ee093521c341a2a887ec93cb279c94b", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": []
+    },
+    {
+      "path": "03-timah-placer/collar.csv",
+      "url": "https://raw.githubusercontent.com/ghoziankarami/orebit-datasets/6b93ac48df79264fda20e4ffc10716280bd2ee8a/03-timah-placer/collar.csv",
+      "sha256": "507ba41a1dfacaa96ddf52a7b4ee96e7133d8dba2b24008954a8ede976fff5c1", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": []
+    },
+    {
+      "path": "03-timah-placer/survey.csv",
+      "url": "https://raw.githubusercontent.com/ghoziankarami/orebit-datasets/6b93ac48df79264fda20e4ffc10716280bd2ee8a/03-timah-placer/survey.csv",
+      "sha256": "c2276a936b59c382a66c2524c98e5bb96babfb22e97967cbe82fa1f23d36b841", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": []
+    },
+    {
+      "path": "03-timah-placer/assay.csv",
+      "url": "https://raw.githubusercontent.com/ghoziankarami/orebit-datasets/6b93ac48df79264fda20e4ffc10716280bd2ee8a/03-timah-placer/assay.csv",
+      "sha256": "dd5ceef085d6faa941c846e97511d6fa046d560e06c64183da4bf4d9c5e4832d", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": []
+    },
+    {
+      "path": "03-timah-placer/litho.csv",
+      "url": "https://raw.githubusercontent.com/ghoziankarami/orebit-datasets/6b93ac48df79264fda20e4ffc10716280bd2ee8a/03-timah-placer/litho.csv",
+      "sha256": "5b38dcc1a6605463e98626814078648b7cb6848135bcee291dd800286dde6c49", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": []
+    },
+    {
+      "path": "Babbit/collar_BABBITT_m.csv",
+      "url": "https://raw.githubusercontent.com/opengeostat/pygslib/c26c3bff20c7cc16583c94fb850e17600b9a610d/doc/source/Tutorial_1/Babbitt/collar_BABBITT.csv",
+      "sha256": "2dbce5d751c283d0d71d9fc2afbebace62d74d6e3db2c92af9cbcac7b7f62c32", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": [
+        "XCOLLAR",
+        "YCOLLAR",
+        "ZCOLLAR"
+      ]
+    },
+    {
+      "path": "Babbit/survey_BABBITT_m.csv",
+      "url": "https://raw.githubusercontent.com/opengeostat/pygslib/c26c3bff20c7cc16583c94fb850e17600b9a610d/doc/source/Tutorial_1/Babbitt/survey_BABBITT.csv",
+      "sha256": "5f41cfaf7adf4cdd7f9652e2db6d53520c5565489123ff6cec0fc0cf6a300c09", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": [
+        "AT"
+      ]
+    },
+    {
+      "path": "Babbit/assay_BABBITT_m.csv",
+      "url": "https://raw.githubusercontent.com/opengeostat/pygslib/c26c3bff20c7cc16583c94fb850e17600b9a610d/doc/source/Tutorial_1/Babbitt/assay_BABBITT.csv",
+      "sha256": "121956eb0e158af5d6c13e66ea1d57b66bee36e9577c20d80b624b1a88140f2f", "checksumNote": "Public pinned-source checksum/revision; # pragma: allowlist secret",
+      "metres": [
+        "FROM",
+        "TO"
+      ]
+    }
+  ]
+}

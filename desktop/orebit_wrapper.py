@@ -341,7 +341,7 @@ class _ExclusiveServer(HTTPServer):
     allow_reuse_address = False
 
 
-def inject_runtime(html):
+def inject_runtime(html, single=False):
     """Insert the desktop marker (and optional default profile) into a page.
 
     A single desktop origin serves Core, Assay and Resource, and every one of
@@ -350,7 +350,10 @@ def inject_runtime(html):
     """
     script = (
         b"<script>window.__OREBIT_RT__="
-        + json.dumps(DESKTOP_RUNTIME, separators=(",", ":")).encode("utf-8")
+        + json.dumps(
+            dict(DESKTOP_RUNTIME, single=True) if single else DESKTOP_RUNTIME,
+            separators=(",", ":"),
+        ).encode("utf-8")
         + b";</script>"
     )
     profile_env = os.environ.get("__OREBIT_DEFAULT_PROFILE__")
@@ -371,13 +374,15 @@ def inject_runtime(html):
     return html[: idx + 6] + script + MIGRATION_IMPORT_JS + html[idx + 6 :]
 
 
-MIGRATION_IMPORT_JS = b"""<script>(async()=>{try{
+MIGRATION_IMPORT_JS = b"""<script>(()=>{
+ const until=Date.now()+180000;let busy=false,last='';
+ async function pull(){if(busy)return;busy=true;try{
  const r=await fetch('/legacy-storage.json',{cache:'no-store'});if(!r.ok)return;
- const snap=await r.json();
+ const text=await r.text();if(text===last)return;const snap=JSON.parse(text);
  for(const k of Object.keys(snap.localStorage||{})){
    if(localStorage.getItem(k)===null)localStorage.setItem(k,snap.localStorage[k]);
  }
- const rows=snap.projects||[];if(!rows.length)return;
+ const rows=snap.projects||[];if(!rows.length){last=text;return;}
  const db=await new Promise(res=>{const q=indexedDB.open('orebit-projects',1);
    q.onupgradeneeded=()=>{const d=q.result;if(!d.objectStoreNames.contains('projects'))d.createObjectStore('projects',{keyPath:'name'});};
    q.onsuccess=()=>res(q.result);q.onerror=()=>res(null);});
@@ -388,10 +393,15 @@ MIGRATION_IMPORT_JS = b"""<script>(async()=>{try{
  const tx=db.transaction('projects','readwrite'),store=tx.objectStore('projects');
  for(const row of rows){
    if(!row||typeof row.name!=='string'||!row.name||existing.has(row.name))continue;
-   store.put(row);
+   store.add(row);existing.add(row.name);
  }
- await new Promise(res=>{tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);});
-}catch(e){}})();</script>"""
+ await new Promise((res,reject)=>{tx.oncomplete=res;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});
+ db.close();last=text;
+}catch(e){console.warn('GeoSuite legacy project import failed',e);}
+ finally{busy=false;}}
+ const timer=setInterval(()=>{if(Date.now()>=until){clearInterval(timer);return;}pull();},1000);
+ window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});pull();
+})();</script>"""
 
 LEGACY_PORTS = {"Assay": 18768, "Resource": 18769}
 MIGRATION_FILE = "legacy-storage.json"
@@ -402,20 +412,23 @@ def merge_legacy(existing, incoming):
 
     The rule the owner set: a project saved on the single origin is never
     overwritten by an older module origin, and nothing is ever deleted. Local
-    keys are added only when absent; projects are appended only when their id
-    is unknown.
+    keys are added only when absent; projects are appended only when their
+    native IndexedDB name key is unknown. Optional legacy IDs are not keys.
     """
     merged = {"localStorage": dict((existing or {}).get("localStorage") or {})}
     for key, value in (incoming.get("localStorage") or {}).items():
         merged["localStorage"].setdefault(key, value)
     projects = list((existing or {}).get("projects") or [])
-    known = {str(p.get("id")) for p in projects if isinstance(p, dict)}
+    known = {p.get("name") for p in projects
+             if isinstance(p, dict) and isinstance(p.get("name"), str)}
     for project in incoming.get("projects") or []:
         if not isinstance(project, dict):
             continue
-        pid = str(project.get("id"))
-        if pid not in known:
-            known.add(pid)
+        name = project.get("name")
+        if not isinstance(name, str) or not name:
+            continue
+        if name not in known:
+            known.add(name)
             projects.append(project)
     merged["projects"] = projects
     return merged
@@ -535,6 +548,14 @@ def start_legacy_migration(target_port, ports=None, base=LEGACY_PORTS):
 LEGACY_WINDOW_SECONDS = 180
 
 
+def close_legacy_after_window(servers):
+    """Retire only the old-origin listeners opened by this launch."""
+    time.sleep(LEGACY_WINDOW_SECONDS)
+    for _, old in servers:
+        old.shutdown()
+        old.server_close()
+
+
 def _single_origin(base_dir):
     """True when this bundle carries the other module pages beside index.html."""
     return all(
@@ -547,6 +568,11 @@ def make_handler(base_dir):
     """Serve the bundled pages, marking every HTML response as desktop."""
 
     root = os.path.realpath(base_dir)
+    # A single-origin bundle serves all three modules from one origin, so module
+    # handoff and the Quick run use the same in-window path as the web build.
+    single = _single_origin(base_dir)
+    legacy_origins = {f"http://127.0.0.1:{port}" for port in LEGACY_PORTS.values()}
+    migration_until = time.monotonic() + LEGACY_WINDOW_SECONDS
 
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
@@ -563,7 +589,7 @@ def make_handler(base_dir):
                 path = os.path.realpath(os.path.join(root, requested.lstrip("/")))
                 if path.startswith(root + os.sep) and os.path.exists(path):
                     with open(path, "rb") as f:
-                        html = inject_runtime(f.read())
+                        html = inject_runtime(f.read(), single)
                     self.send_response(200)
                     self.send_header("Content-Type", "text/html; charset=utf-8")
                     self.send_header("Content-Length", str(len(html)))
@@ -573,15 +599,63 @@ def make_handler(base_dir):
                     return
             return super().do_GET()
 
+        def _migration_origin_allowed(self):
+            origin = self.headers.get("Origin")
+            return origin is None or origin in legacy_origins or origin == f"http://127.0.0.1:{self.server.server_port}"
+
+        def _migration_headers(self):
+            origin = self.headers.get("Origin")
+            if origin and self._migration_origin_allowed():
+                self.send_header("Access-Control-Allow-Origin", origin)
+                self.send_header("Vary", "Origin")
+            self.send_header("Cache-Control", "no-store")
+
+        def do_OPTIONS(self):
+            if self.path.split("?", 1)[0] != "/__migrate":
+                self.send_error(404)
+                return
+            if (not self._migration_origin_allowed()
+                    or self.headers.get("Access-Control-Request-Method") != "POST"
+                    or self.headers.get("Access-Control-Request-Headers", "").lower() != "content-type"):
+                self.send_error(403)
+                return
+            if time.monotonic() >= migration_until:
+                self.send_error(410)
+                return
+            self.send_response(204)
+            self._migration_headers()
+            self.send_header("Access-Control-Allow-Methods", "POST")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
         def do_POST(self):
             if self.path.split("?", 1)[0] != "/__migrate":
                 self.send_error(404)
                 return
+            if not self._migration_origin_allowed():
+                self.send_error(403)
+                return
+            if time.monotonic() >= migration_until:
+                self.send_error(410)
+                return
             try:
+                if self.headers.get_content_type() != "application/json":
+                    raise ValueError("snapshot requires application/json")
                 length = int(self.headers.get("Content-Length") or 0)
-                if length <= 0 or length > 32 * 1024 * 1024:
+                if length <= 0 or length > 8 * 1024 * 1024:
                     raise ValueError("empty or oversized snapshot")
                 payload = json.loads(self.rfile.read(length).decode("utf-8"))
+                if not isinstance(payload, dict):
+                    raise ValueError("snapshot must be an object")
+                if not isinstance(payload.get("projects", []), list):
+                    raise ValueError("projects must be a list")
+                settings = payload.get("localStorage", {})
+                if not isinstance(settings, dict) or any(
+                    not key.startswith("orebit") or not isinstance(value, str)
+                    for key, value in settings.items()
+                ):
+                    raise ValueError("invalid legacy settings")
                 result = write_migration(base_dir, payload)
                 body = json.dumps(result).encode("utf-8")
                 status = 200
@@ -589,6 +663,7 @@ def make_handler(base_dir):
                 body = json.dumps({"ok": False, "error": str(exc)}).encode("utf-8")
                 status = 400
             self.send_response(status)
+            self._migration_headers()
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
@@ -1002,14 +1077,7 @@ def main():
     if _single_origin(base_dir):
         legacy = start_legacy_migration(port)
         if legacy:
-
-            def _close_legacy(servers=legacy):
-                time.sleep(LEGACY_WINDOW_SECONDS)
-                for _, old in servers:
-                    old.shutdown()
-                    old.server_close()
-
-            threading.Thread(target=_close_legacy, daemon=True).start()
+            threading.Thread(target=close_legacy_after_window, args=(legacy,), daemon=True).start()
 
     url = f"http://127.0.0.1:{port}/index.html"
 

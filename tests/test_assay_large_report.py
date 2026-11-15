@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 
 import fitz
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 def _workflow_options(page, disclosure):
     # Open the native task Options before editing, retaining all science checks.
@@ -135,12 +135,27 @@ def main():
                 controls.nav(page, 9)
                 settled(page)
                 _workflow_options(page, 'assayTopCutOptions');page.locator("#customCut").fill("9")
-                page.locator('#topcutDecisionReason').fill('Synthetic reviewed cap for the large-population report check.')
+                reason='Synthetic reviewed cap for the large-population report check.'
+                reason_input = page.locator('#topcutDecisionReason')
+                reason_input.click()
+                reason_input.fill(reason)
+                try:
+                    page.wait_for_function('''(value)=>document.querySelector("#topcutDecisionReason")?.value===value&&
+                      window._topCutDrafts?.au_gpt?.reason===value''',arg=reason,timeout=5000)
+                except PlaywrightTimeoutError as error:
+                    state=page.evaluate('''()=>({
+                      input:document.querySelector('#topcutDecisionReason')?.value,
+                      active:document.activeElement?.id,
+                      draft:window._topCutDrafts?.au_gpt?.reason||''
+                    })''')
+                    raise AssertionError('Native top-cut reason entry did not reach its draft: '+str(state)) from error
                 page.locator('#tab9 button[onclick*="applyTopCutReviewed"]').click()
+                page.wait_for_function('''(value)=>window._capLog?.au_gpt?.cut===9&&
+                  window._capLog?.au_gpt?.reviewReason===value''',arg=reason)
                 controls.nav(page, 13)
                 capped = page.evaluate("""()=>({mean:_compositeCache.composites.reduce((s,c)=>s+c.au_gpt_comp,0)/150000,
                   records:dataTreatmentLog(),treatment:reportTreatment.innerText})""")
-                check(capped["mean"] == 5 and len(capped["records"]) == 1 and capped["records"][0]["before"]["max"] == 10 and capped["records"][0]["after"]["max"] == 9 and capped["treatment"], "actual cap9 recomputes full composites and renders accurate before/after treatment")
+                check(capped["mean"] == 5 and len(capped["records"]) == 1 and capped["records"][0]["before"]["max"] == 10 and capped["records"][0]["after"]["max"] == 9 and capped["treatment"], "actual cap9 recomputes full composites and renders accurate before/after treatment: " + str(capped))
                 controls.nav(page, 9)
                 page.locator('nav.tabs .tab[onclick="showTab(9)"] .pipeline-badge').click()
                 check(page.evaluate('currentTab===9'), "treatment count has the same destination as its tab")

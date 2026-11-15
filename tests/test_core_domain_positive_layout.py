@@ -10,6 +10,7 @@ import tempfile
 import threading
 
 from playwright.sync_api import sync_playwright
+from journey_test_helpers import ensure_detailed_mode
 from domain_native_fixture import write_domain_fixture
 
 ROOT=next(p for p in Path(__file__).resolve().parents if (p/'build/build.mjs').exists())
@@ -30,7 +31,10 @@ def stage(page,n):
         page.locator(f'#mobileNavDrawer .sub-tab[data-tab="{n}"]').click()
     else:
         target=page.locator(f'nav.tabs .tab[onclick="showTab({n})"]')
-        if not target.is_visible():page.locator('nav.tabs .screening-advanced-toggle').click()
+        if not target.is_visible():
+            ensure_detailed_mode(page)
+            if not target.is_visible():
+                raise AssertionError(f'Domain stage {n} is not visible after selecting Detailed mode')
         target.click()
     page.wait_for_function('(n)=>document.getElementById("tab"+n).classList.contains("active")',arg=n)
 

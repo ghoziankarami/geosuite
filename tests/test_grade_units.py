@@ -38,7 +38,13 @@ def check(name, condition, details=None):
 
 def nav(page, tab):
     print(f'Navigate {page.url.rsplit("/",1)[-1]} tab {tab}',flush=True)
-    page.locator(f'nav.tabs .tab[onclick="showTab({tab})"]').click()
+    target=page.locator(f'nav.tabs .tab[onclick="showTab({tab})"]')
+    if target.count() and not target.is_visible():
+        # Unit handoff coverage uses expert stage controls. Reach them through
+        # the actual Quick/Detailed switch, then click the visible tab; don't
+        # bypass the UI with showTab() or force a hidden-button click.
+        page.locator('#journeyMode [data-journey-mode="detailed"]').click()
+    target.click()
     page.wait_for_function('(n)=>document.getElementById("tab"+n).classList.contains("active")', arg=tab)
 
 

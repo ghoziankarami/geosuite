@@ -399,7 +399,7 @@
     OrebitScreeningWorkflow.stageBar();
     if(n===1){const loaded=!!data()?.rows?.length,first=!loaded?2:lastMainStage>1?lastMainStage:3;OrebitScreeningWorkflow.dashboard(panel,insight(1),text('purpose1'),first,loaded&&lastMainStage>1);return;}
     if(card)card.remove();card=node('section',null,'assay-workflow-card');card.setAttribute('aria-label',text('guide'));
-    const step=MAIN.indexOf(n);card.classList.toggle('workflow-optional',step<0);card.append(node('p',step>=0?'ASSAY · '+text('step',{n:step+1,total:MAIN.length}):text('optional'),'workflow-eyebrow'));
+    const step=MAIN.indexOf(n),stage=window.OrebitJourney?.stageOf(n),guided=step>=0||!!stage;card.classList.toggle('workflow-optional',!guided);card.append(node('p',guided?'ASSAY · '+text('step',{n:stage||step+1,total:stage?7:MAIN.length}):text('optional'),'workflow-eyebrow'));
     card.append(node('h2',label(n)),node('p',text('purpose'+n),'workflow-purpose'));
     card.append(OrebitScreeningWorkflow.links(MAIN,n));
     if(data()&&[3,7,8,9,10,11,13].includes(n)&&availableElements().length){
@@ -419,7 +419,7 @@
     const calc=button(text(n===2?'chooseFile':n===3?'checkData':n===8?'reviewTail':n===7?'useMedian':n===13?'pdf':'refresh'),()=>recommend(n),false,n===2?'apply':n===13?'export':n===7?'custom':'inspect');
     calc.disabled=n!==2&&!data()?.rows?.length;actions.append(calc);
     if(n===11){const openCore=node('a',text('openCoreDomain'),'btn secondary');openCore.href='Core.html?workflow=domain';openCore.target='_blank';openCore.rel='noopener';openCore.dataset.actionRole='inspect';
-      if(!window.__OREBIT_RT__)openCore.addEventListener('click',event=>{
+      if(!(window.__OREBIT_RT__&&!window.__OREBIT_RT__.single))openCore.addEventListener('click',event=>{
         event.preventDefault();const popup=window.open('about:blank','_blank');
         if(!popup){if(typeof toast==='function')toast(text('openCoreFailed'),'bad');return;}
         popup.opener=null;
@@ -450,6 +450,22 @@
     OrebitScreeningWorkflow.compact(card);panel.prepend(card);
     if(n===13)renderReview(panel,card);
     OrebitScreeningWorkflow.stageBar('assay',MAIN,n,panel,card);
+    if(n===9)positionTopCutOptions();
+  }
+  // Moving the Options container in the DOM drops focus from a field inside it, so a reason typed while a refresh
+  // lands would lose its caret after the first character. Keep focus and selection across the move.
+  function moveKeepingFocus(options,move){
+    const held=options&&options.contains(document.activeElement)?document.activeElement:null,start=held?.selectionStart,end=held?.selectionEnd;
+    move();
+    if(held&&held.isConnected&&document.activeElement!==held){held.focus({preventScroll:true});try{if(start!=null)held.setSelectionRange(start,end);}catch(error){/* number inputs have no selection range */}}
+  }
+  function prepareTopCutOptions(){
+    const panel=document.getElementById('tab9'),target=panel?.querySelector('#tc'),options=panel?.querySelector('#assayTopCutOptions');
+    if(target&&options&&!target.contains(options))moveKeepingFocus(options,()=>target.prepend(options));
+  }
+  function positionTopCutOptions(){
+    const panel=document.getElementById('tab9'),options=panel?.querySelector('#assayTopCutOptions'),card=panel?.querySelector(':scope > .assay-workflow-card');
+    if(options&&card)moveKeepingFocus(options,()=>card.before(options));
   }
   function renderReview(panel,card){
     panel.querySelector('.workflow-review-list')?.remove();
@@ -483,7 +499,7 @@
     document.addEventListener('change',ev=>{if(ev.target.closest('.panel')&&!ev.target.closest('.assay-workflow-card'))setTimeout(()=>refresh(current),0);});
     refresh(typeof currentTab==='number'?currentTab:1);
   }
-  window.OrebitAssayWorkflow={reset,restore,serialise,snapshot,refresh,record,parameters,context,
+  window.OrebitAssayWorkflow={reset,restore,serialise,snapshot,refresh,record,parameters,context,prepareTopCutOptions,positionTopCutOptions,
     reviewedEDAStatus,reviewedEDARows,reviewedEDABadge,clearReviewedEDAScope,estimationContext,approveEstimationSpec,estimationSpecReadiness,undoEstimationSpec,receiveCheckpointReturn,setCheckpointReturnStatus,
     carry,resume,scopeState,nextStage,scopeText:()=>{const state=scopeState();return state?scopeLine(state):text('scopeNone');}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else setTimeout(boot,0);

@@ -105,6 +105,12 @@ def assert_stage_link_focus(page, message):
     count = links.count()
     check(count >= 4 and panel.evaluate('e=>e===document.activeElement'),
           message + ' starts native stage-link navigation at its destination panel')
+    # The journey strip leads every stage: its own buttons are the first Tab stops, in order.
+    strip = panel.locator('#journeyBar button:visible:not(:disabled)')
+    for position in range(strip.count()):
+        page.keyboard.press('Tab')
+        check(strip.nth(position).evaluate('e=>e===document.activeElement'),
+              message + f' Tab stop {position+1} is journey stage button {position+1}')
     for key, indices in (('Tab', range(count)), ('Shift+Tab', range(count-2, -1, -1))):
         for index in indices:
             page.keyboard.press(key)
@@ -138,6 +144,10 @@ def stage(page, number, mobile):
             page.locator('#mobileBottomNav [data-group="analysis"]').click()
             page.locator(f'#mobileNavDrawer [data-tab="{number}"]').click()
     else:
+        # Expert-stage keyboard journeys use the real Detailed switch; Quick's
+        # four-step rail is covered separately by test_journey_mode.py.
+        if not page.locator(f'nav.tabs .tab[onclick="showTab({number})"]').is_visible():
+            page.locator('#journeyMode [data-journey-mode="detailed"]').click()
         page.locator(f'nav.tabs .tab[onclick="showTab({number})"]').click()
 
 
@@ -312,15 +322,31 @@ try:
                 reference = page.locator(f'#tab1 [data-i18n="{key}.wf.title"]')
                 check(reference.inner_text() == ('Referensi semua alat' if language == 'id' else 'All tools reference'),
                       phase + ' dashboard names optional reference without implying extra required stages')
-                primary = page.locator('#tab1 .workflow-actions [data-action-role="next"]').first
-                primary.focus()
-                page.keyboard.press('Enter')
-                page.wait_for_function("()=>document.activeElement===document.querySelector('.panel.active')", timeout=3000)
-                check(active(page) == {'Core':7,'Assay':3,'Resource':3}[phase],
+                def press_primary():
+                    primary = page.locator('#tab1 .workflow-actions [data-action-role="next"]').first
+                    primary.focus()
+                    page.keyboard.press('Enter')
+                    page.wait_for_function("()=>document.activeElement===document.querySelector('.panel.active')", timeout=3000)
+                quick_core = phase == 'Core' and page.evaluate("localStorage.getItem('orebit.journeyMode.v1')") != 'detailed'
+                press_primary()
+                # Quick (the default) leads Core with Add data; Detailed starts the review at Validation.
+                check(active(page) == {'Core':2 if quick_core else 7,'Assay':3,'Resource':3}[phase],
                       phase + ' primary Enter opens its intended stage')
                 check(page.locator('.panel.active').evaluate('e=>e===document.activeElement') and
                       page.locator('.panel.active').get_attribute('tabindex') == '-1',
                       phase + ' primary Enter focuses the named destination without adding a tab stop')
+                if quick_core:
+                    check(page.locator('#dropzone').is_visible() and page.locator('#quickChooseFiles').is_visible() and
+                          page.locator('.panel.active .workflow-step-links > button:visible').count() == 0,
+                          f'Core {language} {width}px Quick Add data shows the drop target and Choose files without the Detailed stage strip')
+                    # The top-stage strip belongs to the Detailed stage pages: open Detailed with the real switch.
+                    page.locator('#journeyMode [data-journey-mode="detailed"]').click()
+                    stage(page, 1, mobile)
+                    resume = page.locator('#tab1 .workflow-actions [data-action-role="next"]').first.inner_text()
+                    press_primary()
+                    # Import was the last main stage visited, so Detailed offers Resume Import.
+                    check(active(page) == 2 and resume.startswith('Lanjutkan' if language == 'id' else 'Resume'),
+                          f'Core {language} {width}px Detailed primary resumes the last visited stage: {resume}')
                 assert_stage_context(page, phase + ' primary navigation')
                 assert_stage_link_focus(page, f'{phase} {language} {width}px')
                 if CASE == 'stage-links':

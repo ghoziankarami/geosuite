@@ -20,6 +20,7 @@
 //
 // Usage: node build/build.mjs [Core] [Assay] [Resource]   (default: all three)
 
+import { stripScriptComments } from "./strip-comments.mjs";
 import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, readdirSync, cpSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -223,8 +224,11 @@ for (const name of phases) {
   const outBytes = stampSourceDigest(resolveInlineMarkers(srcBytes, name), name);
   writeFileSync(dstPath, outBytes); // Buffer, no text encoding
   patchToFixedPoint(dstPath, name);
+  // Last step, after the patchers: whole-line developer comments do not ship (build/strip-comments.mjs).
+  const stripped = stripScriptComments(readFileSync(dstPath), name);
+  writeFileSync(dstPath, stripped.bytes);
   const finalBytes = readFileSync(dstPath);
-  console.log(`  ${name}.html  ${srcBytes.length.toLocaleString("en-US")} bytes (src) -> ${finalBytes.length.toLocaleString("en-US")} bytes (dist, patched)`);
+  console.log(`  ${name}.html  ${srcBytes.length.toLocaleString("en-US")} bytes (src) -> ${finalBytes.length.toLocaleString("en-US")} bytes (dist, patched; ${stripped.removed.toLocaleString("en-US")} comment lines dropped, ${stripped.saved.toLocaleString("en-US")} bytes saved)`);
 }
 
 // The installable-app layer (src/pwa/: manifest, service worker, icons) so that

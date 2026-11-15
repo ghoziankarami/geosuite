@@ -15,6 +15,7 @@ import threading
 
 import fitz
 from playwright.sync_api import sync_playwright
+from journey_test_helpers import ensure_detailed_mode, open_detailed_tab
 from domain_native_fixture import write_domain_fixture
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / 'build/build.mjs').exists())
@@ -70,6 +71,7 @@ def ready(page):
         picker.locator('[data-pick="en"]').click()
     if page.locator('.tour-skip').is_visible():
         page.locator('.tour-skip').click()
+    ensure_detailed_mode(page)
     page.evaluate("""()=>{window.__nativePipelineErrors=[];const original=safeRender;
       window.safeRender=(name,fn)=>original(name,()=>{try{const v=fn();if(v?.catch)return v.catch(e=>{__nativePipelineErrors.push(String(e));throw e;});return v;}catch(e){__nativePipelineErrors.push(String(e));throw e;}});
       safeRender('pipeline-canary',()=>{throw Error('pipeline-canary')});}""")
@@ -78,11 +80,7 @@ def ready(page):
 
 
 def stage(page, number):
-    button = page.locator(f'nav.tabs .tab[onclick="showTab({number})"]')
-    if not button.is_visible():
-        page.locator('nav.tabs .screening-advanced-toggle').click()
-    button.click()
-    page.wait_for_function('(n)=>document.getElementById("tab"+n).classList.contains("active")', arg=number)
+    open_detailed_tab(page, number)
 
 
 def reveal(page, selector):

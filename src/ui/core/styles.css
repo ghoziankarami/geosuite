@@ -2529,3 +2529,26 @@ a { text-decoration: underline !important; text-underline-offset: 2px; }
 .domain-qhelp-mark:focus-visible { outline: 2px solid var(--accent, #2563eb); outline-offset: 2px; }
 .domain-qhelp-text { display: block; margin-top: 4px; line-height: 1.5; color: var(--fg-mute); }
 @media (max-width: 700px) { .domain-qhelp-mark { width: 44px; height: 44px; } }
+
+/* Quick mode, Add data: the drop target leads the page, as in the owner mock. */
+.quick-add-actions { display: none; }
+.journey-quick #tab2.active { display: flex; flex-direction: column; }
+.journey-quick #tab2.active > h2 { order: -3; }
+.journey-quick #tab2.active > #coreCheckSummaryImport { order: -2; }
+.journey-quick #tab2.active > .card:has(#dropzone) { order: -1; }
+.journey-quick .quick-add-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
+.quick-add-note { font-size: 12px; color: var(--fg-mute); }
+.core-check-findings { margin: 0 0 12px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; }
+.core-check-findings > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; color: var(--fg); }
+.core-check-finding-list { list-style: none; margin: 0; padding: 0 0 10px; display: grid; gap: 8px; }
+.core-check-finding-list > li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 4px 10px; border-top: 1px solid var(--border); padding: 10px 0; min-width: 0; }
+.core-check-finding-list > li > strong { grid-row: span 2; padding: 3px 7px; border-radius: 999px; background: var(--warn-soft); color: var(--warn-ink); font-size: 11px; white-space: nowrap; }
+.core-check-finding-list > li.is-blocking > strong { background: var(--bad-soft); color: var(--bad-ink); }
+.core-check-finding-list > li > span, .core-check-finding-list > li > small { min-width: 0; overflow-wrap: anywhere; }
+.core-check-finding-list > li > small { grid-column: 2; color: var(--fg-mute); line-height: 1.45; }
+.core-check-finding-list > li > button { grid-column: 3; grid-row: 1 / span 2; min-height: 44px; max-width: 100%; white-space: normal; }
+@media (max-width: 600px) { .core-check-finding-list > li { grid-template-columns: minmax(0, 1fr); } .core-check-finding-list > li > strong, .core-check-finding-list > li > small, .core-check-finding-list > li > button { grid-column: 1; grid-row: auto; } .core-check-finding-list > li > strong { justify-self: start; } .core-check-finding-list > li > button { width: 100%; } }
+
+.core-check-read { display: block; margin-top: 2px; font-size: 12px; font-weight: 600; }
+.core-check-read.is-read { color: var(--good, #17803d); }
+.core-check-read.is-empty { color: var(--warn, #a85a06); }

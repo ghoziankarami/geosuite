@@ -27,10 +27,10 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
-import { fileURLToPath } from 'url';
+import * as os from 'os';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURES_DIR = path.join(__dirname, 'fixtures');
+// This test generates its own fixtures; never overwrite checked-in CSVs.
+const FIXTURES_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'geosuite-csv-regression-'));
 
 // ── Fixture generator ──
 // Create realistic CSV samples with known edge cases

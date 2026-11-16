@@ -46,13 +46,30 @@
   }
   function remoteReady(module) {
     if (module === 'Core') return !!projectContext('Core');
-    if (module === 'Assay') return here === 'Core' ? !!(STATE.merged && STATE.merged.length && _coreAnalysisReady()) : !!projectContext('Assay');
-    if (module === 'Resource') return here === 'Assay' ? !!(DATA && DATA.rows && DATA.rows.length) : false;
+    // Back in Core (for example after "Refine in Detailed"), the merged table is rebuilt on demand by exportMasterCSV,
+    // so the later stages stay reachable whenever the Core data itself is ready.
+    var coreReady = function () { return !!(STATE.assay && STATE.assay.length && _coreAnalysisReady()); };
+    if (module === 'Assay') return here === 'Core' ? coreReady() : !!projectContext('Assay');
+    if (module === 'Resource') return here === 'Assay' ? !!(DATA && DATA.rows && DATA.rows.length) : here === 'Core' ? coreReady() : false;
     return false;
+  }
+  // Why a later stage cannot open yet, with the way forward: from Core that is the data check in Validation.
+  function explainUnavailable() {
+    if (typeof toast !== 'function') return;
+    if (here === 'Core' && typeof STATE === 'object' && STATE.assay && STATE.assay.length) {
+      toast(tr('journey.coreNotReady'), 'warn');
+      if (typeof window.showTab === 'function') window.showTab(7);
+      return;
+    }
+    toast(tr('journey.stageUnavailable'), 'warn');
   }
   function openRemoteStage(module, panel) {
     if (window.OrebitQuickRun) OrebitQuickRun.clear();
     if (module === 'Assay' && here === 'Core') return OrebitHandoff.sendSameWindow('Assay', exportMasterCSV, panel);
+    // Core has no direct hand-off to Resource: pass through Assay untouched, as the Quick run does.
+    if (module === 'Resource' && here === 'Core' && window.OrebitQuickRun && OrebitQuickRun.expect('Assay')) {
+      return Promise.resolve(OrebitHandoff.sendSameWindow('Assay', exportMasterCSV, 3)).then(function (ok) { if (!ok) OrebitQuickRun.clear(); return ok; });
+    }
     if (module === 'Resource' && here === 'Assay') return sendResourceHandoff(false, true, panel);
     if (module === 'Core') return OrebitHandoff.sendCoreProject(projectContext('Core'), window, panel);
     if (module === 'Assay' && here === 'Resource') return OrebitHandoff.sendProjectSameWindow('Assay', projectContext('Assay'), panel);
@@ -63,6 +80,29 @@
     var panel = handoffPanel; handoffPanel = 0;
     showTab(panel);
   }
+  // A page that has just received a handoff shows its data before the project
+  // context is activated (~0.7 s in practice). A click in that window used to read
+  // as "not available"; wait for the activation events before saying so.
+  function openStageWhenReady(target, panel) {
+    if (remoteReady(target)) return openRemoteStage(target, panel);
+    return new Promise(function (resolve) {
+      var settled = false;
+      function attempt() {
+        if (settled || !remoteReady(target)) return;
+        settled = true; cleanup(); resolve(openRemoteStage(target, panel));
+      }
+      function cleanup() {
+        window.removeEventListener('orebit-handoff-activated', attempt);
+        window.removeEventListener('orebit-domain-handoff', attempt);
+      }
+      window.addEventListener('orebit-handoff-activated', attempt);
+      window.addEventListener('orebit-domain-handoff', attempt);
+      setTimeout(function () {
+        if (settled || remoteReady(target)) return;
+        settled = true; cleanup(); explainUnavailable(); resolve(false);
+      }, 2000);
+    });
+  }
   function bindHeaderModuleLinks() {
     if (window.__OREBIT_RT__ && !window.__OREBIT_RT__.single) return;
     document.querySelectorAll('a[data-phase-switch]').forEach(function (link) {
@@ -70,8 +110,7 @@
         var target = (link.getAttribute('href').match(/^(Core|Assay|Resource)\.html$/) || [])[1];
         if (!target || target === here) return;
         event.preventDefault(); event.stopImmediatePropagation();
-        if (!remoteReady(target)) { if (typeof toast === 'function') toast(tr('journey.stageUnavailable'), 'warn'); return; }
-        Promise.resolve(openRemoteStage(target, target === 'Core' ? 2 : 3)).then(function (ok) {
+        Promise.resolve(openStageWhenReady(target, target === 'Core' ? 2 : 3)).then(function (ok) {
           if (!ok && typeof toast === 'function') toast(tr('journey.stageFailed'), 'warn');
         }).catch(function (error) { console.warn('[journey header handoff]', error); if (typeof toast === 'function') toast(tr('journey.stageFailed'), 'warn'); });
       });
@@ -185,6 +224,8 @@
         }
         var num=document.createElement('span');num.className='journey-num';num.textContent=String(n);
         var name=document.createElement('span');name.className='journey-name';name.textContent=tr(step[0]);
+        // A collapsed sidebar shows the numbers only, so the step name stays on the control itself.
+        if(!node.getAttribute('aria-label'))node.setAttribute('aria-label',n+'. '+tr(step[0]));
         node.append(num,name);item.append(node);list.append(item);
       });
       bar.replaceChildren(list);bar.classList.add('is-quick');return;
@@ -205,7 +246,7 @@
         node.title = tr(remoteReady(module) ? 'journey.otherModule' : 'journey.stageUnavailable').replace('{module}', module);
         if (!remoteReady(module)) node.setAttribute('aria-disabled', 'true');
         node.addEventListener('click', function () {
-          if (!remoteReady(module)) { if (typeof toast === 'function') toast(tr('journey.stageUnavailable'), 'warn'); return; }
+          if (!remoteReady(module)) { explainUnavailable(); return; }
           Promise.resolve(openRemoteStage(module, panel)).then(function (ok) { if (!ok && typeof toast === 'function') toast(tr('journey.stageFailed'), 'warn'); }).catch(function (error) { console.warn('[journey stage handoff]', error); if (typeof toast === 'function') toast(tr('journey.stageFailed'), 'warn'); });
         });
       } else if (module !== here) node.title = tr('journey.otherModule').replace('{module}', module);

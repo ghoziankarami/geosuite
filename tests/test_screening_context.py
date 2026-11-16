@@ -2,6 +2,8 @@
 import functools, http.server, json, os, tempfile, threading
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+import practice_sample  # this suite checks the sample's known defects, so it uses the practice copy
+practice_sample.enable()
 
 def open_task_options(page, disclosure):
     target = page.locator('#' + disclosure)

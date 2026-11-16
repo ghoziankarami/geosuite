@@ -131,7 +131,8 @@ def calculate(page):
     check(not page.audit_errors and not page.evaluate("window.__resourceInputFailures"), "sensitivity completes without uncaught or swallowed rendering failures")
     nav(page, 7)
     open_task_options(page, 'resourceCVOptions')
-    cv_help = page.locator('#tab7').inner_text()
+    # Help text may sit behind its ? mark; the guidance is still the stage's own text.
+    cv_help = page.locator('#tab7').text_content()
     check('R² > 0.4' not in cv_help and 'no universal R² acceptance threshold' in cv_help,
           'native LOO help avoids a universal R squared acceptance threshold')
     check('reproducible subsample' in cv_help and 'Same-drillhole neighbours may remain' in cv_help,
@@ -162,7 +163,7 @@ def calculate(page):
     check(page.evaluate('JSON.stringify({rows:DATA.rows,results:estimState.results,labels:classState.labels,metrics:crossvalState.metrics})')==before_language,
           'confidence language-only redraw preserves all raw rows, estimates, class assignments and CV metrics')
     nav(page, 7)
-    check('Tidak ada ambang penerimaan R² universal' in page.locator('#tab7').inner_text(),
+    check('Tidak ada ambang penerimaan R² universal' in page.locator('#tab7').text_content(),
           'Indonesian LOO help preserves the same acceptance limitation')
     nav(page, 9)
     page.locator('#lang-switch').click()

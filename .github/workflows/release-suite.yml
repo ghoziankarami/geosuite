@@ -105,8 +105,7 @@ jobs:
         shell: pwsh
         run: |
           $found = (Get-Item "desktop\dist\Orebit-GeoSuite.exe").VersionInfo.FileVersion
-          $want = "${{ env.TAG }}".TrimStart("v")
-          if ($found -notlike "$want*") { throw "FileVersion $found does not start with $want" }
+          python desktop/verify-single-artifact.py --version "$found" "${{ env.TAG }}"
           Write-Host "ok: FileVersion $found"
 
       - name: Verify the artifact

@@ -92,7 +92,7 @@ def _default_vault() -> Path:
 # now". Keep it short per tab — three or four entries, most relevant first.
 TAB_MAP: dict[str, dict[str, list[str]]] = {
     "Core": {
-        "1": ["start/overview", "start/quickstart"],
+        "1": ["start/quick", "start/overview", "start/quickstart"],
         "2": ["start/data", "trouble/index#columns-not-detected"],
         "3": ["start/data", "ref/validation"],
         "4": ["start/data", "trouble/index#holes-point-up"],
@@ -111,7 +111,7 @@ TAB_MAP: dict[str, dict[str, list[str]]] = {
         "13": ["workflows/prepare", "workflows/reporting"],
     },
     "Assay": {
-        "1": ["start/overview"],
+        "1": ["start/quick", "start/overview"],
         "2": ["start/data", "trouble/index#columns-not-detected"],
         "3": ["start/data"],
         "4": ["workflows/topcut"],
@@ -125,7 +125,7 @@ TAB_MAP: dict[str, dict[str, list[str]]] = {
         "12": ["workflows/reporting"],
     },
     "Resource": {
-        "1": ["start/overview", "workflows/estimate"],
+        "1": ["start/quick", "start/overview", "workflows/estimate"],
         "2": ["start/data", "trouble/index#columns-not-detected"],
         "3": ["concepts/declustering", "workflows/topcut", "ref/estimation"],
         "4": ["ref/variography", "workflows/variogram", "trouble/index#flat-variogram"],

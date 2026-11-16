@@ -472,6 +472,10 @@ function refreshDemoBanner() {
     // naming and must stay text-only.
     asHtml = true;
     label = T('ds.sample', 'Sample data — a built-in example, not your data. <a href="#" data-goto-tab="2">Import your own →</a>');
+  } else if (project && /^(master-estimation|drillhole-clean)[\w.-]*\.csv$/i.test(project)) {
+    // A file handed over by the previous module is the user's data from that step, not a project they named.
+    kind = 'ok';
+    label = T('ds.handoff', 'Your data — from the previous step');
   } else if (project) {
     kind = 'ok';
     label = T('ds.project', 'Your data — project "{name}"').replace('{name}', project);

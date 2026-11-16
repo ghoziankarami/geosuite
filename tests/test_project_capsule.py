@@ -343,9 +343,19 @@ try:
                 chooser.value.set_files({'name':'delayed-project.orebit','mimeType':'application/json',
                                          'buffer':json.dumps(delayed).encode('utf-8')})
                 page.locator('#p3ApplyMapping').wait_for(state='visible')
-                for target, source in (('midx','axis_a'),('midy','axis_b'),('midz','axis_c')):
-                    page.locator(f'.colmap-sel[data-target="{target}"]').select_option(source)
-                page.locator('#colmapGrade').select_option('au_gpt')
+                # A second, slower import can rebuild this panel while the user maps.
+                # A user simply re-picks; wait until the choices stick before Apply.
+                def map_delayed_project():
+                    for _ in range(20):
+                        for target, source in (('midx','axis_a'),('midy','axis_b'),('midz','axis_c')):
+                            page.locator(f'.colmap-sel[data-target="{target}"]').select_option(source)
+                        page.locator('#colmapGrade').select_option('au_gpt')
+                        values = page.evaluate("()=>Object.fromEntries(Array.from(document.querySelectorAll('.colmap-sel')).map(s=>[s.dataset.target,s.value]))")
+                        if (values.get('midx'), values.get('midy'), values.get('midz')) == ('axis_a', 'axis_b', 'axis_c'):
+                            return True
+                        page.wait_for_timeout(150)
+                    return False
+                check(map_delayed_project(), 'The delayed-import mapping choices stay applied before Apply')
                 page.evaluate('''()=>{window.__originalCapsuleHash=window._opcSha256;
                   window._opcSha256=value=>new Promise((resolve,reject)=>{
                     window.__releaseCapsuleHash=()=>window.__originalCapsuleHash(value).then(resolve,reject);

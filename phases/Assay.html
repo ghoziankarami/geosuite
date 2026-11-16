@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <!-- OREBIT_BUILD_START
-Orebit Assay — GeoSuite v3.2.3
+Orebit Assay — GeoSuite v3.2.4
 Copyright (c) 2026 Orebit (Ghozian Islam Karami). GPL-3.0-only.
-Build: assay-v3.2.3-source
+Build: assay-v3.2.4-source
 Terms: https://geosuite.orebit.id/terms
 -- OREBIT_BUILD_END -->
-<script>window.OREBIT_BUILD_ID="assay-v3.2.3-source";</script>
+<script>window.OREBIT_BUILD_ID="assay-v3.2.4-source";</script>
+
 
 
 
@@ -29,7 +30,7 @@ Terms: https://geosuite.orebit.id/terms
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="product-version" content="v3.2.3"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
+<meta name="product-version" content="v3.2.4"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
 <meta name="product-name" content="Orebit Assay">
 <meta name="product-stage" content="Assay">
 <!-- CSP: data remains local; optional online services and release checks use explicit origins. -->
@@ -528,6 +529,45 @@ OrebitQuickRun.on('Assay', async function () {
   toast(t('quick.assayPassing'), 'info');
   OrebitQuickRun.expect('Resource');
   if (!(await sendResourceHandoff(false, true))) OrebitQuickRun.clear();
+});
+// Journey workspace (Detailed): stepping back to Core and returning with the same Core data restores the
+// treatments, interpretation and domain decisions made here, instead of starting again from the forwarded CSV.
+// The key is the incoming data before any treatment, so changed Core data never reuses old decisions.
+function _assayWorkspaceKey() {
+  if (typeof DATA === 'undefined' || !DATA || !DATA.rows || !DATA.rows.length) return null;
+  const pipes = window._gradePipeline || {};
+  const raw = Object.keys(pipes).map(c => [colIdx(c), pipes[c].raw]).filter(([i, values]) => i >= 0 && Array.isArray(values));
+  let h = 2166136261;
+  const add = value => { const text = JSON.stringify(value); for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } h ^= 124; h = Math.imul(h, 16777619) >>> 0; };
+  add(DATA.cols);
+  // The geological domain received with the data is part of the input: a changed readiness or revision never reuses old decisions.
+  const domain = typeof OrebitHandoff === 'object' ? OrebitHandoff.domain() : null;
+  add(domain ? { readiness: domain.handoff?.readiness || null, volume: domain.handoff?.volume ?? null, revision: domain.revision || domain.handoff?.revision || null, codes: (domain.domains || []).map(d => d.code) } : null);
+  DATA.rows.forEach((row, r) => { if (raw.length) { row = row.slice(); raw.forEach(([i, values]) => { row[i] = values[r]; }); } add(row); });
+  return 'assay-v1:' + DATA.rows.length + ':' + h.toString(16);
+}
+function _assayWorkspaceHasDecisions(bundle) {
+  const tr = bundle && bundle.treatments || {};
+  return Object.values(tr.pipeline || {}).some(p => (p.ops || []).length) || Object.keys(tr.decisions || {}).length > 0 ||
+    !!bundle.statisticalDomainReview || (bundle.statisticalDomainHistory || []).length > 0 ||
+    (bundle.interpretation != null && JSON.stringify(bundle.interpretation) !== JSON.stringify(window.OrebitAssayWorkflow?.serialise()));
+}
+window.__orebitBeforeLeave = async function () {
+  const key = _assayWorkspaceKey();
+  if (key && typeof OrebitHandoff === 'object' && OrebitHandoff.workspaceSave) await OrebitHandoff.workspaceSave('Assay', key, buildBundle(DATA.name));
+};
+window.addEventListener('orebit-handoff-activated', function () {
+  if (document.body.classList.contains('journey-quick') || typeof OrebitHandoff !== 'object' || !OrebitHandoff.workspaceLoad) return;
+  setTimeout(async function () {
+    try {
+      await OrebitHandoff.domainReady();
+      const key = _assayWorkspaceKey();
+      const saved = key && await OrebitHandoff.workspaceLoad('Assay', key);
+      if (!saved || !_assayWorkspaceHasDecisions(saved)) return;
+      await applyBundle(saved);
+      toast(t('asy.workspace.restored'), 'good');
+    } catch (error) { console.warn('[Assay workspace restore]', error); }
+  }, 0);
 });
 /* @orebit-inline: shared/ui/screening-workflow.js */
 /* @orebit-inline: shared/ui/assay-workflow.js */

@@ -169,7 +169,16 @@
     // Quick (the default) leads with adding data, as in the owner mock; Start review / Resume
     // are the Detailed workflow's entries. Read the stored choice so load order cannot matter.
     let quick=true;try{quick=localStorage.getItem('orebit.journeyMode.v1')!=='detailed';}catch(e){}
-    if(quick&&first!==2&&!assay()&&!resource()){const importData=button(tr('import'),'next',()=>navigate(2));importData.dataset.dashboardAction='import';actions.append(importData);}
+    // A blocked built-in sample makes "repair the sample" (in the data check below) the one primary action,
+    // so importing your own data becomes the secondary choice instead of a competing primary.
+    const sampleRepair=!assay()&&!resource()&&typeof window.__isSampleData==='function'&&window.__isSampleData()&&!!window.OrebitCoreRepair?.candidate?.();
+    if(quick&&first!==2&&!assay()&&!resource()){
+      // Blocked built-in sample: the first screen offers exactly two choices, repair it and continue (primary) or import your own data.
+      // The ready built-in sample: one primary straight to the estimate, Import as the secondary choice.
+      const sampleReady=!sampleRepair&&!assay()&&!resource()&&typeof window.__isSampleData==='function'&&window.__isSampleData()&&typeof _coreAnalysisReady==='function'&&_coreAnalysisReady()&&window.OrebitQuickRun?.available();
+      if(sampleReady){const go=button(window.__t('core.check.estimateSample'),'next',()=>coreQuickEstimate());go.dataset.dashboardAction='estimate-sample';go.dataset.checkAction='estimate';actions.append(go);}
+      if(sampleRepair){const repair=button(window.__t('core.check.repairSample'),'next',async()=>{window.OrebitCoreRepair.armQuickReturn();if(!await window.OrebitCoreRepair.applySource())window.OrebitCoreRepair.disarmQuickReturn();});repair.dataset.dashboardAction='repair-sample';repair.dataset.checkAction='repair-sample';actions.append(repair);}
+      const importData=button(tr('import'),sampleRepair||sampleReady?'inspect':'next',()=>navigate(2));importData.dataset.dashboardAction='import';actions.append(importData);}
     else{const lead=button(resume?tr('resume',{stage:label(first)}):tr(first===2?'import':'start'),'next',()=>navigate(first));lead.dataset.dashboardAction=first===2?'import':'start';actions.append(lead);if(first!==2){const importData=button(tr('import'),'inspect',()=>navigate(2));importData.dataset.dashboardAction='import';actions.append(importData);}}
     card.append(actions);
     card.append(related('core',1,navigate));panel.prepend(card);
@@ -412,6 +421,8 @@
     }else {
       summary.append(node('strong',tr('quickInsight')),node('p',facts(n)));
       if(!resource()&&!assay()&&n===14){summary.setAttribute('role','status');summary.setAttribute('aria-live','polite');}
+      // The same Core totals on every stage are noise: show the insight only where it says something new.
+      else if(!resource()&&!assay()&&n!==2&&facts(n)===facts(1))summary.hidden=true;
     }
     card.append(summary);
     const actions=node('div',null,'workflow-actions');
@@ -462,6 +473,9 @@
       handoff.disabled=!STATE.merged?.length||!_coreAnalysisReady();actions.append(handoff);
     }
     if(!resource()&&[2,7].includes(n)&&STATE.usingSample)actions.append(button(window.__t('core.source.download'),'inspect',downloadSampleSources));
+    // Practice data for learning Validation: the sample copy with known defects, loaded only on request.
+    if(!resource()&&!assay()&&n===7&&STATE.usingSample&&!STATE.samplePractice){const practice=button(window.__t('core.source.practice'),'inspect',()=>{resetToSample({practice:true});toast(window.__t('core.source.practiceLoaded'),'info');navigate(7);});practice.dataset.samplePractice='load';actions.append(practice);}
+    if(!resource()&&!assay()&&n===7&&STATE.usingSample&&STATE.samplePractice){const clean=button(window.__t('core.source.clean'),'inspect',()=>{resetToSample({practice:false});navigate(7);});clean.dataset.samplePractice='clear';actions.append(clean);}
     if(panel.querySelector('details[data-workflow-options]'))actions.append(button(tr('options'),'custom',()=>customize(panel)));card.append(actions);
     if(target){const gate=node('p',null,'workflow-gate');gate.setAttribute('role','status');card.append(gate);}
     card.append(related(resource()?'resource':'core',n,navigate));
@@ -577,3 +591,48 @@
   window.OrebitScreeningWorkflow={customize,decorateOptions,dashboard,links,related,sidebar,stageBar,mirror,compact,refresh,inspect,reset:()=>{failedAttempt=null;origins.clear();}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else setTimeout(boot,0);
 })();
+
+/* Concise screens: a long explanation (card description or stage recommendation) moves behind a "?" mark
+   beside it, so each screen shows its controls, values and results first. Warnings, blockers, status and
+   paragraphs carrying live values stay visible. The mark is a span role=button, like the Domain help marks,
+   so it does not join the owner control inventory. */
+(function () {
+  'use strict';
+  var MIN_WORDS = 12;
+  function label() { return window.__t ? window.__t('help.title') : 'Help'; }
+  function candidate(p, hint) {
+    // A paragraph another control points to (aria-describedby, label) is that control's own guidance: keep it visible.
+    if (p.id && document.querySelector('[aria-describedby~="' + p.id + '"],[aria-labelledby~="' + p.id + '"]')) return false;
+    if (p.dataset.copyFold || p.hidden || p.closest('#resultSummary,.result-summary,.core-check-summary,[role=alert],[role=status],.toast,dialog,.modal') || (!hint && p.closest('.hint'))) return false;
+    if ((!hint && p.matches('.hint')) || p.matches('.warn,.bad,.good,.result-summary-notice,.workflow-gate,.workflow-insight p,[role]')) return false;
+    if (p.querySelector('[id],button,input,select,a,textarea')) return false;
+    // Only an introduction directly under its card title (or a card's first paragraph) is an explanation that can wait;
+    // a sentence placed among results states their basis and stays visible.
+    var prev = p.previousElementSibling;
+    if (!p.matches('.workflow-recommendation') && !(prev ? prev.matches('h2,h3,h4,.card-title,.copy-qhelp-mark') : true)) return false;
+    var text = (p.textContent || '').trim();
+    return text.split(/\s+/).length >= MIN_WORDS;
+  }
+  function fold(p) {
+    p.dataset.copyFold = 'folded';
+    var mark = document.createElement('span');
+    mark.className = 'copy-qhelp-mark'; mark.textContent = '?'; mark.tabIndex = 0;
+    mark.setAttribute('role', 'button'); mark.setAttribute('aria-expanded', 'false'); mark.setAttribute('aria-label', label());
+    p.hidden = true; p.classList.add('copy-folded');
+    var toggle = function () { p.hidden = !p.hidden; mark.setAttribute('aria-expanded', String(!p.hidden)); };
+    mark.addEventListener('click', toggle);
+    mark.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggle(); } });
+    // Beside the folded text, never inside a heading: headings keep their exact names for readers and tests.
+    p.before(mark);
+  }
+  function scan() {
+    document.querySelectorAll('.panel .card>p,.panel .workflow-recommendation,.panel .card>.card-sub,.panel .card>.muted').forEach(function (p) { if (candidate(p)) fold(p); });
+    // Neutral static hints (no live values, not a warning) of 20 words or more are explanations too.
+    document.querySelectorAll('.panel p.hint:not(.warn):not(.bad):not(.good),.panel .card span.hint').forEach(function (p) { if (candidate(p, true) && (p.textContent || '').trim().split(/\s+/).length >= 20) fold(p); });
+  }
+  var frame = 0;
+  function schedule() { if (!frame) frame = requestAnimationFrame(function () { frame = 0; scan(); }); }
+  function start() { scan(); new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true }); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+

@@ -14,6 +14,8 @@ from pathlib import Path
 
 import fitz
 from playwright.sync_api import sync_playwright, expect
+import practice_sample  # Validation repair runs on the practice copy of the sample
+practice_sample.enable()
 
 def _workflow_options(page, disclosure):
     # Open the native task Options before editing, retaining all science checks.

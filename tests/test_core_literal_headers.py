@@ -360,8 +360,9 @@ def test_striplog_mobile_controls_clear_bottom_navigation(browser, base, languag
           const nav = document.querySelector('#mobileBottomNav').getBoundingClientRect();
           const blocked = [...document.querySelectorAll('#tab8 button,#tab8 input,#tab8 select,#tab8 summary')]
             .map(el => ({el, rect: el.getBoundingClientRect()}))
-            .filter(({rect}) => rect.width && rect.height && rect.bottom > nav.top && rect.top < nav.bottom)
+            .filter(({el, rect}) => el.checkVisibility() && rect.width && rect.height && rect.bottom > nav.top && rect.top < nav.bottom)
             .map(({el}) => el.innerText.trim() || el.getAttribute('aria-label') || el.id || el.outerHTML.slice(0,100));
+          // Controls inside a closed disclosure are not rendered (checkVisibility false) even though they keep a box.
           return {blocked, navTop: nav.top, scrollY, scrollHeight: document.documentElement.scrollHeight};
         }""")
         check(not result["blocked"], f"{language} 390px Strip Log reaches its last controls above the fixed mobile navigation: {result}")

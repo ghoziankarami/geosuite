@@ -598,12 +598,9 @@
         + (function(){{
           var isId = document.documentElement.lang === 'id';
           var supportLbl = isId ? 'Dukung Orebit' : 'Support Orebit';
-          var titleLbl = isId ? '💚 Terbantu GeoSuite?' : '💚 Enjoying GeoSuite?';
-          var bodyLbl = isId ? 'Dukung tool & dokumentasi secara sukarela — sekali saja, tanpa langganan.' : 'Support the tools & docs voluntarily — one-time, no subscription.';
-          return '<div class="orebit-profile-upgrade" style="margin:8px 12px 4px;padding:12px;border-radius:8px;background:#ecfdf5;border:1px solid #a7f3d0;text-align:center;">'
-            + '<div style="font-size:13px;font-weight:600;color:#065f46;margin-bottom:4px;">' + titleLbl + '</div>'
-            + '<div style="font-size:11px;color:#047857;margin-bottom:8px;">' + bodyLbl + '</div>'
-            + '<a href="{SUPPORT_URL}" target="_blank" style="display:inline-block;padding:6px 16px;border-radius:6px;background:#087e82;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">💚 ' + supportLbl + '</a>'
+          // One compact voluntary link (no card): support is never a paywall and never crowds the menu.
+          return '<div class="orebit-profile-upgrade" style="margin:4px 12px;padding:0;text-align:left;">'
+            + '<a href="{SUPPORT_URL}" target="_blank" rel="noopener" style="display:inline-block;padding:6px 12px;border-radius:6px;background:#087e82;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">💚 ' + supportLbl + '</a>'
             + '</div>';
         }})()
         + '<div class="orebit-profile-sec" style="padding:6px 0;">'
@@ -628,9 +625,12 @@
           // the header already carries a Documentation link to the same URL,
           // and the help bubble opens the embedded manual. Three doors to one
           // room is what made this menu feel crowded.
-           + '<a href="' + esc(orebitIssueUrl('bug')) + '" target="_blank" class="orebit-profile-act" style="text-decoration:none;color:inherit;" rel="noopener"><span>🐛 ' + (document.documentElement.lang === 'id' ? 'Laporkan Bug' : 'Report Bug') + '</span></a>'
-           + '<a href="' + esc(orebitIssueUrl('numbers')) + '" target="_blank" class="orebit-profile-act" style="text-decoration:none;color:inherit;" rel="noopener"><span>∑ ' + (document.documentElement.lang === 'id' ? 'Laporkan Angka Salah' : 'Report Wrong Number') + '</span></a>'
+           // About Orebit: the app's links live here once; reporting a problem is in the Help menu.
+           + '<a href="https://orebit.id" target="_blank" class="orebit-profile-act" style="text-decoration:none;color:inherit;" rel="noopener"><span>↗ orebit.id</span></a>'
            + '<a href="https://github.com/ghoziankarami/geosuite" target="_blank" class="orebit-profile-act" style="text-decoration:none;color:inherit;" rel="noopener"><span>⌘ ' + (document.documentElement.lang === 'id' ? 'Kode Sumber (GPL-3.0)' : 'Source Code (GPL-3.0)') + '</span></a>'
+           + '<a href="https://www.instagram.com/orebit.id" target="_blank" class="orebit-profile-act" style="text-decoration:none;color:inherit;" rel="noopener"><span>◎ Instagram</span></a>'
+           + '<a href="https://www.linkedin.com/company/orebit-id" target="_blank" class="orebit-profile-act" style="text-decoration:none;color:inherit;" rel="noopener"><span>in LinkedIn</span></a>'
+           + '<div style="padding:4px 16px 8px;font-size:11px;color:#64748b;">' + (document.documentElement.lang === 'id' ? 'Mengutamakan privasi: data diproses hanya di perangkat Anda.' : 'Privacy-first: data is processed only on your device.') + '</div>'
         + '</div>';
       menu.querySelectorAll('.orebit-profile-act, .orebit-profile-edit').forEach(function(b) {{
         b.addEventListener('click', function() {{
@@ -934,8 +934,9 @@
       '<a data-action="report-bug" href="' + esc(orebitIssueUrl('bug')) + '" target="_blank" rel="noopener">' +
         '<span class="icon">🐛</span><span class="label">' + (document.documentElement.lang === 'id' ? 'Laporkan Bug' : 'Report Bug') + '</span></a>' +
       '<a data-action="report-numbers" href="' + esc(orebitIssueUrl('numbers')) + '" target="_blank" rel="noopener">' +
-        '<span class="icon">∑</span><span class="label">' + (document.documentElement.lang === 'id' ? 'Laporkan Angka Salah' : 'Report Wrong Number') + '</span></a>' +
-      helpLinksHtml();
+        '<span class="icon">∑</span><span class="label">' + (document.documentElement.lang === 'id' ? 'Laporkan Angka Salah' : 'Report Wrong Number') + '</span></a>';
+    // Orebit links, source and support are "about the app", not help: their one desktop home is the profile menu
+    // (phones keep them in the drawer below).
 
     document.body.appendChild(menu);
     if (toolbar) toolbar.insertBefore(btn, toolbar.querySelector('#lang-switch')); else document.body.appendChild(btn);

@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <!-- OREBIT_BUILD_START
-Orebit Core — GeoSuite v3.2.3
+Orebit Core — GeoSuite v3.2.4
 Copyright (c) 2026 Orebit (Ghozian Islam Karami). GPL-3.0-only.
-Build: core-v3.2.3-source
+Build: core-v3.2.4-source
 Terms: https://geosuite.orebit.id/terms
 -- OREBIT_BUILD_END -->
-<script>window.OREBIT_BUILD_ID="core-v3.2.3-source";</script>
+<script>window.OREBIT_BUILD_ID="core-v3.2.4-source";</script>
+
 
 
 
@@ -28,7 +29,7 @@ Terms: https://geosuite.orebit.id/terms
 
 <head>
 <meta charset="UTF-8">
-<meta name="product-version" content="v3.2.3"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
+<meta name="product-version" content="v3.2.4"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
 <meta name="product-name" content="Orebit Core">
 <meta name="product-stage" content="Core">
 <!-- CSP: data remains local; optional online services and release checks use explicit origins. -->
@@ -1437,17 +1438,24 @@ function resetToSample(options = {}) {
     var d = window.STATE?.merged || window.STATE?.collar || [];
     if (Array.isArray(d) && d.length) window._renderDataPreview(d, null, {maxRows: 10});
   }, 100); } catch (e) { console.warn("preview", e); }
-  STATE.collar = SAMPLE_DATA.collar.map(r => ({...r}));
+  // The built-in sample opens valid, so a first estimate needs no repair. The practice copy with known defects
+  // (for learning Validation) loads only on request: resetToSample({practice:true}) or the stored practice choice.
+  let practice = options.practice;
+  if (practice == null) { try { practice = localStorage.getItem('orebit.samplePractice.v1') === '1'; } catch (e) { practice = false; } }
+  try { localStorage.setItem('orebit.samplePractice.v1', practice ? '1' : '0'); } catch (e) { /* choice is a convenience */ }
+  const sample = practice ? SAMPLE_DATA : SAMPLE_SOURCE_DATA;
+  STATE.samplePractice = !!practice;
+  STATE.collar = sample.collar.map(r => ({...r}));
   // Auto-set CRS for the sample (nickel laterite, Southeast Sulawesi = WGS 84 / UTM 51S)
   STATE.crs = 'EPSG:32751';
   STATE.survey = SAMPLE_DATA.survey.map(r => ({...r}));
   STATE.assay = SAMPLE_DATA.assay.map(r => ({...r}));
   _cachedGradeCols = null;
-  STATE.geology = SAMPLE_DATA.geology.map(r => ({...r}));
+  STATE.geology = sample.geology.map(r => ({...r}));
   // Sample data is already keyed by canonical column names — use those as the
   // "raw headers" so Column Mapping reports a genuine (and here, real) full match.
   ['collar','survey','assay','geology'].forEach(t => {
-    STATE.rawHeaders[t] = Object.keys(SAMPLE_DATA[t][0] || {});
+    STATE.rawHeaders[t] = Object.keys(sample[t][0] || {});
     STATE.rawRows[t] = STATE[t].map(r => ({...r}));
     delete STATE.manualMap[t];
     STATE.isSample[t] = true;
@@ -2296,6 +2304,13 @@ function coreCheckFacts() {
     merged: STATE.merged ? STATE.merged.length : 0,
   };
 }
+// Quick: prepare the Core data and carry it through Assay to the Resource review in this window.
+function coreQuickEstimate() {
+  if (!STATE.merged) computeMerge();
+  if (!STATE.merged?.length) { renderCoreCheckSummary(); return; }
+  OrebitQuickRun.expect('Assay');
+  OrebitHandoff.sendSameWindow('Assay', exportMasterCSV).then(ok => { if (!ok) OrebitQuickRun.clear(); });
+}
 function renderCoreCheckSummary() {
   const hosts = ['coreCheckSummary', 'coreCheckSummaryImport'].map(id => document.getElementById(id)).filter(Boolean);
   if (!hosts.length) return;
@@ -2350,21 +2365,25 @@ function renderCoreCheckSummary() {
       list.append(entries);
       host.append(list);
     }
-    const lead = state === 'blocked' ? t('core.check.blocked') : state === 'ready' ? t('core.check.ready') : fill(t('core.check.prepared'), { n: facts.merged.toLocaleString() });
-    host.append(el('p', lead, state === 'blocked' ? 'result-summary-notice' : 'result-summary-note'));
+    // Dashboard with the blocked built-in sample: the dashboard's primary is the repair, so say that, not "fix findings".
+    const sampleLead = state === 'blocked' && host.id === 'coreCheckSummary' && document.body.classList.contains('journey-quick') && window.OrebitCoreRepair?.candidate?.();
+    const lead = sampleLead ? t('core.check.sampleNote') : state === 'blocked' ? t('core.check.blocked') : state === 'ready' ? t('core.check.ready') : fill(t('core.check.prepared'), { n: facts.merged.toLocaleString() });
+    host.append(el('p', lead, state === 'blocked' && !sampleLead ? 'result-summary-notice' : 'result-summary-note'));
     const actions = el('div', null, 'result-summary-actions');
     const validation = action(t('core.check.openValidation'), () => { window.OrebitCoreRepair?.armQuickReturn?.(); showTab(7); }, 'inspect');
     validation.dataset.checkAction = 'validation';
     if (state === 'blocked') {
       // The built-in sample ships with known, recoverable source defects: Quick offers one direct repair
       // (the same owner as Validation's restore) and returns here, ready, instead of a Validation round trip.
-      if (document.body.classList.contains('journey-quick') && window.OrebitCoreRepair?.candidate?.()) {
-        // One primary action stays "Import your data"; the sample is the clearly labelled alternative.
+      // On the dashboard the same repair is the dashboard's primary action; the Import screen offers it here.
+      if (host.id === 'coreCheckSummaryImport' && document.body.classList.contains('journey-quick') && window.OrebitCoreRepair?.candidate?.()) {
+        // With the sample loaded, continuing means repairing it: that is the single primary action here.
+        // Importing your own data stays available as the secondary choice on the dashboard.
         host.append(el('p', t('core.check.sampleNote'), 'result-summary-note'));
         const repair = action(t('core.check.repairSample'), async () => {
           window.OrebitCoreRepair.armQuickReturn();
           if (!await window.OrebitCoreRepair.applySource()) window.OrebitCoreRepair.disarmQuickReturn();
-        }, 'inspect');
+        }, 'next');
         repair.dataset.checkAction = 'repair-sample';
         actions.append(repair);
       }
@@ -2381,13 +2400,10 @@ function renderCoreCheckSummary() {
       actions.append(prepare);
       if (facts.fail + facts.warn > 0) actions.append(validation);
     }
-    if (state !== 'blocked' && window.OrebitQuickRun?.available()) {
-      const estimate = action(t('core.check.estimate'), () => {
-        if (!STATE.merged) computeMerge();
-        if (!STATE.merged?.length) { renderCoreCheckSummary(); return; }
-        OrebitQuickRun.expect('Assay');
-        OrebitHandoff.sendSameWindow('Assay', exportMasterCSV).then(ok => { if (!ok) OrebitQuickRun.clear(); });
-      }, 'next');
+    // On the Quick dashboard with the ready built-in sample, "Estimate with the sample" is the dashboard's own primary.
+    const dashboardOwnsEstimate = host.id === 'coreCheckSummary' && document.body.classList.contains('journey-quick') && typeof window.__isSampleData === 'function' && window.__isSampleData();
+    if (state !== 'blocked' && window.OrebitQuickRun?.available() && !dashboardOwnsEstimate) {
+      const estimate = action(t('core.check.estimate'), coreQuickEstimate, 'next');
       estimate.dataset.checkAction = 'estimate';
       actions.prepend(estimate);
       host.append(el('p', t('core.check.estimateNote'), 'result-summary-note'));
@@ -10361,7 +10377,7 @@ document.addEventListener('keydown', (e) => {
   }
 
   /* ---- Load bundle data into STATE ---- */
-  async function applyBundle(bundle, {duringStartup = false} = {}) {
+  async function applyBundle(bundle, {duringStartup = false, quiet = false} = {}) {
     // Stage all four source tables before touching the active project. A bad
     // later CSV field must not leave an earlier table, audit or scope replaced.
     // Reuse the ordinary parser/mapping owners and keep legacy optional tables.
@@ -10473,7 +10489,8 @@ document.addEventListener('keydown', (e) => {
 
     const counts = tables.map(t => `${t}:${STATE[t].length}`).join(', ');
     const bdlMsg = bdlReport.changed > 0 ? ` · BDL: ${bdlReport.changed} fixed` : '';
-    toast(t('core.applyBundle.projectLoaded').replace('{counts}', counts).replace('{bdlMsg}', bdlMsg), 'good');
+    // A journey return (Resource/Assay back to Core) is navigation, not an import: no table-count toast.
+    if (!quiet) toast(t('core.applyBundle.projectLoaded').replace('{counts}', counts).replace('{bdlMsg}', bdlMsg), 'good');
     return true;
   }
 

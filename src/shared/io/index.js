@@ -250,6 +250,29 @@ var OrebitHandoff = (function () {
       });
     });
   }
+  // Journey workspace: the last state of a module the user stepped away from in this window, so a return with
+  // the same input can restore its decisions instead of starting again from the forwarded CSV.
+  var WORKSPACE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+  function workspaceSave(module, key, bundle) {
+    if (!/^(Assay|Resource)$/.test(module) || typeof key !== 'string' || !bundle) return Promise.resolve(false);
+    return put('Workspace:' + module, { key: key, bundle: bundle, ts: Date.now() }).then(function () { return true; });
+  }
+  function workspaceLoad(module, key) {
+    return db().then(function (d) {
+      return new Promise(function (resolve, reject) {
+        var tx = d.transaction(STORE, 'readonly'), g = tx.objectStore(STORE).get('Workspace:' + module);
+        g.onsuccess = function () { var r = g.result || null; resolve(r && r.key === key && Date.now() - r.ts < WORKSPACE_MAX_AGE_MS ? r.bundle : null); };
+        g.onerror = function () { reject(g.error); };
+      });
+    });
+  }
+  // Give the page a chance to record its workspace before this window navigates to another module.
+  function beforeLeave() {
+    try {
+      return Promise.resolve(typeof window.__orebitBeforeLeave === 'function' ? window.__orebitBeforeLeave() : null)
+        .catch(function (error) { console.warn('[journey workspace]', error); });
+    } catch (error) { console.warn('[journey workspace]', error); return Promise.resolve(); }
+  }
   // Run an export function and capture the file it would have downloaded.
   function capture(exportFn) {
     var got = null;
@@ -284,6 +307,8 @@ var OrebitHandoff = (function () {
       var bytes=new Uint8Array(24);window.crypto.getRandomValues(bytes);
       var token='core-'+Array.from(bytes,function(b){return b.toString(16).padStart(2,'0');}).join('');
       return put('CoreProject:'+token,{schema:'orebit-core-project-handoff',project:project,ts:Date.now()}).then(function(){
+        return openedWindow===window?beforeLeave():null;
+      }).then(function(){
         openedWindow.location.href='Core.html?coreHandoff='+encodeURIComponent(token)+(panel?'&journeyStage='+encodeURIComponent(panel):'');
         return true;
       });
@@ -306,7 +331,7 @@ var OrebitHandoff = (function () {
       if (new TextEncoder().encode(text).length > SOURCE_MAX) throw Error('PROJECT_STAGE_HANDOFF_TOO_LARGE');
       var bytes = new Uint8Array(24); window.crypto.getRandomValues(bytes);
       var token = 'stage-' + Array.from(bytes, function (b) { return b.toString(16).padStart(2, '0'); }).join('');
-      return put('ProjectStage:' + token, { schema: 'orebit-project-stage-handoff', target: target, panel: panel, project: project, ts: Date.now() }).then(function () {
+      return put('ProjectStage:' + token, { schema: 'orebit-project-stage-handoff', target: target, panel: panel, project: project, ts: Date.now() }).then(beforeLeave).then(function () {
         window.location.href = target + '.html?projectHandoff=' + encodeURIComponent(token);
         return true;
       });
@@ -361,9 +386,8 @@ var OrebitHandoff = (function () {
       return put(target, { name: file.name, text: file.text, domain: payloads[0], source: payloads[1], rev: rev, ts: Date.now() });
     }).then(function () {
       if (quiet) return true; // refresh for an already-open tab: store only, never navigate
-      if (w) handoffWindows[target] = w;
-      if (w) w.location.href = url; else window.location.href = url;
-      return true;
+      if (w) { handoffWindows[target] = w; w.location.href = url; return true; }
+      return beforeLeave().then(function () { window.location.href = url; return true; });
     }, function (err) {
       if (w) try { w.close(); } catch (e) { /* ignore */ }
       if (typeof toast === 'function') toast('Could not hand the data over (' + (err && err.message || err) + '). Use the CSV export instead.', 'bad');
@@ -559,7 +583,7 @@ var OrebitHandoff = (function () {
   return { available: available, sourceStateKey: sourceStateKey, capture: capture, send: send, sendSameWindow: sendSameWindow, sendProjectSameWindow: sendProjectSameWindow, takeProjectSameWindow: takeProjectSameWindow, sendFile:sendFile, receive: receive,
     bindTextImport:bindTextImport, bindFileImport:bindFileImport, inheritImport:inheritImport, activated:activated,
     domainReady:function(){return domainValidation;}, domain: currentDomain, contexts: function () { return receivedContexts.slice(); }, showDomain: showDomain,
-    sendEDAReference: sendEDAReference, sendCoreProject:sendCoreProject, takeCoreProject:takeCoreProject, receiveDesktopAssayReference: receiveDesktopAssayReference,
+    sendEDAReference: sendEDAReference, sendCoreProject:sendCoreProject, takeCoreProject:takeCoreProject, workspaceSave: workspaceSave, workspaceLoad: workspaceLoad, receiveDesktopAssayReference: receiveDesktopAssayReference,
     sendAssayCheckpointReturn:sendAssayCheckpointReturn, receiveDesktopAssayCheckpointReturn:receiveDesktopAssayCheckpointReturn,
     receiveAssayCheckpointReturn:receiveAssayCheckpointReturn, importAssayCheckpointReturnFile:importAssayCheckpointReturnFile,
     recordAssayCheckpointReturn:recordAssayCheckpointReturn, restoreAssayCheckpointReturn:restoreAssayCheckpointReturn,

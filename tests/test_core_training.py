@@ -14,6 +14,8 @@ import threading
 import zipfile
 from pathlib import Path
 from playwright.sync_api import sync_playwright, TimeoutError as BrowserTimeout
+import practice_sample  # Validation repair runs on the practice copy of the sample
+practice_sample.enable()
 
 ROOT = next(
     p for p in Path(__file__).resolve().parents if (p / "build/build.mjs").exists()

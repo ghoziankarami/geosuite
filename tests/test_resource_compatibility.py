@@ -110,11 +110,11 @@ with tempfile.TemporaryDirectory() as temp:
             assign(c,'assay',{'midx':'midx','midy':'midy','midz':'midz'});c.evaluate('computeMerge()')
             check(c.evaluate('Math.abs(STATE.merged[0].midx-304.8)<1e-8'),'project manual mapping retains normalized metres')
             c.evaluate('resetToSample()');assign(c,'collar',{});c.evaluate('computeMerge()')
-            check(c.evaluate("window._coreLengthUnit==='m' && STATE.collar[0].x===SAMPLE_DATA.collar[0].x"),'feet upload followed by sample mapping leaves metre sample unchanged')
+            check(c.evaluate("window._coreLengthUnit==='m' && STATE.collar[0].x===SAMPLE_SOURCE_DATA.collar[0].x"),'feet upload followed by sample mapping leaves metre sample unchanged')
             tab(c,2);c.locator('#coreLengthUnit').select_option('ft');c.wait_for_timeout(300)
-            check(c.evaluate('STATE.collar.length===SAMPLE_DATA.collar.length && STATE.collar[0].x===SAMPLE_DATA.collar[0].x'),'changing future import units cannot resurrect a prior uploaded dataset')
+            check(c.evaluate('STATE.collar.length===SAMPLE_SOURCE_DATA.collar.length && STATE.collar[0].x===SAMPLE_SOURCE_DATA.collar[0].x'),'changing future import units cannot resurrect a prior uploaded dataset')
             assign(c,'collar',{})
-            check(c.evaluate('STATE.collar[0].x===SAMPLE_DATA.collar[0].x'),'manual mapping uses loaded source units rather than future import preferences')
+            check(c.evaluate('STATE.collar[0].x===SAMPLE_SOURCE_DATA.collar[0].x'),'manual mapping uses loaded source units rather than future import preferences')
             c.close()
 
             r=page(browser,'Resource');tab(r,2)
@@ -172,10 +172,10 @@ with tempfile.TemporaryDirectory() as temp:
             check(r.evaluate('variogramState.model')==nested,'session roundtrip preserves full nested model and anisotropy')
             r.evaluate('() => noteSessionRecovered(JSON.parse(localStorage.getItem(RESOURCE_SESSION_KEY)))')
             recovery=r.locator('#resourceRecoveryNote').inner_text()
-            check('Resource setup restored' in recovery and 'Recompute declustering' in recovery
-                  and 'Generate Grid' in recovery and 'Run Estimation' in recovery
-                  and r.locator('#resourceRecoveryNote button').count()==0,
-                  'Recovered setup notice explains pending calculations without a misleading clean-start button')
+            check('Settings restored' in recovery and 'recalculated, not stored' in recovery
+                  and r.locator('#resourceRecoveryNote button:not([data-recovery-estimate])').count()==0
+                  and r.locator('#resourceRecoveryNote [data-recovery-estimate]').count()==1,
+                  'Recovered setup notice is one short line with one Estimate again action and no misleading clean-start button')
             r.evaluate("() => {const p=JSON.parse(localStorage.getItem(RESOURCE_SESSION_KEY));delete p.envelopeMode;delete p.envelopeRadius;delete p.search.maxPerHole;delete p.search.secondPass;localStorage.setItem(RESOURCE_SESSION_KEY,JSON.stringify(p));blockState.envelopeMode='xy';searchState.maxPerHole=0;searchState.secondPass=false;restoreResourceSession();}")
             check(r.evaluate("blockState.envelopeMode==='xy'&&!searchState.secondPass&&searchState.maxPerHole===0"),'legacy session without new fields still loads with original defaults')
             r.evaluate('blockState.envelopeMode="xyz";blockState.envelopeRadius=.01;blockState.envelopeRadiusUserSet=true');tab(r,5)

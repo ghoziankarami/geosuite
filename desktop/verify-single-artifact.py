@@ -44,9 +44,34 @@ def windows_version(path):
     return None
 
 
+def version_matches(found, want):
+    """Compare the version a platform reports with the release tag.
+
+    Windows reports the PE fixed version, which can carry a trailing .0
+    (3.2.4.0 for 3.2.4); a longer patch number is a different release
+    (3.2.40 is not 3.2.4).
+    """
+    def parts(text):
+        fields = str(text or "").strip().split()
+        if not fields:
+            return []
+        try:
+            return [int(field) for field in fields[0].split(".")]
+        except ValueError:
+            return []
+
+    have, need = parts(found), parts(want)
+    if not need or len(have) < len(need) or have[: len(need)] != need:
+        return False
+    return all(part == 0 for part in have[len(need) :])
+
+
 def main():
+    if len(sys.argv) == 4 and sys.argv[1] == "--version":
+        check(version_matches(sys.argv[2], sys.argv[3].removeprefix('v')), f"{sys.argv[2]} matches {sys.argv[3]}")
+        return
     if len(sys.argv) != 3:
-        raise SystemExit("usage: verify-single-artifact.py <artifact> <tag>")
+        raise SystemExit("usage: verify-single-artifact.py [--version <found>] <artifact> <tag>")
     artifact, tag = Path(sys.argv[1]), sys.argv[2]
     want = tag.lstrip("v")
 

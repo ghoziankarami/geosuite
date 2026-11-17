@@ -188,7 +188,7 @@
       if (window.__orebitCoreProjectReady) await window.__orebitCoreProjectReady;
       const project=await window.OrebitHandoff.takeCoreProject();
       if (!project || typeof window.applyBundle!=='function') throw Error('CORE_PROJECT_HANDOFF_UNAVAILABLE');
-      await window.applyBundle(project);
+      await window.applyBundle(project, {quiet: true});
       STATE.currentProjectName=null;STATE.saveStatus='unsaved';
       if(typeof updateProjectNameDisplay==='function')updateProjectNameDisplay();
       window.showTab(journeyStage === 2 || journeyStage === 14 ? journeyStage : 14);

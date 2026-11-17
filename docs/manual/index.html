@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Orebit GeoSuite documentation — task-based guides, parameter reference and troubleshooting for drillhole preparation, exploratory analysis and mineral resource estimation. Offline-capable single file.">
-<title>Orebit GeoSuite Docs · v3.2.3</title>
+<title>Orebit GeoSuite Docs · v3.2.4</title>
 <link rel="canonical" href="https://geosuite.orebit.id/docs/">
 <meta name="theme-color" content="#0d9488">
 <!-- version-sync-guard consumer: keep this meta as the single version anchor for this page -->
-<meta name="docs-version" content="v3.2.3">
+<meta name="docs-version" content="v3.2.4">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Orebit">
 <meta property="og:url" content="https://geosuite.orebit.id/docs/">
@@ -276,7 +276,7 @@ figure.shot figcaption{padding:8px 13px; font-size:12.5px; color:var(--muted); b
     <img src="/images/geosuite/og-share.png" alt="" width="24" height="24">
     <span>GeoSuite <span class="sub">Docs</span></span>
   </a>
-  <span class="ver-pill" id="verPill">v3.2.3</span>
+  <span class="ver-pill" id="verPill">v3.2.4</span>
   <span class="topbar-spacer"></span>
   <button class="searchbtn" id="searchBtn">
     <span aria-hidden="true">⌕</span>
@@ -334,7 +334,7 @@ figure.shot figcaption{padding:8px 13px; font-size:12.5px; color:var(--muted); b
   </div>
   <div class="foot-bot">
     © Orebit.id 2026 · <span class="l-en">GPL-3.0 · Source available</span><span class="l-id">GPL-3.0 · Kode sumber tersedia</span> ·
-    <span style="color:var(--teal); font-weight:600;">v3.2.3</span>
+    <span style="color:var(--teal); font-weight:600;">v3.2.4</span>
   </div>
 </footer>
 
@@ -361,7 +361,7 @@ figure.shot figcaption{padding:8px 13px; font-size:12.5px; color:var(--muted); b
    A cell/label written as a plain string is language-neutral
    (parameter names, units, numbers) and is rendered as-is.
 ================================================================== */
-var VERSION = 'v3.2.3';
+var VERSION = 'v3.2.4';
 
 var DOCS = [
 /* ================================================================
@@ -430,8 +430,10 @@ var DOCS = [
       {t:'cards', items:[
         {to:'start/data', en:'Prepare your CSV files', id:'Siapkan file CSV Anda',
          den:'The exact columns each of the four tables needs.', did:'Kolom persis yang dibutuhkan tiap dari empat tabel.'},
-        {to:'start/quickstart', en:'15-minute quickstart', id:'Mulai cepat 15 menit',
-         den:'Raw CSV to a grade-tonnage curve, end to end.', did:'CSV mentah sampai kurva grade-tonnage, ujung ke ujung.'},
+        {to:'start/quick', en:'Quick Estimate in four steps', id:'Quick Estimate dalam empat langkah',
+         den:'Sample or your data to a first estimate, one button per screen.', did:'Sampel atau data Anda sampai estimasi pertama, satu tombol per layar.'},
+        {to:'start/quickstart', en:'Detailed walkthrough (15 minutes)', id:'Panduan Detailed (15 menit)',
+         den:'Every stage, raw CSV to a grade-tonnage curve.', did:'Semua tahap, CSV mentah sampai kurva grade-tonnage.'},
         {to:'ref/domain-workflow', en:'Core Domain to Assay and Resource', id:'Core Domain ke Assay dan Resource',
          den:'Follow contacts, surface pairs or section lofts through review and handoff.', did:'Ikuti kontak, pasangan surface atau loft penampang hingga review dan serah-terima.'},
         {to:'trouble/index', en:'Something is wrong', id:'Ada yang tidak beres',
@@ -598,8 +600,42 @@ var DOCS = [
   },
 
   {
+    id:'quick',
+    en:'Quick Estimate in four steps', id_:'Quick Estimate dalam empat langkah',
+    lede:{
+      en:'The fastest way to a first screening estimate, on the web, the desktop app or your phone. Every setting stays reachable.',
+      id:'Cara tercepat menuju estimasi screening pertama, di web, aplikasi desktop atau ponsel. Semua pengaturan tetap terjangkau.'
+    },
+    blocks:[
+      {t:'p',
+        en:'GeoSuite opens in <b>Quick</b> mode: four steps, one main button per screen. <b>Detailed</b> (switch at the top right) shows all seven stages and every tool. Both work on the same data, and you can switch at any time.',
+        id:'GeoSuite terbuka dalam mode <b>Quick</b>: empat langkah, satu tombol utama per layar. <b>Detailed</b> (saklar di kanan atas) menampilkan ketujuh tahap dan semua alat. Keduanya memakai data yang sama, dan Anda bisa berpindah kapan saja.'},
+      {t:'steps', items:[
+        {en:'<b>Add data.</b> Press <b>Estimate with the sample</b> to try the built-in sample, or <b>Import your data</b> to load your collar, survey, assay and geology CSVs.',
+         id:'<b>Tambah data.</b> Tekan <b>Estimasi dengan sampel</b> untuk mencoba sampel bawaan, atau <b>Impor data Anda</b> untuk memuat CSV collar, survey, assay dan geologi.'},
+        {en:'<b>Check.</b> GeoSuite reads each table and validates it. If something blocks the estimate, the check names it and takes you to the fix. Nothing is changed for you.',
+         id:'<b>Periksa.</b> GeoSuite membaca dan memvalidasi tiap tabel. Bila ada yang memblokir estimasi, pemeriksaan menyebutkannya dan membawa Anda ke perbaikannya. Tidak ada yang diubah tanpa Anda.'},
+        {en:'<b>Estimate.</b> Review the settings the estimate will use (element, population, model, grid, density, search). Change any of them with <b>Setup</b>, then press <b>Estimate</b>.',
+         id:'<b>Estimasi.</b> Tinjau pengaturan yang akan dipakai (unsur, populasi, model, grid, densitas, search). Ubah lewat <b>Setup</b>, lalu tekan <b>Estimasi</b>.'},
+        {en:'<b>Result.</b> Read the volume, grade and contained metal, the coverage and the grade-tonnage curve. Export the PDF, save the project, or <b>Refine in detailed workflow</b>.',
+         id:'<b>Hasil.</b> Baca volume, kadar dan logam terkandung, cakupan dan kurva grade-tonnage. Ekspor PDF, simpan proyek, atau <b>Lanjutkan di alur Detailed</b>.'}
+      ]},
+      {t:'h', en:'Your work is kept', id:'Pekerjaan Anda tersimpan'},
+      {t:'p',
+        en:'Moving between stages or modules keeps your work: Assay treatments and domain decisions come back when you return with the same data, Resource keeps its settings and variogram, and returning to Resource with the same data and settings recalculates the same estimate. If grade values changed (for example after a top-cut), the settings stay and the variogram is fitted again. <b>Save project</b> keeps everything, including the estimation settings, in one file.',
+        id:'Berpindah antar tahap atau modul tidak menghilangkan pekerjaan: perlakuan dan keputusan domain di Assay kembali saat Anda kembali dengan data yang sama, Resource menyimpan pengaturan dan variogramnya, dan kembali ke Resource dengan data dan pengaturan yang sama menghitung ulang estimasi yang sama. Bila nilai kadar berubah (misalnya setelah top-cut), pengaturan tetap dan variogram di-fit ulang. <b>Simpan proyek</b> menyimpan semuanya, termasuk pengaturan estimasi, dalam satu file.'},
+      {t:'h', en:'Practice data', id:'Data latihan'},
+      {t:'p',
+        en:'The built-in sample opens valid. To learn the Validation tools, open <b>Validation</b> in Core and press <b>Load practice data</b>: a copy of the sample with known defects to find and fix. <b>Back to the clean sample</b> restores it.',
+        id:'Sampel bawaan terbuka dalam keadaan valid. Untuk belajar alat Validasi, buka <b>Validasi</b> di Core dan tekan <b>Muat data latihan</b>: salinan sampel dengan cacat yang bisa dicari dan diperbaiki. <b>Kembali ke sampel bersih</b> mengembalikannya.'},
+      {t:'note', k:'warn',
+        en:'A Quick result is a screening estimate, not a Mineral Resource under KCMI, JORC or SNI. A named geologist must review domain, density and continuity before any report.',
+        id:'Hasil Quick adalah estimasi screening, bukan Sumber Daya Mineral menurut KCMI, JORC atau SNI. Geologis yang bertanggung jawab harus meninjau domain, densitas dan kontinuitas sebelum laporan apa pun.'}
+    ]
+  },
+  {
     id:'quickstart',
-    en:'15-minute quickstart', id_:'Mulai cepat 15 menit',
+    en:'Detailed walkthrough (15 minutes)', id_:'Panduan Detailed (15 menit)',
     lede:{
       en:'Raw drillhole CSVs to a grade-tonnage curve, in one sitting. Use the sample dataset the first time.',
       id:'Dari CSV lubang bor mentah ke kurva grade-tonnage, dalam sekali duduk. Pakai dataset contoh untuk percobaan pertama.'
@@ -628,8 +664,8 @@ var DOCS = [
 
       {t:'h', en:'Part 2 — Assay (about 4 minutes)', id:'Bagian 2 — Assay (sekitar 4 menit)'},
       {t:'steps', items:[
-        {en:'On Core\u2019s export, click <b>Continue in Assay →</b>: Assay opens with the merged file already loaded. (Or upload the merged CSV you exported — it is the same import. In the Windows Desktop Edition, upload is the only way.)',
-         id:'Di ekspor Core, klik <b>Lanjut di Assay →</b>: Assay terbuka dengan file gabungan sudah termuat. (Atau unggah CSV gabungan yang Anda ekspor — impornya sama. Di Desktop Edition Windows, hanya cara unggah yang tersedia.)'},
+        {en:'On Core\u2019s export, click <b>Continue in Assay →</b>: Assay opens with the merged file already loaded. (Or upload the merged CSV you exported — it is the same import.)',
+         id:'Di ekspor Core, klik <b>Lanjut di Assay →</b>: Assay terbuka dengan file gabungan sudah termuat. (Atau unggah CSV gabungan yang Anda ekspor — impornya sama.)'},
         {en:'Go to <b>Stats</b>. Look at the histogram and the coefficient of variation. A CV above roughly 1.5 tells you outliers will drive the estimate and a top-cut needs thinking about.',
          id:'Masuk ke <b>Stats</b>. Perhatikan histogram dan koefisien variasi. CV di atas kira-kira 1,5 menandakan pencilan akan mendominasi estimasi dan top-cut perlu dipikirkan.'},
         {en:'Go to <b>Top-Cut</b>. Compare the P98 and P99 candidates and see how much metal each one removes. Choose one and note why.',

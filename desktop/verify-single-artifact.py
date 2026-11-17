@@ -68,7 +68,7 @@ def version_matches(found, want):
 
 def main():
     if len(sys.argv) == 4 and sys.argv[1] == "--version":
-        check(version_matches(sys.argv[2], sys.argv[3]), f"{sys.argv[2]} matches {sys.argv[3]}")
+        check(version_matches(sys.argv[2], sys.argv[3].removeprefix('v')), f"{sys.argv[2]} matches {sys.argv[3]}")
         return
     if len(sys.argv) != 3:
         raise SystemExit("usage: verify-single-artifact.py [--version <found>] <artifact> <tag>")

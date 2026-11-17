@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/v/release/ghoziankarami/geosuite)](https://github.com/ghoziankarami/geosuite/releases/latest)
 [![GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue)](LICENSE)
 
-Drillhole data to a screening block model, in the browser or on Windows.
+Drillhole data to a screening block model, in the browser, on Windows or on macOS.
 Free and open source. No account, licence key or paid tier. English and Bahasa Indonesia.
 
 | Module | What it does |
@@ -24,21 +24,22 @@ variogram dan estimasi (Resource). Gratis, tanpa akun, bisa offline.
 | Platform | How |
 | --- | --- |
 | **Any browser** | Open [geosuite.orebit.id/Core.html](https://geosuite.orebit.id/Core.html). Nothing to install. |
-| **Windows 10/11** | Download `Orebit-Core.exe`, `Orebit-Assay.exe` and `Orebit-Resource.exe` from the [latest release](https://github.com/ghoziankarami/geosuite/releases/latest) into **one folder**. See [Windows executables](docs/INSTALLATION.md#windows-executables). |
-| **macOS, Linux, ChromeOS** | Open Core in Chrome/Edge and choose **Install app**; in Safari use **File → Add to Dock**. Runs offline after all three modules are opened once. |
+| **Windows 10/11** | Download one `Orebit-GeoSuite.exe` from the [latest release](https://github.com/ghoziankarami/geosuite/releases/latest); Core, Assay and Resource share one window. See [Windows executables](docs/INSTALLATION.md#windows-executables). |
+| **macOS desktop** | Download `Orebit-GeoSuite-macos.dmg` from the [latest release](https://github.com/ghoziankarami/geosuite/releases/latest), drag to Applications, then right-click → Open on first launch. See [macOS](docs/INSTALLATION.md#macos-desktop). |
+| **Installed web app — macOS, Linux, ChromeOS** | Open Core in Chrome/Edge and choose **Install app**; in Safari use **File → Add to Dock**. Runs offline after all three modules are opened once. |
 | **From source** | Node.js 18+ and Python 3.9+, then [run from source](#run-from-source). |
 
-The Windows executables are unsigned. Compare them with `SHA256SUMS.txt` from the same release.
+Desktop builds are unsigned; the macOS app is not notarised. Compare downloaded assets with `SHA256SUMS.txt` from the same release.
 **Code → Download ZIP** is the source code, not the executables.
 
 ## First run
 
-The app opens with a synthetic nickel laterite sample (349 collars). It contains
-a few deliberate data errors so you can practise the correction workflow.
+The app opens with a valid synthetic nickel laterite sample (349 collars), ready for Quick Estimate. A separate practice sample with deliberate errors is available from Core Validation.
 
-1. **Core:** Validation → fix the listed records → Desurvey → Merge → Domain → Export.
-2. **Continue in Assay:** check distributions, choose top-cut or no cap, make composites.
-3. **Continue in Resource:** fit a variogram, build the block model, estimate, export the PDF.
+1. **Quick:** use the built-in sample → Check → Estimate → Result. For your own data, import the four CSVs and resolve validation findings.
+2. **Detailed Core:** validate → Desurvey → Merge → interpret Domain when needed → Export.
+3. **Continue in Assay:** check distributions, choose top-cut or no cap, make composites.
+4. **Continue in Resource:** fit a variogram, build the block model, estimate, export the PDF.
 
 Follow the [10-minute quickstart](docs/vignettes/en/00-quickstart.md)
 ([Bahasa Indonesia](docs/vignettes/00-quickstart.md)). For real public data, use the
@@ -66,7 +67,7 @@ Serve the generated `dist/`. Files in `phases/` contain build markers and do not
 ## Releases
 
 - Each version is a [GitHub release](https://github.com/ghoziankarami/geosuite/releases)
-  with the three Windows executables, a web ZIP for local hosting, `SHA256SUMS.txt` and notes on what changed.
+  with a Windows `Orebit-GeoSuite.exe`, macOS `Orebit-GeoSuite-macos.dmg`, checksums and notes on what changed. A local web ZIP can be built from source; inspect each release for its actual assets.
 - Versions follow `MAJOR.MINOR.PATCH`. The web app at geosuite.orebit.id runs the latest release.
 - Check your version on the Core dashboard. Updating the web app does not update an
   executable or a source checkout; download the new release or pull and rebuild.
@@ -88,7 +89,7 @@ Use synthetic or public data only.
 | `phases/` | Module markup and logic (Core, Assay, Resource) |
 | `src/shared/` | Shared calculation, geometry, import, report and UI code |
 | `src/locales/`, `src/assets/`, `src/pwa/` | Translations, samples, fonts, offline support |
-| `build/`, `desktop/` | Web build and Windows packaging |
+| `build/`, `desktop/` | Web build and Windows/macOS packaging |
 | `tests/` | Numerical, import, browser and offline tests |
 | `docs/` | Tutorials, input format, methodology, contributor guide |
 | `vendor/` | Bundled libraries with their own licences |

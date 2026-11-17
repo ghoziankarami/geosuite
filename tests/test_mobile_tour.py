@@ -11,6 +11,8 @@ import os
 import threading
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+import practice_sample  # this suite checks the sample's known defects, so it uses the practice copy
+practice_sample.enable()
 
 ROOT = next(
     p for p in Path(__file__).resolve().parents if (p / "build/build.mjs").exists()

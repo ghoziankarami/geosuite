@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <!-- OREBIT_BUILD_START
-Orebit Resource — GeoSuite v3.2.3
+Orebit Resource — GeoSuite v3.2.4
 Copyright (c) 2026 Orebit (Ghozian Islam Karami). GPL-3.0-only.
-Build: resource-v3.2.3-source
+Build: resource-v3.2.4-source
 Terms: https://geosuite.orebit.id/terms
 -- OREBIT_BUILD_END -->
-<script>window.OREBIT_BUILD_ID="resource-v3.2.3-source";</script>
+<script>window.OREBIT_BUILD_ID="resource-v3.2.4-source";</script>
+
 
 
 
@@ -28,7 +29,7 @@ Terms: https://geosuite.orebit.id/terms
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="product-version" content="v3.2.3"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
+<meta name="product-version" content="v3.2.4"><script>window.OREBIT_VERSION=(document.querySelector('meta[name="product-version"]')||{content:""}).content;</script>
 <meta name="product-name" content="Orebit Resource">
 <meta name="product-stage" content="Resource">
 <!-- CSP: data remains local; optional online services and release checks use explicit origins. -->
@@ -1293,6 +1294,10 @@ function buildBundle(projectName) {
     };
     // Carry forward user-assigned units so P3 projects preserve unit choices
     bundle.units = {...(DATA.units||{}),[setupState.element]:gradeUnitFor(setupState.element)};
+    // The estimation settings travel with the saved project (element, domain, unit, continuity model, block,
+    // density, envelope, search, cutoff), so reopening it restores the same setup. Results are recomputed.
+    saveResourceSession();
+    try { bundle.resourceSettings = JSON.parse(localStorage.getItem(RESOURCE_SESSION_KEY) || 'null'); } catch (e) { bundle.resourceSettings = null; }
   }
 
   return bundle;
@@ -1377,6 +1382,11 @@ async function loadBundle(bundle, options = {}) {
     // Carry forward user-assigned units from P2 so ingest/element detection respects
     // the unit choice. ingestDataset → finalizeUploadLoad reads _lastSchemaMeta.units.
     const previousSchemaMeta = _lastSchemaMeta;
+    // A saved project carries its own estimation settings: offer them to the normal recovery owner, which
+    // applies them only when the reopened table matches the one they were saved with.
+    if (bundle.resourceSettings && bundle.resourceSettings.v === 1) {
+      try { localStorage.setItem(RESOURCE_SESSION_KEY, JSON.stringify(bundle.resourceSettings)); resourceSessionResumePending = true; window.__resourceSettingsFromProject = true; } catch (e) { /* recovery is optional */ }
+    }
     _lastSchemaMeta = bundle.schemaMeta || (bundle.units && Object.keys(bundle.units).length ? {units:bundle.units} : null);
     if(bundle.units&&Object.keys(bundle.units).length)_lastSchemaMeta={..._lastSchemaMeta,units:bundle.units};
     window._lastSchemaMeta = _lastSchemaMeta;
@@ -2643,6 +2653,14 @@ function finalizeUploadLoad(parsed, fileName, elFound, report, manualUnit=null) 
  resourceSessionResumePending = false;
  document.getElementById('resourceRecoveryNote')?.replaceChildren();
  if (recovered) noteSessionRecovered(recovered);
+ // Same data and the same settings as the last accepted estimate: recalculate it now with the existing quick
+ // orchestrator (the result is recomputed, never restored from storage), and say so on the result card's progress.
+ if (recovered && !recovered.valuesChanged && recovered.journey) {
+  let last = null; try { last = JSON.parse(localStorage.getItem(RESOURCE_LASTRUN_KEY) || 'null'); } catch (e) { last = null; }
+  if (last && last.dataset === _resourceDatasetFingerprint() && _resourceCanonicalJSON(last.signature) === _resourceCanonicalJSON(resourceCalculationSignature()) && !window.OrebitQuickRun?.pending?.()) {
+   setTimeout(() => { showTab(1); toast(t('res.noteSessionRecovered.recalculating'), 'info'); startComputePipeline({mode:'quick'}); }, 0);
+  }
+ }
  renderDataPreview();
  // Re-render whichever tab is currently active so it reflects the just-loaded
  // data immediately. Without this, importing a .orebit bundle (or uploading a
@@ -2693,6 +2711,16 @@ function autoFillSoftColumns(parsed, missingSoft) {
 // Shown when canonical columns / grade element can't be auto-detected from names.
 // User DECLARES which CSV column is which + the grade unit — no more guessing.
 let _pendingUpload = null;
+// The mapping panel can re-render after the user has chosen (a late import report
+// replaces the selects). Keep those choices so the rebuild cannot silently reset them.
+const _colmapDraft = Object.create(null);
+document.addEventListener('change', event => {
+ const field = event.target;
+ if (!field || !field.classList) return;
+ if (field.classList.contains('colmap-sel') && field.dataset.target) _colmapDraft[field.dataset.target] = field.value;
+ else if (field.id === 'colmapGrade') _colmapDraft.__grade = field.value;
+ else if (field.id === 'colmapUnit') _colmapDraft.__unit = field.value;
+}, true);
 
 function renderColumnMappingPanel(parsed, fileName, missing, elFound0, report, rejected) {
  // Ensure the import tab is visible so the mapping panel can be seen
@@ -2702,6 +2730,18 @@ function renderColumnMappingPanel(parsed, fileName, missing, elFound0, report, r
  // The OLD dataset stays active until the gate opens -- say so (D7/D18).
  const reportHtml = report ? renderImportReportHtml(report, { tr: _resImportTr, pendingName: importActiveDatasetLabel(DATA, { tr: _resImportTr }) }) : '';
  const origCols = parsed.cols.slice();
+ // A re-render (the import report can land after the user has already chosen) keeps
+ // the user's valid choices instead of falling back to the smart guess.
+ const priorChoice = Object.create(null);
+ document.querySelectorAll('.colmap-sel').forEach(sel => {
+   const target = sel.getAttribute('data-target');
+   if (target && sel.value && origCols.includes(sel.value)) priorChoice[target] = sel.value;
+ });
+ for (const key of Object.keys(_colmapDraft)) {
+   if (origCols.includes(_colmapDraft[key]) && !priorChoice[key]) priorChoice[key] = _colmapDraft[key];
+ }
+ const priorGrade = (document.getElementById('colmapGrade') || {}).value || _colmapDraft.__grade;
+ const priorUnit = (document.getElementById('colmapUnit') || {}).value || _colmapDraft.__unit;
  // Check if hard requirements (coordinates) are missing — this means user needs Core processing
  const missingHardNow = ['midx','midy','midz'].filter(c => !origCols.includes(c) && missing && missing.includes(c));
  const coordWarning = missingHardNow.length > 0
@@ -2757,7 +2797,7 @@ function renderColumnMappingPanel(parsed, fileName, missing, elFound0, report, r
  const gradeOpts = '<option value="">(choose grade column)</option>' +
  origCols.map(c => `<option value="${escapeHtml(c)}" ${c === gradeGuess ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
  const units = ['auto', ...OrebitGradeUnits.options];
- const unitOpts = units.map(u => `<option value="${u}">${u === 'auto' ? 'auto-detect from name' : u}</option>`).join('');
+ const unitOpts = units.map(u => `<option value="${u}"${u === (priorUnit && units.includes(priorUnit) ? priorUnit : 'auto') ? ' selected' : ''}>${u === 'auto' ? 'auto-detect from name' : u}</option>`).join('');
 
  // Without a report (legacy caller) keep the old one-line note; with one, the report says it.
  const missingNote = report ? '' : (missing && missing.length
@@ -2782,7 +2822,7 @@ function renderColumnMappingPanel(parsed, fileName, missing, elFound0, report, r
  <div style="margin-top:8px;font-size:11.5px;color:var(--fg-mute);">Tip: placer tin reported per volume → choose <code>kg/m³</code> (density is ignored, contained metal = volume × grade).</div>
  <div class="row-controls" style="margin-top:14px;">
  <button class="btn" id="p3ApplyMapping" onclick="applyColumnMapping()">✓ Apply Mapping &amp; Load</button>
- <button class="btn secondary" id="p3CancelImport" onclick="_pendingUpload = null; renderUploadTab();">Cancel</button>
+ <button class="btn secondary" id="p3CancelImport" onclick="_pendingUpload = null; Object.keys(_colmapDraft).forEach(key => delete _colmapDraft[key]); renderUploadTab();">Cancel</button>
  </div>
  </div>`);
 }
@@ -2837,6 +2877,7 @@ function applyColumnMapping() {
      sourceRevision:projectToSave.sourceCapsule?.revision, sourceColumns:projectSourceColumns.slice(),
      mappedColumns:newCols.slice(), gradeColumn:gradeKey, unit:unitSel};
  }
+ Object.keys(_colmapDraft).forEach(key => delete _colmapDraft[key]);
  const parsed = { ..._pendingUpload, cols: newCols, rows: _pendingUpload.rows };
  delete parsed.projectToSave;
  delete parsed.schemaMetaForApply;
@@ -5325,6 +5366,16 @@ let estimState = {
  * Nothing here restores silently: `noteSessionRecovered()` tells the user.
  */
 const RESOURCE_SESSION_KEY = 'orebit-resource-session-v1';
+// Data handed over from Assay in this window (the journey), as opposed to a file the user uploads by hand.
+const resourceArrivedByHandoff = /[?&]handoff=1(?:&|$)/.test(location.search);
+// Single use: only the first restore after a journey arrival counts as the journey; a later import or project reopen does not.
+window.addEventListener('orebit-handoff-activated', () => { window.__resourceJourneyData = typeof DATA !== 'undefined' ? DATA : null; });
+const RESOURCE_LASTRUN_KEY = 'orebit-resource-lastrun-v1';
+// Same settings regardless of key order (a restored model is rebuilt field by field).
+function _resourceCanonicalJSON(text) {
+ const sort = v => Array.isArray(v) ? v.map(sort) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map(k => [k, sort(v[k])])) : v;
+ try { return JSON.stringify(sort(JSON.parse(text))); } catch (e) { return null; }
+}
 let resourceSessionResumePending = true;
 
 // Scope recovery to the complete uploaded table and declared units. The former
@@ -5342,9 +5393,22 @@ function _resourceDatasetFingerprint() {
   h ^= 124; h = Math.imul(h, 16777619) >>> 0;
  };
  add(cols);
- add(Object.entries(DATA.units || {}).sort(([a], [b]) => a.localeCompare(b)));
+ add(_resourceCanonicalUnits());
  for (const row of DATA.rows) add(row);
  return `v3:${DATA.rows.length}:${h.toString(16)}`;
+}
+
+// Same table layout and declared units with possibly different values (for example after an Assay top-cut).
+function _resourceDatasetShape() {
+ if (!DATA?.rows?.length) return null;
+ return JSON.stringify([DATA.rows.length, DATA.cols || DATA.columns || [], _resourceCanonicalUnits()]);
+}
+// Physical units compared by meaning, so a reopened project ("kgm3" written as "kg/m³") is the same table.
+function _resourceCanonicalUnits() {
+ const U = typeof OrebitGradeUnits === 'object' ? OrebitGradeUnits : null;
+ // A declared unit that only repeats what the column name already says (sn_kgm3 → kg/m³) is not a different table.
+ return Object.entries(DATA.units || {}).map(([k, v]) => [k, (U && U.normalize(v)) || v])
+  .filter(([k, v]) => !(U && v && v === U.fromHeader(k))).sort(([a], [b]) => a.localeCompare(b));
 }
 
 function saveResourceSession() {
@@ -5353,6 +5417,7 @@ function saveResourceSession() {
    v: 1,
    savedAt: Date.now(),
    dataset: _resourceDatasetFingerprint(),
+   shape: _resourceDatasetShape(),
    element: setupState.element,
    domain: setupState.domain,
    declusterCell: Number.isInteger(setupState.declusterCell) && setupState.declusterCell >= 5 && setupState.declusterCell <= 2000 ? setupState.declusterCell : null,
@@ -5372,6 +5437,8 @@ function saveResourceSession() {
     aniso: variogramState.model.aniso || null,
     covarianceMode: variogramState.model.struct1 ? variogramState.model.covarianceMode : (variogramState.model.covarianceMode || 'legacy-search')
    } : null,
+   // The measured experimental variogram (lags, gammas, pairs) for this data, so the Continuity plot comes back too.
+   experimental: (() => { const e = variogramState.experimental; return e && Array.isArray(e.lags) && e.lags.length <= 500 ? JSON.parse(JSON.stringify(e)) : null; })(),
    direction: variogramState.direction,
    customDirection:{...variogramState.customDirection},
    directionDescriptor:validVariogramDirectionDescriptor(variogramState.directionDescriptor)?{...variogramState.directionDescriptor}:null,
@@ -5401,6 +5468,8 @@ function saveResourceSession() {
 // Read the saved settings back into state. Returns the payload if anything was
 // restored, so the caller can tell the user; null otherwise.
 function restoreResourceSession() {
+ // The journey is the dataset the handoff delivered; any later upload or project reopen replaces DATA and is not.
+ const journey = resourceArrivedByHandoff && !!DATA && DATA === window.__resourceJourneyData;
  let raw = null;
  try { raw = localStorage.getItem(RESOURCE_SESSION_KEY); } catch (e) { return null; }
  if (!raw) return null;
@@ -5411,7 +5480,17 @@ function restoreResourceSession() {
  // Keep their saved data untouched, but require fresh choices instead of silently
  // restoring scientific settings against an unverifiable dataset.
  const current = _resourceDatasetFingerprint();
- if (!current || typeof p.dataset !== 'string' || p.dataset !== current) return null;
+ if (!current || typeof p.dataset !== 'string') return null;
+ // Changed values in the same table and units (an Assay treatment, a refreshed Core export) keep the user's
+ // choices but never the continuity fit, which was measured on the previous values and must be fitted again.
+ window.__resourceSettingsFromProject = false;
+ const valuesChanged = p.dataset !== current;
+ // Only the journey (same table re-sent from Assay, e.g. after a top-cut) may keep choices across new values;
+ // a different file uploaded by hand starts fresh.
+ if (valuesChanged && !journey) return null;
+ // Only a current-format fingerprint can say "same table, new values"; older ones stay unverifiable and are refused.
+ if (valuesChanged && (!/^v3:/.test(p.dataset) || typeof p.shape !== 'string' || p.shape !== _resourceDatasetShape())) return null;
+ p.valuesChanged = valuesChanged; p.journey = journey;
  // Restore settings only when their selected scientific scope still exists.
  // A missing saved column/domain must not apply its fit or unit to another scope.
  const elements = detectActiveElements().filter(e => DATA.cols.includes(e));
@@ -5437,7 +5516,9 @@ function restoreResourceSession() {
  if(Number.isFinite(p.massDensityBeforeVolumetric)&&p.massDensityBeforeVolumetric>0)blockState.massDensityBeforeVolumetric=p.massDensityBeforeVolumetric;
  setupState.reportCutoffNote=typeof p.reportCutoffNote==="string"?p.reportCutoffNote:"";if(document.getElementById("reportCutoffNote"))document.getElementById("reportCutoffNote").value=setupState.reportCutoffNote;
  if(p.reportCutoff==null || (Number.isFinite(p.reportCutoff)&&p.reportCutoff>=0)){setupState.reportCutoff=p.reportCutoff??null;if(document.getElementById("reportCutoff"))document.getElementById("reportCutoff").value=setupState.reportCutoff??"";}
- if (p.variogram && Number.isFinite(p.variogram.range) && p.variogram.range > 0) {
+ // Measured curves come back only on a same-window journey return; a fresh session reopen retires derived results.
+ if (!valuesChanged && journey && p.experimental && Array.isArray(p.experimental.lags) && Array.isArray(p.experimental.gammas) && p.experimental.lags.length === p.experimental.gammas.length) variogramState.experimental = p.experimental;
+ if (!valuesChanged && p.variogram && Number.isFinite(p.variogram.range) && p.variogram.range > 0) {
   variogramState.model = {
    type: p.variogram.type, nugget: p.variogram.nugget,
    sill: p.variogram.sill, range: p.variogram.range
@@ -5458,10 +5539,10 @@ function restoreResourceSession() {
   if (Number.isFinite(p.envelopeRadius) && p.envelopeRadius > 0) blockState.envelopeRadius = p.envelopeRadius;
   if (Array.isArray(p.blockDims)) blockState.dims = p.blockDims.slice();
   if (Array.isArray(p.blockOrigin)) blockState.origin = p.blockOrigin.slice();
-  if (Number.isFinite(p.density) && p.density > 0) blockState.density = p.density;
-  blockState.densityUserSet = !!p.densityUserSet;
   restored = true;
  }
+ // Density is a user choice of its own and does not need a generated grid.
+ if (Number.isFinite(p.density) && p.density > 0) { blockState.density = p.density; blockState.densityUserSet = !!p.densityUserSet; }
  if (p.search) {
   for (const k of ['rMaj','rSemi','rMin','azDeg','dipDeg','rakeDeg','minNeighbors','maxNeighbors','maxPerHole','secondPassFactor','secondPassMin']) {
    if (Number.isFinite(p.search[k])) searchState[k] = p.search[k];
@@ -5469,6 +5550,9 @@ function restoreResourceSession() {
   if (typeof p.search.useOctant === 'boolean') searchState.useOctant = p.search.useOctant;
   if (typeof p.search.secondPass === 'boolean') searchState.secondPass = p.search.secondPass;
   if (typeof p.search.domainBoundary === 'boolean') searchState.domainBoundary = p.search.domainBoundary;
+  // The restored search belongs to the restored model: mark its range as already sized, so Estimation does not
+  // replace the user's radii with fresh defaults on the first render after a reload or a return.
+  if (variogramState.model && Number.isFinite(variogramState.model.range)) variogramState._lastRange = variogramState.model.range;
  }
  return restored ? p : null;
 }
@@ -5487,13 +5571,16 @@ function noteSessionRecovered(p) {
  if (!host) return;
  // Scope and required reruns stay visible; only the restored model parameters collapse.
  host.innerHTML = `<div class="hint resource-recovered" style="border-left:3px solid var(--accent);">
-   <strong>${t('res.noteSessionRecovered.previousSessionRecovered')}</strong>${when ? ` <span style="color:var(--fg-mute);font-size:12px;">(${when})</span>` : ''}<br>
-   <span class="resource-recovered-scope" style="font-size:12.5px;">${escapeHtml(t('res.noteSessionRecovered.scope').replace('{element}', setupState.element).replace('{domain}', setupState.domain === 'all' ? t('res.allDomains') : String(setupState.domain)).replace('{cell}', setupState.declusterCell ?? t('res.cls.notAvailable')))}</span><br>
-   <span class="resource-recovered-rerun" style="font-size:12.5px;">${escapeHtml(t('res.noteSessionRecovered.rerun'))}</span>
+   <strong>${t('res.noteSessionRecovered.previousSessionRecovered')}</strong> · <span class="resource-recovered-scope" style="font-size:12.5px;">${escapeHtml(t('res.noteSessionRecovered.scope').replace('{element}', setupState.element).replace('{domain}', setupState.domain === 'all' ? t('res.allDomains') : String(setupState.domain)).replace('{cell}', setupState.declusterCell ?? t('res.cls.notAvailable')))}</span>
+   <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;"><span class="resource-recovered-rerun" style="font-size:12.5px;">${escapeHtml(t(p && p.valuesChanged ? 'res.noteSessionRecovered.valuesChanged' : 'res.noteSessionRecovered.rerun'))}</span>
+   <button type="button" class="btn" data-action-role="next" data-recovery-estimate>${escapeHtml(t('res.noteSessionRecovered.estimateAgain'))}</button></div>
    <details class="resource-recovered-details" style="margin-top:4px;"><summary style="cursor:pointer;font-size:12.5px;">${t('res.noteSessionRecovered.details')}</summary>
-   <span style="font-size:12.5px;">${t('res.noteSessionRecovered.summary').replace('{vg}', vg).replace('{size}', size)}</span>
+   <span style="font-size:12.5px;">${t('res.noteSessionRecovered.summary').replace('{vg}', vg).replace('{size}', size)}${when ? ` (${when})` : ''}</span>
    </details>
  </div>`;
+ // One clear next step: the existing quick orchestrator regenerates the grid and estimate with these settings,
+ // and the dashboard summary shows the result (results are never stored, so they are recomputed, not restored).
+ host.querySelector('[data-recovery-estimate]')?.addEventListener('click', () => { showTab(1); startComputePipeline({mode:'quick'}); });
 }
 /* ---------- Sprint C: Variable Density Helper ---------- */
 // Returns per-block density if variable density table is active, else blockState.density.
@@ -6975,6 +7062,9 @@ async function runEstimation() {
   gridSize:blockState.size,gridOrigin:blockState.origin,blockDensityVector:blockState.blockDensities,uniformDensity:blockState.density});
  window._resourceReportSnapshot=null;
  window.__resourceReportSelectionSnapshot=null;
+ // Remember which data and settings produced this accepted estimate, so returning to Resource with exactly the
+ // same data and settings can recalculate it at once instead of showing an empty result.
+ try { localStorage.setItem(RESOURCE_LASTRUN_KEY, JSON.stringify({dataset:_resourceDatasetFingerprint(),signature:estimationSignature,ts:Date.now()})); } catch (e) { /* convenience only */ }
  estimState._running = false;
  setEstimStatus(`<span style="color:var(--good-ink);"><span style="color:var(--good-ink);"></span> ${t('res.processChunk.finished')
    .replace('{dt}', dt).replace('{estimated}', estimated.toLocaleString('en-US')).replace('{n}', N.toLocaleString('en-US'))
@@ -7954,8 +8044,6 @@ function renderResultSummary() {
   screeningNotice.id='resultSummaryScreeningNotice';host.append(screeningNotice);
   if(!empty)host.append(el('p',t('res.summary.headline').replace('{quantity}',q(head.quantity)).replace('{qunit}',head.quantityUnit).replace('{grade}',q(head.grade))
    .replace('{unit}',OrebitScreeningReport.unitLabel(head.unit)).replace('{element}',head.elementLabel).replace('{metal}',q(head.metalTonnes,0)),'result-summary-headline'));
-  if(!empty){const plain=el('p',t('res.summary.plain').replace('{quantity}',q(head.quantity)).replace('{qunit}',head.quantityUnit).replace('{grade}',q(head.grade))
-   .replace('{unit}',OrebitScreeningReport.unitLabel(head.unit)).replace('{element}',head.elementLabel).replace('{metal}',q(head.metalTonnes,0)),'result-summary-note');plain.id='resultSummaryPlain';host.append(plain);}
   const metrics=el('dl',null,'result-summary-metrics'),metric=(label,value,basis)=>{const g=el('div');g.append(el('dt',label),el('dd',value));if(basis)g.append(el('small',basis));metrics.append(g);};
   metric(t('res.summary.estimated'),head.estimatedBlocks.toLocaleString(),t('res.summary.metricOfBlocks').replace('{n}',head.blocks.toLocaleString()));
   metric(t('res.summary.coverage'),q(head.estimatedBlocks/head.blocks*100,1)+'%',t('res.summary.coverageBasis'));
@@ -10779,7 +10867,7 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
    ],
    attentionRequired:true,
    interpretation:briefText(!report?'noEstimate':selected.blocks?'meaning':'empty')+(report&&selected.blocks?' '+(report.quantityRollup?briefText('solidSupport'):briefText('envelope')):''),
-   attention:haveVario&&!variogramState.model.struct1&&variogramState.model.covarianceMode!=='model-range'?briefText('legacy'):report?massBasis+' '+briefText('attention',{missing:report.generated.blocks-report.estimated.blocks,fallback:passCounts?.[2]||0}):briefText('noEstimate'),
+   attention:haveVario&&!variogramState.model.struct1&&variogramState.model.covarianceMode!=='model-range'?briefText('legacy'):report?briefText('attention',{missing:report.generated.blocks-report.estimated.blocks,fallback:passCounts?.[2]||0}):briefText('noEstimate'),
    next:briefText(report?'next':'fixNext')
  });
  const upstreamScope=OrebitScreeningReport.sourceScope(_lastSchemaMeta).summary;
@@ -10808,7 +10896,7 @@ statCard(15, 58 + ch + 4, cw, ch, (t('res.maybeShowSupportMoment.estimatedBlocks
    ['Applied confidence cutoff',haveClass&&classState.cutoff!=null?`${classState.cutoff} ${gradeUnitFor(setupState.element)} used when assigning confidence labels`:'No classification cutoff applied'],
    ['Tonnage reconciliation',bridge],
    ['Block volume and mass basis',massBasis],
-   ['Block viewer display',JSON.stringify(window._blockViewAppliedSettings||{purpose:'No block view rendered; report selection is independent'})],
+   ['Block viewer display',JSON.stringify(window._blockViewAppliedSettings||{purpose:'No block view rendered; report selection is independent'},(k,v)=>typeof v==='number'&&!Number.isInteger(v)?+v.toPrecision(4):v)],
    ['Density assignment audit',report?JSON.stringify(report.densityAudit):'Not estimated'],
    ['Effective unit conversion',OrebitGradeUnits.metalFormula(gradeUnitFor(setupState.element))],
    [briefText('supportDetails'),support],

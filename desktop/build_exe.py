@@ -147,7 +147,18 @@ def build_single() -> Path:
     staged = []
     for page in pages:
         target = HERE / page.name
-        shutil.copyfile(page, target)
+        # WKWebView reports the vendor `new Function('return this')` probe as an
+        # uncaught EvalError under the web CSP, which the app then shows to the
+        # user. The packaged app is offline and serves only its own bundle, so the
+        # desktop copy allows eval; the web pages keep the strict policy.
+        text = page.read_text(encoding="utf-8").replace(
+            "script-src 'self' 'unsafe-inline'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+        ).replace(
+            "script-src-elem 'self' 'unsafe-inline'",
+            "script-src-elem 'self' 'unsafe-inline' 'unsafe-eval'",
+        )
+        target.write_text(text, encoding="utf-8", newline="")
         staged.append(target)
     index = HERE / "index.html"
     index.write_text(launcher_html(), encoding="utf-8")
@@ -165,8 +176,9 @@ def build_single() -> Path:
         if icon.is_file():
             args += ["--icon", str(icon)]
         args += ["--add-data", f"{index}{sep}."]
-        for page in pages:
-            args += ["--add-data", f"{page}{sep}."]
+        for target in staged:
+            if target is not index:
+                args += ["--add-data", f"{target}{sep}."]
         args += [
             "--add-data", f"{VENDOR}{sep}vendor",
             "--hidden-import", "tkinter", "--collect-all", "tkinter",

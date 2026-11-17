@@ -7,6 +7,7 @@
 | --- | --- | --- |
 | Web or installed web app | A current browser; internet for initial loading | [Open Core](https://geosuite.orebit.id/Core.html) |
 | Windows executable | Windows 10/11; no Node or Python | [Public releases](https://github.com/ghoziankarami/geosuite/releases/latest) |
+| macOS desktop | No Node or Python; unsigned app | [DMG and checksums](https://github.com/ghoziankarami/geosuite/releases/latest) |
 | Local source build | Node.js 18+ and Python 3.9+; Windows, macOS or Linux | Commands below |
 
 An executable is one distribution of GeoSuite. The GPL-3.0 source is also
@@ -16,26 +17,25 @@ an account, a licence key, or a VPS.
 
 ## Windows executables
 
-1. Open the [latest release](https://github.com/ghoziankarami/geosuite/releases/latest)
-   and expand **Assets**.
-2. Download `Orebit-Core.exe`, `Orebit-Assay.exe`, `Orebit-Resource.exe` and
-   `SHA256SUMS.txt` (about 57 MB in total) into **one folder**.
-   **Continue in Assay** and **Continue in Resource** open the next executable
-   from that folder and pass the data along.
-3. Check each file in PowerShell and compare with its line in `SHA256SUMS.txt`:
+Since v3.2.4, download **one** `Orebit-GeoSuite.exe` and `SHA256SUMS.txt` from the [latest release](https://github.com/ghoziankarami/geosuite/releases/latest). Core, Assay and Resource share one window. Node and Python are not required.
 
-   ```powershell
-   Get-FileHash .\Orebit-Core.exe -Algorithm SHA256
-   ```
+```powershell
+Get-FileHash .\Orebit-GeoSuite.exe -Algorithm SHA256
+```
 
-4. Run `Orebit-Core.exe`. The executables are unsigned, so Windows SmartScreen may
-   show **Windows protected your PC**; choose **More info → Run anyway** only after
-   the checksum matches.
-5. The Core dashboard shows the version and the built-in sample. Node and Python are not needed.
+Compare the hash with the manifest, then run the EXE. It is unsigned; Windows SmartScreen may show **Windows protected your PC**. Use **More info → Run anyway** only for the verified official download. The dashboard shows the version and the valid built-in sample.
 
-To update, download the three files of the new release into the same folder and
-replace the old ones. Projects you exported as `.orebit` files open in the new version.
-**Code → Download ZIP** contains source code, not the executables.
+To update, download the new EXE and verify its checksum. Keep exported `.orebit` project backups. **Code → Download ZIP** contains source, not the executable.
+
+## macOS desktop
+
+Download `Orebit-GeoSuite-macos.dmg` and `SHA256SUMS.txt` from the same release:
+
+```bash
+shasum -a 256 Orebit-GeoSuite-macos.dmg
+```
+
+Compare the hash, open the DMG and drag GeoSuite to Applications. The app is unsigned and not notarised: on first launch use **right-click → Open**. macOS may ask for local-network access because the app serves itself on `127.0.0.1`. Core, Assay and Resource share one window. Node and Python are not required. Keep project backups when updating.
 
 ## Build and run locally / Jalankan dari kode sumber
 
